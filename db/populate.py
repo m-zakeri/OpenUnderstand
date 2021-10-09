@@ -12,9 +12,14 @@ def append_java_ent_kinds():
                         print(f"Kind exists: {kind}")
                         continue
                 except Kind.DoesNotExist:
-                    Kind(
+                    kind = Kind(
                         name=query
-                    ).save()
+                    )
+                    res = kind.save()
+                    if res:
+                        print(f"Created: {kind}")
+                    else:
+                        raise ConnectionError("Database disconnected, please try again!")
 
 
 def append_java_ref_kinds():
