@@ -23,6 +23,7 @@ def append_java_ent_kinds():
 
 
 def append_java_ref_kinds():
+    # TODO: Complete this method!
     pass
 
 
