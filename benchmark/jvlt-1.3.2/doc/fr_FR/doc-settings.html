@@ -1,0 +1,201 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+
+
+
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>jVLT - Settings</title>
+
+<link href="style.css" rel="stylesheet" type="text/css"></head><body>
+<table>
+<tbody><tr>
+<td><img alt="jVLT logo" src="jvlt.png" height="128" width="128"></td><td>
+<h1>jVLT - outil d’apprentissage du vocabulaire</h1>
+</td>
+</tr>
+<tr>
+<td class="bluebox" valign="top">
+<div style="margin-left: 0px;">
+<a href="doc.html">Documentation</a>
+</div>
+<div style="margin-left: 10px;">
+<a href="doc-vocabulary.html">Vocabulaire</a>
+</div>
+<div style="margin-left: 10px;">
+<a href="doc-examples.html">Exemples</a>
+</div>
+<div style="margin-left: 10px;">
+<a href="doc-quizzes.html">Quiz</a>
+</div>
+<div style="margin-left: 10px;">Préférences</div>
+<div style="margin-left: 10px;">
+<a href="doc-menus.html">Menus</a>
+</div>
+<div style="margin-left: 10px;">
+<a href="doc-misc.html">Divers</a>
+</div>
+</td><td class="content">Vous pouvez changer plusieurs paramètres de jVLT en choisissant “Préférences…” dans le menu “Édition”.
+
+<h2>
+<a name="appearance_settings">Paramètres d’apparence</a>
+</h2>Dans l’onglet “Apparence”, on peut modifier l’apparence, les
+polices de caractère, la langue de l’application et les champs affichés
+dans la zone HTML. En ce qui concerne le choix d’une police, soit on
+peut utiliser celle par défaut, soit une police personnalisée en
+choisissant “Choisir une police…” dans le menu déroulant local.<br>
+
+<ul>
+
+<li>
+<b>Apparence : </b>Cette option détermine l’apparence générale de l’application. Les choix disponibles dépendent du système de votre ordinateur.</li>
+
+<li>
+<b>Police de l’interface utilisateur : </b>La police de l’interface
+utilisateur est utilisée pour tous les composants sauf la vue détaillée
+des mots et des exemples, ainsi que pour les éléments pour lesquels la
+police est fixée par les deux paramètres suivants. Veuillez noter que
+la modification de cette police n’est possible que si l’apparence
+“Métal” est utilisée.
+</li>
+
+<li>
+<b>Police d’interface utilisateur pour “Original” : </b>Cette police est utilisée pour les mots et les exemples de la langue de départ.<br>
+</li>
+        <li><b>Police d’interface utilisateur pour </b><b>“Prononciation” :</b> Pour la prononciation, une police personnalisée peut également être définie.<br>
+</li>
+        <li><b>Police HTML : </b>Cette police est utilisée pour les zones HTML dans les onglets Vocabulaire, Exemples et Quiz.<br>
+        </li>
+
+
+<li>
+<b>Police HTML du champ “Original” : </b>Ce paramètre détermine la police du champ&nbsp; “Original” dans
+la <a href="doc-vocabulary.html#detailed_view">vue détaillée</a>.
+</li>
+
+<li>
+          <span style="font-weight: bold;">Police HTML du champ</span><b> “Prononciation” : </b>Vous pouvez aussi choisir la police d’affichage de la prononciation dans la vue détaillée.<br>
+
+</li>
+
+<li>
+<b>Paramètres locaux :</b> Ce paramètre détermine la langue de l’interface de l’application.
+</li>
+
+<li>
+<b>Champs affichés dans la zone HTML :</b>
+C’est ici que vous pouvez choisir quels champs afficher dans la <a href="doc-vocabulary.html#detailed_view">vue détaillée</a> de l’onglet Vocabulaire.
+</li>
+
+</ul>
+Notez que n’importe quel changement des paramètres ci-dessus nécessitera un redémarrage de l’application.
+<br>
+<br>
+
+<img alt="Appearance settings" src="settings_appearance.png">
+<br>
+<br>
+
+
+<h2>
+<a name="general_settings">Paramètres généraux </a>
+</h2>Dans l’onglet "Général" vous pouvez actuellement effectuer le paramétrage suivant :<br>
+
+<ul>
+
+<li>
+<b>Au démarrage, réouvrir le dernier fichier ouvert : </b>Si vous cochez cette case,
+jVLT se souviendra du fichier sur lequel vous avez travaillé lors de la session précédente et le chargera au démarrage.
+</li>
+
+<li>
+<b>Police d’impression :</b> Vous pouvez soit utiliser la police par défaut pour <a href="doc-misc.html#printing">l’impression</a>, soit choisir une police personnalisée en choisissant l’option de menu “Choisir une police…” dans le menu déroulant local.<br>
+
+ </li></ul><br>
+<br>
+
+<img alt="General settings" src="settings_general.png">
+<br>
+<br>
+
+
+<h3>Durée d’expiration<br>
+</h3>La durée d’expiration détermine le moment où un mot redevient actif après un quiz (voir <a href="doc-quizzes.html">la section Quiz</a>). Il y a trois paramètres pour modifier la date d’expiration :
+<ul>
+
+<li>
+<b>Nombre de lots :</b> Le numéro maximum du lot assigné à un mot. Si un
+mot qui se trouve déjà dans le lot au numéro le plus élevé est su
+pendant un quiz, son numéro de lot ne change pas (en principe il
+augmente d’un).
+</li>
+
+<li>
+<b>Facteur d’expiration :</b>
+Détermine le moment (le nombre d’unités de temps) après lequel un mot redevient actif. Si <i>X</i> est le facteur d’expiration, un mot assigné au lot n° <i>i</i> se réactive après <i>X</i><i style="vertical-align: super;">i-1</i> unités de temps.
+C'est à dire, un mot du lot n° <i>1</i> redevient
+actif après une unité de temps, un mot du lot n° <i>2</i> après <i>X</i> unités de temps, un mot du lot n° <i>3</i> après
+<i>X</i><i style="vertical-align: super;">2</i> unités de temps, etc.
+</li>
+
+<li>
+<b>Unité :</b> L’unité de temps peut être soit en jours, soit en heures.
+</li>
+
+</ul>
+
+
+<h2>
+<a name="multimedia_settings">Paramètres des fichiers multimédia</a>
+</h2>
+Dans cet onglet, vous pouvez décider comment jVLT gérera les fichiers multimédia specifiés dans la&nbsp; <a href="doc-vocabulary.html#add_word">fenêtre de mots</a>.
+<br>
+<br>
+
+<img alt="File types" src="settings_file_types.png">
+<ul>
+
+<li>
+          <span style="font-weight: bold;">Lire les fichiers</span><b> audio juste après la sélection du mot :</b> Si cette case est coché, jVLT  lira automatiquement les fichiers audio quand vous choisirez un mot dans la <a href="doc-vocabulary.html#word%20list">liste de mots</a>.
+</li>
+
+</ul>
+
+<h3>Types de fichier<br>
+</h3>Dans la zone “Types de fichier”, on peut définir des commandes
+externes pour afficher ou lancer des fichiers multimédia. Cliquer sur
+“Modifier” ou “Ajouter” ouvre une nouvelle boîte de dialogue qui vous
+permet d’éditer un certain type de fichier. La signification des
+éléments de la fenêtre de dialogue est décrite ci-dessous :
+<ul>
+
+<li>
+<b>Extension de fichier :</b> L’extension de fichier, par exemple “mp3”. Pour les types de fichier par défaut, cette valeur ne peut pas être modifiée.
+</li>
+
+<li>
+<b>Type:</b> Le type de fichier. Ce paramètre est optionnel, il ne fait que déterminer quelle icône es t utilisée dans la <a href="doc-vocabulary.html#detailed_view">vue détaillée</a>.
+</li>
+
+<li>
+<b>Utiliser jVLT to lire/montrer :</b>Vous ne pouvez cocher cette case
+que pour les types de fichier par défaut. Si elle est cochée, jVLT
+lui-même essaiera de lancer le fichier au lieu d’utiliser une commande
+externe.
+</li>
+
+<li>
+<b>Commande :</b> La commande pour lancer ou afficher un fichier
+portant cette extension. Vous devrez ajouter %f pour remplacer le nom
+de fichier.
+</li>
+
+</ul>
+
+<img alt="Edit file type" src="settings_edit_file_type.png">
+<br>
+<br>
+
+
+</td>
+</tr>
+</tbody></table>
+</body></html>
