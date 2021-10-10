@@ -124,5 +124,4 @@ if __name__ == '__main__':
     db.connect()
     db.create_tables(
         models=[Database, Kind, Entity, Reference, ],
-
     )

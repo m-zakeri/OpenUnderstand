@@ -1,7 +1,8 @@
 import peewee
 import unittest
 
-from models import Kind
+from models import Kind, Entity
+from utils import get_object_or_create
 
 
 def append_java_ent_kinds():
@@ -9,34 +10,16 @@ def append_java_ent_kinds():
         for line in f.readlines():
             if line.startswith("Java"):
                 query = line.strip()
-                try:
-                    kind = Kind.get(Kind.name == query)
-                    if kind:
-                        print(f"Kind exists: {kind}")
-                        continue
-                except Kind.DoesNotExist:
-                    kind = Kind(
-                        name=query
-                    )
-                    res = kind.save()
-                    if res:
-                        print(f"Created: {kind}")
-                    else:
-                        raise ConnectionError("Database disconnected, please try again!")
+                kind, _ = get_object_or_create(Kind, name=query)
+                print(f"Created ({_}): {kind}")
 
 
-def append_java_ref_kind(kind: str, inverse: str, ref: str) -> bool:
-    result = 0
-    ref_kind = Kind(name=ref, is_ent_kind=False)
-    result += ref_kind.save()
-
+def append_java_ref_kind(kind: str, inverse: str, ref: str) -> int:
+    ref_kind, _ = get_object_or_create(Kind, name=ref, is_ent_kind=False)
     inv = ref.replace(kind, inverse)
-    inv_kind = Kind(name=inv, is_ent_kind=False, inverse=ref_kind)
-    result += inv_kind.save()
-
+    inv_kind, _ = get_object_or_create(Kind, name=inv, is_ent_kind=False, inverse=ref_kind)
     ref_kind.inverse = inv_kind
-    result += ref_kind.save()
-    return result == 3
+    return ref_kind.save()
 
 
 def append_java_ref_kinds():
@@ -59,10 +42,61 @@ def append_java_ref_kinds():
                     inv_kind = inv_kind[1:-1]
 
 
+def append_entities_with_understand(udb_path: str):
+    try:
+        import understand as und
+    except ImportError:
+        print("Understand Python API is not installed correctly.")
+
+    db = und.open(udb_path)
+    for ent in db.ents():
+        if ent.language() == "Java":
+            # Create parents first
+            parent_obj = None
+            parents = []
+            parent = ent.parent()
+            while parent is not None:
+                parents.append(parent)
+                parent = parent.parent()
+            parents.reverse()
+            for index, parent in enumerate(parents):
+                kind, _ = get_object_or_create(Kind, name=parent.kind().longname())
+                parent_obj, _ = get_object_or_create(
+                    Entity,
+                    kind=kind,
+                    parent=parent_obj,
+                    name=parent.name(),
+                    longname=parent.longname(),
+                    value=parent.value(),
+                    type=parent.type()
+                )
+
+            # Create entity it-self!
+            kind, _ = get_object_or_create(Kind, name=ent.kind().longname())
+            ent, _ = get_object_or_create(
+                Entity,
+                kind=kind,
+                parent=parent_obj,
+                name=ent.name(),
+                longname=ent.longname(),
+                value=ent.value(),
+                type=ent.type()
+            )
+            print(ent)
+
+
+def append_references_with_understand(udb_path: str):
+    # TODO: Implement this method!
+    try:
+        import understand as und
+    except ImportError:
+        print("Understand Python API is not installed correctly.")
+
+
 class TestFill(unittest.TestCase):
     def setUp(self) -> None:
-        self.ent_kind = Kind.get(Kind.name == "Java Method Constructor Member Default")
-        self.ref_kind = Kind.get(Kind.name == "Java Open")
+        self.ent_kind = Kind.get(name="Java Method Constructor Member Default")
+        self.ref_kind = Kind.get(name="Java Open")
 
     def test_valid_inverse(self):
         inv = self.ref_kind.inv()
@@ -77,5 +111,9 @@ class TestFill(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    udb_path = "D:\Dev\JavaSample\JavaSample1.udb"
     append_java_ent_kinds()
     append_java_ref_kinds()
+    print("=" * 50)
+    append_entities_with_understand(udb_path)
+    append_references_with_understand(udb_path)
