@@ -12,7 +12,7 @@ class Kind(Model):
     This table will fill automatically.
     """
     id = AutoField()
-    inv = ForeignKeyField('self', null=True)
+    inverse = ForeignKeyField('self', null=True)
     name = CharField(max_length=256, unique=True)
 
     is_ent_kind = BooleanField(default=True)
@@ -37,10 +37,11 @@ class Kind(Model):
     def inv(self):
         """
         The logical inverse of a reference kind. This will throw an
-        UnderstandError if called with an entity kind.
+        OpenUnderstandError if called with an entity kind.
         """
-        # TODO: Complete this method.
-        return None
+        if self.is_ent_kind:
+            raise OperationalError("Entity kind has no inverse.")
+        return self.inverse
 
     @staticmethod
     def list_entity(ent_kind: str):
