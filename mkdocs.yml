@@ -7,7 +7,19 @@ copyright: © 2021-2022 OpenUnderstand project - IUST Reverse Engineering Resear
 
 theme:
   name: material
-
+  palette:
+    - scheme: default
+      primary: orange
+      accent: orange
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Dark mode
+    - scheme: slate
+      primary: orange
+      accent: orange
+      toggle:
+        icon: material/toggle-switch
+        name: Light mode
 
 plugins:
   - search
