@@ -4,7 +4,10 @@ to create project parse tree, analyze project, and create symbol table db
 It is the same Understand und command line tool
 
 """
+from pprint import pprint
 
+from db.api import open as db_open, create_db, Kind
+from db.fill import main
 
 class Project():
     # Todo: Implement project class
@@ -14,3 +17,8 @@ class Project():
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     p = Project()
+    # create_db("G:\Dev\OpenUnderstand\database.db")
+    # main()
+    db = db_open("G:\Dev\OpenUnderstand\database.db")
+    ent = db.ent_from_id(16)
+    print(Kind.list_reference("callby"))
