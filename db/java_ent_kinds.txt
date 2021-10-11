@@ -1,8 +1,11 @@
 File
+
 Java File
 Java File Jar
 
+
 Method
+
 Java Method Constructor Member Default
 Java Method Constructor Member Protected
 Java Method Constructor Member Private
@@ -68,22 +71,30 @@ Java Unresolved External Static Method Protected Member
 Java Unresolved External Static Method Public Member
 Java Unresolved External Static Method Public Main Member
 
+
 Module
+
 Java Unknown Module
 Java Unresolved Module
 Java Module
 
+
 Package
+
 Java Unknown Package
 Java Unresolved Package
 Java Package
 Java Package Unnamed
 
+
 Parameter
+
 Java Catch Parameter
 Java Parameter
 
+
 Type
+
 Java Abstract Class Type Default Member
 Java Abstract Class Type Private Member
 Java Abstract Class Type Protected Member
@@ -156,7 +167,10 @@ Java Static Final Generic Class Type Default Member
 Java Static Final Generic Class Type Private Member
 Java Static Final Generic Class Type Protected Member
 Java Static Final Generic Class Type Public Member
+
+
 Variable
+
 Java Static Final Variable Default Member
 Java Static Final Variable Private Member
 Java Static Final Variable Protected Member
@@ -179,3 +193,4 @@ Java Final Variable Public Member
 Java Implicit Final Variable Public Member
 Java Unknown Variable Member
 Java Variable EnumConstant Public Member
+
