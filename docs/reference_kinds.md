@@ -280,12 +280,213 @@ class class2 {
 |     Java DotRefby              |     `some_pack`                         |     `some_meth`                    |
 
 
+### Java Export and Exportby
+
+- [ ] **Todo:** add a short definition with and an example code and corresponding table for this reference kind.
+
+
+### Java Import and Importby
+
+Java Import indicates a file imports an individual class. For example, the `some_file.java` file might contain:
+
+```java
+import pack1.some_class;
+```
+
+Java Import Demand indicates a file has an _on-demand_ import statement for a package or class. For example, the `some_file.java` file might contain:
+
+```java
+import pack1.*;
+```
+
+|     Reference kind   string    |     Entity   performing references    |     Entity being   referenced    |
+|--------------------------------|---------------------------------------|----------------------------------|
+|     Java Import                |     `some_file`                         |     `pack1.some_class`             |
+|     Java Importby              |     `pack1.some_class`                  |     `some_file`                    |
+|     Java Import   Demand       |     `some_file`                         |     `pack1`                        |
+|     Java Importby   Demand     |     `pack1`                             |     `some_file`                    |
+
+
+### Java Modify and Modifyby
+
+Indicates that a variable’s value is modified or both read and set, as with the increment (`++`), decrement (`--`), and assignment/operator combinations (`*=`, `/=`, ...).
+
+```java
+class some_class {
+ void some_meth() {
+  int i = 5;
+  i++;
+ }
+}
+```
+
+
+|     Reference kind   string    |     Entity   performing references    |     Entity being   referenced    |
+|--------------------------------|---------------------------------------|----------------------------------|
+|     Java Modify                |     `some_meth`                         |     `i`                            |
+|     Java Modifyby              |     `i`                                 |     `some_meth`                    |
+
+
+### Java ModuleUse and ModuleUseby
+
+- [ ] **Todo:** add a short definition with and an example code and corresponding table for this reference kind.
+
+
+
+### Java Override and Overrideby
+
+Indicates that a method overrides a method from a parent class.
+
+```java
+class A {
+ int some_meth() {
+ ...
+ }
+}
+
+class B extends A{
+ int some_meth() {
+ ...
+ }
+}
+```
+
+|     Reference kind   string    |     Entity   performing references    |     Entity being   referenced    |
+|--------------------------------|---------------------------------------|----------------------------------|
+|     Java Override              |     `B.some_meth`                       |     `A.some_meth`                  |
+|     Java   Overrideby          |     `A.some_meth`                       |     `B.some_meth`                  |
+
+
+### Java Provide and Provideby
+- [ ] **Todo:** add a short definition with and an example code and corresponding table for this reference kind.
+
+
+
+### Java Require and Requireby
+- [ ] **Todo:** add a short definition with and an example code and corresponding table for this reference kind.
+
+
+
+### Java Set and Setby
+
+Java Set indicates that a variable is set by a separate statement.
+
+```java
+void some_meth() {
+ int i;
+ i = 5;
+}
+```
+
+Java Set Init indicates that a variable is initialized in its declaration.
+
+```java
+void some_meth() {
+ int i = 5;
+}
+```
+
+- [ ] **Todo:** add a short definition with and an example code and corresponding table for Set Partial and Setby Partial reference kinds.
+
+
+|     Reference kind   string    |     Entity   performing references    |     Entity being   referenced    |
+|--------------------------------|---------------------------------------|----------------------------------|
+|     Java Set                   |     `some_meth`                         |     `i`                            |
+|     Java Setby                 |     `i`                                 |     `some_meth`                    |
+|     Java Set Init              |     `some_meth`                         |     `i`                            |
+|     Java Setby   Init          |     `i`                                 |     `some_meth`                    |
+|     Set Partial                |     Todo:                             |     Todo:                        |
+|     Setby Partial              |     Todo:                             |     Todo:                        |
+
+
+### Java Typed and Typedby
+
+Indicates the type of a variable or parameter.
+
+```java
+class class1 {
+ ...
+}
+
+class class2 {
+ class1 some_obj;
+}
+```
+
+|     Reference kind   string    |     Entity   performing references    |     Entity being   referenced    |
+|--------------------------------|---------------------------------------|----------------------------------|
+|     Java Typed                 |     `some_obj`                          |     `class1`                       |
+|     Java Typedby               |     `class1`                            |     `some_obj`                    |
+
+
+
+### Java Use and Useby
+
+Indicates that a variable is used or read.
+
+
+```java
+class some_class {
+ int some_var;
+ void some_meth() {
+  int local_var = some_var; // read of some_var
+ }
+}
+```
+
+- [ ] **Todo:** add a short definition with and an example code and corresponding table for Use Partial and Useby Partial reference kinds.
+- [ ] **Todo:** add a short definition with and an example code and corresponding table for Use Ptr and Useby Ptr reference kinds.
+- [ ] **Todo:** add a short definition with and an example code and corresponding table for Use Return and Useby Return reference kinds.
+
+
+|     Reference kind   string    |     Entity   performing references    |     Entity being   referenced    |
+|--------------------------------|---------------------------------------|----------------------------------|
+|     Java Use                   |     `some_meth`                         |     `some_var`                     |
+|     Java Useby                 |     `some_var`                          |     `some_meth`                    |
+|     Java Use   Partial         |     Todo:                             |     Todo:                        |
+|     Java Useby   Partial       |     Todo:                             |     Todo:                        |
+|     Java Use Ptr               |     Todo:                             |     Todo:                        |
+|     Java Useby   Partial       |     Todo:                             |     Todo:                        |
+|     Java Use Return            |     Todo:                             |     Todo:                        |
+|     Java Useby Return          |     Todo:                             |     Todo:                        |
+
+
+###  Java Open and Openby
+- [ ] **Todo:** add a short definition with and an example code and corresponding table for this reference kind.
+
+
+
+
+### Java Throw and Throwby
+
+Indicates that a method throws an exception.
+
+```java
+void some_meth() throws java.io.IOException {
+ ...
+}
+```
+
+
+|     Reference kind   string    |     Entity   performing references    |     Entity being   referenced    |
+|--------------------------------|---------------------------------------|----------------------------------|
+|     Java Throw                   |     `some_meth`                         |     `java_io.IOException`          |
+|     Java Throwby                 |     `java_io.IOException`               |     `some_meth`                   |
 
 
 
 
 
+### Java End and Endby
+Indicates the end of a class, interface, or method.
 
+- [ ] **Todo:** Requires a better example (I cannot understand this kind in understand!)
+
+
+|     Reference kind   string    |     Entity   performing references    |     Entity being   referenced    |
+|--------------------------------|---------------------------------------|----------------------------------|
+|     Java End                   |     `some_class`                        |     `some_class`                   |
+|     Java Endby                 |     `some_class`                        |     `some_class`                   |
 
 
 
