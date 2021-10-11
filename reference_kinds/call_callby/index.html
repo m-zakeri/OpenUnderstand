@@ -13,14 +13,14 @@
         <meta name="author" content="Morteza Zakeri, Ali Ayati, Sadegh Jafari, Saeed Parsa">
       
       
-        <link rel="canonical" href="https://m-zakeri.github.io/OpenUndertsand/proposals/core_code_graphs_development/">
+        <link rel="canonical" href="https://m-zakeri.github.io/OpenUndertsand/reference_kinds/call_callby/">
       
       <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.2.2, mkdocs-material-7.2.5">
     
     
       
-        <title>Core code graphs and visualiztion development - OpenUnderstand Docs (v0.1.0dev)</title>
+        <title>Call and Callby - OpenUnderstand Docs (v0.1.0dev)</title>
       
     
     
@@ -72,6 +72,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#java-call-and-callby-reference-kind" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -98,7 +103,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Core code graphs and visualiztion development
+              Call and Callby
             
           </span>
         </div>
@@ -260,7 +265,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference_kinds/" class="md-nav__link">
+      <a href="../" class="md-nav__link">
         References kinds
       </a>
     </li>
@@ -288,14 +293,12 @@
 
   
   
-    
-  
   
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5" type="checkbox" id="__nav_5" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_5" type="checkbox" id="__nav_5" >
       
       <label class="md-nav__link" for="__nav_5">
         Development proposals
@@ -313,7 +316,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../core_entity_reference_development/" class="md-nav__link">
+      <a href="../../proposals/core_entity_reference_development/" class="md-nav__link">
         Core entity-reference development
       </a>
     </li>
@@ -325,7 +328,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../core_source_code_metrics_development/" class="md-nav__link">
+      <a href="../../proposals/core_source_code_metrics_development/" class="md-nav__link">
         Core source code metrics development
       </a>
     </li>
@@ -335,19 +338,11 @@
             
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-      
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../proposals/core_code_graphs_development/" class="md-nav__link">
         Core code graphs and visualiztion development
       </a>
-      
     </li>
   
 
@@ -364,12 +359,14 @@
 
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6" type="checkbox" id="__nav_6" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6" type="checkbox" id="__nav_6" checked>
       
       <label class="md-nav__link" for="__nav_6">
         Analysis passes
@@ -385,11 +382,91 @@
             
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../../reference_kinds/call_callby/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Call and Callby
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         Call and Callby
       </a>
+      
+        
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#analysis_passes.call_callby" class="md-nav__link">
+    analysis_passes.call_callby
+  </a>
+  
+    <nav class="md-nav" aria-label="analysis_passes.call_callby">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#analysis_passes.call_callby--description" class="md-nav__link">
+    Description
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#analysis_passes.call_callby--references" class="md-nav__link">
+    References
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#analysis_passes.call_callby.CallAndCallBy" class="md-nav__link">
+    CallAndCallBy
+  </a>
+  
+    <nav class="md-nav" aria-label="CallAndCallBy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#analysis_passes.call_callby.CallAndCallBy--todo-implementing-the-antlr-listener-pass-for-java-call-and-java-callby-reference-kind" class="md-nav__link">
+    Todo: Implementing the ANTLR listener pass for Java Call and Java Callby reference kind
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -437,19 +514,144 @@
               </div>
             
             
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#analysis_passes.call_callby" class="md-nav__link">
+    analysis_passes.call_callby
+  </a>
+  
+    <nav class="md-nav" aria-label="analysis_passes.call_callby">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#analysis_passes.call_callby--description" class="md-nav__link">
+    Description
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#analysis_passes.call_callby--references" class="md-nav__link">
+    References
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#analysis_passes.call_callby.CallAndCallBy" class="md-nav__link">
+    CallAndCallBy
+  </a>
+  
+    <nav class="md-nav" aria-label="CallAndCallBy">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#analysis_passes.call_callby.CallAndCallBy--todo-implementing-the-antlr-listener-pass-for-java-call-and-java-callby-reference-kind" class="md-nav__link">
+    Todo: Implementing the ANTLR listener pass for Java Call and Java Callby reference kind
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
           
           <div class="md-content" data-md-component="content">
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/m-zakeri/OpenUndertsand/edit/master/docs/proposals/core_code_graphs_development.md" title="Edit this page" class="md-content__button md-icon">
+                  <a href="https://github.com/m-zakeri/OpenUndertsand/edit/master/docs/reference_kinds/call_callby.md" title="Edit this page" class="md-content__button md-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
                   </a>
                 
                 
-                  <h1>Core code graphs and visualiztion development</h1>
-                
-                
+                <h1 id="java-call-and-callby-reference-kind">Java Call and Callby reference kind</h1>
+
+
+  <div class="doc doc-object doc-module">
+
+<a id="analysis_passes.call_callby"></a>
+    <div class="doc doc-contents first">
+
+      <h3 id="analysis_passes.call_callby--description">Description</h3>
+<p>This module find all OpenUnderstand call and callby references in a Java project</p>
+<h3 id="analysis_passes.call_callby--references">References</h3>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h2 id="analysis_passes.call_callby.CallAndCallBy" class="doc doc-heading">
+        <code>CallAndCallBy</code>
+
+
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+      <h3 id="analysis_passes.call_callby.CallAndCallBy--todo-implementing-the-antlr-listener-pass-for-java-call-and-java-callby-reference-kind">Todo: Implementing the ANTLR listener pass for Java Call and Java Callby reference kind</h3>
+
+
+
+    </div>
+
+  </div>
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
                 
               
               
@@ -469,7 +671,7 @@
     <nav class="md-footer__inner md-grid" aria-label="Footer">
       
         
-        <a href="../core_source_code_metrics_development/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Core source code metrics development" rel="prev">
+        <a href="../../proposals/core_code_graphs_development/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Core code graphs and visualiztion development" rel="prev">
           <div class="md-footer__button md-icon">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
           </div>
@@ -478,20 +680,20 @@
               <span class="md-footer__direction">
                 Previous
               </span>
-              Core source code metrics development
+              Core code graphs and visualiztion development
             </div>
           </div>
         </a>
       
       
         
-        <a href="../../reference_kinds/call_callby/" class="md-footer__link md-footer__link--next" aria-label="Next: Call and Callby" rel="next">
+        <a href="../../tutorials/" class="md-footer__link md-footer__link--next" aria-label="Next: Tutorials" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Call and Callby
+              Tutorials
             </div>
           </div>
           <div class="md-footer__button md-icon">
