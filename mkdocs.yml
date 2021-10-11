@@ -43,7 +43,7 @@ nav:
         - Core code graphs and visualiztion development: proposals/core_code_graphs_development.md
     - Analysis passes:
         - Call and Callby: reference_kinds/call_callby.md
-    -Code graph and visulization:
+    - Code graph and visulization:
         - Control flow graph: code_graphs/control_flow_graph.md
     - Tutorials: tutorials.md
     - Issue tracker: 'https://github.com/m-zakeri/OpenUnderstand/issues'
