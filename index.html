@@ -279,11 +279,65 @@
     Project layout
   </a>
   
+    <nav class="md-nav" aria-label="Project layout">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entity-and-reference" class="md-nav__link">
+    Entity and reference
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#entity-kinds" class="md-nav__link">
+    Entity kinds
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reference-kind" class="md-nav__link">
+    Reference kind
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
   <a href="#architecture" class="md-nav__link">
     Architecture
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#database-schema-erd" class="md-nav__link">
+    Database schema ERD
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#some-architectural-notes" class="md-nav__link">
+    Some architectural notes
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    References
   </a>
   
 </li>
@@ -456,6 +510,48 @@
   
   
   
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_7" type="checkbox" id="__nav_7" >
+      
+      <label class="md-nav__link" for="__nav_7">
+        Code graph and visulization
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="Code graph and visulization" data-md-level="1">
+        <label class="md-nav__title" for="__nav_7">
+          <span class="md-nav__icon md-icon"></span>
+          Code graph and visulization
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="code_graphs/control_flow_graph/" class="md-nav__link">
+        Control flow graph
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
     <li class="md-nav__item">
       <a href="tutorials/" class="md-nav__link">
         Tutorials
@@ -516,11 +612,65 @@
     Project layout
   </a>
   
+    <nav class="md-nav" aria-label="Project layout">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entity-and-reference" class="md-nav__link">
+    Entity and reference
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#entity-kinds" class="md-nav__link">
+    Entity kinds
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#reference-kind" class="md-nav__link">
+    Reference kind
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
   <a href="#architecture" class="md-nav__link">
     Architecture
+  </a>
+  
+    <nav class="md-nav" aria-label="Architecture">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#database-schema-erd" class="md-nav__link">
+    Database schema ERD
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#some-architectural-notes" class="md-nav__link">
+    Some architectural notes
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#references" class="md-nav__link">
+    References
   </a>
   
 </li>
@@ -550,10 +700,49 @@ Visit
 <p>Understand [1] has an extensive API to let developers query the data it captures about their code. It has three flavors: Perl, Python, and C. We work with Python API.  All three implementations of the Understand APIs are read-only. They do not modify the Understand project information. If there is a need to modify Understand project information programmatically, the 'und' tool must be used. Unfortunately, the Understand API source code is not publicly available, making it difficult to change and reuse in a different environment. </p>
 <p>This project aims to provide an open-source implementation of the Understand Python API to analyze the source codes. We primarily focus on implementing the API for Java programs using Python programming languages and compiler tools such as ANTLR [2]. To develop an open-source implementation of Understand Python API, we look at the structures used by Understand for analyzing source codes.</p>
 <h2 id="project-layout">Project layout</h2>
-<h2 id="architecture">Architecture</h2>
+<h3 id="entity-and-reference">Entity and reference</h3>
+<p>Most of the data captured by Understand involves Entities and References.</p>
 <ul>
-<li></li>
+<li><strong>Entity:</strong> An Entity is anything in the code that Understand captures information on: i.e., A file, a class, a variable, a function, etc. In the Perl API, Entities are represented with the Understand::Ent class. In Python, it is the Understand.Ent class.</li>
+<li><strong>Reference:</strong> A specific place where an entity appears in the code. A reference is always defined as a relationship between two entities. e.g., function Bar is called on line 14 of function Foo. In the Perl API, References are represented with the Understand::Ref class. In Python, it is the Understand.Ref class.</li>
 </ul>
+<p>Every entity and reference have a unique set of attributes that can be queried by the API. A few of the attributes you can view for an entity would be its name, its type, any associated comments, what kind of entity it is, and if it has them: its parent entity and its parameters. On the other hand, a reference would have both of the entities associated with it as well as the file, line, and column where the reference occurs and what kind of reference it is. To help visualize this, let's use this simple C code:</p>
+<pre><code class="language-c">myFile.c
+
+    void main(){
+       char myString[];
+       myString = “Hello World!”;
+}
+</code></pre>
+<p>Understand would identify three entities (blue) and three references (green), shown in Figure 1.</p>
+<p><img alt="Understand data structure for a simple C code" src="figs/entity_reference_graph.png" /></p>
+<p><em>Figure 1. Understand data structure for a simple C code</em></p>
+<p>Since all references are relationships between two objects, the references are actually stored going in both directions. Hence, each reference kind has an opposite: "Define" and "DefineIn", "Set" and "SetBy", "Call" and "Callby", etc. The same entities of Figure 1 with their reverse references are shown in Figure 2.</p>
+<p><img alt="Understand data structure for a simple C code" src="figs/entity_reference_graph_inverse.png" /></p>
+<p><em>Figure 2. References of Figure 1 in inverse directions</em></p>
+<h3 id="entity-kinds">Entity kinds</h3>
+<p>A comprehensive list of OpenUnderstand entity kinds for Java programming language can be found on
+<a href="entity_kinds/">Entity kind page</a></p>
+<h3 id="reference-kind">Reference kind</h3>
+<p>A comprehensive list of OpenUnderstand reference kinds for Java programming language can be found on
+<a href="reference_kinds/">Reference kind page</a></p>
+<h2 id="architecture">Architecture</h2>
+<h3 id="database-schema-erd">Database schema ERD</h3>
+<h3 id="some-architectural-notes">Some architectural notes</h3>
+<ul>
+<li>Multiple analysis passes are required to capture all entities and references kinds</li>
+<li>OpenUnderstand analysis project files in at least two passes.</li>
+<li>File is the root since the parent of files is None.</li>
+<li>Parent of a package is its first file according to alphabetical sort of all files in the package.</li>
+<li>Parent of other entities is their definition place.</li>
+<li>Only variables have value.</li>
+<li>Classes that are not in project are Unknown.</li>
+</ul>
+<h2 id="references">References</h2>
+<p>References
+[1] SciTools, “Understand,” 2020. https://www.scitools.com/ (accessed Sep. 11, 2020).</p>
+<p>[2] T. Parr and K. Fisher, “LL(*): the foundation of the ANTLR parser generator,” Proc. 32nd ACM SIGPLAN Conf. Program. Lang. Des. Implement., pp. 425–436, 2011, doi: http://doi.acm.org/10.1145/1993498.1993548.</p>
+<p>[3] N. Tsantalis and A. Chatzigeorgiou, “Identification of move method refactoring opportunities,” IEEE Trans. Softw. Eng., vol. 35, no. 3, pp. 347–367, May 2009, doi: 10.1109/TSE.2009.1.</p>
                 
               
               

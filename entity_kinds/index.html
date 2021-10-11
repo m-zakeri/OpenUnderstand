@@ -462,6 +462,48 @@
   
   
   
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_7" type="checkbox" id="__nav_7" >
+      
+      <label class="md-nav__link" for="__nav_7">
+        Code graph and visulization
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="Code graph and visulization" data-md-level="1">
+        <label class="md-nav__title" for="__nav_7">
+          <span class="md-nav__icon md-icon"></span>
+          Code graph and visulization
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../code_graphs/control_flow_graph/" class="md-nav__link">
+        Control flow graph
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
     <li class="md-nav__item">
       <a href="../tutorials/" class="md-nav__link">
         Tutorials
@@ -587,23 +629,23 @@ members (for example classes and methods).</li>
 <tbody>
 <tr>
 <td>Java File</td>
-<td>A source file written in Java (<code>.java file</code>). File entity kinds do not have any parent.</td>
-<td><code>java    SomeFile.java</code></td>
+<td>A source file written in Java (<code>.java</code> file). File entity kinds do not have any parent.</td>
+<td><code>SomeFile.java</code></td>
 </tr>
 <tr>
 <td>Java File Jar</td>
-<td>A source file from a jar file (<code>.jar</code>).</td>
-<td><code>java SomeJavaARchive.jar</code></td>
+<td>A source file from a Java ARchive file (<code>.jar</code> File).</td>
+<td><code>SomeJavaARchive.jar</code></td>
 </tr>
 <tr>
 <td>Java Method Constructor Member <em>Visibility</em></td>
 <td>A constructor. Visibility may be Default, Public, Protected, or   Private. For example, <code>some_class</code> in the following example has a kind of Java   Constructor with Default visibility.</td>
-<td><code>java class   some_class {     some_class()   { // constructor     ...     }</code></td>
+<td><code>class   some_class {     some_class()   { // constructor     ...     }</code></td>
 </tr>
 <tr>
 <td>Java Static Final Method <em>Visibility</em> Member</td>
 <td>A static final (non-extendable) method. Visibility may be   Default, Public, Protected, or Private. For example, <code>some_meth in</code> the following   example has a kind of Java Static Final Method Private Member.</td>
-<td><code>java   private   static final int some_meth() {     ...     }</code></td>
+<td><code>private   static final int some_meth() {     ...     }</code></td>
 </tr>
 <tr>
 <td>Java Static Final Generic Method <em>Visibility</em> Member</td>
@@ -613,7 +655,7 @@ members (for example classes and methods).</li>
 <tr>
 <td>Java Final Method <em>Visibility</em> Member</td>
 <td>A final (non-extendable) method. Visibility may be Default,   Public, Protected, or Private. For example, <code>some_meth</code> in the following example   has a kind of Java Final Method Private Member.</td>
-<td><code>java private   final int some_meth() {     ...     }</code></td>
+<td><code>private   final int some_meth() {     ...     }</code></td>
 </tr>
 <tr>
 <td>Java Generic Final Method <em>Visibility</em> Member</td>
@@ -628,22 +670,22 @@ members (for example classes and methods).</li>
 <tr>
 <td>Java Static Method <em>Visibility</em> Member</td>
 <td>A static method. Visibility may be Default, Public, Protected, or   Private. For example, <code>some_meth</code> in the following example has a kind of Java   Static Method Private Member.</td>
-<td><code>java   private   static int some_meth() {     ...     }</code></td>
+<td><code>private   static int some_meth() {     ...     }</code></td>
 </tr>
 <tr>
 <td>Java Static Method Public Main Member</td>
 <td>A Java “main” method. This is always public and static. For example,   <code>main</code> method in the following example has a kind of Java Static Method Public Main   Member.</td>
-<td><code>java   public   static main(String[] args) {     ...     }</code></td>
+<td><code>public   static main(String[] args) {     ...     }</code></td>
 </tr>
 <tr>
 <td>Java Method <em>Visibility</em> Member</td>
 <td>A method. Visibility may be Default, Public, Protected, or   Private. For example, <code>some_meth</code> in the following example has a kind of Java   Method Private Member.</td>
-<td><code>java   private   int some_meth() {     ...     }</code></td>
+<td><code>private   int some_meth() {     ...     }</code></td>
 </tr>
 <tr>
 <td>Java Abstract Method <em>Visibility</em> Member</td>
 <td>An abstract method. Visibility may be Default, Public,   Protected, or Private. For example, <code>some_meth</code> in the following example has a kind   of Java Abstract Method Protected Member.</td>
-<td><code>java  protected   abstract int some_meth();</code></td>
+<td><code>protected   abstract int some_meth();</code></td>
 </tr>
 <tr>
 <td>Java Abstract Generic Method <em>Visibility</em> Member</td>
@@ -662,7 +704,7 @@ members (for example classes and methods).</li>
 </tr>
 <tr>
 <td>Java Unresolved External Static Final Method <em>Visibility</em>   Member</td>
-<td></td>
+<td>Todo:</td>
 <td></td>
 </tr>
 <tr>
@@ -693,7 +735,7 @@ members (for example classes and methods).</li>
 <tr>
 <td>Java Package</td>
 <td>A Java package. For example, <code>some_pack</code> in the following example has   a kind of Java Package.     Important note: The default unnamed package has a kind of Java   <code>Package Unnamed</code>. An unnamed package entity is created if any files in the   project do not have a “package” statement. Any class that appears in a file without   a “package” statement belongs to the unnamed package.</td>
-<td><code>java   package   some_pack;</code></td>
+<td><code>package   some_pack;</code></td>
 </tr>
 <tr>
 <td>Java Unknown Package</td>
@@ -708,17 +750,17 @@ members (for example classes and methods).</li>
 <tr>
 <td>Java Parameter</td>
 <td>A Java method parameter. For example, <code>a_param</code> in the following example   has a kind of Java Parameter.</td>
-<td><code>java  void   some_meth(int a_param) {     ...     }</code></td>
+<td><code>void   some_meth(int a_param) {     ...     }</code></td>
 </tr>
 <tr>
 <td>Java Catch Parameter</td>
 <td>Parameter in a Java catch clause. For example, <code>some_exception</code> in the   following example has a kind of Java Catch Parameter.</td>
-<td><code>java   catch   (some_exception e) {     ...     }</code></td>
+<td><code>catch   (some_exception e) {     ...     }</code></td>
 </tr>
 <tr>
 <td>Java Abstract Class Type <em>Visibility</em> Member</td>
 <td>An abstract class. Visibility may be Default, Public, Protected,   or Private. For example, <code>some_class</code> in the following example has a kind of   Java Abstract Class Type Private Member.</td>
-<td><code>java  private   abstract class some_class {     ...     }</code></td>
+<td><code>private   abstract class some_class {     ...     }</code></td>
 </tr>
 <tr>
 <td>Java Abstract Generic Class Type <em>Visibility</em> Member</td>
@@ -728,7 +770,7 @@ members (for example classes and methods).</li>
 <tr>
 <td>Java Static Abstract Class Type <em>Visibility</em> Member</td>
 <td>A static abstract class. Visibility may be Default, Public,   Protected, or Private. For example, <code>some_class</code> in the following example has a   kind of Java Static Abstract Class Type Private Member.</td>
-<td><code>java   private   static abstract class some_class {     ...     }</code></td>
+<td><code>private   static abstract class some_class {     ...     }</code></td>
 </tr>
 <tr>
 <td>Java Static Abstract Generic Class Type <em>Visibility</em> Member</td>
@@ -748,17 +790,17 @@ members (for example classes and methods).</li>
 <tr>
 <td>Java Class Type Anonymous Member</td>
 <td>An anonymous class. A unique name of the form (Anon-1), (Anon-2),   etc. is given to each anonymous class. For example:</td>
-<td><code>java   some_class   some_meth() {     return   new some_class() { // creates anonymous class     ...     }     }</code></td>
+<td><code>some_class   some_meth() {     return   new some_class() { // creates anonymous class     ...     }     }</code></td>
 </tr>
 <tr>
 <td>Java Class Type <em>Visibility</em> Member</td>
 <td>A class. Visibility may be Default, Public, Protected, or   Private. For example, <code>some_class</code> in the following example has a kind of Java Class   Type Public Member.</td>
-<td><code>java    public   class some_class {     ...     }</code></td>
+<td><code>public   class some_class {     ...     }</code></td>
 </tr>
 <tr>
 <td>Java Generic Class Type <em>Visibility</em> Member</td>
 <td>A generic class. Visibility may be Default, Public, Protected, or   Private. For example, <code>some_class</code> in the following example has a kind of Java Class   Type Public Member.</td>
-<td><code>java   public   class&lt;T&gt; some_class {     ...     }</code></td>
+<td><code>public   class&lt;T&gt; some_class {     ...     }</code></td>
 </tr>
 <tr>
 <td>Java Enum Class Type <em>Visibility</em> Member</td>
@@ -768,7 +810,7 @@ members (for example classes and methods).</li>
 <tr>
 <td>Java Final Class Type <em>Visibility</em> Member</td>
 <td>A final (non-extendable) class. Visibility may be Default,   Public, Protected, or Private. For example, <code>some_class</code> in the following example has a kind of Java Final Class Type Protected Member.</td>
-<td><code>java   protected   final class some_class {     ...     }</code></td>
+<td><code>protected   final class some_class {     ...     }</code></td>
 </tr>
 <tr>
 <td>Java Final Generic Class Type <em>Visibility</em> Member</td>
@@ -778,12 +820,12 @@ members (for example classes and methods).</li>
 <tr>
 <td>Java Static Class Type <em>Visibility</em> Member</td>
 <td>A static class. Visibility may be Default, Public, Protected, or Private.   For example, <code>some_class</code> in the following example has a kind of Java Static   Class Type Private Member.</td>
-<td><code>java   private   static class some_class {     ...     }</code></td>
+<td><code>private   static class some_class {     ...     }</code></td>
 </tr>
 <tr>
 <td>Java Static Final Class Type <em>Visibility</em> Member</td>
 <td>A static final class. Visibility may be Default, Public,   Protected, or Private. For example, <code>some_class</code> in the following example has a   kind of Java Static Final Class Type Private Member.</td>
-<td><code>java  private   static final class some_class {     ...     }</code></td>
+<td><code>private   static final class some_class {     ...     }</code></td>
 </tr>
 <tr>
 <td>Java Static Generic Class Type <em>Visibility</em> Member</td>
@@ -813,32 +855,32 @@ members (for example classes and methods).</li>
 <tr>
 <td>Java Static Final Variable <em>Visibility</em> Member</td>
 <td>A static final class member variable (field). Visibility may be Default,   Public, Protected, or Private. For example, <code>some_constant</code> in the following   example has a kind of Java Static Final Variable Private Member.</td>
-<td><code>java  class   some_class {     private   static final int some_constant = 5;     }</code></td>
+<td><code>class   some_class {     private   static final int some_constant = 5;     }</code></td>
 </tr>
 <tr>
 <td>Java Static Variable <em>Visibility</em> Member</td>
 <td>A static class member variable (field). Visibility may be   Default, Public, Protected, or Private. For example, <code>some_constant</code> in the following   example has a kind of Java Static Variable Private     Member.</td>
-<td><code>java  class   some_class {     private   static int some_constant = 5;     }</code></td>
+<td><code>class   some_class {     private   static int some_constant = 5;     }</code></td>
 </tr>
 <tr>
 <td>Java Final Variable <em>Visibility</em> Member</td>
 <td>A final class member variable (field).   Visibility may be Default, Public, Protected, or Private. For example,   <code>some_constant</code> in the following example has a kind of Java Final Variable   Private Member.</td>
-<td><code>java  class   some_class {     private   final int some_constant = 5;     }</code></td>
+<td><code>class   some_class {     private   final int some_constant = 5;     }</code></td>
 </tr>
 <tr>
 <td>Java Variable <em>Visibility</em> Member</td>
 <td>A class member variable (field). Visibility may be Default,   Public, Protected, or Private. For example, <code>some_var</code> in the following example   has a kind of Java Variable Private Member.</td>
-<td><code>java  class   some_class {     private   int some_var = 5;     }</code></td>
+<td><code>class   some_class {     private   int some_var = 5;     }</code></td>
 </tr>
 <tr>
 <td>Java Variable Local</td>
 <td>A local variable. For example, <code>some_var</code> in the following example has   a kind of Java Variable Local.</td>
-<td><code>java   int   some_meth() {     int   some_var = 5;     }</code></td>
+<td><code>int   some_meth() {     int   some_var = 5;     }</code></td>
 </tr>
 <tr>
 <td>Java Final Variable Local</td>
 <td>A final local variable. For example, <code>some_constant</code> in the   following example has a kind of Java Final Variable Local.</td>
-<td><code>java   int   some_meth() {     final   int some_constant = 5;     }</code></td>
+<td><code>int   some_meth() {     final   int some_constant = 5;     }</code></td>
 </tr>
 <tr>
 <td>Java Implicit Final Variable Public Member</td>
