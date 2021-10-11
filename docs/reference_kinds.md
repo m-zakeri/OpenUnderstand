@@ -115,6 +115,174 @@ class c3 {
 |     Java Castby                |     `c1`                                |     `c3`                           |
 
 
+### Java Contain and Containin
+Indicates a class is in a package.
+
+```java
+package some_pack;
+
+class some_class {
+ ...
+}
+```
+
+|     Reference kind   string    |     Entity   performing references    |     Entity being   referenced    |
+|--------------------------------|---------------------------------------|----------------------------------|
+|     Java Contain               |     `some_pack`                         |     `some_class`                   |
+|     Java   Containin           |     `some_class`                        |     `some_pack`                    |
+
+
+### Java Couple and Coupleby
+Indicates a coupling link as counted in the OO coupling metrics. A link is created from a class to any external class (a class that is not in the extends/implements hierarchy) that is referenced.
+
+```java
+public class c1 {
+ ...
+}
+
+public class c2 {
+ cl obj;
+}
+```
+
+|     Reference kind   string    |     Entity   performing references    |     Entity being   referenced    |
+|--------------------------------|---------------------------------------|----------------------------------|
+|     Java Couple                |     `c2`                                |     `c1`                           |
+|     Java Coupleby              |     `c1`                                |     `c2`                           |
+
+
+### Java Extend Couple and Extendby Coupleby
+Indicates one class or interface extends another. This extends relation is used when the extended class is in a file that is part of the project. If the extended class was found in a classpath .jar file, the relation is Java Extend Couple External. If the Indicates class implicitly extends the java.lang.Object class, the relation is Java Extend Couple Implicit.
+
+- [ ] **Todo:** add a short definition with and an example code and corresponding table for Java Extend Couple Implicit External and Java Extendby Coupleby Implicit External reference kind.
+ 
+
+```java
+// Example 1:
+class class1 {
+ ...
+}
+class class2 extends class1 {
+ ...
+}
+// Example 2:
+class some_class extends java.io.Writer {
+ ...
+}
+// Example 3:
+class some_class {
+ ...
+}
+// Example 4:
+//Todo
+```
+
+|     Reference kind   string                       |     Entity   performing references    |     Entity being   referenced    |
+|---------------------------------------------------|---------------------------------------|----------------------------------|
+|     Java Extend   Couple                          |     Ex 1: `class2`                      |     Ex 1: `class2`                 |
+|     Java Extendby   Coupleby                      |     Ex 1: `class1`                      |     Ex 1: `class1`                 |
+|     Java Extend   Couple External                 |     Ex 2: `some_class`                  |     Ex 2: `java.io.Writer`         |
+|     Java Extendby   Coupleby External             |     Ex 2: `java.io.Writer`              |     Ex 2: `some_class`             |
+|     Java Extend   Couple Implicit                 |     Ex 3: `some_class`                  |     Ex 3: `java.lang.Object`       |
+|     Java Extendby   Coupleby Implicit             |     Ex 3: `java.lang.Object`            |     Ex 3: `some_class`             |
+|     Java Extend   Couple Implicit External        |     Todo                              |     Todo                         |
+|     Java Extendby   Coupleby Implicit External    |     Todo                              |     Todo                         |
+
+
+### Java Implement Couple and Implementby Coupleby
+Indicates a class implements an interface.
+
+```java
+interface some_interface {
+ ...
+}
+
+class some_class implements some_interface {
+ ...
+}
+```
+
+|     Reference kind   string        |     Entity   performing references    |     Entity being   referenced    |
+|------------------------------------|---------------------------------------|----------------------------------|
+|     Java   Implement Couple        |     `some_class`                        |     `some_interface`               |
+|     Java   Implementby Coupleby    |     `some_interface`                    |     `some_class`                   |
+
+
+### Java Create and Createby
+Indicates that an instance of a class is created (`new` operator) in a scope.
+
+```java
+class c1 {
+ ...
+}
+
+class c2 {
+ c1 a = new c1();
+}
+```
+
+|     Reference kind   string    |     Entity   performing references    |     Entity being   referenced    |
+|--------------------------------|---------------------------------------|----------------------------------|
+|     Java Create                |     `c2`                                |     `c1`                           |
+|     Java Createby              |     `c1`                                |     `c2`                           |
+
+
+### Java Declare and Declarein
+- [ ]  **Todo:** add a short definition with and an example code and corresponding table for this reference kind
+
+
+### Java Define and Definein
+Indicates that an entity is defined in a scope.
+
+```java
+//Example Define
+class some_class {
+ int some_var = 5;
+}
+
+//Example Define implicit
+//Todo
+```
+
+- [ ] **Todo:** add a short definition with and an example code and corresponding table for Define Implicit and Definein Implicit reference kind.
+
+
+
+|     Reference kind   string     |     Entity   performing references    |     Entity being   referenced    |
+|---------------------------------|---------------------------------------|----------------------------------|
+|     Java Define                 |     `some_class`                        |     `some_var`                     |
+|     Java Definein               |     `some_var`                         |     `some_class`                   |
+|     Java Define Implicit        |     Todo:                             |     Todo:                        |
+|     Java Definein   Implicit    |     Todo:                             |     Todo:                        |
+
+
+### Java DotRef and DotRefby
+
+Indicates that an entity name was used to the left of a `“.”` in a qualified name.
+
+```java
+package some_pack;
+class class1 {
+ static int covid;
+}
+
+class class2 {
+ void some_meth() {
+  some_pack.class1.covid = 2021;
+ }
+}
+```
+
+
+|     Reference kind   string    |     Entity   performing references    |     Entity being   referenced    |
+|--------------------------------|---------------------------------------|----------------------------------|
+|     Java DotRef                |     `some_meth`                         |     `some_pack`                    |
+|     Java DotRefby              |     `some_pack`                         |     `some_meth`                    |
+
+
+
+
+
 
 
 
