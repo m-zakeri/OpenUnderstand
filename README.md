@@ -1,5 +1,5 @@
 # OpenUnderstand
-![OpenUnderstand Logo](docs/figs/OpenUnderstand_Logo.png)
+![OpenUnderstand Logo](./docs/figs/OpenUnderstand_Logo.png)
 
 An open-source implementation of Understand API in Python.
 
