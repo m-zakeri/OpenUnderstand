@@ -1,0 +1,34 @@
+site_name: OpenUnderstand Docs (v0.1.0dev)
+site_url: https://m-zakeri.github.io/OpenUndertsand
+repo_url: https://github.com/m-zakeri/OpenUndertsand
+site_description: Automated Source Code Refactoring Toolkit
+site_author: Morteza Zakeri, Ali Ayati, Sadegh Jafari, Saeed Parsa
+copyright: © 2021-2022 OpenUnderstand project - IUST Reverse Engineering Research Laboratory
+
+theme:
+  name: material
+
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          setup_commands:
+            - import sys
+            - import os
+          selection:
+            members: True
+
+nav:
+    - Home: index.md
+    - Entity kinds: entity_kinds.md
+    - References kinds: reference_kinds.md
+    - Benchmarks: benchmarks.md
+    - Development proposals:
+        - Core entity-reference development: proposals/core_entity_reference_development.md
+        - Core source code metrics development: proposals/core_source_code_metrics_development.md
+        - Core code graphs and visualiztion development: proposals/core_code_graphs_development.md
+    - Analysis passes:
+        - Call and Callby: reference/call_callby.md
+    - Issue tracker: 'https://github.com/m-zakeri/OpenUnderstand/issues'
