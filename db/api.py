@@ -818,7 +818,38 @@ class Ent:
         true, only the first matching reference to each unique entity is
         returned
         """
-        return []
+        query = ReferenceModel.select().where(
+            ReferenceModel._scope == self._id
+        )
+        if refkindstring:
+            kinds = KindModel.select().where(
+                (KindModel.is_ent_kind == False) & (KindModel._name.contains(refkindstring))
+            )
+            query = query.where(
+                ReferenceModel._kind.in_(kinds)
+            )
+
+        if entkindstring:
+            kinds = KindModel.select().where(
+                (KindModel.is_ent_kind == True) & (KindModel._name.contains(entkindstring))
+            )
+            ents = EntityModel.select().where(
+                EntityModel._kind.in_(kinds)
+            )
+            query = query.where(
+                ReferenceModel._ent.in_(ents)
+            )
+        references = []
+
+        for ref in query:
+            references.append(
+                Ref(**ref.__dict__.get('__data__'))
+            )
+
+        if unique:
+            references = references[:1]
+
+        return references
 
     def relname(self):  # real signature unknown; restored from __doc__
         """
@@ -1146,11 +1177,11 @@ class Ref(object):
 
     def __repr__(self, *args, **kwargs):  # real signature unknown
         """ Return repr(self). """
-        return f"{self.kindname()} from {self.ent()} to {self.scope()}"
+        return f"{self.kind()} {self.ent()} {self.file()}({self._line}, {self._column})"
 
     def __str__(self, *args, **kwargs):  # real signature unknown
         """ Return str(self). """
-        return f"{self.kindname()} from {self.ent()} to {self.scope()}"
+        return f"{self.kind()} {self.ent()} {self.file()}({self._line}, {self._column})"
 
 
 class UnderstandError(Exception):
