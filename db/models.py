@@ -51,13 +51,15 @@ class ReferenceModel(Model):
     _scope = ForeignKeyField(EntityModel, backref='inv_refs')
 
     def __str__(self):
-        return f"{self._kind} | {self._ent} | {self._scope} | {self._file}({self._line}, {self._column})"
+        return f"{self._kind} {self._ent} {self._file}({self._line}, {self._column})"
 
 
 class DatabaseModel(Model):
     name = CharField(max_length=128)
     language = CharField(max_length=128, default="Java")
     root = CharField(max_length=1024)
+
+    db_path = CharField(max_length=1024, unique=True)
 
     def __str__(self):
         return str(self.name)

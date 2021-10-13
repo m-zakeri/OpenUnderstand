@@ -7,13 +7,7 @@ except ImportError:
 
 db = und.open("D:\Dev\JavaSample\JavaSample1.udb")
 
-ent = db.ents("class")
-
-for i in ent:
-    depends = i.depends()
-    if depends:
-        print(i, i.kind(), i.parent())
-        for k, v in depends.items():
-            print(k, k.kind())
-            pprint(v)
-        print("============")
+ent = db.lookup("Admin", "method")[0]
+print(ent, ent.simplename())
+for ref in ent.refs(entkindstring="method", unique=True):
+    print(ref, ref.kind().longname())

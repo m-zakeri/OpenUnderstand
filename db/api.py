@@ -229,7 +229,7 @@ STRING = 'String'
 WHITESPACE = 'Whitespace'
 
 
-def create_db(dbname):
+def create_db(dbname, project_dir: str, project_name=None):
     db = SqliteDatabase(dbname, pragmas={
         'journal_mode': 'wal',
         'cache_size': -1 * 64000,  # 64MB
@@ -241,6 +241,13 @@ def create_db(dbname):
     db.create_tables(
         [KindModel, EntityModel, ReferenceModel, DatabaseModel]
     )
+
+    DatabaseModel.get_or_create(
+        name=project_name or os.path.basename(dbname),
+        root=project_dir,
+        db_path=dbname
+    )
+    return open(dbname)
 
 
 def open(dbname):  # real signature unknown; restored from __doc__
@@ -259,6 +266,9 @@ def open(dbname):  # real signature unknown; restored from __doc__
       DBUnableOpen         - database is unreadable or does not exist
       NoApiLicense         - Understand license required
     """
+    if not os.path.isfile(dbname):
+        raise UnderstandError()
+
     db = SqliteDatabase(dbname, pragmas={
         'journal_mode': 'wal',
         'cache_size': -1 * 64000,  # 64MB
@@ -268,7 +278,11 @@ def open(dbname):  # real signature unknown; restored from __doc__
         [KindModel, EntityModel, ReferenceModel, DatabaseModel]
     )
 
-    return Db()
+    obj = DatabaseModel.get_or_none(
+        db_path=dbname
+    )
+
+    return Db(db_obj=obj)
 
 
 def version():  # real signature unknown; restored from __doc__
@@ -307,6 +321,11 @@ class Db:
       understand.Db.relative_file_name()
       understand.Db.root_archs()  understand.Db.__str__() --name
     """
+
+    def __init__(self, db_obj):
+        self._name = db_obj.name
+        self._root = db_obj.root
+        self._language = db_obj.language
 
     def close(self):  # real signature unknown; restored from __doc__
         """
@@ -375,8 +394,7 @@ class Db:
         "Python", "VHDL", or "Web". C is included with "C++"
         This will throw a UnderstandError if the database has been closed.
         """
-        # TODO: Implement this later!
-        return ()
+        return str(self._language)
 
     def lookup(self, name, kindstring=None):  # real signature unknown; restored from __doc__
         """
@@ -398,7 +416,19 @@ class Db:
         would return a list of file entities containing "Test" (case sensitive)
         in their names.
         """
-        return []
+        ents = []
+        query = EntityModel.select()
+        if kindstring:
+            kinds = KindModel.select().where(KindModel._name.contains(kindstring))
+            query = query.where(EntityModel._kind.in_(kinds))
+        query = query.where(
+            (EntityModel._name.contains(name)) | (EntityModel._longname.contains(name))
+        )
+        for ent in query:
+            ents.append(
+                Ent(**ent.__dict__.get('__data__'))
+            )
+        return ents
 
     def lookup_uniquename(self, uniquename):  # real signature unknown; restored from __doc__
         """
@@ -419,7 +449,7 @@ class Db:
 
         This will throw a UnderstandError if the database has been closed.
         """
-        return ""
+        return str(self._name)
 
     def relative_file_name(self, absolute_path):  # real signature unknown; restored from __doc__
         """
@@ -427,11 +457,13 @@ class Db:
 
         Return the relative file name like ent.relname() but for an arbitrary path.
         """
-        return ""
+        list_of_paths = [self._root, absolute_path]
+        common_prefix = os.path.commonprefix(list_of_paths)
+        return os.path.relpath(absolute_path, common_prefix)
 
     def __str__(self, *args, **kwargs):  # real signature unknown
         """ Return str(self). """
-        pass
+        return self.name()
 
 
 @dataclass
@@ -536,7 +568,24 @@ class Ent:
         entities are to be returned. If it is not included, all referenced
         entities are returned.
         """
-        return []
+        ents = set()
+        query = ReferenceModel.select().where(
+            (ReferenceModel._ent == self._id) | (ReferenceModel._scope == self._id)
+        )
+        if refkindstring:
+            kinds = KindModel.select().where(
+                (KindModel._name.contains(refkindstring)) & (KindModel.is_ent_kind == False)
+            )
+            query = query.where(ReferenceModel._kind.in_(kinds))
+
+        for ref in query:
+            if entkindstring is not None:
+                if entkindstring.lower() not in ref._ent._kind._name.lower():
+                    continue
+            ents.add(
+                Ent(**ref._ent.__dict__.get('__data__'))
+            )
+        return list(ents)
 
     def filerefs(self, refkindstring=None, entkindstring=None,
                  unique=None):  # real signature unknown; restored from __doc__
@@ -562,6 +611,7 @@ class Ent:
         true, only the first matching reference to each unique entity is
         returned
         """
+        # TODO: Implement this later!
         return []
 
     def freetext(self, option):  # real signature unknown; restored from __doc__
@@ -637,7 +687,7 @@ class Ent:
         This is similar to ent.kind().name(), but does not create a Kind
         object.
         """
-        return ""
+        return self.kind().name()
 
     def language(self):  # real signature unknown; restored from __doc__
         """
@@ -649,53 +699,7 @@ class Ent:
         "Java", "Jovial", "Pascal", "Plm", "Python",
         "VHDL" or "Web". C is included with "C++".
         """
-        return ""
-
-    def lexer(self, lookup_ents=None, tabstop=None, show_inactive=None,
-              expand_macros=None):  # real signature unknown; restored from __doc__
-        """
-        ent.lexer([lookup_ents [,tabstop [,show_inactive [,expand_macros]]]])
-          -> understand.Lexer
-
-        Return a lexer object for the specified file entity. The original
-        source file must be readable and unchanged since the last database
-        parse. If an error occurs, an UnderstandError will be thrown. Possible
-        errors are:
-          FileModified         - the file must not be modified since the last
-                                 parse
-          FileUnreadable       - the file must be readable from the original
-                                 location
-          UnsupportedLanguage  - the file language is not supported
-
-        The optional paramter lookup_ents is true by default. If it is
-        specified false, the lexemes for the constructed lexer will not
-        have entity or reference information, but the lexer construction will
-        be much faster.
-
-        The optional paramter tabstop is 8 by default. If it is specified it
-        must be greater than 0, and is the value to use for tab stops
-
-        The optional parameter show_inactive is true by default. If false,
-        inactive lexemes will not be returned.
-
-        The optional parameter expand_macros is false by default. If true,
-        and if macro expansion text is stored, lexemes that are macros will
-        be replaced with the lexeme stream of the expansion text.
-        """
-        pass
-
-    def library(self):  # real signature unknown; restored from __doc__
-        """
-        ent.library() -> string
-
-        Return the library the entity belongs to.
-
-        This will return "" if the entity does not belong to a
-        library. Predefined Ada entities such as text_io will bin the
-        'Standard' library. Predefined VHDL entities will be in either the
-        'std' or 'ieee' libraries.
-        """
-        return ""
+        return "Java"
 
     def longname(self):  # real signature unknown; restored from __doc__
         """
@@ -756,7 +760,15 @@ class Ent:
         to get some information about these cases. If no parameters are
         available, None is returned.
         """
-        return ""
+        ents = EntityModel.select().where(
+            EntityModel._parent == self._id
+        )
+        pars = []
+        for ent in ents:
+            obj = Ent(**ent.__dict__.get("__data__"))
+            if obj.kind().check("parameter"):
+                pars.append(f"{obj.type()} {obj.name() if shownames else ''}".strip())
+        return ",".join(pars) if pars else None
 
     def parent(self):  # real signature unknown; restored from __doc__
         """
@@ -784,7 +796,7 @@ class Ent:
 
         This is the same as ent.refs()[:1]
         """
-        pass
+        return self.refs(*args, **kwargs)[:1]
 
     def refs(self, refkindstring=None, entkindstring=None,
              unique=None):  # real signature unknown; restored from __doc__
@@ -806,7 +818,38 @@ class Ent:
         true, only the first matching reference to each unique entity is
         returned
         """
-        return []
+        query = ReferenceModel.select().where(
+            ReferenceModel._scope == self._id
+        )
+        if refkindstring:
+            kinds = KindModel.select().where(
+                (KindModel.is_ent_kind == False) & (KindModel._name.contains(refkindstring))
+            )
+            query = query.where(
+                ReferenceModel._kind.in_(kinds)
+            )
+
+        if entkindstring:
+            kinds = KindModel.select().where(
+                (KindModel.is_ent_kind == True) & (KindModel._name.contains(entkindstring))
+            )
+            ents = EntityModel.select().where(
+                EntityModel._kind.in_(kinds)
+            )
+            query = query.where(
+                ReferenceModel._ent.in_(ents)
+            )
+        references = []
+
+        for ref in query:
+            references.append(
+                Ref(**ref.__dict__.get('__data__'))
+            )
+
+        if unique:
+            references = references[:1]
+
+        return references
 
     def relname(self):  # real signature unknown; restored from __doc__
         """
@@ -817,6 +860,7 @@ class Ent:
         This is the fullname for the file, minus any root directories that
         are common for all project files. Return None for non-file entities.
         """
+        # TODO: Implement this later!
         return ""
 
     def simplename(self):  # real signature unknown; restored from __doc__
@@ -829,7 +873,7 @@ class Ent:
         generally the same as ent.name() except for languages like Java, for
         which this will not return a name with any dots in it.
         """
-        return ""
+        return self.name().split(".")[-1]
 
     def type(self):  # real signature unknown; restored from __doc__
         """
@@ -840,7 +884,9 @@ class Ent:
         This is defined for entity kinds like variables and types, as well as
         entity kinds that have a return type like functions.
         """
-        return ""
+        if self._type is not None:
+            return str(self._type)
+        return None
 
     def uniquename(self):  # real signature unknown; restored from __doc__
         """
@@ -867,11 +913,15 @@ class Ent:
         This is for enumerators, initialized variables, and macros. Not all
         languages are supported.
         """
-        return ""
+        if self._value is not None:
+            return str(self._value)
+        return None
 
-    def __eq__(self, *args, **kwargs):  # real signature unknown
+    def __eq__(self, other):  # real signature unknown
         """ Return self==value. """
-        pass
+        if isinstance(other, Ent):
+            return self.id() == other.id()
+        return NotImplemented
 
     def __ge__(self, *args, **kwargs):  # real signature unknown
         """ Return self>=value. """
@@ -883,7 +933,7 @@ class Ent:
 
     def __hash__(self, *args, **kwargs):  # real signature unknown
         """ Return hash(self). """
-        pass
+        return hash(self.id())
 
     def __le__(self, *args, **kwargs):  # real signature unknown
         """ Return self<=value. """
@@ -1130,11 +1180,11 @@ class Ref(object):
 
     def __repr__(self, *args, **kwargs):  # real signature unknown
         """ Return repr(self). """
-        return f"{self.kindname()} from {self.ent()} to {self.scope()}"
+        return f"{self.kind()} {self.ent()} {self.file()}({self._line}, {self._column})"
 
     def __str__(self, *args, **kwargs):  # real signature unknown
         """ Return str(self). """
-        return f"{self.kindname()} from {self.ent()} to {self.scope()}"
+        return f"{self.kind()} {self.ent()} {self.file()}({self._line}, {self._column})"
 
 
 class UnderstandError(Exception):
