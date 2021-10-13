@@ -796,7 +796,7 @@ class Ent:
 
         This is the same as ent.refs()[:1]
         """
-        pass
+        return self.refs(*args, **kwargs)[:1]
 
     def refs(self, refkindstring=None, entkindstring=None,
              unique=None):  # real signature unknown; restored from __doc__
