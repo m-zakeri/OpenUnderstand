@@ -7,4 +7,8 @@ except ImportError:
 
 db = und.open("D:\Dev\JavaSample\JavaSample1.udb")
 
-pprint(db.relative_file_name("D:\Dev\JavaSample\src\Admin.java"))
+ent = db.lookup("Admin", "class")[0]
+
+print(ent, ent.kind())
+for i in ent.ents(""):
+    print(i)

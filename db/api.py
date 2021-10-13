@@ -568,7 +568,24 @@ class Ent:
         entities are to be returned. If it is not included, all referenced
         entities are returned.
         """
-        return []
+        ents = set()
+        query = ReferenceModel.select().where(
+            (ReferenceModel._ent == self._id) | (ReferenceModel._scope == self._id)
+        )
+        if refkindstring:
+            kinds = KindModel.select().where(
+                (KindModel._name.contains(refkindstring)) & (KindModel.is_ent_kind == False)
+            )
+            query = query.where(ReferenceModel._kind.in_(kinds))
+
+        for ref in query:
+            if entkindstring is not None:
+                if entkindstring.lower() not in ref._ent._kind._name.lower():
+                    continue
+            ents.add(
+                Ent(**ref._ent.__dict__.get('__data__'))
+            )
+        return list(ents)
 
     def filerefs(self, refkindstring=None, entkindstring=None,
                  unique=None):  # real signature unknown; restored from __doc__
@@ -901,9 +918,11 @@ class Ent:
         """
         return ""
 
-    def __eq__(self, *args, **kwargs):  # real signature unknown
+    def __eq__(self, other):  # real signature unknown
         """ Return self==value. """
-        pass
+        if isinstance(other, Ent):
+            return self.id() == other.id()
+        return NotImplemented
 
     def __ge__(self, *args, **kwargs):  # real signature unknown
         """ Return self>=value. """
@@ -915,7 +934,7 @@ class Ent:
 
     def __hash__(self, *args, **kwargs):  # real signature unknown
         """ Return hash(self). """
-        pass
+        return hash(self.id())
 
     def __le__(self, *args, **kwargs):  # real signature unknown
         """ Return self<=value. """
