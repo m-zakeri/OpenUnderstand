@@ -229,7 +229,7 @@ STRING = 'String'
 WHITESPACE = 'Whitespace'
 
 
-def create_db(dbname):
+def create_db(dbname, project_dir: str, project_name=None):
     db = SqliteDatabase(dbname, pragmas={
         'journal_mode': 'wal',
         'cache_size': -1 * 64000,  # 64MB
@@ -241,6 +241,13 @@ def create_db(dbname):
     db.create_tables(
         [KindModel, EntityModel, ReferenceModel, DatabaseModel]
     )
+
+    DatabaseModel.get_or_create(
+        name=project_name or os.path.basename(dbname),
+        root=project_dir,
+        db_path=dbname
+    )
+    return open(dbname)
 
 
 def open(dbname):  # real signature unknown; restored from __doc__
@@ -259,6 +266,9 @@ def open(dbname):  # real signature unknown; restored from __doc__
       DBUnableOpen         - database is unreadable or does not exist
       NoApiLicense         - Understand license required
     """
+    if not os.path.isfile(dbname):
+        raise UnderstandError()
+
     db = SqliteDatabase(dbname, pragmas={
         'journal_mode': 'wal',
         'cache_size': -1 * 64000,  # 64MB
@@ -268,7 +278,11 @@ def open(dbname):  # real signature unknown; restored from __doc__
         [KindModel, EntityModel, ReferenceModel, DatabaseModel]
     )
 
-    return Db()
+    obj = DatabaseModel.get_or_none(
+        db_path=dbname
+    )
+
+    return Db(db_obj=obj)
 
 
 def version():  # real signature unknown; restored from __doc__
@@ -307,6 +321,11 @@ class Db:
       understand.Db.relative_file_name()
       understand.Db.root_archs()  understand.Db.__str__() --name
     """
+
+    def __init__(self, db_obj):
+        self._name = db_obj.name
+        self._root = db_obj.root
+        self._language = db_obj.language
 
     def close(self):  # real signature unknown; restored from __doc__
         """
@@ -375,8 +394,7 @@ class Db:
         "Python", "VHDL", or "Web". C is included with "C++"
         This will throw a UnderstandError if the database has been closed.
         """
-        # TODO: Implement this later!
-        return ()
+        return str(self._language)
 
     def lookup(self, name, kindstring=None):  # real signature unknown; restored from __doc__
         """
@@ -398,7 +416,19 @@ class Db:
         would return a list of file entities containing "Test" (case sensitive)
         in their names.
         """
-        return []
+        ents = []
+        query = EntityModel.select()
+        if kindstring:
+            kinds = KindModel.select().where(KindModel._name.contains(kindstring))
+            query = query.where(EntityModel._kind.in_(kinds))
+        query = query.where(
+            (EntityModel._name.contains(name)) | (EntityModel._longname.contains(name))
+        )
+        for ent in query:
+            ents.append(
+                Ent(**ent.__dict__.get('__data__'))
+            )
+        return ents
 
     def lookup_uniquename(self, uniquename):  # real signature unknown; restored from __doc__
         """
@@ -419,7 +449,7 @@ class Db:
 
         This will throw a UnderstandError if the database has been closed.
         """
-        return ""
+        return str(self._name)
 
     def relative_file_name(self, absolute_path):  # real signature unknown; restored from __doc__
         """
@@ -431,7 +461,7 @@ class Db:
 
     def __str__(self, *args, **kwargs):  # real signature unknown
         """ Return str(self). """
-        pass
+        return self.name()
 
 
 @dataclass

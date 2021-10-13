@@ -59,6 +59,8 @@ class DatabaseModel(Model):
     language = CharField(max_length=128, default="Java")
     root = CharField(max_length=1024)
 
+    db_path = CharField(max_length=1024, unique=True)
+
     def __str__(self):
         return str(self.name)
 

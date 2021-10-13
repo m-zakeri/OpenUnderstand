@@ -17,8 +17,9 @@ class Project():
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     p = Project()
-    # create_db("G:\Dev\OpenUnderstand\database.db")
+    # create_db("G:\Dev\OpenUnderstand\database.db", project_dir="G:\Dev\OpenUnderstand\benchmark\calculator_app")
     # main()
     db = db_open("G:\Dev\OpenUnderstand\database.db")
     ent = db.ent_from_id(16)
-    print(Kind.list_reference("callby"))
+    ents = db.lookup("admin")
+    pprint(ents)
