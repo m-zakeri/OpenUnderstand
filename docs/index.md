@@ -56,7 +56,32 @@ A comprehensive list of OpenUnderstand reference kinds for Java programming lang
 ## Architecture
 
 ### Database schema ERD
+For the database section of this project, peewee library and SQLite3 are used.
+It is essential to read the [peewee's documents](http://docs.peewee-orm.com/en/latest/) as well.
 
+The ERD diagram for the designed database is as follows:
+
+![Designed Database Schema](figs/db_uml.png)
+_Figure 3. Designed Database Schema_
+
+There are four tables:
+  - Database: For storing some basic info about the project. This table fills automatically.
+  - Kind: For storing entity and reference kinds which are separable by `is_ent_kind` boolean.
+    This table fills automatically.
+  - Entity: For storing Java entities in the project.
+  - Reference: For storing Java references in the project.
+
+#### How to fill the tables
+Get or create an instance:
+```python
+obj, has_created = ModelName.get_or_create(**fields)
+```
+Get or none:
+```python
+obj = ModelName.get_or_none(**fields)
+```
+
+Need more? check out the [peewee's documents](http://docs.peewee-orm.com/en/latest/).
 
 ### Some architectural notes
 * Multiple analysis passes are required to capture all entities and references kinds
@@ -67,12 +92,36 @@ A comprehensive list of OpenUnderstand reference kinds for Java programming lang
 * Only variables have value.
 * Classes that are not in project are Unknown.
 
+## API
+There is a designed and read-to-use API in `db/api.py` for querying the database and checking the results with Understand.
+The API is exactly the same as Understand's API.
 
+### Initializing the database
+```python
+from db.api import create_db
+from db.fill import main
 
+create_db(
+  dbname="G:\Dev\OpenUnderstand\database.db",
+  project_dir="G:\Dev\OpenUnderstand\benchmark\calculator_app"
+)
+main()
+```
+### Using the API
+```python
+from db.api import open as db_open
 
+db = db_open("G:\Dev\OpenUnderstand\database.db")
+ent = db.lookup("Admin", "method")[0]
 
+print(ent, ent.kind())
+print(ent, ent.simplename())
+for ref in ent.refs(entkindstring="method"):
+    print(ref)
+# The results should be exactly similar to Understand.
+```
 
-
+**Note: Unit test are under development, and we will inform you as they released. You code should pass all unit tests.**
 ## References
 
 References
