@@ -457,7 +457,9 @@ class Db:
 
         Return the relative file name like ent.relname() but for an arbitrary path.
         """
-        return ""
+        list_of_paths = [self._root, absolute_path]
+        common_prefix = os.path.commonprefix(list_of_paths)
+        return os.path.relpath(absolute_path, common_prefix)
 
     def __str__(self, *args, **kwargs):  # real signature unknown
         """ Return str(self). """

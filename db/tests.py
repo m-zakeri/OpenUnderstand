@@ -7,4 +7,4 @@ except ImportError:
 
 db = und.open("D:\Dev\JavaSample\JavaSample1.udb")
 
-pprint(db.lookup("Admin"))
+pprint(db.relative_file_name("D:\Dev\JavaSample\src\Admin.java"))

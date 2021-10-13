@@ -21,5 +21,5 @@ if __name__ == '__main__':
     # main()
     db = db_open("G:\Dev\OpenUnderstand\database.db")
     ent = db.ent_from_id(16)
-    ents = db.lookup("admin")
+    ents = db.relative_file_name("D:\Dev\JavaSample\src\Admin.java")
     pprint(ents)
