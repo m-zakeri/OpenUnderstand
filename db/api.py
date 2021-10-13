@@ -860,6 +860,7 @@ class Ent:
         This is the fullname for the file, minus any root directories that
         are common for all project files. Return None for non-file entities.
         """
+        # TODO: Implement this later!
         return ""
 
     def simplename(self):  # real signature unknown; restored from __doc__
@@ -872,7 +873,7 @@ class Ent:
         generally the same as ent.name() except for languages like Java, for
         which this will not return a name with any dots in it.
         """
-        return ""
+        return self.name().split(".")[-1]
 
     def type(self):  # real signature unknown; restored from __doc__
         """
