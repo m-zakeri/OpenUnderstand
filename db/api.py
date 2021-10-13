@@ -611,6 +611,7 @@ class Ent:
         true, only the first matching reference to each unique entity is
         returned
         """
+        # TODO: Implement this later!
         return []
 
     def freetext(self, option):  # real signature unknown; restored from __doc__
@@ -686,7 +687,7 @@ class Ent:
         This is similar to ent.kind().name(), but does not create a Kind
         object.
         """
-        return ""
+        return self.kind().name()
 
     def language(self):  # real signature unknown; restored from __doc__
         """
@@ -698,53 +699,7 @@ class Ent:
         "Java", "Jovial", "Pascal", "Plm", "Python",
         "VHDL" or "Web". C is included with "C++".
         """
-        return ""
-
-    def lexer(self, lookup_ents=None, tabstop=None, show_inactive=None,
-              expand_macros=None):  # real signature unknown; restored from __doc__
-        """
-        ent.lexer([lookup_ents [,tabstop [,show_inactive [,expand_macros]]]])
-          -> understand.Lexer
-
-        Return a lexer object for the specified file entity. The original
-        source file must be readable and unchanged since the last database
-        parse. If an error occurs, an UnderstandError will be thrown. Possible
-        errors are:
-          FileModified         - the file must not be modified since the last
-                                 parse
-          FileUnreadable       - the file must be readable from the original
-                                 location
-          UnsupportedLanguage  - the file language is not supported
-
-        The optional paramter lookup_ents is true by default. If it is
-        specified false, the lexemes for the constructed lexer will not
-        have entity or reference information, but the lexer construction will
-        be much faster.
-
-        The optional paramter tabstop is 8 by default. If it is specified it
-        must be greater than 0, and is the value to use for tab stops
-
-        The optional parameter show_inactive is true by default. If false,
-        inactive lexemes will not be returned.
-
-        The optional parameter expand_macros is false by default. If true,
-        and if macro expansion text is stored, lexemes that are macros will
-        be replaced with the lexeme stream of the expansion text.
-        """
-        pass
-
-    def library(self):  # real signature unknown; restored from __doc__
-        """
-        ent.library() -> string
-
-        Return the library the entity belongs to.
-
-        This will return "" if the entity does not belong to a
-        library. Predefined Ada entities such as text_io will bin the
-        'Standard' library. Predefined VHDL entities will be in either the
-        'std' or 'ieee' libraries.
-        """
-        return ""
+        return "Java"
 
     def longname(self):  # real signature unknown; restored from __doc__
         """
@@ -805,7 +760,15 @@ class Ent:
         to get some information about these cases. If no parameters are
         available, None is returned.
         """
-        return ""
+        ents = EntityModel.select().where(
+            EntityModel._parent == self._id
+        )
+        pars = []
+        for ent in ents:
+            obj = Ent(**ent.__dict__.get("__data__"))
+            if obj.kind().check("parameter"):
+                pars.append(f"{obj.type()} {obj.name() if shownames else ''}".strip())
+        return ",".join(pars) if pars else None
 
     def parent(self):  # real signature unknown; restored from __doc__
         """
@@ -889,7 +852,9 @@ class Ent:
         This is defined for entity kinds like variables and types, as well as
         entity kinds that have a return type like functions.
         """
-        return ""
+        if self._type is not None:
+            return str(self._type)
+        return None
 
     def uniquename(self):  # real signature unknown; restored from __doc__
         """
