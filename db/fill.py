@@ -132,12 +132,12 @@ class TestFill(unittest.TestCase):
 
 
 def main():
-    udb_path = "D:\Dev\JavaSample\JavaSample1.udb"
+    # udb_path = "D:\Dev\JavaSample\JavaSample1.udb"
     append_java_ent_kinds()
     append_java_ref_kinds()
-    print("=" * 50)
-    append_entities_with_understand(udb_path)
-    append_references_with_understand(udb_path)
+    # print("=" * 50)
+    # append_entities_with_understand(udb_path)
+    # append_references_with_understand(udb_path)
 
 
 if __name__ == '__main__':
