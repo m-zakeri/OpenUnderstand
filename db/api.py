@@ -913,7 +913,9 @@ class Ent:
         This is for enumerators, initialized variables, and macros. Not all
         languages are supported.
         """
-        return ""
+        if self._value is not None:
+            return str(self._value)
+        return None
 
     def __eq__(self, other):  # real signature unknown
         """ Return self==value. """

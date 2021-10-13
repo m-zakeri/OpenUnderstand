@@ -21,17 +21,14 @@ if __name__ == '__main__':
     # create_db("G:\Dev\OpenUnderstand\database.db", project_dir="G:\Dev\OpenUnderstand\benchmark\calculator_app")
     # main()
     db = db_open("G:\Dev\OpenUnderstand\database.db")
-    ent = db.lookup("Admin", "class")[0]
+    ent = db.lookup("Admin", "method")[0]
     """
-    Admin Public Class
-    
-    Admin.java
-    (Unnamed_Package)
-    Admin.Admin
-    Employee
-    Admin
+    Use name Admin.java(3) Java Use
+Use id Admin.java(4) Java Use
+Use grade Admin.java(5) Java Use
     """
     print(ent, ent.kind())
-    for i in ent.ents(""):
-        print(i)
+    print(ent, ent.simplename())
+    for ref in ent.refs(entkindstring="method", unique=True):
+        print(ref)
 
