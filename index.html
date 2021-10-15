@@ -321,11 +321,51 @@
     Database schema ERD
   </a>
   
+    <nav class="md-nav" aria-label="Database schema ERD">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-to-fill-the-tables" class="md-nav__link">
+    How to fill the tables
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
   <a href="#some-architectural-notes" class="md-nav__link">
     Some architectural notes
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api" class="md-nav__link">
+    API
+  </a>
+  
+    <nav class="md-nav" aria-label="API">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#initializing-the-database" class="md-nav__link">
+    Initializing the database
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-the-api" class="md-nav__link">
+    Using the API
   </a>
   
 </li>
@@ -654,11 +694,51 @@
     Database schema ERD
   </a>
   
+    <nav class="md-nav" aria-label="Database schema ERD">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-to-fill-the-tables" class="md-nav__link">
+    How to fill the tables
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
   <a href="#some-architectural-notes" class="md-nav__link">
     Some architectural notes
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#api" class="md-nav__link">
+    API
+  </a>
+  
+    <nav class="md-nav" aria-label="API">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#initializing-the-database" class="md-nav__link">
+    Initializing the database
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#using-the-api" class="md-nav__link">
+    Using the API
   </a>
   
 </li>
@@ -728,6 +808,25 @@ Visit
 <a href="reference_kinds/">Reference kind page</a></p>
 <h2 id="architecture">Architecture</h2>
 <h3 id="database-schema-erd">Database schema ERD</h3>
+<p>For the database section of this project, peewee library and SQLite3 are used.
+It is essential to read the <a href="http://docs.peewee-orm.com/en/latest/">peewee's documents</a> as well.</p>
+<p>The ERD diagram for the designed database is as follows:</p>
+<p><img alt="Designed Database Schema" src="figs/db_uml.png" />
+<em>Figure 3. Designed Database Schema</em></p>
+<p>There are four tables:
+  - Database: For storing some basic info about the project. This table fills automatically.
+  - Kind: For storing entity and reference kinds which are separable by <code>is_ent_kind</code> boolean.
+    This table fills automatically.
+  - Entity: For storing Java entities in the project.
+  - Reference: For storing Java references in the project.</p>
+<h4 id="how-to-fill-the-tables">How to fill the tables</h4>
+<p>Get or create an instance:</p>
+<pre><code class="language-python">obj, has_created = ModelName.get_or_create(**fields)
+</code></pre>
+<p>Get or none:</p>
+<pre><code class="language-python">obj = ModelName.get_or_none(**fields)
+</code></pre>
+<p>Need more? check out the <a href="http://docs.peewee-orm.com/en/latest/">peewee's documents</a>.</p>
 <h3 id="some-architectural-notes">Some architectural notes</h3>
 <ul>
 <li>Multiple analysis passes are required to capture all entities and references kinds</li>
@@ -738,6 +837,32 @@ Visit
 <li>Only variables have value.</li>
 <li>Classes that are not in project are Unknown.</li>
 </ul>
+<h2 id="api">API</h2>
+<p>There is a designed and read-to-use API in <code>db/api.py</code> for querying the database and checking the results with Understand.
+The API is exactly the same as Understand's API.</p>
+<h3 id="initializing-the-database">Initializing the database</h3>
+<pre><code class="language-python">from db.api import create_db
+from db.fill import main
+
+create_db(
+  dbname=&quot;G:\Dev\OpenUnderstand\database.db&quot;,
+  project_dir=&quot;G:\Dev\OpenUnderstand\benchmark\calculator_app&quot;
+)
+main()
+</code></pre>
+<h3 id="using-the-api">Using the API</h3>
+<pre><code class="language-python">from db.api import open as db_open
+
+db = db_open(&quot;G:\Dev\OpenUnderstand\database.db&quot;)
+ent = db.lookup(&quot;Admin&quot;, &quot;method&quot;)[0]
+
+print(ent, ent.kind())
+print(ent, ent.simplename())
+for ref in ent.refs(entkindstring=&quot;method&quot;):
+    print(ref)
+# The results should be exactly similar to Understand.
+</code></pre>
+<p><strong>Note: Unit test are under development, and we will inform you as they released. You code should pass all unit tests.</strong></p>
 <h2 id="references">References</h2>
 <p>References
 [1] SciTools, “Understand,” 2020. https://www.scitools.com/ (accessed Sep. 11, 2020).</p>
