@@ -321,19 +321,6 @@
     Database schema ERD
   </a>
   
-    <nav class="md-nav" aria-label="Database schema ERD">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#how-to-fill-the-tables" class="md-nav__link">
-    How to fill the tables
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
         
           <li class="md-nav__item">
@@ -359,6 +346,13 @@
           <li class="md-nav__item">
   <a href="#initializing-the-database" class="md-nav__link">
     Initializing the database
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#filling-openunderstand-tables" class="md-nav__link">
+    Filling OpenUnderstand tables
   </a>
   
 </li>
@@ -694,19 +688,6 @@
     Database schema ERD
   </a>
   
-    <nav class="md-nav" aria-label="Database schema ERD">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#how-to-fill-the-tables" class="md-nav__link">
-    How to fill the tables
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
 </li>
         
           <li class="md-nav__item">
@@ -732,6 +713,13 @@
           <li class="md-nav__item">
   <a href="#initializing-the-database" class="md-nav__link">
     Initializing the database
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#filling-openunderstand-tables" class="md-nav__link">
+    Filling OpenUnderstand tables
   </a>
   
 </li>
@@ -807,25 +795,20 @@ Visit
 <p>A comprehensive list of OpenUnderstand reference kinds for Java programming language can be found on
 <a href="reference_kinds/">Reference kind page</a></p>
 <h2 id="architecture">Architecture</h2>
+<p>This section briefly describes the OpneUndertsand architecture.</p>
 <h3 id="database-schema-erd">Database schema ERD</h3>
-<p>For the database section of this project, peewee library and SQLite3 are used.
+<p>For the database section of this project, <code>peewee</code> library and <code>SQLite3</code> are used.
 It is essential to read the <a href="http://docs.peewee-orm.com/en/latest/">peewee's documents</a> as well.</p>
-<p>The ERD diagram for the designed database is as follows:</p>
+<p>The entity-relationship diagram (ERD) for the designed database for OpneUnderstand symbol table is shown in Figure 3. There are four important tables in OpenUnderstand database, created for each project during static analysis:</p>
+<ul>
+<li><strong>Project:</strong> For storing some basic information about the project under analysis such as project name, programming languages, etc. This table fills automatically.</li>
+<li><strong>Kind:</strong> For storing both the entity and reference kinds which are separable by <code>is_ent_kind</code> boolean.
+    This table fills automatically.</li>
+<li><strong>Entity:</strong> For storing Java entities in the project. This table fills during the program static analysis by <a href="tutorials/">ANTLR listeners</a>.</li>
+<li><strong>Reference:</strong> For storing Java references in the project. This table fills during the program static analysis by <a href="tutorials/">ANTLR listeners</a>.</li>
+</ul>
 <p><img alt="Designed Database Schema" src="figs/db_uml.png" /></p>
-<p><em>Figure 3. Designed Database Schema</em></p>
-<p>There are four tables:
-  - <strong>Project:</strong> For storing some basic info about the project. This table fills automatically.
-  - <strong>Kind:</strong> For storing entity and reference kinds which are separable by <code>is_ent_kind</code> boolean.
-    This table fills automatically.
-  - <strong>Entity:</strong> For storing Java entities in the project.
-  - <strong>Reference:</strong> For storing Java references in the project.</p>
-<h4 id="how-to-fill-the-tables">How to fill the tables</h4>
-<p>Get or create an instance:</p>
-<pre><code class="language-python">obj, has_created = ModelName.get_or_create(**fields)
-</code></pre>
-<p>Get or none:</p>
-<pre><code class="language-python">obj = ModelName.get_or_none(**fields)
-</code></pre>
+<p><em>Figure 3. OpenUnderstand database schema ERD</em></p>
 <p>Need more? check out the <a href="http://docs.peewee-orm.com/en/latest/">peewee's documents</a>.</p>
 <h3 id="some-architectural-notes">Some architectural notes</h3>
 <ul>
@@ -839,7 +822,7 @@ It is essential to read the <a href="http://docs.peewee-orm.com/en/latest/">peew
 </ul>
 <h2 id="api">API</h2>
 <p>There is a designed and read-to-use API in <code>db/api.py</code> for querying the database and checking the results with Understand.
-The API is exactly the same as Understand's API.</p>
+The API is exactly the same as Understand's API to be compatible with Understand tool.</p>
 <h3 id="initializing-the-database">Initializing the database</h3>
 <pre><code class="language-python">from db.api import create_db
 from db.fill import main
@@ -849,6 +832,15 @@ create_db(
   project_dir=&quot;G:\Dev\OpenUnderstand\benchmark\calculator_app&quot;
 )
 main()
+</code></pre>
+<h3 id="filling-openunderstand-tables">Filling OpenUnderstand tables</h3>
+<p>It is essential to check whether and reference or entity kinds have already been inserted into the database or not before any insert operation. Any duplicated entity or reference should be avoided.
+To this aim we provides the following methods.</p>
+<p>Get or create an instance:</p>
+<pre><code class="language-python">obj, has_created = ModelName.get_or_create(**fields)
+</code></pre>
+<p>Get or none:</p>
+<pre><code class="language-python">obj = ModelName.get_or_none(**fields)
 </code></pre>
 <h3 id="using-the-api">Using the API</h3>
 <pre><code class="language-python">from db.api import open as db_open
@@ -862,12 +854,13 @@ for ref in ent.refs(entkindstring=&quot;method&quot;):
     print(ref)
 # The results should be exactly similar to Understand.
 </code></pre>
-<p><strong>Note: Unit test are under development, and we will inform you as they released. You code should pass all unit tests.</strong></p>
+<p><strong>Note:</strong> To facilitate the verification process OpenUnderstand uses a set of unit tests for each entity and reference kinds. The unit test mainly used the <a href="benchmarks/">benchmark projects</a>.</p>
+<p>Our current development proposal is Core entity-reference development which is available on <a href="https://m-zakeri.github.io/OpenUnderstand/proposals/core_entity_reference_development/">development proposals section</a>.</p>
+<p>If you have any further questions, or you are interested to be a core developer do not hesitate to contact us. You can send an e-mail to m-zakir@live.com.</p>
 <h2 id="references">References</h2>
 <p>References
 [1] SciTools, “Understand,” 2020. https://www.scitools.com/ (accessed Sep. 11, 2020).</p>
 <p>[2] T. Parr and K. Fisher, “LL(*): the foundation of the ANTLR parser generator,” Proc. 32nd ACM SIGPLAN Conf. Program. Lang. Des. Implement., pp. 425–436, 2011, doi: http://doi.acm.org/10.1145/1993498.1993548.</p>
-<p>[3] N. Tsantalis and A. Chatzigeorgiou, “Identification of move method refactoring opportunities,” IEEE Trans. Softw. Eng., vol. 35, no. 3, pp. 347–367, May 2009, doi: 10.1109/TSE.2009.1.</p>
                 
               
               
