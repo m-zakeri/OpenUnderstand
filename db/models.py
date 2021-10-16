@@ -54,7 +54,7 @@ class ReferenceModel(Model):
         return f"{self._kind} {self._ent} {self._file}({self._line}, {self._column})"
 
 
-class DatabaseModel(Model):
+class ProjectModel(Model):
     name = CharField(max_length=128)
     language = CharField(max_length=128, default="Java")
     root = CharField(max_length=1024)

@@ -236,13 +236,13 @@ def create_db(dbname, project_dir: str, project_name=None):
         'ignore_check_constraints': 0,
         'synchronous': 0})
     db.bind(
-        [KindModel, EntityModel, ReferenceModel, DatabaseModel]
+        [KindModel, EntityModel, ReferenceModel, ProjectModel]
     )
     db.create_tables(
-        [KindModel, EntityModel, ReferenceModel, DatabaseModel]
+        [KindModel, EntityModel, ReferenceModel, ProjectModel]
     )
 
-    DatabaseModel.get_or_create(
+    ProjectModel.get_or_create(
         name=project_name or os.path.basename(dbname),
         root=project_dir,
         db_path=dbname
@@ -275,10 +275,10 @@ def open(dbname):  # real signature unknown; restored from __doc__
         'ignore_check_constraints': 0,
         'synchronous': 0})
     db.bind(
-        [KindModel, EntityModel, ReferenceModel, DatabaseModel]
+        [KindModel, EntityModel, ReferenceModel, ProjectModel]
     )
 
-    obj = DatabaseModel.get_or_none(
+    obj = ProjectModel.get_or_none(
         db_path=dbname
     )
 
