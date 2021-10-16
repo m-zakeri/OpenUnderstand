@@ -811,14 +811,14 @@ Visit
 <p>For the database section of this project, peewee library and SQLite3 are used.
 It is essential to read the <a href="http://docs.peewee-orm.com/en/latest/">peewee's documents</a> as well.</p>
 <p>The ERD diagram for the designed database is as follows:</p>
-<p><img alt="Designed Database Schema" src="figs/db_uml.png" />
-<em>Figure 3. Designed Database Schema</em></p>
+<p><img alt="Designed Database Schema" src="figs/db_uml.png" /></p>
+<p><em>Figure 3. Designed Database Schema</em></p>
 <p>There are four tables:
-  - Database: For storing some basic info about the project. This table fills automatically.
-  - Kind: For storing entity and reference kinds which are separable by <code>is_ent_kind</code> boolean.
+  - <strong>Project:</strong> For storing some basic info about the project. This table fills automatically.
+  - <strong>Kind:</strong> For storing entity and reference kinds which are separable by <code>is_ent_kind</code> boolean.
     This table fills automatically.
-  - Entity: For storing Java entities in the project.
-  - Reference: For storing Java references in the project.</p>
+  - <strong>Entity:</strong> For storing Java entities in the project.
+  - <strong>Reference:</strong> For storing Java references in the project.</p>
 <h4 id="how-to-fill-the-tables">How to fill the tables</h4>
 <p>Get or create an instance:</p>
 <pre><code class="language-python">obj, has_created = ModelName.get_or_create(**fields)
