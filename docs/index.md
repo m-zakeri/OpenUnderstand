@@ -141,17 +141,21 @@ for ref in ent.refs(entkindstring="method"):
 # The results should be exactly similar to Understand.
 ```
 
-**Note:** To facilitate the verification process OpenUnderstand uses a set of unit tests for each entity and reference kinds. The unit test mainly used the [benchmark projects](benchmarks.md).
+### API tests
+To facilitate the verification process OpenUnderstand uses a set of unit tests for each entity and reference kinds. The unit test mainly used the [benchmark projects](benchmarks.md).
 
 
+## Current development proposal
 Our current development proposal is Core entity-reference development which is available on [development proposals section](https://m-zakeri.github.io/OpenUnderstand/proposals/core_entity_reference_development/).
 
-If you have any further questions, or you are interested to be a core developer do not hesitate to contact us. You can send an e-mail to m-zakir@live.com.
+
+## FAQs
+If you have any further questions, or you are interested to be a core developer do not hesitate to contact us. You can send an e-mail to m-zakeri@live.com with the subject "OpenUnderstand".
+
 
 
 ## References
 
-References
 [1]	SciTools, “Understand,” 2020. https://www.scitools.com/ (accessed Sep. 11, 2020).
 
 [2]	T. Parr and K. Fisher, “LL(*): the foundation of the ANTLR parser generator,” Proc. 32nd ACM SIGPLAN Conf. Program. Lang. Des. Implement., pp. 425–436, 2011, doi: http://doi.acm.org/10.1145/1993498.1993548.
