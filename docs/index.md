@@ -62,14 +62,15 @@ It is essential to read the [peewee's documents](http://docs.peewee-orm.com/en/l
 The ERD diagram for the designed database is as follows:
 
 ![Designed Database Schema](figs/db_uml.png)
+
 _Figure 3. Designed Database Schema_
 
 There are four tables:
-  - Database: For storing some basic info about the project. This table fills automatically.
-  - Kind: For storing entity and reference kinds which are separable by `is_ent_kind` boolean.
+  - **Project:** For storing some basic info about the project. This table fills automatically.
+  - **Kind:** For storing entity and reference kinds which are separable by `is_ent_kind` boolean.
     This table fills automatically.
-  - Entity: For storing Java entities in the project.
-  - Reference: For storing Java references in the project.
+  - **Entity:** For storing Java entities in the project.
+  - **Reference:** For storing Java references in the project.
 
 #### How to fill the tables
 Get or create an instance:
