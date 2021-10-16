@@ -54,35 +54,30 @@ A comprehensive list of OpenUnderstand reference kinds for Java programming lang
 
 
 ## Architecture
+This section briefly describes the OpneUndertsand architecture.
 
 ### Database schema ERD
-For the database section of this project, peewee library and SQLite3 are used.
+For the database section of this project, `peewee` library and `SQLite3` are used.
 It is essential to read the [peewee's documents](http://docs.peewee-orm.com/en/latest/) as well.
 
-The ERD diagram for the designed database is as follows:
+The entity-relationship diagram (ERD) for the designed database for OpneUnderstand symbol table is shown in Figure 3. There are four important tables in OpenUnderstand database, created for each project during static analysis:
+
+* **Project:** For storing some basic information about the project under analysis such as project name, programming languages, etc. This table fills automatically.
+* **Kind:** For storing both the entity and reference kinds which are separable by `is_ent_kind` boolean.
+    This table fills automatically.
+* **Entity:** For storing Java entities in the project. This table fills during the program static analysis by [ANTLR listeners](tutorials.md).
+* **Reference:** For storing Java references in the project. This table fills during the program static analysis by [ANTLR listeners](tutorials.md).
 
 ![Designed Database Schema](figs/db_uml.png)
 
-_Figure 3. Designed Database Schema_
+_Figure 3. OpenUnderstand database schema ERD_
 
-There are four tables:
-  - **Project:** For storing some basic info about the project. This table fills automatically.
-  - **Kind:** For storing entity and reference kinds which are separable by `is_ent_kind` boolean.
-    This table fills automatically.
-  - **Entity:** For storing Java entities in the project.
-  - **Reference:** For storing Java references in the project.
 
-#### How to fill the tables
-Get or create an instance:
-```python
-obj, has_created = ModelName.get_or_create(**fields)
-```
-Get or none:
-```python
-obj = ModelName.get_or_none(**fields)
-```
+
+
 
 Need more? check out the [peewee's documents](http://docs.peewee-orm.com/en/latest/).
+
 
 ### Some architectural notes
 * Multiple analysis passes are required to capture all entities and references kinds
@@ -93,11 +88,14 @@ Need more? check out the [peewee's documents](http://docs.peewee-orm.com/en/late
 * Only variables have value.
 * Classes that are not in project are Unknown.
 
+
+
 ## API
 There is a designed and read-to-use API in `db/api.py` for querying the database and checking the results with Understand.
-The API is exactly the same as Understand's API.
+The API is exactly the same as Understand's API to be compatible with Understand tool.
 
 ### Initializing the database
+
 ```python
 from db.api import create_db
 from db.fill import main
@@ -108,7 +106,28 @@ create_db(
 )
 main()
 ```
+
+### Filling OpenUnderstand tables
+It is essential to check whether and reference or entity kinds have already been inserted into the database or not before any insert operation. Any duplicated entity or reference should be avoided.
+To this aim we provides the following methods.
+
+Get or create an instance:
+
+```python
+obj, has_created = ModelName.get_or_create(**fields)
+```
+
+
+Get or none:
+
+```python
+obj = ModelName.get_or_none(**fields)
+```
+
+
+
 ### Using the API
+
 ```python
 from db.api import open as db_open
 
@@ -122,7 +141,14 @@ for ref in ent.refs(entkindstring="method"):
 # The results should be exactly similar to Understand.
 ```
 
-**Note: Unit test are under development, and we will inform you as they released. You code should pass all unit tests.**
+**Note:** To facilitate the verification process OpenUnderstand uses a set of unit tests for each entity and reference kinds. The unit test mainly used the [benchmark projects](benchmarks.md).
+
+
+Our current development proposal is Core entity-reference development which is available on [development proposals section](https://m-zakeri.github.io/OpenUnderstand/proposals/core_entity_reference_development/).
+
+If you have any further questions, or you are interested to be a core developer do not hesitate to contact us. You can send an e-mail to m-zakir@live.com.
+
+
 ## References
 
 References
@@ -130,4 +156,3 @@ References
 
 [2]	T. Parr and K. Fisher, “LL(*): the foundation of the ANTLR parser generator,” Proc. 32nd ACM SIGPLAN Conf. Program. Lang. Des. Implement., pp. 425–436, 2011, doi: http://doi.acm.org/10.1145/1993498.1993548.
 
-[3]	N. Tsantalis and A. Chatzigeorgiou, “Identification of move method refactoring opportunities,” IEEE Trans. Softw. Eng., vol. 35, no. 3, pp. 347–367, May 2009, doi: 10.1109/TSE.2009.1.
