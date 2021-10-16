@@ -109,7 +109,7 @@ main()
 
 ### Filling OpenUnderstand tables
 It is essential to check whether and reference or entity kinds have already been inserted into the database or not before any insert operation. Any duplicated entity or reference should be avoided.
-To this aim we provides the following methods.
+To this aim, we provide the following methods.
 
 Get or create an instance:
 
