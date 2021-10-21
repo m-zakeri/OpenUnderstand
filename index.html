@@ -865,12 +865,12 @@ It is essential to read the <a href="http://docs.peewee-orm.com/en/latest/">peew
 <p>There is a designed and read-to-use API in <code>db/api.py</code> for querying the database and checking the results with Understand.
 The API is exactly the same as Understand's API to be compatible with Understand tool.</p>
 <h3 id="initializing-the-database">Initializing the database</h3>
-<pre><code class="language-python">from db.api import create_db
-from db.fill import main
+<pre><code class="language-python">from openunderstand.db.api import create_db
+from openunderstand.db.fill import main
 
 create_db(
-  dbname=&quot;G:\Dev\OpenUnderstand\database.db&quot;, # customize the path
-  project_dir=&quot;G:\Dev\OpenUnderstand\benchmark\calculator_app&quot; # customize the path
+    dbname=&quot;G:\Dev\OpenUnderstand\database.db&quot;,  # customize the path
+    project_dir=&quot;G:\Dev\OpenUnderstand\benchmark\calculator_app&quot;  # customize the path
 )
 main()
 </code></pre>
@@ -885,9 +885,9 @@ To this aim, we provide the following <code>get</code> and <code>create</code> m
 </code></pre>
 <p>To find more information about CRUD operations check out the <a href="http://docs.peewee-orm.com/en/latest/">peewee's documents</a>.</p>
 <h3 id="using-the-api">Using the API</h3>
-<pre><code class="language-python">from db.api import open as db_open
+<pre><code class="language-python">from openunderstand.db.api import open as db_open
 
-db = db_open(&quot;G:\Dev\OpenUnderstand\database.db&quot;) # customize the path
+db = db_open(&quot;G:\Dev\OpenUnderstand\database.db&quot;)  # customize the path
 ent = db.lookup(&quot;Admin&quot;, &quot;method&quot;)[0]
 
 print(ent, ent.kind())
