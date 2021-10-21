@@ -92,12 +92,12 @@ The API is exactly the same as Understand's API to be compatible with Understand
 ### Initializing the database
 
 ```python
-from db.api import create_db
-from db.fill import main
+from openunderstand.db.api import create_db
+from openunderstand.db.fill import main
 
 create_db(
-  dbname="G:\Dev\OpenUnderstand\database.db", # customize the path
-  project_dir="G:\Dev\OpenUnderstand\benchmark\calculator_app" # customize the path
+    dbname="G:\Dev\OpenUnderstand\database.db",  # customize the path
+    project_dir="G:\Dev\OpenUnderstand\benchmark\calculator_app"  # customize the path
 )
 main()
 ```
@@ -126,9 +126,9 @@ To find more information about CRUD operations check out the [peewee's documents
 ### Using the API
 
 ```python
-from db.api import open as db_open
+from openunderstand.db.api import open as db_open
 
-db = db_open("G:\Dev\OpenUnderstand\database.db") # customize the path
+db = db_open("G:\Dev\OpenUnderstand\database.db")  # customize the path
 ent = db.lookup("Admin", "method")[0]
 
 print(ent, ent.kind())
