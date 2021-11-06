@@ -1,7 +1,7 @@
 site_name: OpenUnderstand Docs (v0.1.0dev)
 site_url: https://m-zakeri.github.io/OpenUndertsand
 repo_url: https://github.com/m-zakeri/OpenUndertsand
-site_description: Automated Source Code Refactoring Toolkit
+site_description: An open-source implementation of Understand Python API for Java language
 site_author: Morteza Zakeri, Ali Ayati, Sadegh Jafari, Saeed Parsa
 copyright: © 2021-2022 OpenUnderstand project - IUST Reverse Engineering Research Laboratory
 
