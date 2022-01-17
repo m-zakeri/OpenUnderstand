@@ -1,12 +1,18 @@
-import peewee
 import unittest
+from pathlib import Path
+
+import peewee
 
 from db.models import KindModel, EntityModel, ReferenceModel
 from db.utils import get_entity_object_from_understand
 
+FILE_DIR = Path(__file__).parent
+ENT_KINDS_FILE = FILE_DIR / "java_ent_kinds.txt"
+REF_KINDS_FILE = FILE_DIR / "java_ref_kinds.txt"
+
 
 def append_java_ent_kinds():
-    with open("./db/java_ent_kinds.txt", "r") as f:
+    with open(ENT_KINDS_FILE, "r") as f:
         for line in f.readlines():
             if line.startswith("Java"):
                 query = line.strip()
@@ -24,7 +30,7 @@ def append_java_ref_kind(kind: str, inverse: str, ref: str) -> int:
 
 def append_java_ref_kinds():
     kind, inv_kind = "", ""
-    with open("./db/java_ref_kinds.txt", "r") as f:
+    with open(REF_KINDS_FILE, "r") as f:
         for line in f.readlines():
             line = line.strip()
             if line.startswith("Java"):

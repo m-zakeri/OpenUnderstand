@@ -50,6 +50,15 @@ class ReferenceModel(Model):
     _ent = ForeignKeyField(EntityModel, backref='refs')
     _scope = ForeignKeyField(EntityModel, backref='inv_refs')
 
+    """
+    class B:
+        pass
+        
+    class A:
+        def test():
+            B()
+    """
+
     def __str__(self):
         return f"{self._kind} {self._ent} {self._file}({self._line}, {self._column})"
 
