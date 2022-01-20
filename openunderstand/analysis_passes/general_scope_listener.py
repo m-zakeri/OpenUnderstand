@@ -12,7 +12,7 @@ class GeneralScopeListener(JavaParserLabeledListener):
     def __init__(self, file_full_path, available_package_classes, available_class_methods,
                  available_class_fields, class_parents):
         self.scope_stack = [[file_full_path]]
-        self.available_imported_classes = []
+        self.available_imported_classes = set()
         self.class_parents = class_parents
         # the three following variables are derived from self.init_info
         # customized for the current file under consideration
@@ -20,7 +20,7 @@ class GeneralScopeListener(JavaParserLabeledListener):
         self.class_methods_repo = {}
         self.class_fields_repo = {}
 
-        self.all_classes_repo = []
+        self.all_classes_repo = set()
 
         self.init_info = [available_package_classes, available_class_methods, available_class_fields]
         self.current_long_name = ''
@@ -42,11 +42,9 @@ class GeneralScopeListener(JavaParserLabeledListener):
 
     def fill_all_classes_repo(self):
         for classname in self.classes_repo:
-            if classname not in self.all_classes_repo:
-                self.all_classes_repo.append(classname)
+            self.all_classes_repo.add(classname)
         for classname in self.available_imported_classes:
-            if classname not in self.classes_repo:
-                self.all_classes_repo.append(classname)
+            self.all_classes_repo.add(classname)
 
     def fill_class_parents(self):
         for classname in self.class_parents.keys():
@@ -90,10 +88,9 @@ class GeneralScopeListener(JavaParserLabeledListener):
         package_prefix = imported_entity[:index]
         if import_text[index + 1:] == '*':
             for classname in self.init_info[0][package_prefix]:
-                if classname not in self.available_imported_classes:
-                    self.available_imported_classes.append(classname)
+                self.available_imported_classes.add(classname)
         else:
-            self.available_imported_classes.append(imported_entity)
+            self.available_imported_classes.add(imported_entity)
 
     def enterFormalParameters(self, ctx: JavaParserLabeled.FormalParametersContext):
         if self.in_method_declaration:
@@ -168,7 +165,7 @@ class InitializerListener(JavaParserLabeledListener):
     def __init__(self, file_full_address, available_packages=None, available_package_classes=None,
                  available_class_methods=None, available_class_fields=None, class_parents=None):
         self.abspath = file_full_address
-        self.available_packages = available_packages if available_packages is not None else []
+        self.available_packages = available_packages if available_packages is not None else set()
         # each key in the following dictionary should be the name of a package
         # the value of each key is an array with the name of classes
         # each element of this array can also be a dictionary
@@ -196,8 +193,7 @@ class InitializerListener(JavaParserLabeledListener):
     def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
         package_text = ctx.getText()
         package_name = package_text[package_text.find('package') + 7:package_text.find(';')]
-        if package_name not in self.available_packages:
-            self.available_packages.append(package_name)
+        self.available_packages.add(package_name)
         self.current_package_name = package_name
         self.current_scope.append({'tp': 'package', 'name': package_name})
         self.current_long_name = package_name
@@ -295,8 +291,7 @@ class InitializerListener(JavaParserLabeledListener):
     def add_unknown_package(self):
         if self.current_package_name is None:
             self.current_package_name = self.UNKNOWN_PACKAGE + ',' + self.abspath
-            if self.current_package_name not in self.available_packages:
-                self.available_packages.append(self.current_package_name)
+            self.available_packages.add(self.current_package_name)
 
 
 def initialize(root_folder):
