@@ -16,13 +16,18 @@ from fnmatch import fnmatch
 
 
 class Project():
+    tree = None
 
-    def ParseAndWalk(self, listener, fileAddress):
+    def Parse(self, fileAddress):
         file_stream = FileStream(fileAddress)
         lexer = JavaLexer(file_stream)
         tokens = CommonTokenStream(lexer)
         parser = JavaParserLabeled(tokens)
         tree = parser.compilationUnit()
+        self.tree = tree
+        return tree
+
+    def Walk(self, listener, tree):
         walker = ParseTreeWalker()
         walker.walk(listener=listener, t=tree)
 
@@ -115,14 +120,14 @@ class Project():
         listener = ClassPropertiesListener()
         listener.class_longname = class_longname.split(".")
         listener.class_properties = None
-        self.ParseAndWalk(listener, file_address)
+        self.Walk(listener, self.tree)
         return listener.class_properties
 
     def getInterfaceProperties(self, interface_longname, file_address):
         listener = InterfacePropertiesListener()
         listener.interface_longname = interface_longname.split(".")
         listener.interface_properties = None
-        self.ParseAndWalk(listener, file_address)
+        self.Walk(listener, self.tree)
         return listener.interface_properties
 
     def getCreatedClassEntity(self, class_longname, class_potential_longname, file_address):
@@ -185,49 +190,45 @@ class Project():
 
 if __name__ == '__main__':
     p = Project()
-    create_db("..\database.db",
+    create_db("../benchmark2_database.db",
               project_dir="..\benchmark")
     main()
-    db = db_open("..\database.db")
+    db = db_open("../benchmark2_database.db")
 
+    # path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
     path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
-
     files = p.getListOfFiles(path)
     ########## AGE KHASTID YEK FILE RO RUN KONID:
     # files = ["../../Java codes/javaCoupling.java"]
 
-    # implement:
     for file_address in files:
         try:
             file_ent = p.getFileEntity(file_address)
+            tree = p.Parse(file_address)
+        except Exception as e:
+            print("An Error occurred in file:" + file_address + "\n" + str(e) )
+            continue
+        try:
+            # implement
             listener = ImplementCoupleAndImplementByCoupleBy()
             listener.implement = []
-            p.ParseAndWalk(listener, file_address)
+            p.Walk(listener, tree)
             p.addImplementOrImplementByRefs(listener.implement, file_ent, file_address)
         except Exception as e:
-            print("An Error occurred in file:" + file_address + "\n" + str(e) )
-            continue
-
-    # create
-    for file_address in files:
+            print("An Error occurred for reference implement in file:" + file_address + "\n" + str(e))
         try:
-            file_ent = p.getFileEntity(file_address)
+            # create
             listener = CreateAndCreateBy()
             listener.create = []
-            p.ParseAndWalk(listener, file_address)
+            p.Walk(listener, tree)
             p.addCreateRefs(listener.create, file_ent, file_address)
         except Exception as e:
-            print("An Error occurred in file:" + file_address + "\n" + str(e) )
-            continue
-
-    # declare
-    for file_address in files:
+            print("An Error occurred for reference create in file:" + file_address + "\n" + str(e))
         try:
-            file_ent = p.getFileEntity(file_address)
+            # declare
             listener = DeclareAndDeclareinListener()
             listener.declare = []
-            p.ParseAndWalk(listener, file_address)
+            p.Walk(listener, tree)
             p.addDeclareRefs(listener.declare, file_ent)
         except Exception as e:
-            print("An Error occurred in file:" + file_address + "\n" + str(e) )
-            continue
+            print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
