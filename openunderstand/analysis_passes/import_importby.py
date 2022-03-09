@@ -1,12 +1,20 @@
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from antlr4 import *
-from gen.javaLabeled.JavaLexer import JavaLexer
-from pathlib import Path
-from db.models import *
+"""
+
+
+"""
+
 import os
-from db.api import open as db_open, create_db, Kind
-from db.fill import main
+from pathlib import Path
+
+from antlr4 import *
+
+from gen.javaLabeled.JavaLexer import JavaLexer
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+
+from ..oudb.models import *
+from ..oudb.api import open as db_open, create_db, Kind
+from ..oudb.fill import main
 
 
 class ClassEntityListener(JavaParserLabeledListener):
@@ -71,6 +79,7 @@ def create_Ref(kind, file, line, column, ent, scope):
                                                     )
     return obj
 
+
 def get_class_body(path):
     file = FileStream(path)
     lexer = JavaLexer(file)
@@ -96,7 +105,7 @@ def readFile():
                 filename.append(file)
                 listOfFiles.append(os.path.join(dirpath, file))
 
-    db = db_open(r"E:\uni\compiler\OpenUnderstand\database.db")
+    db = db_open(r"E:\uni\compiler\OpenUnderstand\database.oudb")
 
     for path, name in zip(listOfFiles, filename):
         # lexer and parser for the current file
@@ -118,7 +127,8 @@ def readFile():
         # break
         # find enitity
         entities = []
-        for ent_name, longname, is_unk, parent in zip(listener.names, listener.longnames, listener.is_unknown_class, listener.parents):
+        for ent_name, longname, is_unk, parent in zip(listener.names, listener.longnames, listener.is_unknown_class,
+                                                      listener.parents):
             if is_unk:
                 ent_kind = KindModel.get_or_none(_name="Java Unknown Class Type Member")._id
                 contents = ""

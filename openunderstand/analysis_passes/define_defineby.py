@@ -13,9 +13,9 @@ from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 
 from gen.javaLabeled.JavaLexer import JavaLexer
 
-from ..db.models import *
+from ..oudb.models import *
 
-from ..db.api import open as db_open, create_db, Kind
+from ..oudb.api import open as db_open, create_db, Kind
 
 
 class DefineListener(JavaParserLabeledListener):
@@ -136,7 +136,7 @@ def readFile():
                 filename.append(file)
                 listOfFiles.append(os.path.join(dirpath, file))
 
-    db = db_open(r"E:\uni\compiler\OpenUnderstand\database.db")
+    db = db_open(r"E:\uni\compiler\OpenUnderstand\database.oudb")
 
     types = [JavaLexer.ADD_ASSIGN, JavaLexer.SUB_ASSIGN, JavaLexer.MUL_ASSIGN, JavaLexer.DIV_ASSIGN,
              JavaLexer.AND_ASSIGN, JavaLexer.OR_ASSIGN, JavaLexer.XOR_ASSIGN, JavaLexer.MOD_ASSIGN,

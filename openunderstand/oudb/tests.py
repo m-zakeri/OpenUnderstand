@@ -7,7 +7,7 @@ except ImportError:
 
 db = und.open("D:\Term 7\Compiler\Final proj\github\OpenUnderstand\Java codes\Java codes.udb")
 
-# ent = db.lookup("Admin", "method")[0]
+# ent = oudb.lookup("Admin", "method")[0]
 # print(ent, ent.simplename())
 # for ref in ent.refs(entkindstring="method", unique=True):
 #     print(ref, ref.kind().longname())

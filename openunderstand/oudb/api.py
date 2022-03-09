@@ -4,7 +4,7 @@ import os
 # from D:\program files\SciTools\bin\pc-win64\Python\understand.pyd
 # by generator 1.147
 
-from db.models import *
+from ..oudb.models import *
 
 from dataclasses import dataclass
 
@@ -45,9 +45,9 @@ Sorted List of All Entities
 import understand
 
 # Open Database
-db = understand.open("test.udb")
+oudb = understand.open("test.udb")
 
-for ent in sorted(db.ents(),key= lambda ent: ent.name()):
+for ent in sorted(oudb.ents(),key= lambda ent: ent.name()):
   print (ent.name(),"  [",ent.kindname(),"]",sep="",end="\n")
 
 
@@ -56,9 +56,9 @@ List of Files
 
 import understand
 
-db = understand.open("test.udb")
+oudb = understand.open("test.udb")
 
-for file in db.ents("File"):
+for file in oudb.ents("File"):
   # print directory name
   print (file.longname())
 
@@ -69,11 +69,11 @@ Lookup an Entity (Case Insensitive)
 import understand
 import re
 
-db = understand.open("test.udb")
+oudb = understand.open("test.udb")
 
 # Create a regular expression that is case insensitive
 searchstr = re.compile("test*.cpp",re.I)
-for file in db.lookup(searchstr,"File"):
+for file in oudb.lookup(searchstr,"File"):
   print (file)
 
 
@@ -82,9 +82,9 @@ Global Variable Usage
 
 import understand
 
-db = understand.open("test.udb")
+oudb = understand.open("test.udb")
 
-for ent in db.ents("Global Object ~Static"):
+for ent in oudb.ents("Global Object ~Static"):
   print (ent,":",sep="")
   for ref in ent.refs():
     print (ref.kindname(),ref.ent(),ref.file(),"(",ref.line(),",",ref.column(),")")
@@ -99,9 +99,9 @@ import understand
 def sortKeyFunc(ent):
   return str.lower(ent.longname())
 
-db = understand.open("test.udb")
+oudb = understand.open("test.udb")
 
-ents = db.ents("function,method,procedure")
+ents = oudb.ents("function,method,procedure")
 for func in sorted(ents,key = sortKeyFunc):
   print (func.longname()," (",sep="",end="")
   first = True
@@ -118,9 +118,9 @@ List of Functions with Associated Comments
 
 import understand
 
-db = understand.open("test.udb")
+oudb = understand.open("test.udb")
 
-for func in db.ents("function ~unresolved ~unknown"):
+for func in oudb.ents("function ~unresolved ~unknown"):
   comments = func.comments("after")
   if comments:
     print (func.longname(),":\n  ",comments,"\n",sep="")
@@ -131,15 +131,15 @@ List of Ada Packages
 
 import understand
 
-db = understand.open("test.udb")
+oudb = understand.open("test.udb")
 
 print ("Standard Packages:")
-for package in db.ents("Package"):
+for package in oudb.ents("Package"):
   if package.library() == "Standard":
     print ("  ",package.longname())
 
 print ("\nUser Packages:")
-for package in db.ents("Package"):
+for package in oudb.ents("Package"):
   if package.library() != "Standard":
     print("  ",package.longname())
 
@@ -149,9 +149,9 @@ All Project Metrics
 
 import understand
 
-db = understand.open("test.udb")
+oudb = understand.open("test.udb")
 
-metrics = db.metric(db.metrics())
+metrics = oudb.metric(oudb.metrics())
 for k,v in sorted(metrics.items()):
   print (k,"=",v)
 
@@ -161,9 +161,9 @@ Cyclomatic Complexity of Functions
 
 import understand
 
-db = understand.open("test.udb")
+oudb = understand.open("test.udb")
 
-for func in db.ents("function,method,procedure"):
+for func in oudb.ents("function,method,procedure"):
   metric = func.metric(("Cyclomatic",))
   if metric["Cyclomatic"] is not None:
     print (func," = ",metric["Cyclomatic"],sep="")
@@ -174,9 +174,9 @@ for func in db.ents("function,method,procedure"):
 
 import understand
 
-db = understand.open("test.udb")
+oudb = understand.open("test.udb")
 
-for func in db.ents("function,method,procedure"):
+for func in oudb.ents("function,method,procedure"):
   file = "callby_" + func.name() + ".png"
   print (func.longname(),"->",file)
   func.draw("Called By",file)
@@ -187,9 +187,9 @@ Info Browser View of Functions
 
 import understand
 
-db = understand.open("test.udb")
+oudb = understand.open("test.udb")
 
-for func in db.ents("function,method,procedure"):
+for func in oudb.ents("function,method,procedure"):
   for line in func.ib():
     print(line,end="")
 
@@ -199,9 +199,9 @@ Lexical Stream
 
 import understand
 
-db = understand.open("test.udb")
+oudb = understand.open("test.udb")
 
-file = db.lookup("test.cpp")[0]
+file = oudb.lookup("test.cpp")[0]
 for lexeme in file.lexer():
   print (lexeme.text(),end="")
   if lexeme.ent():
@@ -329,7 +329,7 @@ class Db:
 
     def close(self):  # real signature unknown; restored from __doc__
         """
-        db.close() -> None
+        oudb.close() -> None
 
         Close the database.
 
@@ -342,7 +342,7 @@ class Db:
 
     def ents(self, kindstring=None):  # real signature unknown; restored from __doc__
         """
-        db.ents([kindstring]) -> list of Ent
+        oudb.ents([kindstring]) -> list of Ent
 
         Return a list entities in the database.
 
@@ -367,7 +367,7 @@ class Db:
 
     def ent_from_id(self, id: int):  # real signature unknown; restored from __doc__
         """
-        db.ent_from_id(id) -> understand.Ent
+        oudb.ent_from_id(id) -> understand.Ent
 
         Return the ent associated with the id.
 
@@ -384,7 +384,7 @@ class Db:
 
     def language(self):  # real signature unknown; restored from __doc__
         """
-        db.language() -> tuple of strings
+        oudb.language() -> tuple of strings
 
         Return a tuple with project languages
 
@@ -398,7 +398,7 @@ class Db:
 
     def lookup(self, name, kindstring=None):  # real signature unknown; restored from __doc__
         """
-        db.lookup(name [,kindstring]) -> list of understand.Ent
+        oudb.lookup(name [,kindstring]) -> list of understand.Ent
 
         Return a list of entities that match the specified name.
 
@@ -406,13 +406,13 @@ class Db:
         as a string. By default, regular expressions are case sensitive. For
         case insensitive search, compile the regular expression like this:
           import re
-          db.lookup(re.compile("searchstring",re.I))
+          oudb.lookup(re.compile("searchstring",re.I))
         The re.I flag is for case insensitivity. Otherwise, the lookup command
         can be run simply
-          db.lookup("searchstring")
+          oudb.lookup("searchstring")
         The optional paramter kindstring is a language-specific entity filter
         string. So, for example,
-          db.lookup(".Test.","File")
+          oudb.lookup(".Test.","File")
         would return a list of file entities containing "Test" (case sensitive)
         in their names.
         """
@@ -432,7 +432,7 @@ class Db:
 
     def lookup_uniquename(self, uniquename):  # real signature unknown; restored from __doc__
         """
-        db.lookup_uniquename(uniquename) -> ent
+        oudb.lookup_uniquename(uniquename) -> ent
 
         Return the entity identified by uniquename.
 
@@ -443,7 +443,7 @@ class Db:
 
     def name(self):  # real signature unknown; restored from __doc__
         """
-        db.name() -> string
+        oudb.name() -> string
 
         Return the filename of the database.
 
@@ -453,7 +453,7 @@ class Db:
 
     def relative_file_name(self, absolute_path):  # real signature unknown; restored from __doc__
         """
-        db.relative_file_name(absolute_path) -> string
+        oudb.relative_file_name(absolute_path) -> string
 
         Return the relative file name like ent.relname() but for an arbitrary path.
         """
@@ -652,7 +652,7 @@ class Ent:
           "{Metrics}=off;{calls}levels=-1;{callbys}levels=-1;{references}sort=name"
 
         The Architectures field is not generated by this command and can be
-        generated separately using db.archs(ent)
+        generated separately using oudb.archs(ent)
         """
         return []
 
@@ -664,7 +664,7 @@ class Ent:
 
         The identifier is not guaranteed to remain constant after the
         database has been updated. An id can be converted back into an
-        understand.Ent with db.ent_from_id(id). The id is used for
+        understand.Ent with oudb.ent_from_id(id). The id is used for
         comparisons and the hash function.
         """
         return self._id
@@ -899,7 +899,7 @@ class Ent:
         as the source code changes slightly over time. The unique name is
         composed of things like parameters and parent names. So, the some
         code changes will in new uniquenames for the same intrinsic entity.
-        Use db.lookup_uniquename() to convert a unqiuename back to an object
+        Use oudb.lookup_uniquename() to convert a unqiuename back to an object
         of understand.Ent. This is what repr() shows.
         """
         return ""

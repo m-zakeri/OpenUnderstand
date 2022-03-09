@@ -1,4 +1,4 @@
-from db.models import EntityModel, KindModel
+from ..oudb.models import EntityModel, KindModel
 
 
 def get_entity_object_from_understand(understand_ent):

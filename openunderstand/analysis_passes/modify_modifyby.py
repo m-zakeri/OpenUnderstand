@@ -1,12 +1,21 @@
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from antlr4 import *
-from gen.javaLabeled.JavaLexer import JavaLexer
-from pathlib import Path
-from db.models import *
+"""
+
+
+"""
+
 import os
-from db.api import open as db_open, create_db, Kind
-from analysis_passes.Define_Defineby import *
+from pathlib import Path
+
+from antlr4 import *
+
+from gen.javaLabeled.JavaLexer import JavaLexer
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+
+from ..oudb.models import *
+from ..oudb.api import open as db_open, create_db, Kind
+from ..oudb.fill import main
+from ..analysis_passes.define_defineby import *
 
 
 class ModifyListener(JavaParserLabeledListener):
@@ -104,7 +113,7 @@ def readFile():
                 filename.append(file)
                 listOfFiles.append(os.path.join(dirpath, file))
 
-    db = db_open(r"E:\uni\compiler\OpenUnderstand\database.db")
+    db = db_open(r"E:\uni\compiler\OpenUnderstand\database.oudb")
 
     types = [JavaLexer.ADD_ASSIGN, JavaLexer.SUB_ASSIGN, JavaLexer.MUL_ASSIGN, JavaLexer.DIV_ASSIGN,
              JavaLexer.AND_ASSIGN, JavaLexer.OR_ASSIGN, JavaLexer.XOR_ASSIGN, JavaLexer.MOD_ASSIGN,
