@@ -14,7 +14,7 @@ Students must form groups of up to *four* persons. Each group develops analysis 
 **Note 2:** The computation of each source code metric must be implemented as a standalone Python module (single .py file) in the `openuderstand.metrics` package. Consider the existing modules in the packages as examples.
 
 
-**Note 3:** Each module should be follows [PEP -- Style Guide for Python Code](https://www.python.org/dev/peps/pep-0008/) and document well.
+**Note 3:** Each module should follow [PEP -- Style Guide for Python Code](https://www.python.org/dev/peps/pep-0008/) and document well.
 
 **Note 4:** Each group is asked to review the code of at least one other group in the classroom. Your final project score is computed considering the score given by referees to each member of the team.
 
