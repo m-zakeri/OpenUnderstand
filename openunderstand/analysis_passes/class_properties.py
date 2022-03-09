@@ -1,6 +1,12 @@
+"""
+The helper module for couple_coupleby.py, create_createby.py, declare_declareby.py modules
 
-__author__ = 'Shaghayegh Mobasher , Setayesh kouloubandi ,Parisa Alaie'
-__version__ = '0.1.0'
+Todo: Must be document well
+"""
+
+
+__author__ = 'Shaghayegh Mobasher , Setayesh kouloubandi ,Parisa Alaie, Zakeri'
+__version__ = '0.1.1'
 
 
 from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
