@@ -2,6 +2,9 @@
 
 OpenUnderstand supports the following source code metrics for the Java programming language.
 
+
+_Table 3. OpenUnderstand source code metrics for Java_
+
 | API name                      | Friendly name                            | Description                                                                                                            |
 | :---------------------------- |:-----------------------------------------|:-----------------------------------------------------------------------------------------------------------------------|
 | AvgCyclomatic                 | Average Cyclomatic Complexity            | Average  cyclomatic complexity for all nested functions or methods.                                                    |
