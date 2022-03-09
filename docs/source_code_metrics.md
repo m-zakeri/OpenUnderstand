@@ -1,5 +1,7 @@
 # Source code metrics
 
+Source code metrics are essential components in the software measurement process. They are extracted from the source code of the software, and their values allow us to reach conclusions about the quality attributes measured by the metrics.
+
 OpenUnderstand supports the following source code metrics for the Java programming language.
 
 
