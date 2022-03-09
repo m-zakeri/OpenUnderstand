@@ -36,6 +36,7 @@ nav:
     - Home: index.md
     - Entity kinds: entity_kinds.md
     - References kinds: reference_kinds.md
+    - Source code metrics: source_code_metrics.md
     - Benchmarks: benchmarks.md
     - Development proposals:
         - Core entity-reference development: proposals/core_entity_reference_development.md
