@@ -1,11 +1,21 @@
+"""
+
+
+"""
+
+
+import os
+from antlr4 import *
+from pathlib import Path
+
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from antlr4 import *
+
 from gen.javaLabeled.JavaLexer import JavaLexer
-from pathlib import Path
-from db.models import *
-import os
-from db.api import open as db_open, create_db, Kind
+
+from ..db.models import *
+
+from ..db.api import open as db_open, create_db, Kind
 
 
 class DefineListener(JavaParserLabeledListener):

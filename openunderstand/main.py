@@ -3,7 +3,7 @@ from db.fill import main
 
 
 from antlr4 import *
-from analysis_passes.implementCouple_implementbyCoupleby import ImplementCoupleAndImplementByCoupleBy
+from analysis_passes.couple_coupleby import ImplementCoupleAndImplementByCoupleBy
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaLexer import JavaLexer
 from db.models import KindModel, EntityModel, ReferenceModel
