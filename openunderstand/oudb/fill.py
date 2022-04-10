@@ -1,8 +1,8 @@
 import peewee
 import unittest
 
-from ..oudb.models import KindModel, EntityModel, ReferenceModel
-from ..oudb.utils import get_entity_object_from_understand
+from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel
+from openunderstand.oudb.utils import get_entity_object_from_understand
 
 
 def append_java_ent_kinds():

@@ -18,9 +18,9 @@ class Project():
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     p = Project()
-    # create_db("G:\Dev\OpenUnderstand\database.oudb", project_dir="G:\Dev\OpenUnderstand\benchmark\calculator_app")
-    # main()
-    db = db_open("G:\Dev\OpenUnderstand\database.oudb")
+    create_db("H:\Developement\PythonProjects\CompilerProject\OpenUnderstand\OpenUnderstand\database.db", project_dir="H:\Developement\PythonProjects\OpenUnderstand\OpenUnderstand\\benchmark")
+    main()
+    db = db_open("H:\Developement\PythonProjects\CompilerProject\OpenUnderstand\OpenUnderstand\database.db")
     ent = db.lookup("Admin", "method")[0]
     """
     Use name Admin.java(3) Java Use
