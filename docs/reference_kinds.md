@@ -17,7 +17,7 @@ _Table 2. Java references kinds details_
 |     Java Extend Couple/Coupleby     Java Extend Couple/Coupleby External     Java Extend Couple/Coupleby Implicit     Java Extend Couple/Coupleby Implicit External    |     Indicates one class or interface   extends another. This extends     relation is used when the extended   class is in a file that is part of the project. If the extended class was   found in a classpath .jar file, the relation is Java Extend Couple External.   If the Indicates class implicitly extends the java.lang.Object class, the   relation is Java Extend Couple Implicit.    |  [Java Extend Couple and Extendby Coupleby ](#java-extend-couple-and-extendby-coupleby)                                                                              |
 |     Java Implement Couple/Coupleby                                                                                                                                     |     Indicates a class implements an   interface.                                                                                                                                                                                                                                                                                                                                                 |   [Java Implement Couple and Implementby Coupleby ](#java-implement-couple-and-implementby-coupleby)                                                  |
 |     Java Create/Createby                                                                                                                                               |     Indicates that an instance of a class is created (“new” operator)   in a scope.                                                                                                                                                                                                                                                                                                              |   [Java Create and Createby](#java-create-and-createby)                                                                                   |
-|     Java Declare/Declarein                                                                                                                                             |     Todo:                                                                                                                                                                                                                                                                                                                                                                                        |      [Java Declare and Declarein](#java-declare-and-declarein)                                                                                                                                                                     |
+|     Java Declare/Declarein                                                                                                                                             |     Indicates that a package is declared in a file or in a (parent) package.                                                                                                                                                                                                                                                                                                                                                                                        |      [Java Declare and Declarein](#java-declare-and-declarein)                                                                                                                                                                     |
 |     Java Define/Definein                                                                                                                                               |     Indicates that an entity is defined in a scope.                                                                                                                                                                                                                                                                                                                                              |   [Java Define and Definein](#java-define-and-definein)                                                                                                          |
 |     Java Define/Definein Implicit                                                                                                                                      |     Todo:                                                                                                                                                                                                                                                                                                                                                                                        |     [Java Define and Definein Implicit](#java-define-and-definein)                                                                           |
 |     Java DotRef/DotRefby                                                                                                                                               |     Indicates that an entity name was used to the left of a “.” in a     qualified name.                                                                                                                                                                                                                                                                                                         |   [Java DotRef and DotRefby](#java-dotref-and-dotrefby)  |
@@ -228,7 +228,28 @@ class c2 {
 
 
 ### Java Declare and Declarein
-- [ ]  **Todo:** add a short definition with and an example code and corresponding table for this reference kind
+
+Indicates that a package is declared in a file or in a (parent) package.
+
+![Declare Declarein ref kinds example](./figs/Declare-Declarein-example.png)
+
+```java
+package technology.tabula.debug;
+
+import java.awt.BasicStroke;
+import java.awt.Color;
+
+class Debug {
+...
+}
+
+```
+
+| Reference kind   string  | Entity   performing references | Entity being   referenced |
+|--------------------------|--------------------------------|---------------------------|
+| Java Declare             | `Debug.java`                   | `technology`, `technology.tabula.debug`            |
+| Java Declarein           | `technology`, `technology.tabula.debug`                 | `Debug.java`              |
+
 
 
 ### Java Define and Definein
