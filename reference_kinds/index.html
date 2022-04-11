@@ -987,7 +987,7 @@
 </tr>
 <tr>
 <td>Java Declare/Declarein</td>
-<td>Todo:</td>
+<td>Indicates that a package is declared in a file or in a (parent) package.</td>
 <td><a href="#java-declare-and-declarein">Java Declare and Declarein</a></td>
 </tr>
 <tr>
@@ -1402,9 +1402,39 @@ class c2 {
 </tbody>
 </table>
 <h3 id="java-declare-and-declarein">Java Declare and Declarein</h3>
-<ul>
-<li>[ ]  <strong>Todo:</strong> add a short definition with and an example code and corresponding table for this reference kind</li>
-</ul>
+<p>Indicates that a package is declared in a file or in a (parent) package.</p>
+<p><img alt="Declare Declarein ref kinds example" src="../figs/Declare-Declarein-example.png" /></p>
+<pre><code class="language-java">package technology.tabula.debug;
+
+import java.awt.BasicStroke;
+import java.awt.Color;
+
+class Debug {
+...
+}
+
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Reference kind   string</th>
+<th>Entity   performing references</th>
+<th>Entity being   referenced</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Java Declare</td>
+<td><code>Debug.java</code></td>
+<td><code>technology</code>, <code>technology.tabula.debug</code></td>
+</tr>
+<tr>
+<td>Java Declarein</td>
+<td><code>technology</code>, <code>technology.tabula.debug</code></td>
+<td><code>Debug.java</code></td>
+</tr>
+</tbody>
+</table>
 <h3 id="java-define-and-definein">Java Define and Definein</h3>
 <p>Indicates that an entity is defined in a scope.</p>
 <pre><code class="language-java">//Example Define
