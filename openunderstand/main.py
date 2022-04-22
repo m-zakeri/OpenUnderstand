@@ -209,7 +209,7 @@ if __name__ == '__main__':
     db = db_open("../benchmark2_database.db")
 
     # path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
-    path = "C:/Users/98910/university/Term6/Courses/Compiler/Project/Compiler_OpneUnderstand/OpenUnderstand-8b69f877f175bf4ccd6c58ec3601be655157d8ca/benchmark/myJavaTest"
+    path = "C:/Users/98910/university/Term6/Courses/Compiler/Project/Compiler_OpneUnderstand/OpenUnderstand-8b69f877f175bf4ccd6c58ec3601be655157d8ca/benchmark/myJavaTest/"
     files = p.getListOfFiles(path)
     ########## AGE KHASTID YEK FILE RO RUN KONID:
     # files = ["../../Java codes/javaCoupling.java"]
