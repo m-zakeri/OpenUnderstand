@@ -1,13 +1,13 @@
 """
 Open Understand main driver
-to create project parse tree, analyze project, and create symbol table oudb
+to create project parse tree, analyze project, and create symbol table db
 It is the same Understand und command line tool
 
 """
 from pprint import pprint
 
-from oudb.api import open as db_open, create_db, Kind
-from oudb.fill import main
+from db.api import open as db_open, create_db, Kind
+from db.fill import main
 
 
 class Project():
@@ -18,9 +18,9 @@ class Project():
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     p = Project()
-    create_db("H:\Developement\PythonProjects\CompilerProject\OpenUnderstand\OpenUnderstand\database.db", project_dir="H:\Developement\PythonProjects\OpenUnderstand\OpenUnderstand\\benchmark")
-    main()
-    db = db_open("H:\Developement\PythonProjects\CompilerProject\OpenUnderstand\OpenUnderstand\database.db")
+    # create_db("G:\Dev\OpenUnderstand\database.db", project_dir="G:\Dev\OpenUnderstand\benchmark\calculator_app")
+    # main()
+    db = db_open("G:\Dev\OpenUnderstand\database.db")
     ent = db.lookup("Admin", "method")[0]
     """
     Use name Admin.java(3) Java Use

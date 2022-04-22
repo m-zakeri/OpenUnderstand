@@ -1,0 +1,14 @@
+/nbproject/private/
+/target/
+/javadoc/
+
+# Eclipse files #
+/.classpath
+/.project
+/.settings
+
+# Intellij Idea
+.idea
+*.iml
+*.ipr
+*.iws

@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.1" xml:lang="en-US">
+  <compounddef id="Main_8java" kind="file" language="Java">
+    <compoundname>Main.java</compoundname>
+    <innerclass refid="classcom_1_1calculator_1_1app_1_1init_1_1Main" prot="public">com::calculator::app::init::Main</innerclass>
+    <innernamespace refid="namespacecom_1_1calculator_1_1app_1_1init">com::calculator::app::init</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1" refid="namespacecom_1_1calculator_1_1app_1_1init" refkind="compound"><highlight class="keyword">package<sp/></highlight><highlight class="normal">com.calculator.app.init;</highlight></codeline>
+<codeline lineno="2"><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="keyword">import</highlight><highlight class="normal"><sp/>com.calculator.app.method.integral;</highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="keyword">import</highlight><highlight class="normal"><sp/>com.calculator.app.method.fibonacci;</highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="keyword">import</highlight><highlight class="normal"><sp/>com.calculator.app.display.print_success;</highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="keyword">import</highlight><highlight class="normal"><sp/>com.calculator.app.display.println;</highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight></codeline>
+<codeline lineno="8" refid="classcom_1_1calculator_1_1app_1_1init_1_1Main" refkind="compound"><highlight class="normal"></highlight><highlight class="keyword">public</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classcom_1_1calculator_1_1app_1_1init_1_1Main" kindref="compound">Main</ref><sp/>{</highlight></codeline>
+<codeline lineno="9"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>at<sp/>this<sp/>point<sp/>we<sp/>are<sp/>going<sp/>to<sp/>check<sp/>the<sp/>changes<sp/>propagation<sp/>when<sp/>refactors<sp/>are<sp/>executes<sp/>on<sp/>this<sp/>projects</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="10" refid="classcom_1_1calculator_1_1app_1_1init_1_1Main_1a8b260eecbaabcef8473fd87ada040682" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">static</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classcom_1_1calculator_1_1app_1_1init_1_1Main_1a8b260eecbaabcef8473fd87ada040682" kindref="member">main</ref>(String[]<sp/>args)<sp/>{</highlight></codeline>
+<codeline lineno="11"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>whe<sp/>must<sp/>propagate<sp/>extract<sp/>class<sp/>when<sp/>splitting<sp/>integral<sp/>class</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="12"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classcom_1_1calculator_1_1app_1_1method_1_1integral" kindref="compound">integral</ref><sp/>in<sp/>=<sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classcom_1_1calculator_1_1app_1_1method_1_1integral" kindref="compound">integral</ref>();</highlight></codeline>
+<codeline lineno="13"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>in.<ref refid="classcom_1_1calculator_1_1app_1_1method_1_1integral_1a051ccb1d2fbf38706a4763cb74caafc2" kindref="member">calculate_x</ref>(1,<sp/>10,<sp/>1000);</highlight></codeline>
+<codeline lineno="14"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>we<sp/>must<sp/>propagate<sp/>print_success<sp/>class<sp/>termination<sp/>when<sp/>inline<sp/>the<sp/>class</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="15"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classcom_1_1calculator_1_1app_1_1display_1_1print__success" kindref="compound">print_success</ref>.<ref refid="classcom_1_1calculator_1_1app_1_1display_1_1print__success_1a861967d05bb884548daac43558a5b766" kindref="member">print_success_message</ref>();</highlight></codeline>
+<codeline lineno="16"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>in.<ref refid="classcom_1_1calculator_1_1app_1_1method_1_1integral_1a6c3e2fd07c478bdbb4b9bb98f3d7a477" kindref="member">calculate_pow_x_n</ref>(1,<sp/>10,<sp/>1000);</highlight></codeline>
+<codeline lineno="17"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classcom_1_1calculator_1_1app_1_1display_1_1println" kindref="compound">println</ref><sp/>pln<sp/>=<sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classcom_1_1calculator_1_1app_1_1display_1_1println" kindref="compound">println</ref>();</highlight></codeline>
+<codeline lineno="18"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="keywordtype">double</highlight><highlight class="normal"><sp/>value<sp/>=<sp/><ref refid="classcom_1_1calculator_1_1app_1_1method_1_1fibonacci" kindref="compound">fibonacci</ref>.<ref refid="classcom_1_1calculator_1_1app_1_1method_1_1fibonacci_1a7900254e2012fb179219f2801a528dc2" kindref="member">calculate_to_n</ref>(0,<sp/>1,<sp/>100);</highlight></codeline>
+<codeline lineno="19"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>pln.<ref refid="classcom_1_1calculator_1_1app_1_1display_1_1println_1aa58e31bae8b6ae8f19ac38fe947729ec" kindref="member">print</ref>(</highlight><highlight class="stringliteral">&quot;the<sp/>value<sp/>of<sp/>fibonacci<sp/>is<sp/>:&quot;</highlight><highlight class="normal">,<sp/>String.valueOf(value));</highlight></codeline>
+<codeline lineno="20"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>we<sp/>must<sp/>make<sp/>sure<sp/>print_success<sp/>is<sp/>working<sp/>when<sp/>inline-class<sp/>terminates<sp/>print_success<sp/>class</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="21"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>pln.<ref refid="classcom_1_1calculator_1_1app_1_1display_1_1println_1a0d34406ad5d7127fd4d376ed66f3e27b" kindref="member">print_success</ref>();</highlight></codeline>
+<codeline lineno="22"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="23"><highlight class="normal">}</highlight></codeline>
+    </programlisting>
+    <location file="src/com/calculator/app/init/Main.java"/>
+  </compounddef>
+</doxygen>

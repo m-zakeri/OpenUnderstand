@@ -1,0 +1,9 @@
+digraph "fibonacci"
+{
+ // LATEX_PDF_SIZE
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  Node1 [label="{fibonacci\n||+ static double calculate\l_to_n(double x0, double\l x1, int n)\l}",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
+  Node2 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",arrowtail="onormal",fontname="Helvetica"];
+  Node2 [label="{basic_operation\n||+ static double multiplication\l(double a, double b)\l+ static int multiplication\l(int a, int b)\l+ static double pow(double\l a, double power)\l+ static double sum(double\l a, double b)\l+ static int sum(int\l a, int b)\l}",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classcom_1_1calculator_1_1app_1_1method_1_1basic__operation.html",tooltip=" "];
+}
