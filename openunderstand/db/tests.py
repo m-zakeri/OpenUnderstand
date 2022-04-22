@@ -5,7 +5,7 @@ try:
 except ImportError:
     print("Can not import understand")
 
-db = und.open("C:/Users/98910/university/Term6/Courses/Compiler/Project/Compiler_OpneUnderstand/OpenUnderstand-8b69f877f175bf4ccd6c58ec3601be655157d8ca/benchmark/jfreechart/jfreechart.udb")
+db = und.open("C:/Users/98910/university/Term6/Courses/Compiler/Project/Compiler_OpneUnderstand/OpenUnderstand-8b69f877f175bf4ccd6c58ec3601be655157d8ca/benchmark/myJavaTest/myJavaTest.udb")
 
 # ent = db.lookup("Admin", "method")[0]
 # print(ent, ent.simplename())
@@ -17,7 +17,7 @@ db = und.open("C:/Users/98910/university/Term6/Courses/Compiler/Project/Compiler
 for ent in db.ents():
     for ref in ent.refs():
 
-        if ref.kindname() == "Declare": # and ref.file().name() == "printLog.java":
+        if ref.kindname() == "Cast": # and ref.file().name() == "printLog.java":
             print(f"ent name: {ent.name()}, ent longname: {ent.longname()}, \n"
                   f"ent parent: {ent.parent()}, ent kind: {ent.kind()}, ent value: {ent.value()},\n"
                   f"ent type: {ent.type()}, ent contents: {ent.contents()}")
