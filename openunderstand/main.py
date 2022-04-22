@@ -10,6 +10,7 @@ from db.models import KindModel, EntityModel, ReferenceModel
 from analysis_passes.create_createby import CreateAndCreateBy
 from analysis_passes.declare_declarein import DeclareAndDeclareinListener
 from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
+from analysis_passes.Cast_CastBy import CastAndCastBy
 
 import os
 from fnmatch import fnmatch
@@ -89,6 +90,18 @@ class Project():
                                                          _column=ref_dict["col"], _ent=ent, _scope=scope)
             implementBy_ref = ReferenceModel.get_or_create(_kind=189, _file=file_ent, _line=ref_dict["line"],
                                                            _column=ref_dict["col"], _ent=scope, _scope=ent)
+
+    def addCastorCastByReferences(self,ref_dicts , file_ent, file_address):
+        for ref_dict in ref_dicts:
+            scope = EntityModel.get_or_create(_kind = ""
+                                              ,_parent = "" ,
+                                              _name ="",
+                                              _longname= "" ,
+                                              _value ="" ,
+                                              _type="" ,
+                                              _contents="")
+
+
 
     def addCreateRefs(self, ref_dicts, file_ent, file_address):
         for ref_dict in ref_dicts:
@@ -196,7 +209,7 @@ if __name__ == '__main__':
     db = db_open("../benchmark2_database.db")
 
     # path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
-    path = "C:/Users/98910/university/Term6/Courses/Compiler/Project/Compiler_OpneUnderstand/OpenUnderstand-8b69f877f175bf4ccd6c58ec3601be655157d8ca/benchmark/calculator_app"
+    path = "C:/Users/98910/university/Term6/Courses/Compiler/Project/Compiler_OpneUnderstand/OpenUnderstand-8b69f877f175bf4ccd6c58ec3601be655157d8ca/benchmark/myJavaTest"
     files = p.getListOfFiles(path)
     ########## AGE KHASTID YEK FILE RO RUN KONID:
     # files = ["../../Java codes/javaCoupling.java"]
@@ -232,3 +245,13 @@ if __name__ == '__main__':
             p.addDeclareRefs(listener.declare, file_ent)
         except Exception as e:
             print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
+
+        try:
+            #cast
+            listener = CastAndCastBy()
+            listener.cast = []
+            p.Walk(listener , tree)
+            p.addCastorCastByReferences(listener.cast , file_ent , file_address)
+        except Exception as e:
+            print("An Error occurred for reference cast in file :" + file_address +"\n" + str(e))
+
