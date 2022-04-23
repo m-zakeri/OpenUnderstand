@@ -251,6 +251,10 @@ if __name__ == '__main__':
         listener = implementListener(classes)
         p.Walk(listener, tree)
 
+
         listener = CastAndCastBy(classes)
+        listener.castedTo = []
+        listener.casted = []
+        listener.ref = []
         p.Walk(listener, tree)
         p.addCastorCastByReferences(listener.cast , file_ent , file_address)

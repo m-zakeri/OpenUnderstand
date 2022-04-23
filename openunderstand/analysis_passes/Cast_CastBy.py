@@ -18,6 +18,7 @@ class ClassEntities:
 
 class implementListener(JavaParserLabeledListener):
     classes = []
+
     def __init__(self , classes):
         self.classes = classes
 
@@ -36,6 +37,10 @@ class implementListener(JavaParserLabeledListener):
 
 class CastAndCastBy(JavaParserLabeledListener):
     classes = []
+    castedTo = []
+    casted = []
+    ref = []
+
     def __init__(self , classes):
         self.classes = classes
 
@@ -49,6 +54,10 @@ class CastAndCastBy(JavaParserLabeledListener):
         name = ctx.typeType().getText()
         scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
         [line, col] = str(ctx.start).split(",")[3].split(":")  # line, column
+
+        self.ref.append({"line":line, "col":col})
+        print(self.ref)
+
         if (len(scope_parents) >= 2):
             parent = scope_parents[-2]
         else:
@@ -56,20 +65,16 @@ class CastAndCastBy(JavaParserLabeledListener):
         print(name)
         for ent in self.classes:
             if(ent.name == name):
-                print(ent.parent)
-                print("name : " + ent.name)
-                print("Longname : "+ent.longname)
-                print("Kind : "+ent.kind)
-                print("Content : "+ ent.content)
+                self.castedTo.append({"name":name, "longname":ent.longname , "parent":ent.parent ,
+                                      "kind" : ent.kind , "content":ent.content , "modifier" :ent.modifiers})
                 print(ent.modifiers)
             if(parent is not None):
                 if(ent.name == parent):
-                    print(ent.parent)
-                    print("name : " + ent.name)
-                    print("Longname : " + ent.longname)
-                    print("Kind : " + ent.kind)
-                    print("Content : " + ent.content)
-                    print(ent.modifiers)
+                    self.casted.append({"name": name, "longname": ent.longname, "parent": ent.parent,
+                                          "kind": ent.kind, "content": ent.content, "modifier": ent.modifiers})
+
+        print(self.casted)
+        print(self.castedTo)
     # cast = []
     # name = ""
     # @staticmethod
