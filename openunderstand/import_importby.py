@@ -45,7 +45,7 @@ class Project:
         )
         return parent_entity
 
-    def importing_entity_factory(self, i):
+    def imported_entity_factory(self, i):
         if i['is_built_in']:
             imported_entity, _ = EntityModel.get_or_create(
                 _kind=KindModel.get_or_none(_name="Java Unknown Class Type Member")._id,
@@ -160,7 +160,7 @@ def main():
         walker.walk(listener, tree)
 
         for i in listener.repository:
-            imported_entity = p.importing_entity_factory(i)
+            imported_entity = p.imported_entity_factory(i)
             add_references(importing_entity, imported_entity, i)
 
 
