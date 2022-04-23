@@ -93,23 +93,28 @@ class Project():
 
     def addCastorCastByReferences(self,cast , file_ent, file_address):
         for ent in cast:
-            cast_To = EntityModel.get_or_create(_kind = self.findKindWithKeywords(ent["kind"], ent["modifier"]),
-                                              _name = ent["name"],
-                                              _parent = ent["parent"] if ent["parent"] is not None else file_ent,
-                                              _longname = ent["longname"],
-                                              _contents = ent["content"]
-                                              )[0]
-            cast =  EntityModel.get_or_create(_kind = self.findKindWithKeywords(ent["p_kind"], ent["p_modifier"]),
-                                              _name = ent["p_name"],
-                                              _parent = ent["p_parent"] if ent["p_parent"] is not None else file_ent,
-                                              _longname = ent["p_longname"],
-                                              _contents = ent["p_content"]
-                                              )[0]
+            kind = self.findKindWithKeywords(ent["kind"], ent["modifier"])
+            p_kind = self.findKindWithKeywords(ent["p_kind"], ent["p_modifier"])
+            if(kind and p_kind):
+                cast_To = EntityModel.get_or_create(_kind = self.findKindWithKeywords(ent["kind"], ent["modifier"]),
+                                                  _name = ent["name"],
+                                                  _parent = ent["parent"] if ent["parent"] is not None else file_ent,
+                                                  _longname = ent["longname"],
+                                                  _contents = ent["content"]
+                                                  )[0]
 
-            cast_ref = ReferenceModel.get_or_create(_kind=174, _file=file_ent, _line=ent["line"],
-                                                         _column=ent["col"], _ent=cast_To, _scope=cast)
-            castBy_ref = ReferenceModel.get_or_create(_kind=175, _file=file_ent, _line=ent["line"],
-                                                           _column=ent["col"], _ent=cast, _scope=cast_To)
+                print(p_kind)
+                cast =  EntityModel.get_or_create(_kind = self.findKindWithKeywords(ent["p_kind"], ent["p_modifier"]),
+                                                  _name = ent["p_name"],
+                                                  _parent = ent["p_parent"] if ent["p_parent"] is not None else file_ent,
+                                                  _longname = ent["p_longname"],
+                                                  _contents = ent["p_content"]
+                                                  )[0]
+
+                cast_ref = ReferenceModel.get_or_create(_kind=174, _file=file_ent, _line=ent["line"],
+                                                             _column=ent["col"], _ent=cast_To, _scope=cast)
+                castBy_ref = ReferenceModel.get_or_create(_kind=175, _file=file_ent, _line=ent["line"],
+                                                               _column=ent["col"], _ent=cast, _scope=cast_To)
 
 
     def addCreateRefs(self, ref_dicts, file_ent, file_address):
@@ -218,10 +223,24 @@ if __name__ == '__main__':
     db = db_open("../benchmark2_database.db")
 
     # path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
-    path = "C:/Users/98910/university/Term6/Courses/Compiler/Project/Compiler_OpneUnderstand/OpenUnderstand-8b69f877f175bf4ccd6c58ec3601be655157d8ca/benchmark/jfreechart"
+    path = "C:/Users/98910/university/Term6/Courses/Compiler/Project/Compiler_OpneUnderstand/OpenUnderstand-8b69f877f175bf4ccd6c58ec3601be655157d8ca/benchmark/myJavaTest"
     files = p.getListOfFiles(path)
     ########## AGE KHASTID YEK FILE RO RUN KONID:
     # files = ["../../Java codes/javaCoupling.java"]
+
+    classes = [] # for cast and cast by
+    for file_address in files:
+        try:
+            file_ent = p.getFileEntity(file_address)
+            tree = p.Parse(file_address)
+        except Exception as e:
+            print("An Error occurred in file:" + file_address + "\n" + str(e))
+            continue
+        try:
+            listener = implementListener(classes)
+            p.Walk(listener, tree)
+        except Exception as e:
+            print("An Error occurred in file:" + file_address + "\n" + str(e))
 
     for file_address in files:
         try:
@@ -258,11 +277,6 @@ if __name__ == '__main__':
 
         try:
             # cast
-            classes =[]
-            listener = implementListener(classes)
-            p.Walk(listener, tree)
-
-
             listener = CastAndCastBy(classes)
             listener.cast = []
             p.Walk(listener, tree)
