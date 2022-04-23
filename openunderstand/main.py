@@ -1,3 +1,4 @@
+from analysis_passes.Contain_ContainBy import ContainAndContainBy
 from db.api import open as db_open, create_db
 from db.fill import main
 
@@ -283,3 +284,11 @@ if __name__ == '__main__':
             p.addCastorCastByReferences(listener.cast , file_ent , file_address)
         except Exception as e:
             print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
+
+        try:
+            #contain
+            listener = ContainAndContainBy()
+            p.Walk(listener,tree)
+        except Exception as e:
+            print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
+

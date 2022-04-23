@@ -17,7 +17,7 @@ db = und.open("C:/Users/98910/university/Term6/Courses/Compiler/Project/Compiler
 for ent in db.ents():
     for ref in ent.refs():
 
-        if ref.kindname() == "Cast": # and ref.file().name() == "printLog.java":
+        if ref.kindname() == "Contain": # and ref.file().name() == "printLog.java":
             print(f"ent name: {ent.name()}, ent longname: {ent.longname()}, \n"
                   f"ent parent: {ent.parent()}, ent kind: {ent.kind()}, ent value: {ent.value()},\n"
                   f"ent type: {ent.type()}, ent contents: {ent.contents()}")
