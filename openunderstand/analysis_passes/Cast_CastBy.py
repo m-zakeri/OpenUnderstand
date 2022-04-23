@@ -6,7 +6,8 @@ from db.models import KindModel, EntityModel, ReferenceModel
 from db.fill import main
 
 class ClassEntities:
-    def __init__(self,name, parent , kind , content , longname):
+    def __init__(self,name, parent , kind , content , longname  , modifiers):
+        self.modifiers = modifiers
         self.name = name
         self.parent = parent
         self.kind = kind
@@ -29,7 +30,8 @@ class implementListener(JavaParserLabeledListener):
             scope_longname = ".".join(scope_parents)
 
         EntityClass = ClassEntities(name, scope_parents[-2] if len(scope_parents) > 2 else None, "Class", ctx.getText(),
-                                    scope_longname)
+                                    scope_longname , class_properties.ClassPropertiesListener.findClassOrInterfaceModifiers(
+                                                   ctx))
         self.classes.append(EntityClass)
 
 class CastAndCastBy(JavaParserLabeledListener):
@@ -46,6 +48,7 @@ class CastAndCastBy(JavaParserLabeledListener):
     def enterExpression5(self, ctx:JavaParserLabeled.Expression5Context):
         name = ctx.typeType().getText()
         scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
+        [line, col] = str(ctx.start).split(",")[3].split(":")  # line, column
         if (len(scope_parents) >= 2):
             parent = scope_parents[-2]
         else:
@@ -58,6 +61,7 @@ class CastAndCastBy(JavaParserLabeledListener):
                 print("Longname : "+ent.longname)
                 print("Kind : "+ent.kind)
                 print("Content : "+ ent.content)
+                print(ent.modifiers)
             if(parent is not None):
                 if(ent.name == parent):
                     print(ent.parent)
@@ -65,6 +69,7 @@ class CastAndCastBy(JavaParserLabeledListener):
                     print("Longname : " + ent.longname)
                     print("Kind : " + ent.kind)
                     print("Content : " + ent.content)
+                    print(ent.modifiers)
     # cast = []
     # name = ""
     # @staticmethod
