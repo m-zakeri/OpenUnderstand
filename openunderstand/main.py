@@ -218,7 +218,7 @@ if __name__ == '__main__':
     db = db_open("../benchmark2_database.db")
 
     # path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
-    path = "C:/Users/98910/university/Term6/Courses/Compiler/Project/Compiler_OpneUnderstand/OpenUnderstand-8b69f877f175bf4ccd6c58ec3601be655157d8ca/benchmark/myJavaTest"
+    path = "C:/Users/98910/university/Term6/Courses/Compiler/Project/Compiler_OpneUnderstand/OpenUnderstand-8b69f877f175bf4ccd6c58ec3601be655157d8ca/benchmark/jfreechart"
     files = p.getListOfFiles(path)
     ########## AGE KHASTID YEK FILE RO RUN KONID:
     # files = ["../../Java codes/javaCoupling.java"]
@@ -255,13 +255,17 @@ if __name__ == '__main__':
         except Exception as e:
             print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
 
+
+        try:
             # cast
-        classes =[]
-        listener = implementListener(classes)
-        p.Walk(listener, tree)
+            classes =[]
+            listener = implementListener(classes)
+            p.Walk(listener, tree)
 
 
-        listener = CastAndCastBy(classes)
-        listener.cast = []
-        p.Walk(listener, tree)
-        p.addCastorCastByReferences(listener.cast , file_ent , file_address)
+            listener = CastAndCastBy(classes)
+            listener.cast = []
+            p.Walk(listener, tree)
+            p.addCastorCastByReferences(listener.cast , file_ent , file_address)
+        except Exception as e:
+            print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))

@@ -53,6 +53,8 @@ class CastAndCastBy(JavaParserLabeledListener):
         scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
         [line, col] = str(ctx.start).split(",")[3].split(":")  # line, column
 
+        print("name : " + name)
+
         if (len(scope_parents) >= 2):
             parent = scope_parents[-2]
         else:
@@ -65,6 +67,8 @@ class CastAndCastBy(JavaParserLabeledListener):
                 c_kind = ent.kind
                 c_content = ent.content
                 c_modifiers = ent.modifiers
+
+        print("parent :" +parent)
 
         for ent in self.classes:
             if (parent is not None):
