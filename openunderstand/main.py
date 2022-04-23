@@ -91,16 +91,25 @@ class Project():
             implementBy_ref = ReferenceModel.get_or_create(_kind=189, _file=file_ent, _line=ref_dict["line"],
                                                            _column=ref_dict["col"], _ent=scope, _scope=ent)
 
-    def addCastorCastByReferences(self,ref_dicts , file_ent, file_address):
-        for ref_dict in ref_dicts:
-            scope = EntityModel.get_or_create(_kind = ""
-                                              ,_parent = "" ,
-                                              _name ="",
-                                              _longname= "" ,
-                                              _value ="" ,
-                                              _type="" ,
-                                              _contents="")
+    def addCastorCastByReferences(self,cast , file_ent, file_address):
+        for ent in cast:
+            cast_To = EntityModel.get_or_create(_kind = self.findKindWithKeywords(ent["kind"], ent["modifier"]),
+                                              _name = ent["name"],
+                                              _parent = ent["parent"] if ent["parent"] is not None else file_ent,
+                                              _longname = ent["longname"],
+                                              _contents = ent["content"]
+                                              )[0]
+            cast =  EntityModel.get_or_create(_kind = self.findKindWithKeywords(ent["p_kind"], ent["p_modifier"]),
+                                              _name = ent["p_name"],
+                                              _parent = ent["p_parent"] if ent["p_parent"] is not None else file_ent,
+                                              _longname = ent["p_longname"],
+                                              _contents = ent["p_content"]
+                                              )[0]
 
+            cast_ref = ReferenceModel.get_or_create(_kind=174, _file=file_ent, _line=ent["line"],
+                                                         _column=ent["col"], _ent=cast_To, _scope=cast)
+            castBy_ref = ReferenceModel.get_or_create(_kind=175, _file=file_ent, _line=ent["line"],
+                                                           _column=ent["col"], _ent=cast, _scope=cast_To)
 
 
     def addCreateRefs(self, ref_dicts, file_ent, file_address):
@@ -253,8 +262,6 @@ if __name__ == '__main__':
 
 
         listener = CastAndCastBy(classes)
-        listener.castedTo = []
-        listener.casted = []
-        listener.ref = []
+        listener.cast = []
         p.Walk(listener, tree)
         p.addCastorCastByReferences(listener.cast , file_ent , file_address)

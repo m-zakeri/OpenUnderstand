@@ -37,9 +37,7 @@ class implementListener(JavaParserLabeledListener):
 
 class CastAndCastBy(JavaParserLabeledListener):
     classes = []
-    castedTo = []
-    casted = []
-    ref = []
+    cast = []
 
     def __init__(self , classes):
         self.classes = classes
@@ -55,26 +53,35 @@ class CastAndCastBy(JavaParserLabeledListener):
         scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
         [line, col] = str(ctx.start).split(",")[3].split(":")  # line, column
 
-        self.ref.append({"line":line, "col":col})
-        print(self.ref)
-
         if (len(scope_parents) >= 2):
             parent = scope_parents[-2]
         else:
             parent = None
-        print(name)
         for ent in self.classes:
             if(ent.name == name):
-                self.castedTo.append({"name":name, "longname":ent.longname , "parent":ent.parent ,
-                                      "kind" : ent.kind , "content":ent.content , "modifier" :ent.modifiers})
-                print(ent.modifiers)
-            if(parent is not None):
-                if(ent.name == parent):
-                    self.casted.append({"name": name, "longname": ent.longname, "parent": ent.parent,
-                                          "kind": ent.kind, "content": ent.content, "modifier": ent.modifiers})
+                c_name = name
+                c_longname = ent.longname
+                c_parent = ent.parent
+                c_kind = ent.kind
+                c_content = ent.content
+                c_modifiers = ent.modifiers
 
-        print(self.casted)
-        print(self.castedTo)
+        for ent in self.classes:
+            if (parent is not None):
+                if (ent.name == parent):
+                    self.cast.append({"name": c_name,"longname":c_longname , "parent" : c_parent ,
+                                        "kind" : c_kind , "content" : c_content , "modifier" : c_modifiers,
+                                        "p_name": ent.name, "p_longname": ent.longname, "p_parent": ent.parent,
+                                        "p_kind": ent.kind, "p_content": ent.content, "p_modifier": ent.modifiers
+                                        ,"line":line, "col":col})
+            else :
+                self.cast.append({"name": c_name, "longname": c_longname, "parent": c_parent,
+                                    "kind": c_kind, "content": c_content, "modifier": c_modifiers,
+                                    "p_name": None, "p_longname": None, "p_parent": None,
+                                    "p_kind": None, "p_content": None, "p_modifier": None
+                                       , "line": line, "col": col})
+
+        print(self.cast)
     # cast = []
     # name = ""
     # @staticmethod
