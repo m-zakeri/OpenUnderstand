@@ -11,10 +11,34 @@ class ContainAndContainBy(JavaParserLabeledListener):
         print(ctx.qualifiedName().IDENTIFIER()[0])
 
     def enterClassDeclaration(self, ctx:JavaParserLabeled.ClassDeclarationContext):
+        name = ctx.IDENTIFIER().getText()
         print(ctx.IDENTIFIER().getText())
         [line, col] = str(ctx.start).split(",")[3].split(":")  # line, column
         col = col[:-1]
-        print("line : "+line)
-        print("col :" +col)
+        scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
+        if len(scope_parents) == 1:
+            scope_longname = scope_parents[0]
+        else:
+            scope_longname = ".".join(scope_parents)
+
+        parent = scope_parents[-2] if len(scope_parents) > 2 else None
+        kind ="Class"
+        modifiers = class_properties.ClassPropertiesListener.findClassOrInterfaceModifiers(
+            ctx)
+        content = ctx.getText()
+
+        self.contain.append({"name":name ,
+                             "longname" : scope_longname,
+                             "parent" : parent,
+                             "kind" : kind,
+                             "line" :line,
+                             "col" : col,
+                             "modifiers" : modifiers,
+                             "content":content
+                             })
+        print(self.contain)
+
+
+
 
 
