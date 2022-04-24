@@ -12,7 +12,14 @@ class ContainAndContainBy(JavaParserLabeledListener):
 
     def enterPackageDeclaration(self, ctx:JavaParserLabeled.PackageDeclarationContext):
         print(ctx.qualifiedName().IDENTIFIER()[0])
-        self.packageInfo.append({"name":ctx.qualifiedName().IDENTIFIER()[0]})
+        self.packageInfo.append({"name":ctx.qualifiedName().IDENTIFIER()[0],
+                                 "longname":ctx.qualifiedName().IDENTIFIER()[0],
+                                 "kind":"Package",
+                                 "contents" : "",
+                                 "parent" : None ,
+                                 "type" : None,
+                                 "value" : None
+                                 })
 
     def enterClassDeclaration(self, ctx:JavaParserLabeled.ClassDeclarationContext):
         name = ctx.IDENTIFIER().getText()
@@ -20,16 +27,22 @@ class ContainAndContainBy(JavaParserLabeledListener):
         [line, col] = str(ctx.start).split(",")[3].split(":")  # line, column
         col = col[:-1]
         scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
+
         if len(scope_parents) == 1:
             scope_longname = scope_parents[0]
         else:
             scope_longname = ".".join(scope_parents)
 
-
-        scope_longname = "."+ scope_longname
+        scope_longname = "." + scope_longname
         packageName = self.packageInfo[0]["name"]
         scope_longname = packageName.getText() + scope_longname
 
+        packageLongName = self.packageInfo[0]["longname"]
+        packageKind = self.packageInfo[0]["kind"]
+        packageContent = self.packageInfo[0]["contents"]
+        packageParent = self.packageInfo[0]["parent"]
+        packageType = self.packageInfo[0]["type"]
+        packageValue = self.packageInfo[0]["value"]
 
         parent = scope_parents[-2] if len(scope_parents) > 2 else None
         kind ="Class"
@@ -37,8 +50,16 @@ class ContainAndContainBy(JavaParserLabeledListener):
             ctx)
         content = ctx.getText()
 
+
+
         self.contain.append({
                              "package_name":packageName.getText(),
+                             "package_longname" :packageLongName.getText(),
+                             "package_kind" : packageKind,
+                             "package_content" : packageContent ,
+                             "package_parent" : packageParent,
+                             "package_type" : packageType ,
+                             "package_value" : packageValue,
                              "name":name ,
                              "longname" : scope_longname,
                              "parent" : parent,
@@ -46,11 +67,8 @@ class ContainAndContainBy(JavaParserLabeledListener):
                              "line" :line,
                              "col" : col,
                              "modifiers" : modifiers,
-                             "content":content
+                             "content":content,
+                             "type" : None ,
+                             "value" : None
                              })
         print(self.contain)
-
-
-
-
-

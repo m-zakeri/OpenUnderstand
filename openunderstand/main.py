@@ -118,6 +118,7 @@ class Project():
                                                                _column=ent["col"], _ent=cast, _scope=cast_To)
 
 
+
     def addCreateRefs(self, ref_dicts, file_ent, file_address):
         for ref_dict in ref_dicts:
             scope = EntityModel.get_or_create(_kind=self.findKindWithKeywords("Method", ref_dict["scopemodifiers"]),
@@ -288,6 +289,7 @@ if __name__ == '__main__':
         try:
             #contain
             listener = ContainAndContainBy()
+            listener.contain = []
             p.Walk(listener,tree)
         except Exception as e:
             print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
