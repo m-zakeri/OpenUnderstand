@@ -7,8 +7,12 @@ from db.fill import main
 
 class ContainAndContainBy(JavaParserLabeledListener):
     contain = []
+    packageInfo = []
+
+
     def enterPackageDeclaration(self, ctx:JavaParserLabeled.PackageDeclarationContext):
         print(ctx.qualifiedName().IDENTIFIER()[0])
+        self.packageInfo.append({"name":ctx.qualifiedName().IDENTIFIER()[0]})
 
     def enterClassDeclaration(self, ctx:JavaParserLabeled.ClassDeclarationContext):
         name = ctx.IDENTIFIER().getText()
@@ -21,13 +25,21 @@ class ContainAndContainBy(JavaParserLabeledListener):
         else:
             scope_longname = ".".join(scope_parents)
 
+
+        scope_longname = "."+ scope_longname
+        packageName = self.packageInfo[0]["name"]
+        scope_longname = packageName.getText() + scope_longname
+
+
         parent = scope_parents[-2] if len(scope_parents) > 2 else None
         kind ="Class"
         modifiers = class_properties.ClassPropertiesListener.findClassOrInterfaceModifiers(
             ctx)
         content = ctx.getText()
 
-        self.contain.append({"name":name ,
+        self.contain.append({
+                             "package_name":packageName.getText(),
+                             "name":name ,
                              "longname" : scope_longname,
                              "parent" : parent,
                              "kind" : kind,
