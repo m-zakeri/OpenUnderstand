@@ -18,7 +18,7 @@ from analysis_passes.couple_coupleby import ImplementCoupleAndImplementByCoupleB
 from analysis_passes.create_createby import CreateAndCreateBy
 from analysis_passes.declare_declarein import DeclareAndDeclareinListener
 from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
-
+from analysis_passes.import_importby import ImportListener
 
 class Project():
     tree = None
@@ -202,7 +202,7 @@ if __name__ == '__main__':
     db = db_open("../benchmark2_database.oudb")
 
     # path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
-    path = "E:/terme 10/Compiler/Project/OpenUnderstand/benchmark"
+    path = "E:/terme 10/Compiler/Project/OpenUnderstand/benchmark/calculator_app"
     files = p.getListOfFiles(path)
     ########## AGE KHASTID YEK FILE RO RUN KONID:
     # files = ["../../Java codes/javaCoupling.java"]
@@ -238,3 +238,9 @@ if __name__ == '__main__':
             p.addDeclareRefs(listener.declare, file_ent)
         except Exception as e:
             print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
+        try:
+            # import
+            listener = ImportListener()
+            p.Walk(listener, tree)
+        except Exception as e:
+            print("An Error occurred for reference import in file:" + file_address + "\n" + str(e))

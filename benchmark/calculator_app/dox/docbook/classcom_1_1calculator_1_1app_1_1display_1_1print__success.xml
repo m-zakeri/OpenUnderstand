@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_classcom_1_1calculator_1_1app_1_1display_1_1print__success" xml:lang="en-US">
+<title>print_success</title>
+<indexterm><primary>print_success</primary></indexterm>
+Collaboration diagram for print_success:<para>
+    <informalfigure>
+        <mediaobject>
+            <imageobject>
+                <imagedata width="50%" align="center" valign="middle" scalefit="0" fileref="classcom_1_1calculator_1_1app_1_1display_1_1print__success__coll__graph.png"></imagedata>
+            </imageobject>
+        </mediaobject>
+    </informalfigure>
+</para>
+<simplesect>
+    <title>Static Public Member Functions    </title>
+        <itemizedlist>
+            <listitem><para>static void <link linkend="_classcom_1_1calculator_1_1app_1_1display_1_1print__success_1a861967d05bb884548daac43558a5b766">print_success_message</link> ()</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Member Function Documentation</title>
+<anchor xml:id="_classcom_1_1calculator_1_1app_1_1display_1_1print__success_1a861967d05bb884548daac43558a5b766"/>    <section>
+    <title>print_success_message()</title>
+<indexterm><primary>print_success_message</primary><secondary>print_success</secondary></indexterm>
+<indexterm><primary>print_success</primary><secondary>print_success_message</secondary></indexterm>
+<para><computeroutput>static void print_success_message ( )<computeroutput>[static]</computeroutput></computeroutput></para>Here is the caller graph for this function:<para>
+    <informalfigure>
+        <mediaobject>
+            <imageobject>
+                <imagedata width="50%" align="center" valign="middle" scalefit="0" fileref="classcom_1_1calculator_1_1app_1_1display_1_1print__success_a861967d05bb884548daac43558a5b766_icgraph.png"></imagedata>
+            </imageobject>
+        </mediaobject>
+    </informalfigure>
+</para>
+</section>
+<para>
+The documentation for this class was generated from the following file:</para>
+src/com/calculator/app/display/<link linkend="_print__success_8java">print_success.java</link></section>
+</section>
