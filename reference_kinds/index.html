@@ -401,6 +401,19 @@
     Java Modify and Modifyby
   </a>
   
+    <nav class="md-nav" aria-label="Java Modify and Modifyby">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#modify-deref-partial-and-modifyby-deref-partial" class="md-nav__link">
+    Modify (Deref) Partial and Modifyby (Deref) Partial
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
         
           <li class="md-nav__item">
@@ -831,6 +844,19 @@
   <a href="#java-modify-and-modifyby" class="md-nav__link">
     Java Modify and Modifyby
   </a>
+  
+    <nav class="md-nav" aria-label="Java Modify and Modifyby">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#modify-deref-partial-and-modifyby-deref-partial" class="md-nav__link">
+    Modify (Deref) Partial and Modifyby (Deref) Partial
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
         
@@ -1582,6 +1608,50 @@ class class2 {
 <td>Java Modifyby</td>
 <td><code>i</code></td>
 <td><code>some_meth</code></td>
+</tr>
+</tbody>
+</table>
+<h4 id="modify-deref-partial-and-modifyby-deref-partial">Modify (Deref) Partial and Modifyby (Deref) Partial</h4>
+<p>This reference is like <code>Modify</code> and <code>Modifyby</code>. 
+But, it is used when an entity modifies some elements of a variable of collection type.</p>
+<pre><code class="language-java">public ProjectionProfile{
+  this.verticalProjection = new float[toFixed(areaHeight)];
+  this.horizontalProjection = new float[toFixed(areaWidth)];
+
+ private void addRectangle(Rectangle element) {
+        // calculate horizontal and vertical projection profiles
+        if (!area.contains(element)) {
+            return;
+        }
+
+        this.minCharHeight = (float) Math.min(this.minCharHeight, element.getHeight());
+        this.minCharWidth = (float) Math.min(this.minCharWidth, element.getWidth());
+
+        for (int k = toFixed(element.getLeft()); k &lt; toFixed(element.getRight()); k++) {
+            this.horizontalProjection[k - toFixed(areaLeft)] += element.getHeight();
+            this.maxHorizontalProjection = Math.max(this.maxHorizontalProjection, this.horizontalProjection[k - toFixed(areaLeft)]);
+        }
+    }     
+}
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>Reference kind   string</th>
+<th>Entity   performing references</th>
+<th>Entity being   referenced</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Java Modify Partial</td>
+<td><code>addRectangle</code></td>
+<td><code>horizontalProjection</code></td>
+</tr>
+<tr>
+<td>Java Modifyby  Partial</td>
+<td><code>horizontalProjection</code></td>
+<td><code>addRectangle</code></td>
 </tr>
 </tbody>
 </table>

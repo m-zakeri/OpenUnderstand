@@ -13,14 +13,14 @@
         <meta name="author" content="Morteza Zakeri, Ali Ayati, Saeed Parsa">
       
       
-        <link rel="canonical" href="https://m-zakeri.github.io/OpenUnderstand/proposals/core_entity_reference_development/">
+        <link rel="canonical" href="https://m-zakeri.github.io/OpenUnderstand/proposals/code_review_and_bug_fixing/">
       
       <link rel="icon" href="../../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.2.2, mkdocs-material-7.2.5">
     
     
       
-        <title>Core entity-reference development - OpenUnderstand Docs (v0.1.0dev)</title>
+        <title>Code review and bug fixing - OpenUnderstand Docs (v0.1.0dev)</title>
       
     
     
@@ -73,7 +73,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#core-entity-reference-development" class="md-skip">
+        <a href="#code-review-and-bug-fixing" class="md-skip">
           Skip to content
         </a>
       
@@ -103,7 +103,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Core entity-reference development
+              Code review and bug fixing
             
           </span>
         </div>
@@ -308,14 +308,12 @@
 
   
   
-    
-  
   
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6" type="checkbox" id="__nav_6" checked>
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6" type="checkbox" id="__nav_6" >
       
       <label class="md-nav__link" for="__nav_6">
         Development proposals
@@ -331,21 +329,11 @@
             
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../core_entity_reference_development/" class="md-nav__link">
         Core entity-reference development
       </a>
-      
     </li>
   
 
@@ -523,23 +511,23 @@
             <article class="md-content__inner md-typeset">
               
                 
-                  <a href="https://github.com/m-zakeri/OpenUnderstand/edit/master/docs/proposals/core_entity_reference_development.md" title="Edit this page" class="md-content__button md-icon">
+                  <a href="https://github.com/m-zakeri/OpenUnderstand/edit/master/docs/proposals/code_review_and_bug_fixing.md" title="Edit this page" class="md-content__button md-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
                   </a>
                 
                 
-                <h1 id="core-entity-reference-development">Core entity-reference development</h1>
-<p>Reading: 5 minutes, Last update: 10 March 2022</p>
+                <h1 id="code-review-and-bug-fixing">Code review and bug fixing</h1>
+<p>Reading: 5 minutes, Last update: 25 April 2022</p>
 <hr />
-<p>The following proposal has been initially prepared for the <strong>IUST Compiler</strong> and <strong>IUST Advanced Compiler</strong> courses in <em>Fall 2021</em> and <em>Winter/Spring 2022</em>.</p>
+<p>The following proposal has been initially prepared for the <strong>IUST Compiler</strong> course.
+In addition, the students who want to collaborate on the project later are expected to work on this proposal. </p>
 <p><strong>Note 1:</strong> Before reading this proposal ensure that you have read and understood the <a href="../..">OpenUnderstand white-paper</a>.</p>
-<p>Students must form groups of up to <em>four</em> persons. Each group develops analysis passes to find a subset of references kinds listed in <a href="../../reference_kinds/">Table 2</a> along with their corresponding entities. The exact list of reference kind will be assigned to each group subsequently. The entity kinds in <a href="../../entity_kinds/">Table 1</a> and references kinds in <a href="../../reference_kinds/">Table 2</a> <em>may</em> update during the semester for bug fixing purposes.</p>
-<p><strong>Note 2:</strong> Each pair of references kinds must be implemented as a standalone Python module (single .py file) in the <code>openuderstand.analysis_passes</code> package. Consider the existing modules in the packages as examples.</p>
-<p><strong>Note 3:</strong> Each python module should follow <a href="https://www.python.org/dev/peps/pep-0008/">PEP -- Style Guide for Python Code</a> and document well.</p>
-<p><strong>Note 4:</strong> Each group is asked to review the code of at least one other group in the classroom. Your final project score is computed considering the score given by referees to each member of the team.</p>
-<p><strong>Note 5:</strong> Before developing your codes ensure that you have pulled the latest version of the OpenUnderstand repository.
+<p>For the proposal of this phase, each referee group must review the code and fix the bugs of their assignee group in the previous phases, i.e., <a href="../core_entity_reference_development/">Phase I</a> and <a href="../core_source_code_metrics_development/">Phase II</a>.</p>
+<p>The results of bug fixing are delivered as pull requests on the same modules developed by the assignee groups in the previous phases.
+In cases where the assignee group has not developed a required module, the referee group is asked to implement the module.</p>
+<p><strong>Note 2:</strong> Before code review and bug fixing ensure that you have pulled the latest version of the OpenUnderstand repository.
 For final presentation, your code must pass all unit tests and have no conflicts with other modules. Unit tests are under development, and we will inform you as they are released.</p>
-<p>Keep in touch!</p>
+<p><strong>Note 3:</strong> Each python module should follow <a href="https://www.python.org/dev/peps/pep-0008/">PEP -- Style Guide for Python Code</a> and document well.</p>
 <hr />
                 
               
@@ -556,41 +544,6 @@ For final presentation, your code must pass all unit tests and have no conflicts
       
         
 <footer class="md-footer">
-  
-    <nav class="md-footer__inner md-grid" aria-label="Footer">
-      
-        
-        <a href="../../benchmarks/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Benchmarks" rel="prev">
-          <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
-          </div>
-          <div class="md-footer__title">
-            <div class="md-ellipsis">
-              <span class="md-footer__direction">
-                Previous
-              </span>
-              Benchmarks
-            </div>
-          </div>
-        </a>
-      
-      
-        
-        <a href="../core_source_code_metrics_development/" class="md-footer__link md-footer__link--next" aria-label="Next: Core source code metrics development" rel="next">
-          <div class="md-footer__title">
-            <div class="md-ellipsis">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              Core source code metrics development
-            </div>
-          </div>
-          <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
-          </div>
-        </a>
-      
-    </nav>
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
