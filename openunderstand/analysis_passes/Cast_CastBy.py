@@ -39,6 +39,13 @@ class CastAndCastBy(JavaParserLabeledListener):
     classes = []
     cast = []
 
+    c_name = ""
+    c_longname = ""
+    c_parent = ""
+    c_kind = ""
+    c_content = ""
+    c_modifiers = ""
+
     def __init__(self , classes):
         self.classes = classes
 
@@ -55,12 +62,12 @@ class CastAndCastBy(JavaParserLabeledListener):
         col = col[:-1]
         print("name : " + name)
 
-        if (len(scope_parents) >= 2):
+        if len(scope_parents) >= 2:
             parent = scope_parents[-2]
         else:
             parent = None
         for ent in self.classes:
-            if(ent.name == name):
+            if ent.name == name:
                 c_name = name
                 c_longname = ent.longname
                 c_parent = ent.parent
@@ -68,18 +75,18 @@ class CastAndCastBy(JavaParserLabeledListener):
                 c_content = ent.content
                 c_modifiers = ent.modifiers
 
-        print("parent :" +parent)
+        print("parent :" + parent)
 
         for ent in self.classes:
-            if(c_name):
-                if (parent is not None):
-                    if (ent.name == parent):
+            if c_name != "":
+                if parent is not None:
+                    if ent.name == parent:
                         self.cast.append({"name": c_name,"longname":c_longname , "parent" : c_parent ,
                                             "kind" : c_kind , "content" : c_content , "modifier" : c_modifiers,
                                             "p_name": ent.name, "p_longname": ent.longname, "p_parent": ent.parent,
                                             "p_kind": ent.kind, "p_content": ent.content, "p_modifier": ent.modifiers
                                             ,"line":line, "col":col})
-                else :
+                else:
                     self.cast.append({"name": c_name, "longname": c_longname, "parent": c_parent,
                                         "kind": c_kind, "content": c_content, "modifier": c_modifiers,
                                         "p_name": None, "p_longname": None, "p_parent": None,
