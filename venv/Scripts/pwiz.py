@@ -1,4 +1,4 @@
-#!E:\terme 10\Compiler\OpenUnderstand\venv\Scripts\python.exe
+#!E:\terme 10\Compiler\Project\OpenUnderstand\venv\Scripts\python.exe
 
 import datetime
 import sys

@@ -7,7 +7,8 @@ from oudb.fill import main as db_fill
 from oudb.api import create_db, open as db_open
 from oudb.models import KindModel, EntityModel, ReferenceModel
 
-DB_PATH = "../../database/calculator_app_import.oudb"
+
+DB_PATH = "../../database/calculator_app_modify.oudb"
 PROJECT_PATH = "../../benchmarks_projects/calculator_app"
 PROJECT_NAME = "Calculator App"
 
@@ -46,22 +47,12 @@ class Project:
         return parent_entity
 
     def imported_entity_factory(self, i):
-        if i['is_built_in']:
-            imported_entity, _ = EntityModel.get_or_create(
-                _kind=KindModel.get_or_none(_name="Java Unknown Class Type Member")._id,
-                _parent=None,
-                _name=i['imported_class_name'],
-                _longname=i['imported_class_longname'],
-            )
-        else:
-            parent_entity = self.get_parent(i['imported_class_file_name'])
-            imported_entity, _ = EntityModel.get_or_create(
-                _kind=KindModel.get_or_none(_name="Java Class Type Public Member")._id,
-                _parent=parent_entity._id,
-                _name=i['imported_class_name'],
-                _longname=i['imported_class_longname'],
-                _contents=get_class_body(parent_entity._longname),
-            )
+        imported_entity, _ = EntityModel.get_or_create(
+            _kind=KindModel.get_or_none(_name="Java Class Type Public Member")._id,
+            # _parent=None,
+            _name='modified_class_name',
+            _longname='modified_class_longname',
+        )
         return imported_entity
 
 
@@ -73,29 +64,22 @@ class ClassEntityListener(JavaParserLabeledListener):
         self.class_body = ctx.getText()
 
 
-class ImportListener(JavaParserLabeledListener):
+class ModifyListener(JavaParserLabeledListener):
     def __init__(self):
         self.repository = []
+        self.scopes = []
+        self.scope_info = []
 
-    def enterImportDeclaration(self, ctx: JavaParserLabeled.CompilationUnitContext):
-        imported_class_longname = ctx.qualifiedName().getText()
-        imported_class_name = imported_class_longname.split('.')[-1]
-
-        if imported_class_longname.split('.')[0] == 'java':
-            is_built_in = True
-            imported_class_file_name = None
-        else:
-            is_built_in = False
-            imported_class_file_name = imported_class_name + ".java"
-
-        line = ctx.children[0].symbol.line
-        col = ctx.children[0].symbol.column
+    def enterImportDeclaration(self, ctx: JavaParserLabeled.Expression6Context):
+        operations = ['+=', '-=', '/=', '*=', '&=', '|=', '^=', '%=']
+        line = None
+        col = None
+        if ctx.children[1].getText() in operations:
+            line_col = str(ctx.children[0].start).split(",")[3][:-1].split(':')
+            line = line_col[0]
+            col = line_col[1]
 
         self.repository.append({
-            'imported_class_name': imported_class_name,
-            'imported_class_longname': imported_class_longname,
-            'is_built_in': is_built_in,
-            'imported_class_file_name': imported_class_file_name,
             'line': line,
             'column': col,
         })
@@ -122,7 +106,7 @@ def add_java_file_entity(file_path, file_name):
 
 def add_references(importing_ent, imported_ent, ref_dict):
     ref, _ = ReferenceModel.get_or_create(
-        _kind=KindModel.get_or_none(_name="Java Import")._id,
+        _kind=KindModel.get_or_none(_name="Java Modify")._id,
         _file=importing_ent._id,
         _line=ref_dict['line'],
         _column=ref_dict['column'],
@@ -130,7 +114,7 @@ def add_references(importing_ent, imported_ent, ref_dict):
         _scope=importing_ent._id,
     )
     inverse_ref, _ = ReferenceModel.get_or_create(
-        _kind=KindModel.get_or_none(_name="Java Importby")._id,
+        _kind=KindModel.get_or_none(_name="Java Modifyby")._id,
         _file=importing_ent._id,
         _line=ref_dict['line'],
         _column=ref_dict['column'],
@@ -147,6 +131,7 @@ def get_class_body(file_path):
     return listener.class_body
 
 
+
 def main():
     p = Project(DB_PATH, PROJECT_PATH, PROJECT_NAME)
     p.init_db()
@@ -155,10 +140,9 @@ def main():
         importing_entity = add_java_file_entity(file_path, file_name)
 
         tree = get_parse_tree(file_path)
-        listener = ImportListener()
+        listener = ModifyListener()
         walker = ParseTreeWalker()
         walker.walk(listener, tree)
-
         for i in listener.repository:
             imported_entity = p.imported_entity_factory(i)
             add_references(importing_entity, imported_entity, i)

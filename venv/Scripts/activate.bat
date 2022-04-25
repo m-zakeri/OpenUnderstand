@@ -8,7 +8,7 @@ if defined _OLD_CODEPAGE (
     "%SystemRoot%\System32\chcp.com" 65001 > nul
 )
 
-set VIRTUAL_ENV=E:\terme 10\Compiler\OpenUnderstand\venv
+set VIRTUAL_ENV=E:\terme 10\Compiler\Project\OpenUnderstand\venv
 
 if not defined PROMPT set PROMPT=$P$G
 
