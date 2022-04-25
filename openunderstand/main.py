@@ -117,6 +117,25 @@ class Project():
                 castBy_ref = ReferenceModel.get_or_create(_kind=175, _file=file_ent, _line=ent["line"],
                                                                _column=ent["col"], _ent=cast, _scope=cast_To)
 
+    def addContainAndContainBy(self, contain , file_ent , file_address ):
+        for ent in contain:
+            kind = self.findKindWithKeywords(ent["kind"], ent["modifiers"])
+            p_kind = self.findKindWithKeywords(ent["package_kind"], [])
+            if kind is not None :
+                Contain_class = EntityModel.get_or_create(_kind = kind,
+                                                  _name = ent["name"],
+                                                  _parent = ent["parent"] if ent["parent"] is not None else file_ent,
+                                                  _longname = ent["longname"],
+                                                  _contents = ent["content"])[0]
+                Contain_package = EntityModel.get_or_create(_kind=ent["package_kind"],
+                                                          _name=ent["package_name"],
+                                                          _parent=ent["package_parent"] if ent["package_parent"] is not None else file_ent,
+                                                          _longname=ent["package_longname"],
+                                                          _contents=ent["package_content"])[0]
+                contain_ref = ReferenceModel.get_or_create(_kind=176, _file=file_ent, _line=ent["line"],
+                                                        _column=ent["col"], _ent=Contain_class, _scope=Contain_package)
+                containIn_ref = ReferenceModel.get_or_create(_kind=177, _file=file_ent, _line=ent["line"],
+                                                          _column=ent["col"], _ent=Contain_package, _scope=Contain_class)
 
 
     def addCreateRefs(self, ref_dicts, file_ent, file_address):
@@ -249,7 +268,7 @@ if __name__ == '__main__':
             file_ent = p.getFileEntity(file_address)
             tree = p.Parse(file_address)
         except Exception as e:
-            print("An Error occurred in file:" + file_address + "\n" + str(e) )
+            print("An Error occurred in file:" + file_address + "\n" + str(e))
             continue
         try:
             # implement
@@ -291,6 +310,7 @@ if __name__ == '__main__':
             listener = ContainAndContainBy()
             listener.contain = []
             p.Walk(listener,tree)
+            p.addContainAndContainBy(listener.contain,file_ent,file_address)
         except Exception as e:
             print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
 
