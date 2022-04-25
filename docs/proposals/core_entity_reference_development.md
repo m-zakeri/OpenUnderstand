@@ -19,7 +19,9 @@ Students must form groups of up to *four* persons. Each group develops analysis 
 
 
 **Note 5:** Before developing your codes ensure that you have pulled the latest version of the OpenUnderstand repository.
-For final presentation, your code must pass all unit tests and have no conflicts with other modules. Unit tests are under development, and we will inform you as they are released.
+
+**Note 6:** Your code should work properly on the real-world software project existing in the [benchmark](../../benchmark) directory of the OpenUnderstand repository.
+In addition, your code must pass all unit tests and have no conflicts with other modules. Unit tests are under development, and we will inform you as they are released.
 
 
 Keep in touch!

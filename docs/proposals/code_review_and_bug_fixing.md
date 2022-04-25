@@ -16,7 +16,8 @@ In cases where the assignee group has not developed a required module, the refer
 
 
 **Note 2:** Before code review and bug fixing ensure that you have pulled the latest version of the OpenUnderstand repository.
-For final presentation, your code must pass all unit tests and have no conflicts with other modules. Unit tests are under development, and we will inform you as they are released.
+For the final presentation, your code should work properly on the real-world software project existing in the [benchmark](../../benchmark) directory of the OpenUnderstand repository.
+
 
 **Note 3:** Each python module should follow [PEP -- Style Guide for Python Code](https://www.python.org/dev/peps/pep-0008/) and document well.
 
