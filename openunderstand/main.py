@@ -120,14 +120,13 @@ class Project():
     def addContainAndContainBy(self, contain , file_ent , file_address ):
         for ent in contain:
             kind = self.findKindWithKeywords(ent["kind"], ent["modifiers"])
-            p_kind = self.findKindWithKeywords(ent["package_kind"], [])
             if kind is not None :
                 Contain_class = EntityModel.get_or_create(_kind = kind,
                                                   _name = ent["name"],
                                                   _parent = ent["parent"] if ent["parent"] is not None else file_ent,
                                                   _longname = ent["longname"],
                                                   _contents = ent["content"])[0]
-                Contain_package = EntityModel.get_or_create(_kind=ent["package_kind"],
+                Contain_package = EntityModel.get_or_create(_kind="72",
                                                           _name=ent["package_name"],
                                                           _parent=ent["package_parent"] if ent["package_parent"] is not None else file_ent,
                                                           _longname=ent["package_longname"],
@@ -244,7 +243,7 @@ if __name__ == '__main__':
     db = db_open("../benchmark2_database.db")
 
     # path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
-    path = "C:/Users/98910/university/Term6/Courses/Compiler/Project/Compiler_OpneUnderstand/OpenUnderstand-8b69f877f175bf4ccd6c58ec3601be655157d8ca/benchmark/myJavaTest"
+    path = "C:/Users/98910/university/Term6/Courses/Compiler/Project/Compiler_OpneUnderstand/OpenUnderstand-8b69f877f175bf4ccd6c58ec3601be655157d8ca/benchmark/jfreechart"
     files = p.getListOfFiles(path)
     ########## AGE KHASTID YEK FILE RO RUN KONID:
     # files = ["../../Java codes/javaCoupling.java"]
