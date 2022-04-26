@@ -7,7 +7,19 @@ from oudb.fill import main as db_fill
 from oudb.api import create_db, open as db_open
 from oudb.models import KindModel, EntityModel, ReferenceModel
 
-PROJECT_NAME = "calculator_app"
+PRJ_INDEX = 4
+PROJECTS_NAME = [
+    'calculator_app',
+    'JSON',
+    'testing_legacy_code',
+    'jhotdraw-develop',
+    'xerces2j',
+    'jvlt-1.3.2',
+    'jfreechart',
+    'ganttproject',
+    '105_freemind',
+]
+PROJECT_NAME = PROJECTS_NAME[PRJ_INDEX]
 DB_PATH = f"../../databases/import/{PROJECT_NAME}.oudb"
 PROJECT_PATH = f"../../benchmarks/{PROJECT_NAME}"
 
@@ -74,19 +86,19 @@ class ClassEntityListener(JavaParserLabeledListener):
 
 
 class ImportListener(JavaParserLabeledListener):
-    def __init__(self):
+    def __init__(self, file_names):
         self.repository = []
+        self.file_names = file_names
 
     def enterImportDeclaration(self, ctx: JavaParserLabeled.CompilationUnitContext):
         imported_class_longname = ctx.qualifiedName().getText()
         imported_class_name = imported_class_longname.split('.')[-1]
 
-        if imported_class_longname.split('.')[0] == 'java':
+        is_built_in = False
+        imported_class_file_name = imported_class_name + ".java"
+        if imported_class_file_name not in self.file_names:
             is_built_in = True
             imported_class_file_name = None
-        else:
-            is_built_in = False
-            imported_class_file_name = imported_class_name + ".java"
 
         line = ctx.children[0].symbol.line
         col = ctx.children[0].symbol.column
@@ -102,7 +114,7 @@ class ImportListener(JavaParserLabeledListener):
 
 
 def get_parse_tree(file_path):
-    file = FileStream(file_path)
+    file = FileStream(file_path, encoding="utf-8")
     lexer = JavaLexer(file)
     tokens = CommonTokenStream(lexer)
     parser = JavaParserLabeled(tokens)
@@ -115,7 +127,7 @@ def add_java_file_entity(file_path, file_name):
         _kind=kind_id,
         _name=file_name,
         _longname=file_path,
-        _contents=FileStream(file_path),
+        _contents=FileStream(file_path, encoding="utf-8"),
     )
     return obj
 
@@ -155,7 +167,7 @@ def main():
         importing_entity = add_java_file_entity(file_path, file_name)
 
         tree = get_parse_tree(file_path)
-        listener = ImportListener()
+        listener = ImportListener(p.file_names)
         walker = ParseTreeWalker()
         walker.walk(listener, tree)
 
