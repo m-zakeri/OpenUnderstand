@@ -51,7 +51,7 @@ class Project():
 
     def getFileEntity(self, path):
         # kind id: 1
-        path = path.replace("/", "\\")
+        # path = path.replace("/", "\\")
         name = path.split("\\")[-1]
         file = open(path, mode='r')
         file_ent = EntityModel.get_or_create(_kind=1, _name=name, _longname=path, _contents=file.read())[0]
@@ -201,11 +201,8 @@ if __name__ == '__main__':
     main()
     db = db_open("../benchmark2_database.oudb")
 
-    # path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
-    path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
+    path = "../benchmark/105_freemind"
     files = p.getListOfFiles(path)
-    ########## AGE KHASTID YEK FILE RO RUN KONID:
-    # files = ["../../Java codes/javaCoupling.java"]
 
     for file_address in files:
         try:

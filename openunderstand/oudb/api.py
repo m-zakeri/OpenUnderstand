@@ -4,7 +4,7 @@ import os
 # from D:\program files\SciTools\bin\pc-win64\Python\understand.pyd
 # by generator 1.147
 
-from ..oudb.models import *
+from oudb.models import *
 
 from dataclasses import dataclass
 
