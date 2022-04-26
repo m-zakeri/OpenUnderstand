@@ -7,9 +7,9 @@ from oudb.fill import main as db_fill
 from oudb.api import create_db, open as db_open
 from oudb.models import KindModel, EntityModel, ReferenceModel
 
-DB_PATH = "../../database/calculator_app_import.oudb"
-PROJECT_PATH = "../../benchmarks_projects/calculator_app"
-PROJECT_NAME = "Calculator App"
+PROJECT_NAME = "calculator_app"
+DB_PATH = f"../../databases/import/{PROJECT_NAME}.oudb"
+PROJECT_PATH = f"../../benchmarks/{PROJECT_NAME}"
 
 
 class Project:
