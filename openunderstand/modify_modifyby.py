@@ -7,11 +7,21 @@ from oudb.fill import main as db_fill
 from oudb.api import create_db, open as db_open
 from oudb.models import KindModel, EntityModel, ReferenceModel
 
-
-DB_PATH = "../../database/calculator_app_modify.oudb"
-PROJECT_PATH = "../../benchmarks_projects/calculator_app"
-PROJECT_NAME = "Calculator App"
-
+PRJ_INDEX = 4
+PROJECTS_NAME = [
+    'calculator_app',
+    'JSON',
+    'testing_legacy_code',
+    'jhotdraw-develop',
+    'xerces2j',
+    'jvlt-1.3.2',
+    'jfreechart',
+    'ganttproject',
+    '105_freemind',
+]
+PROJECT_NAME = PROJECTS_NAME[PRJ_INDEX]
+DB_PATH = f"../../databases/modify/{PROJECT_NAME}.oudb"
+PROJECT_PATH = f"../../benchmarks/{PROJECT_NAME}"
 
 class Project:
     def __init__(self, db_name, project_dir, project_name=None):
