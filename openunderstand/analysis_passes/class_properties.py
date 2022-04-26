@@ -36,11 +36,11 @@ class ClassPropertiesListener(JavaParserLabeledListener):
     @staticmethod
     def findClassOrInterfaceModifiers(c):
         m = ""
-        modifiers=[]
+        modifiers = []
         current = c
         while current is not None:
             if "typeDeclaration" in type(current.parentCtx).__name__:
-                m=(current.parentCtx.classOrInterfaceModifier())
+                m = current.parentCtx.classOrInterfaceModifier()
                 break
             current = current.parentCtx
         for x in m:
@@ -88,7 +88,3 @@ class InterfacePropertiesListener(JavaParserLabeledListener):
                     self.interface_properties["parent"] = self.interface_longname[-2]
                 self.interface_properties["modifiers"] = ClassPropertiesListener.findClassOrInterfaceModifiers(ctx)
                 self.interface_properties["contents"] = ctx.getText()
-
-
-
-

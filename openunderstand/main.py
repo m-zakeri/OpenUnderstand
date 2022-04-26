@@ -18,6 +18,7 @@ from analysis_passes.couple_coupleby import ImplementCoupleAndImplementByCoupleB
 from analysis_passes.create_createby import CreateAndCreateBy
 from analysis_passes.declare_declarein import DeclareAndDeclareinListener
 from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
+from analysis_passes.open_openby import OpenListener
 
 
 class Project():
@@ -105,9 +106,24 @@ class Project():
                                               , _longname=ref_dict["scopelongname"]
                                               , _contents=["scopecontent"])[0]
             ent = self.getCreatedClassEntity(ref_dict["refent"], ref_dict["potential_refent"], file_address)
-            Create = ReferenceModel.get_or_create(_kind=190, _file=file_ent, _line=ref_dict["line"],
+            open = ReferenceModel.get_or_create(_kind=190, _file=file_ent, _line=ref_dict["line"],
+                                                _column=ref_dict["col"], _scope=scope, _ent=ent)
+            openby = ReferenceModel.get_or_create(_kind=191, _file=file_ent, _line=ref_dict["line"],
+                                                  _column=ref_dict["col"], _scope=ent, _ent=scope)
+
+    def addOpenRefs(self, ref_dicts, file_ent, file_address):
+        for ref_dict in ref_dicts:
+            scope = EntityModel.get_or_create(_kind=self.findKindWithKeywords("Method", ref_dict["scopemodifiers"]),
+                                              _name=ref_dict["scopename"],
+                                              _type=ref_dict["scopereturntype"]
+                                              , _parent=ref_dict["scope_parent"] if ref_dict[
+                                                                                        "scope_parent"] is not None else file_ent
+                                              , _longname=ref_dict["scopelongname"]
+                                              , _contents=["scopecontent"])[0]
+            ent = self.getCreatedClassEntity(ref_dict["refent"], ref_dict["potential_refent"], file_address)
+            Create = ReferenceModel.get_or_create(_kind=234, _file=file_ent, _line=ref_dict["line"],
                                                   _column=ref_dict["col"], _scope=scope, _ent=ent)
-            Createby = ReferenceModel.get_or_create(_kind=191, _file=file_ent, _line=ref_dict["line"],
+            Createby = ReferenceModel.get_or_create(_kind=235, _file=file_ent, _line=ref_dict["line"],
                                                     _column=ref_dict["col"], _scope=ent, _ent=scope)
 
     def getPackageEntity(self, file_ent, name, longname):
@@ -201,7 +217,7 @@ if __name__ == '__main__':
     main()
     db = db_open("../benchmark2_database.oudb")
 
-    path = "../benchmark/105_freemind"
+    path = "benchmark/105_freemind"
     files = p.getListOfFiles(path)
 
     for file_address in files:
@@ -233,5 +249,14 @@ if __name__ == '__main__':
             listener.declare = []
             p.Walk(listener, tree)
             p.addDeclareRefs(listener.declare, file_ent)
+        except Exception as e:
+            print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
+
+        try:
+            # open
+            listener = OpenListener()
+            listener.open = []
+            p.Walk(listener, tree)
+            p.addOpenRefs(listener.open, file_ent)
         except Exception as e:
             print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))

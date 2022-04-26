@@ -29,6 +29,7 @@ class OpenListener(JavaParserLabeledListener):
         self.parents = []
         self.parent_info = []
         self.entities = []
+        self.open = []
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         scope_parents = ClassPropertiesListener.findParents(ctx)
@@ -74,7 +75,7 @@ class OpenListener(JavaParserLabeledListener):
                     "type_ent_longname": ent_long_name
                 })
 
-    def enterMethodDeclaration(self, ctx:JavaParserLabeled.MethodDeclarationContext):
+    def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         pass
 
 
@@ -110,7 +111,7 @@ def read_files():
                 filename.append(file)
                 files.append(os.path.join(dir_path, file))
 
-    db_open("../../benchmark2_database.oudb")
+    db_open("../benchmark2_database.oudb")
 
     for path, name in zip(files, filename):
         file = FileStream(path)
