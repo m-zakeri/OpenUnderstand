@@ -1,5 +1,8 @@
 package some_pack;
 
 class some_class {
-    int a;
+    public void main ()
+    {
+        String path = "the number is "+19;
+    }
 }

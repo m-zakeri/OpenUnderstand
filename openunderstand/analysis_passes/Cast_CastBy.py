@@ -90,7 +90,7 @@ class CastAndCastBy(JavaParserLabeledListener):
                     self.cast.append({"name": c_name, "longname": c_longname, "parent": c_parent,
                                         "kind": c_kind, "content": c_content, "modifier": c_modifiers,
                                         "p_name": None, "p_longname": None, "p_parent": None,
-                                        "p_kind": None, "p_content": None, "p_modifier": None
+                                        "p_kind": "Java File", "p_content": None, "p_modifier": None
                                            , "line": line, "col": col})
 
         print(self.cast)
