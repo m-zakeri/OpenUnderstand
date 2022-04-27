@@ -1,8 +1,16 @@
 package some_pack;
+class B{
+    int b;
+}
 
-class some_class {
+class C extends B{
+    int c;
+}
+class A {
     public void main ()
     {
-        String path = "the number is "+19;
+       B n = new B();
+       C c= (C) n;
+
     }
 }

@@ -94,38 +94,30 @@ class Project():
 
     def addCastorCastByReferences(self,cast , file_ent, file_address):
         for ent in cast:
-            # kind = self.findKindWithKeywords(ent["kind"], ent["modifier"]) if (self.findKindWithKeywords(ent["kind"], ent["modifier"])) is not None else "95";
-            # if ent["p_kind"] is not None:
-            #     p_kind = self.findKindWithKeywords(ent["p_kind"], ent["p_modifier"]) if (self.findKindWithKeywords(ent["p_kind"], ent["p_modifier"])) is not None else "95"
-            #
-
-            cast_To = EntityModel.get_or_create(_kind=self.findKindWithKeywords(ent["kind"], ent["modifier"]),
+            kind = self.findKindWithKeywords(ent["kind"], ent["modifier"]) if (self.findKindWithKeywords(ent["kind"], ent["modifier"])) is not None else "95";
+            p_kind = self.findKindWithKeywords(ent["p_kind"], ent["p_modifier"]) if (self.findKindWithKeywords(ent["p_kind"], ent["p_modifier"])) is not None else "95"
+            if kind == "Null":
+                kind = "95"
+            if p_kind == "Null":
+                p_kind = "95"
+            cast_To = EntityModel.get_or_create(_kind=kind ,
                                                 _name=ent["name"],
                                                 _parent=ent["parent"] if ent["parent"] is not None else file_ent,
                                                 _longname=ent["longname"],
                                                 _contents=ent["content"]
                                                 )[0]
 
-            if ent["p_kind"] != "Java File":
-                cast = EntityModel.get_or_create(_kind=self.findKindWithKeywords(ent["p_kind"], ent["p_modifier"]),
-                                                 _name=ent["p_name"],
-                                                 _parent=ent["p_parent"] if ent["p_parent"] is not None else file_ent,
-                                                 _longname=ent["p_longname"],
-                                                 _contents=ent["p_content"]
-                                                 )[0]
-            else:
-                cast = EntityModel.get_or_create(_kind="Java File",
-                                                 _name=ent["p_name"],
-                                                 _parent=ent["p_parent"] if ent["p_parent"] is not None else file_ent,
-                                                 _longname=ent["p_longname"],
-                                                 _contents=ent["p_content"]
-                                                 )[0]
+            cast = EntityModel.get_or_create(_kind=p_kind,
+                                             _name=ent["p_name"],
+                                             _parent=ent["p_parent"] if ent["p_parent"] is not None else file_ent,
+                                             _longname=ent["p_longname"],
+                                             _contents=ent["p_content"]
+                                             )[0]
 
             cast_ref = ReferenceModel.get_or_create(_kind=174, _file=file_ent, _line=ent["line"],
                                                     _column=ent["col"], _ent=cast_To, _scope=cast)
             castBy_ref = ReferenceModel.get_or_create(_kind=175, _file=file_ent, _line=ent["line"],
                                                       _column=ent["col"], _ent=cast, _scope=cast_To)
-
 
     def addContainAndContainBy(self, contain , file_ent , file_address ):
         for ent in contain:
@@ -236,7 +228,6 @@ class Project():
                 if not leastspecific_kind_selected \
                         or len(leastspecific_kind_selected._name) > len(kind._name):
                     leastspecific_kind_selected = kind
-        print("OOOOOOOOOOOO"+leastspecific_kind_selected)
         return leastspecific_kind_selected
 
 
@@ -254,7 +245,7 @@ if __name__ == '__main__':
     db = db_open("../benchmark2_database.db")
 
     # path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
-    path = "C:/Users/98910/university/Term6/Courses/Compiler/Project/Compiler_OpneUnderstand/OpenUnderstand-8b69f877f175bf4ccd6c58ec3601be655157d8ca/benchmark/jfreechart"
+    path = "C:/Users/98910/university/Term6/Courses/Compiler/Project/Compiler_OpneUnderstand/OpenUnderstand-8b69f877f175bf4ccd6c58ec3601be655157d8ca/benchmark/myJavaTest"
     files = p.getListOfFiles(path)
     ########## AGE KHASTID YEK FILE RO RUN KONID:
     # files = ["../../Java codes/javaCoupling.java"]
@@ -323,4 +314,3 @@ if __name__ == '__main__':
             p.addContainAndContainBy(listener.contain,file_ent,file_address)
         except Exception as e:
             print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
-
