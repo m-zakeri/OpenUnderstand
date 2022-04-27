@@ -5,6 +5,7 @@ from metric import DSCmetric
 from pathlib import Path
 import argparse
 import os.path
+import numpy as np
 import json
 
 
@@ -20,10 +21,36 @@ def main(args):
     walker = ParseTreeWalker()
     walker.walk(t=parse_tree, listener=my_listener)
 
+    res = my_listener.get_name
     res2 = my_listener.get_arr
     res3 = my_listener.get_tmp
-    print(res2, res3)
-    print("Number of returned variables:"+str(len(res3))+"\n")
+    res4 = my_listener.get_mmd
+    val = []
+
+    print("Method names: ")
+    print(res)
+    print("Used Variables: ")
+    print(res4)
+    print("Returned Variables: ")
+    print(res3)
+    print("Use Return: ")
+    temp = np.intersect1d(res3, res4)
+    print(temp)
+
+    try:
+        for i in range(len(res)):
+            index = res3.index(temp[i])
+            val.append(res[index])
+
+            if len(val) == len(temp):
+                zip_iterator = zip(val, temp)
+                a_dictionary = dict(zip_iterator)
+
+                print("final result: ")
+                print(a_dictionary)
+
+    except:
+        pass
 
 
 if __name__ == '__main__':

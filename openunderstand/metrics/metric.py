@@ -6,7 +6,9 @@ class DSCmetric(JavaParserLabeledListener):
     def __init__(self):
         self.arr = []
         self.tmp = []
+        self.name = []
         self.null = []
+        self.mmd = []
 
     @property
     def get_arr(self):
@@ -15,6 +17,14 @@ class DSCmetric(JavaParserLabeledListener):
     @property
     def get_tmp(self):
         return self.tmp
+
+    @property
+    def get_name(self):
+        return self.name
+
+    @property
+    def get_mmd(self):
+        return self.mmd
 
 
     def enterBlockStatement1(self, ctx:JavaParserLabeled.BlockStatement1Context):
@@ -33,3 +43,24 @@ class DSCmetric(JavaParserLabeledListener):
 
         except:
             pass
+
+    def enterExpression21(self, ctx:JavaParserLabeled.Expression21Context):
+        if(ctx.ASSIGN().getText()=="="):
+            parent = ctx.parentCtx
+            parent = parent.parentCtx
+            parent = parent.parentCtx
+            parent = parent.parentCtx
+            parent = parent.parentCtx
+            parent = parent.parentCtx
+
+            #remove constructor
+            try:
+                parent.memberDeclaration().constructorDeclaration()
+
+            except:
+                self.mmd.append(ctx.getChild(2).getText())
+
+
+
+    def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
+        self.name.append(ctx.IDENTIFIER().getText())
