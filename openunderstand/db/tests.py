@@ -9,7 +9,7 @@ db = und.open("C:/Users/98910/university/Term6/Courses/Compiler/Project/Compiler
 counter = 0
 for ent in db.ents():
     for ref in ent.refs():
-        if ref.kindname() == "Contain" and ref.file().name() == "CategoryTableXYDatasetTest.java":
+        if ref.kindname() == "Cast" and ref.file().name() == "CategoryTableXYDatasetTest.java":
             counter = counter + 1
             print(f"ent name: {ent.name()}, ent longname: {ent.longname()}, \n"
                   f"ent parent: {ent.parent()}, ent kind: {ent.kind()}, ent value: {ent.value()},\n"

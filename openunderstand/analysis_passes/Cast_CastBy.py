@@ -55,10 +55,19 @@ class CastAndCastBy(JavaParserLabeledListener):
             #         self.classes.append(EntityClass)
 
     def enterExpression5(self, ctx:JavaParserLabeled.Expression5Context):
+        self.c_name = ""
+        self.c_longname = ""
+        self.c_parent = ""
+        self.c_kind = ""
+        self.c_content = ""
+        self.c_modifiers = ""
+
         name = ctx.typeType().getText()
         scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
         [line, col] = str(ctx.start).split(",")[3].split(":")  # line, column
         col = col[:-1]
+        print("line"+line)
+        print("col" + col)
         print("name : " + name)
 
         if len(scope_parents) >= 2:
@@ -77,7 +86,7 @@ class CastAndCastBy(JavaParserLabeledListener):
         print("parent :" + parent)
 
         for ent in self.classes:
-            if self.c_name != "":
+            if self.c_name != "" :
                 if ent.name == parent:
                     self.cast.append({"name": self.c_name,"longname":self.c_longname , "parent" : self.c_parent ,
                                             "kind" : self.c_kind , "content" : self.c_content , "modifier" : self.c_modifiers,

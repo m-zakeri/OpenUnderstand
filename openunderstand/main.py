@@ -94,10 +94,7 @@ class Project():
 
     def addCastorCastByReferences(self,cast , file_ent, file_address):
         for ent in cast:
-            kind = self.findKindWithKeywords(ent["kind"], ent["modifier"]) if (self.findKindWithKeywords(ent["kind"], ent["modifier"])) is not None else "95";
-            p_kind = self.findKindWithKeywords(ent["p_kind"], ent["p_modifier"]) if (self.findKindWithKeywords(ent["p_kind"], ent["p_modifier"])) is not None else "95"
-
-            cast_To = EntityModel.get_or_create(_kind=self.findKindWithKeywords(ent["kind"], ent["modifier"]) ,
+            cast_To = EntityModel.get_or_create(_kind=self.findKindWithKeywords(ent["kind"], ent["modifier"]),
                                                 _name=ent["name"],
                                                 _parent=ent["parent"] if ent["parent"] is not None else file_ent,
                                                 _longname=ent["longname"],
@@ -301,7 +298,7 @@ if __name__ == '__main__':
             p.Walk(listener, tree)
             p.addCastorCastByReferences(listener.cast , file_ent , file_address)
         except Exception as e:
-            print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
+            print("An Error occurred for reference cast in file:" + file_address + "\n" + str(e))
 
         try:
             #contain
@@ -310,4 +307,4 @@ if __name__ == '__main__':
             p.Walk(listener,tree)
             p.addContainAndContainBy(listener.contain,file_ent,file_address)
         except Exception as e:
-            print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
+            print("An Error occurred for reference contain in file:" + file_address + "\n" + str(e))
