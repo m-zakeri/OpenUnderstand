@@ -39,15 +39,14 @@ class CastAndCastBy(JavaParserLabeledListener):
     classes = []
     cast = []
 
-    c_name = ""
-    c_longname = ""
-    c_parent = ""
-    c_kind = ""
-    c_content = ""
-    c_modifiers = ""
-
     def __init__(self , classes):
         self.classes = classes
+        self.c_name = ""
+        self.c_longname = ""
+        self.c_parent = ""
+        self.c_kind = ""
+        self.c_content = ""
+        self.c_modifiers = ""
 
             # for myType in ctx.typeList().typeType():
             #     if myType.classOrInterfaceType():
@@ -68,32 +67,39 @@ class CastAndCastBy(JavaParserLabeledListener):
             parent = None
         for ent in self.classes:
             if ent.name == name:
-                c_name = name
-                c_longname = ent.longname
-                c_parent = ent.parent
-                c_kind = ent.kind
-                c_content = ent.content
-                c_modifiers = ent.modifiers
+                self.c_name = name
+                self.c_longname = ent.longname
+                self.c_parent = ent.parent
+                self.c_kind = ent.kind
+                self.c_content = ent.content
+                self.c_modifiers = ent.modifiers
 
         print("parent :" + parent)
 
         for ent in self.classes:
-            if c_name != "":
-                if parent is not None:
-                    if ent.name == parent:
-                        self.cast.append({"name": c_name,"longname":c_longname , "parent" : c_parent ,
-                                            "kind" : c_kind , "content" : c_content , "modifier" : c_modifiers,
+            if self.c_name != "":
+                if ent.name == parent:
+                    self.cast.append({"name": self.c_name,"longname":self.c_longname , "parent" : self.c_parent ,
+                                            "kind" : self.c_kind , "content" : self.c_content , "modifier" : self.c_modifiers,
                                             "p_name": ent.name, "p_longname": ent.longname, "p_parent": ent.parent,
                                             "p_kind": ent.kind, "p_content": ent.content, "p_modifier": ent.modifiers
                                             ,"line":line, "col":col})
-                else:
-                    self.cast.append({"name": c_name, "longname": c_longname, "parent": c_parent,
-                                        "kind": c_kind, "content": c_content, "modifier": c_modifiers,
-                                        "p_name": None, "p_longname": None, "p_parent": None,
-                                        "p_kind": None, "p_content": None, "p_modifier": None
-                                           , "line": line, "col": col})
 
         print(self.cast)
+
+    @staticmethod
+    def findClassParents(c):  # includes the ctx identifier
+        parents = []
+        current = c
+        while current is not None:
+            if type(current).__name__ == "ClassDeclarationContext" or type(
+                    current).__name__ == "MethodDeclarationContext" \
+                    or type(current).__name__ == "EnumDeclarationContext" \
+                    or type(current).__name__ == "InterfaceDeclarationContext" \
+                    or type(current).__name__ == "AnnotationTypeDeclarationContext":
+                parents.append(current.IDENTIFIER().getText())
+            current = current.parentCtx
+        return list(reversed(parents))
     # cast = []
     # name = ""
     # @staticmethod

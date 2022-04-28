@@ -11,9 +11,16 @@ class ContainAndContainBy(JavaParserLabeledListener):
 
 
     def enterPackageDeclaration(self, ctx:JavaParserLabeled.PackageDeclarationContext):
-        print(ctx.qualifiedName().IDENTIFIER()[0])
-        self.packageInfo.append({"name":ctx.qualifiedName().IDENTIFIER()[0],
-                                 "longname":ctx.qualifiedName().IDENTIFIER()[0],
+        self.packageInfo = []
+        longname = ""
+        for x in range(len(ctx.qualifiedName().IDENTIFIER())):
+            if  x == 0:
+                longname = str(ctx.qualifiedName().IDENTIFIER()[x])
+            else:
+                longname = longname + "." + str(ctx.qualifiedName().IDENTIFIER()[x])
+
+        self.packageInfo.append({"name":ctx.qualifiedName().IDENTIFIER()[-1],
+                                 "longname":longname,
                                  "kind":"Package",
                                  "contents" : "",
                                  "parent" : None ,
@@ -35,9 +42,8 @@ class ContainAndContainBy(JavaParserLabeledListener):
 
         scope_longname = "." + scope_longname
         packageName = self.packageInfo[0]["name"]
-        scope_longname = packageName.getText() + scope_longname
-
         packageLongName = self.packageInfo[0]["longname"]
+        scope_longname = packageLongName + scope_longname
         packageKind = self.packageInfo[0]["kind"]
         packageContent = self.packageInfo[0]["contents"]
         packageParent = self.packageInfo[0]["parent"]
@@ -54,7 +60,7 @@ class ContainAndContainBy(JavaParserLabeledListener):
 
         self.contain.append({
                              "package_name":packageName.getText(),
-                             "package_longname" :packageLongName.getText(),
+                             "package_longname" :packageLongName,
                              "package_kind" : packageKind,
                              "package_content" : packageContent ,
                              "package_parent" : packageParent,

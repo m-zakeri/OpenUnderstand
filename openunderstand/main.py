@@ -96,18 +96,15 @@ class Project():
         for ent in cast:
             kind = self.findKindWithKeywords(ent["kind"], ent["modifier"]) if (self.findKindWithKeywords(ent["kind"], ent["modifier"])) is not None else "95";
             p_kind = self.findKindWithKeywords(ent["p_kind"], ent["p_modifier"]) if (self.findKindWithKeywords(ent["p_kind"], ent["p_modifier"])) is not None else "95"
-            if kind == "Null":
-                kind = "95"
-            if p_kind == "Null":
-                p_kind = "95"
-            cast_To = EntityModel.get_or_create(_kind=kind ,
+
+            cast_To = EntityModel.get_or_create(_kind=self.findKindWithKeywords(ent["kind"], ent["modifier"]) ,
                                                 _name=ent["name"],
                                                 _parent=ent["parent"] if ent["parent"] is not None else file_ent,
                                                 _longname=ent["longname"],
                                                 _contents=ent["content"]
                                                 )[0]
 
-            cast = EntityModel.get_or_create(_kind=p_kind,
+            cast = EntityModel.get_or_create(_kind=self.findKindWithKeywords(ent["p_kind"], ent["p_modifier"]),
                                              _name=ent["p_name"],
                                              _parent=ent["p_parent"] if ent["p_parent"] is not None else file_ent,
                                              _longname=ent["p_longname"],

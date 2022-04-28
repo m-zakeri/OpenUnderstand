@@ -11,6 +11,7 @@ class A {
     {
        B n = new B();
        C c= (C) n;
-
+       int b;
+       float a = (float) b;
     }
 }

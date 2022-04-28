@@ -4,20 +4,13 @@ try:
     import understand as und
 except ImportError:
     print("Can not import understand")
+db = und.open("C:/Users/98910/university/Term6/Courses/Compiler/Project/Compiler_OpneUnderstand/OpenUnderstand-8b69f877f175bf4ccd6c58ec3601be655157d8ca/benchmark/myJavaTest/myJavaTest1.udb")
 
-db = und.open("C:/Users/98910/university/Term6/Courses/Compiler/Project/Compiler_OpneUnderstand/OpenUnderstand-8b69f877f175bf4ccd6c58ec3601be655157d8ca/benchmark/myJavaTest/myJavaTest.udb")
-
-# ent = db.lookup("Admin", "method")[0]
-# print(ent, ent.simplename())
-# for ref in ent.refs(entkindstring="method", unique=True):
-#     print(ref, ref.kind().longname())
-
-
-
+counter = 0
 for ent in db.ents():
     for ref in ent.refs():
-
-        if ref.kindname() == "Contain": # and ref.file().name() == "printLog.java":
+        if ref.kindname() == "Contain" and ref.file().name() == "CategoryTableXYDatasetTest.java":
+            counter = counter + 1
             print(f"ent name: {ent.name()}, ent longname: {ent.longname()}, \n"
                   f"ent parent: {ent.parent()}, ent kind: {ent.kind()}, ent value: {ent.value()},\n"
                   f"ent type: {ent.type()}, ent contents: {ent.contents()}")
@@ -32,3 +25,4 @@ for ent in db.ents():
                   f"ref.ent.parent:{ref.ent().parent()}, ref.ent.value:{ref.ent().value()},ref.ent.type:{ref.ent().type()}\n"
                   f"ref.ent.contents:{ref.ent().contents()}")
             print("--------------------------------------------------------")
+print(counter)
