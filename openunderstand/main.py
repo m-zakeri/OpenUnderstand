@@ -1,20 +1,25 @@
-from analysis_passes.Contain_ContainBy import ContainAndContainBy
-from db.api import open as db_open, create_db
-from db.fill import main
+"""
 
+"""
+
+import os
+from fnmatch import fnmatch
 
 from antlr4 import *
-from analysis_passes.implementCouple_implementbyCoupleby import ImplementCoupleAndImplementByCoupleBy
+
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaLexer import JavaLexer
-from db.models import KindModel, EntityModel, ReferenceModel
+
+from oudb.models import KindModel, EntityModel, ReferenceModel
+from oudb.api import open as db_open, create_db
+from oudb.fill import main
+
+from analysis_passes.couple_coupleby import ImplementCoupleAndImplementByCoupleBy
 from analysis_passes.create_createby import CreateAndCreateBy
 from analysis_passes.declare_declarein import DeclareAndDeclareinListener
 from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
 from analysis_passes.Cast_CastBy import CastAndCastBy, implementListener
-
-import os
-from fnmatch import fnmatch
+from analysis_passes.Contain_ContainBy import ContainAndContainBy
 
 
 class Project():
@@ -53,7 +58,7 @@ class Project():
         file = open(path, mode='r')
         file_ent = EntityModel.get_or_create(_kind=1, _name=name, _longname=path, _contents=file.read())[0]
         file.close()
-        print("processing file:",file_ent)
+        print("processing file:", file_ent)
         return file_ent
 
     def addDeclareRefs(self, ref_dicts, file_ent):
@@ -70,19 +75,19 @@ class Project():
 
             # Declare: kind id 192
             declare_ref = ReferenceModel.get_or_create(_kind=192, _file=file_ent, _line=ref_dict["line"],
-                                         _column=ref_dict["col"], _ent=ent, _scope=scope)
+                                                       _column=ref_dict["col"], _ent=ent, _scope=scope)
 
             # Declarein: kind id 193
             declarein_ref = ReferenceModel.get_or_create(_kind=193, _file=file_ent, _line=ref_dict["line"],
-                                         _column=ref_dict["col"], _scope=ent, _ent=scope)
+                                                         _column=ref_dict["col"], _scope=ent, _ent=scope)
 
     def addImplementOrImplementByRefs(self, ref_dicts, file_ent, file_address):
         for ref_dict in ref_dicts:
-
             scope = EntityModel.get_or_create(_kind=self.findKindWithKeywords(ref_dict["scope_kind"],
                                                                               ref_dict["scope_modifiers"]),
                                               _name=ref_dict["scope_name"],
-                                              _parent= ref_dict["scope_parent"] if ref_dict["scope_parent"] is not None else file_ent,
+                                              _parent=ref_dict["scope_parent"] if ref_dict[
+                                                                                      "scope_parent"] is not None else file_ent,
                                               _longname=ref_dict["scope_longname"],
                                               _contents=ref_dict["scope_contents"])[0]
             ent = self.getImplementEntity(ref_dict["type_ent_longname"], file_address)
@@ -92,7 +97,22 @@ class Project():
             implementBy_ref = ReferenceModel.get_or_create(_kind=189, _file=file_ent, _line=ref_dict["line"],
                                                            _column=ref_dict["col"], _ent=scope, _scope=ent)
 
-    def addCastorCastByReferences(self,cast , file_ent, file_address):
+    def addCreateRefs(self, ref_dicts, file_ent, file_address):
+        for ref_dict in ref_dicts:
+            scope = EntityModel.get_or_create(_kind=self.findKindWithKeywords("Method", ref_dict["scopemodifiers"]),
+                                              _name=ref_dict["scopename"],
+                                              _type=ref_dict["scopereturntype"]
+                                              , _parent=ref_dict["scope_parent"] if ref_dict[
+                                                                                        "scope_parent"] is not None else file_ent
+                                              , _longname=ref_dict["scopelongname"]
+                                              , _contents=["scopecontent"])[0]
+            ent = self.getCreatedClassEntity(ref_dict["refent"], ref_dict["potential_refent"], file_address)
+            Create = ReferenceModel.get_or_create(_kind=190, _file=file_ent, _line=ref_dict["line"],
+                                                  _column=ref_dict["col"], _scope=scope, _ent=ent)
+            Createby = ReferenceModel.get_or_create(_kind=191, _file=file_ent, _line=ref_dict["line"],
+                                                    _column=ref_dict["col"], _scope=ent, _ent=scope)
+
+    def addCastorCastByReferences(self, cast, file_ent, file_address):
         for ent in cast:
             cast_To = EntityModel.get_or_create(_kind=self.findKindWithKeywords(ent["kind"], ent["modifier"]),
                                                 _name=ent["name"],
@@ -113,49 +133,38 @@ class Project():
             castBy_ref = ReferenceModel.get_or_create(_kind=175, _file=file_ent, _line=ent["line"],
                                                       _column=ent["col"], _ent=cast, _scope=cast_To)
 
-    def addContainAndContainBy(self, contain , file_ent , file_address ):
+    def addContainAndContainBy(self, contain, file_ent, file_address):
         for ent in contain:
             kind = self.findKindWithKeywords(ent["kind"], ent["modifiers"])
-            if kind is not None :
-                Contain_class = EntityModel.get_or_create(_kind = kind,
-                                                  _name = ent["name"],
-                                                  _parent = ent["parent"] if ent["parent"] is not None else file_ent,
-                                                  _longname = ent["longname"],
-                                                  _contents = ent["content"])[0]
+            if kind is not None:
+                Contain_class = EntityModel.get_or_create(_kind=kind,
+                                                          _name=ent["name"],
+                                                          _parent=ent["parent"] if ent[
+                                                                                       "parent"] is not None else file_ent,
+                                                          _longname=ent["longname"],
+                                                          _contents=ent["content"])[0]
                 Contain_package = EntityModel.get_or_create(_kind="72",
-                                                          _name=ent["package_name"],
-                                                          _parent=ent["package_parent"] if ent["package_parent"] is not None else file_ent,
-                                                          _longname=ent["package_longname"],
-                                                          _contents=ent["package_content"])[0]
+                                                            _name=ent["package_name"],
+                                                            _parent=ent["package_parent"] if ent[
+                                                                                                 "package_parent"] is not None else file_ent,
+                                                            _longname=ent["package_longname"],
+                                                            _contents=ent["package_content"])[0]
                 contain_ref = ReferenceModel.get_or_create(_kind=176, _file=file_ent, _line=ent["line"],
-                                                        _column=ent["col"], _ent=Contain_class, _scope=Contain_package)
+                                                           _column=ent["col"], _ent=Contain_class,
+                                                           _scope=Contain_package)
                 containIn_ref = ReferenceModel.get_or_create(_kind=177, _file=file_ent, _line=ent["line"],
-                                                          _column=ent["col"], _ent=Contain_package, _scope=Contain_class)
-
-
-    def addCreateRefs(self, ref_dicts, file_ent, file_address):
-        for ref_dict in ref_dicts:
-            scope = EntityModel.get_or_create(_kind=self.findKindWithKeywords("Method", ref_dict["scopemodifiers"]),
-                                              _name=ref_dict["scopename"],
-                                              _type=ref_dict["scopereturntype"]
-                                              ,_parent=ref_dict["scope_parent"] if ref_dict["scope_parent"]is not None else file_ent
-                                              , _longname=ref_dict["scopelongname"]
-                                              ,_contents=["scopecontent"])[0]
-            ent = self.getCreatedClassEntity(ref_dict["refent"], ref_dict["potential_refent"], file_address)
-            Create = ReferenceModel.get_or_create(_kind=190, _file=file_ent, _line=ref_dict["line"],
-                                                  _column=ref_dict["col"], _scope=scope, _ent=ent)
-            Createby = ReferenceModel.get_or_create(_kind=191, _file=file_ent, _line=ref_dict["line"],
-                                                    _column=ref_dict["col"], _scope=ent, _ent=scope)
+                                                             _column=ent["col"], _ent=Contain_package,
+                                                             _scope=Contain_class)
 
     def getPackageEntity(self, file_ent, name, longname):
         # package kind id: 72
-        ent = EntityModel.get_or_create(_kind= 72, _name=name, _parent=file_ent,
+        ent = EntityModel.get_or_create(_kind=72, _name=name, _parent=file_ent,
                                         _longname=longname, _contents="")
         return ent[0]
 
     def getUnnamedPackageEntity(self, file_ent):
         # unnamed package kind id: 73
-        ent = EntityModel.get_or_create(_kind= 73, _name="(Unnamed_Package)", _parent=file_ent,
+        ent = EntityModel.get_or_create(_kind=73, _name="(Unnamed_Package)", _parent=file_ent,
                                         _longname="(Unnamed_Package)", _contents="")
         return ent[0]
 
@@ -191,11 +200,11 @@ class Project():
             kind = self.findKindWithKeywords("Class", props["modifiers"])
             ent = EntityModel.get_or_create(_kind=kind, _name=props["name"],
                                             _longname=props["longname"],
-                                            _parent= props["parent"] if props["parent"] is not None else file_ent,
+                                            _parent=props["parent"] if props["parent"] is not None else file_ent,
                                             _contents=props["contents"])
         return ent[0]
 
-    def getInterfaceEntity(self, interface_longname, file_address): # can't be of unknown kind!
+    def getInterfaceEntity(self, interface_longname, file_address):  # can't be of unknown kind!
         props = p.getInterfaceProperties(interface_longname, file_address)
         if not props:
             return None
@@ -203,7 +212,7 @@ class Project():
             kind = self.findKindWithKeywords("Interface", props["modifiers"])
             ent = EntityModel.get_or_create(_kind=kind, _name=props["name"],
                                             _longname=props["longname"],
-                                            _parent= props["parent"] if props["parent"] is not None else file_ent,
+                                            _parent=props["parent"] if props["parent"] is not None else file_ent,
                                             _contents=props["contents"])
         return ent[0]
 
@@ -224,27 +233,26 @@ class Project():
                     leastspecific_kind_selected = kind
         return leastspecific_kind_selected
 
-
     def checkModifiersInKind(self, modifiers, kind):
         for modifier in modifiers:
             if modifier.lower() not in kind._name.lower():
                 return False
         return True
 
+
 if __name__ == '__main__':
     p = Project()
-    create_db("../benchmark2_database.db",
+    create_db("../benchmark2_database.oudb",
               project_dir="..\benchmark")
     main()
-    db = db_open("../benchmark2_database.db")
+    db = db_open("../benchmark2_database.oudb")
 
     # path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
-    path = "C:/Users/98910/university/Term6/Courses/Compiler/Project/Compiler_OpneUnderstand/OpenUnderstand-8b69f877f175bf4ccd6c58ec3601be655157d8ca/benchmark/myJavaTest"
+    path = "C:/Users/98910/university/Term6/Courses/Compiler/Project/send/OpenUnderstandProject/benchmark/myJavaTest"
     files = p.getListOfFiles(path)
     ########## AGE KHASTID YEK FILE RO RUN KONID:
     # files = ["../../Java codes/javaCoupling.java"]
-
-    classes = [] # for cast and cast by
+    classes = []  # for cast and cast by
     for file_address in files:
         try:
             file_ent = p.getFileEntity(file_address)
@@ -290,21 +298,20 @@ if __name__ == '__main__':
         except Exception as e:
             print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
 
-
         try:
             # cast
             listener = CastAndCastBy(classes)
             listener.cast = []
             p.Walk(listener, tree)
-            p.addCastorCastByReferences(listener.cast , file_ent , file_address)
+            p.addCastorCastByReferences(listener.cast, file_ent, file_address)
         except Exception as e:
             print("An Error occurred for reference cast in file:" + file_address + "\n" + str(e))
 
         try:
-            #contain
+            # contain
             listener = ContainAndContainBy()
             listener.contain = []
-            p.Walk(listener,tree)
-            p.addContainAndContainBy(listener.contain,file_ent,file_address)
+            p.Walk(listener, tree)
+            p.addContainAndContainBy(listener.contain, file_ent, file_address)
         except Exception as e:
             print("An Error occurred for reference contain in file:" + file_address + "\n" + str(e))

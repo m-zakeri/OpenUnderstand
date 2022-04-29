@@ -1,7 +1,0 @@
-digraph "basic_operation"
-{
- // LATEX_PDF_SIZE
-  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
-  node [fontname="Helvetica",fontsize="10",shape=record];
-  Node1 [label="{basic_operation\n||+ static double multiplication\l(double a, double b)\l+ static int multiplication\l(int a, int b)\l+ static double pow(double\l a, double power)\l+ static double sum(double\l a, double b)\l+ static int sum(int\l a, int b)\l}",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled", fontcolor="black",tooltip=" "];
-}

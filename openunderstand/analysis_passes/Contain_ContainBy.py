@@ -1,9 +1,9 @@
 from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 import openunderstand.analysis_passes.class_properties as class_properties
-from db.api import open as db_open, create_db
-from db.models import KindModel, EntityModel, ReferenceModel
-from db.fill import main
+from oudb.api import open as db_open, create_db
+from oudb.models import KindModel, EntityModel, ReferenceModel
+from oudb.fill import main
 
 class ContainAndContainBy(JavaParserLabeledListener):
     contain = []
