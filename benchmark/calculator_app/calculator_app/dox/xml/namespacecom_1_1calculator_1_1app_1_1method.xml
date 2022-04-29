@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.1" xml:lang="en-US">
+  <compounddef id="namespacecom_1_1calculator_1_1app_1_1method" kind="namespace" language="Java">
+    <compoundname>com::calculator::app::method</compoundname>
+    <innerclass refid="classcom_1_1calculator_1_1app_1_1method_1_1basic__operation" prot="public">com::calculator::app::method::basic_operation</innerclass>
+    <innerclass refid="classcom_1_1calculator_1_1app_1_1method_1_1fibonacci" prot="public">com::calculator::app::method::fibonacci</innerclass>
+    <innerclass refid="classcom_1_1calculator_1_1app_1_1method_1_1integral" prot="public">com::calculator::app::method::integral</innerclass>
+    <innerclass refid="classcom_1_1calculator_1_1app_1_1method_1_1printLog" prot="public">com::calculator::app::method::printLog</innerclass>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <location file="src/com/calculator/app/method/basic_operation.java" line="1" column="15"/>
+  </compounddef>
+</doxygen>

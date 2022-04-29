@@ -223,14 +223,14 @@ if __name__ == '__main__':
     main()
     db = db_open("../benchmark_database.oudb")
 
-    # path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
+    path = r"D:\works\university\term6\compiler\Project\OpenUnderstand\benchmark\JSON"
     # path = "C:/Users/Diyar/Desktop/_uni/compiler/project/test"
     # path = "C:/Users/Diyar/Desktop/_uni/compiler/project/OpenUnderstand/benchmark/calculator_app"
     # path = "C:/Users/Diyar/Desktop/_uni/compiler/project/TheAlgorithms"
-    # files = p.getListOfFiles(path)
+    files = p.getListOfFiles(path)
     ########## AGE KHASTID YEK FILE RO RUN KONID:
     # files = ["../../Java codes/javaCoupling.java"]
-    files = ["D:/works/university/term6/compiler/Project/OpenUnderstand/benchmark/TheAlgorithms/TheAlgorithms/TheAlgorithms/DataStructures/Graphs/A_Star.java"]
+    # files = ["D:/works/university/term6/compiler/Project/OpenUnderstand/benchmark/TheAlgorithms/TheAlgorithms/TheAlgorithms/DataStructures/Graphs/A_Star.java"]
 
     for file_address in files:
         try:
@@ -239,30 +239,30 @@ if __name__ == '__main__':
         except Exception as e:
             print("An Error occurred in file:" + file_address + "\n" + str(e))
             continue
-        try:
-            # implement
-            listener = ImplementCoupleAndImplementByCoupleBy()
-            listener.implement = []
-            p.Walk(listener, tree)
-            p.addImplementOrImplementByRefs(listener.implement, file_ent, file_address)
-        except Exception as e:
-            print("An Error occurred for reference implement in file:" + file_address + "\n" + str(e))
-        try:
-            # create
-            listener = CreateAndCreateBy()
-            listener.create = []
-            p.Walk(listener, tree)
-            p.addCreateRefs(listener.create, file_ent, file_address)
-        except Exception as e:
-            print("An Error occurred for reference create in file:" + file_address + "\n" + str(e))
-        try:
-            # declare
-            listener = DeclareAndDeclareinListener()
-            listener.declare = []
-            p.Walk(listener, tree)
-            p.addDeclareRefs(listener.declare, file_ent)
-        except Exception as e:
-            print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
+        # try:
+        #     # implement
+        #     listener = ImplementCoupleAndImplementByCoupleBy()
+        #     listener.implement = []
+        #     p.Walk(listener, tree)
+        #     p.addImplementOrImplementByRefs(listener.implement, file_ent, file_address)
+        # except Exception as e:
+        #     print("An Error occurred for reference implement in file:" + file_address + "\n" + str(e))
+        # try:
+        #     # create
+        #     listener = CreateAndCreateBy()
+        #     listener.create = []
+        #     p.Walk(listener, tree)
+        #     p.addCreateRefs(listener.create, file_ent, file_address)
+        # except Exception as e:
+        #     print("An Error occurred for reference create in file:" + file_address + "\n" + str(e))
+        # try:
+        #     # declare
+        #     listener = DeclareAndDeclareinListener()
+        #     listener.declare = []
+        #     p.Walk(listener, tree)
+        #     p.addDeclareRefs(listener.declare, file_ent)
+        # except Exception as e:
+        #     print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
         try:
             # define
             listener = DefineListener()
