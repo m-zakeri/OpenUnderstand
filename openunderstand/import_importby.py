@@ -242,7 +242,7 @@ def add_references(importing_ent, imported_ent, ref_dict):
         _scope=imported_ent.get_id(),
     )
 
-    # print(f'1. ref name: Java Import || inverse ref name: Java Importby')
+    # print(f'1. ref name: Java Import')
     # print(f'2. ref scope: {importing_ent._longname} || kind: {KindModel.get_or_none(_id=importing_ent._kind)._name}')
     # print(f'3. ref ent: {imported_ent._longname} || kind: {KindModel.get_or_none(_id=imported_ent._kind)._name}')
     # print(f'4. file location: {EntityModel.get_or_none(_id=importing_ent.get_id())} || line: {ref_dict["line"]}')
