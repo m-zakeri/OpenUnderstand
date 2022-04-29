@@ -4,24 +4,9 @@ from  gen.JavaParserLabeledListener import JavaParserLabeledListener
 
 class DSCmetric(JavaParserLabeledListener):
     def __init__(self):
-        self.dc=0
-        self.functions=[]
-        self.classname=dict()
-        self.currentclass=""
         self.currentmethod=""
 
-    def enterClassDeclaration(self, ctx:JavaParserLabeled.ClassDeclarationContext):
-        self.dc+=1
-        self.classname[ctx.IDENTIFIER().__str__()]=0
-        self.currentclass=ctx.IDENTIFIER().__str__()
-
-
-    def enterFieldDeclaration(self, ctx:JavaParserLabeled.FieldDeclarationContext):
-        self.classname[self.currentclass]+=1
-
-
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
-        self.functions.append(ctx.IDENTIFIER().getText())
         self.currentmethod=ctx.IDENTIFIER().getText()
 
 
