@@ -1,6 +1,4 @@
-
-
-#expression -> NEW creator
+# expression -> NEW creator
 
 
 """
@@ -23,33 +21,40 @@ import analysis_passes.class_properties as class_properties
 
 class Set_Setby(JavaParserLabeledListener):
     def __init__(self):
-        self.currentmethod=""
+        self.current_method = ""
+        self.all_sets = []
 
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
-        self.functions.append(ctx.IDENTIFIER().getText())
-        self.currentmethod=ctx.IDENTIFIER().getText()
+        self.current_method = ctx.IDENTIFIER().getText()
 
-    def enterExpression21(self, ctx:JavaParserLabeled.Expression21Context):
+    def enterExpression21(self, ctx: JavaParserLabeled.Expression21Context):
         try:
             if str(ctx.ASSIGN()) == "=":
-                print("--------------------------------")
+                # print("--------------------------------")
                 try:
-                    print("variable=" + ctx.getChild(0).getChild(0).IDENTIFIER().getText())
-                    print("method=" + self.currentmethod)
+                    self.all_sets.append({"variable": ctx.getChild(0).getChild(0).IDENTIFIER().getText()
+                                             , "method": self.current_method})
+                    # print("variable=" + ctx.getChild(0).getChild(0).IDENTIFIER().getText())
+                    # print("method=" + self.current_method)
                 except:
-                    print("variable=" + str(ctx.getChild(0).getChild(2)))
-                    print("method=" + self.currentmethod)
-                print("--------------------------------")
+                    self.all_sets.append({"variable": str(ctx.getChild(0).getChild(2)),
+                                          "method": self.current_method})
+                    # print("variable=" + str(ctx.getChild(0).getChild(2)))
+                    # print("method=" + self.current_method)
+                # print("--------------------------------")
         except:
-            print("undiscovered state")
+            return {"variable": "undiscovered state",
+                    "method": self.current_method}
 
-    def enterVariableDeclarator(self, ctx:JavaParserLabeled.VariableDeclaratorContext):
+    def enterVariableDeclarator(self, ctx: JavaParserLabeled.VariableDeclaratorContext):
         if str(ctx.ASSIGN()) == "=":
-            print("--------------------------------")
-            print("variable=" + str(ctx.variableDeclaratorId().getChild(0)))
-            print("method=" + self.currentmethod)
-            print()
-            print("--------------------------------")
-
-
-
+            # print("--------------------------------")
+            str(ctx.start).split(",")[3].split(":")
+            self.all_sets.append({"variable": str(ctx.variableDeclaratorId().getChild(0)),
+                                  "method": self.current_method,
+                                  "line": str(ctx.start).split(",")[3].split(":")[0],
+                                  "col": str(ctx.start).split(",")[3].split(":")[1]})
+            # print("variable=" + str(ctx.variableDeclaratorId().getChild(0)))
+            # print("method=" + self.current_method)
+            # print()
+            # print("--------------------------------")
