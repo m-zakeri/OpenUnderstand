@@ -545,8 +545,17 @@
 <hr />
 <p>The following proposal has been initially prepared for the <strong>IUST Compiler</strong> and <strong>IUST Advanced Compiler</strong>  courses in <em>Winter/Spring 2022</em>.</p>
 <p><strong>Note 1:</strong> Before reading this proposal ensure that you have read and understood the <a href="../..">OpenUnderstand white-paper</a>.</p>
+<p>The goal of this proposal is to implement an extended version of the <a href="https://documentation.scitools.com/html/python/api/understand.Metric.html#understand.Metric">Sci-tools Understand APIs for computing source metrics</a>. 
+The following APIs are used to commute source code metrics at different abstraction levels:
+* <a href="https://documentation.scitools.com/html/python/api/understand.Db.html">understand.Db.metric</a>
+* <a href="https://documentation.scitools.com/html/python/api/understand.Ent.html">understand.Ent.metric</a></p>
 <p>Students must form groups of up to <em>four</em> persons. Each group develops analysis passes to compute the value of source code metrics listed in <a href="../../source_code_metrics/">Table 3</a>.The exact list of the metrics will be assigned to each group subsequently. The description of the source code metrics listed in <a href="../../source_code_metrics/">Table 3</a> <em>may</em> update during the semester.</p>
-<p><strong>Note 2:</strong> The computation of each source code metric must be implemented as a standalone Python module (single .py file) in the <code>openuderstand.metrics</code> package. Consider the existing modules in the packages as examples.</p>
+<p>The computation of source code metrics consists of two steps:</p>
+<ul>
+<li>First, developing the required APIs for querying the database created in <a href="../core_entity_reference_development/">Phase 1</a> of the project. The APIs signature <em>must</em> follow the <a href="https://documentation.scitools.com/html/python/index.html">Sci-tools Understand Python API</a>. </li>
+<li>Second, querying the database using the developed API to find the appropriate entities and reference kinds involved in computing metrics according to the metric definitions. </li>
+</ul>
+<p><strong>Note 2:</strong> The computation of each source code metric must be implemented as a standalone Python module (single .py file) in the <code>openuderstand.metrics</code> package. Consider the existing modules in the packages as examples. Please strongly use the created database in <a href="../core_entity_reference_development/">Phase 1</a> to compute source code metrics.</p>
 <p><strong>Note 3:</strong> Each module should follow <a href="https://www.python.org/dev/peps/pep-0008/">PEP -- Style Guide for Python Code</a> and document well.</p>
 <p><strong>Note 4:</strong> Each group is asked to review the code of at least one other group in the classroom. Your final project score is computed considering the score given by referees to each member of the team.</p>
 <p><strong>Note 5:</strong> Before developing your codes ensure that you have pulled the latest version of the OpenUnderstand repository.
