@@ -1,13 +1,14 @@
 import os
 from antlr4 import *
+from pathlib import Path
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from oudb.fill import main as db_fill
 from oudb.api import create_db, open as db_open
-from oudb.models import EntityModel, ReferenceModel
+from oudb.models import KindModel, EntityModel, ReferenceModel
 
-PRJ_INDEX = 1
+PRJ_INDEX = 0
 REF_NAME = "import"
 
 
@@ -38,6 +39,14 @@ def get_project_info(index, ref_name):
     }
 
 
+def get_parse_tree(file_path):
+    file = FileStream(file_path, encoding="utf-8")
+    lexer = JavaLexer(file)
+    tokens = CommonTokenStream(lexer)
+    parser = JavaParserLabeled(tokens)
+    return parser.compilationUnit()
+
+
 class Project:
     def __init__(self, db_name, project_dir, project_name=None):
         self.db_name = db_name
@@ -50,23 +59,14 @@ class Project:
         db_fill()
         db_open(self.db_name)
 
-    def get_java_files(self, add_to_db=True):
+    def get_java_files(self):
         for dir_path, _, file_names in os.walk(self.project_dir):
             for file in file_names:
                 if '.java' in str(file):
                     path = os.path.join(dir_path, file)
                     path = path.replace("/", "\\")
                     self.files.append((file, path))
-                    if add_to_db:
-                        add_java_file_entity(path, file)
-
-
-class ClassEntityListener(JavaParserLabeledListener):
-    def __init__(self):
-        self.class_body = None
-
-    def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
-        self.class_body = ctx.getText()
+                    add_java_file_entity(path, file)
 
 
 class ImportListener(JavaParserLabeledListener):
@@ -74,7 +74,7 @@ class ImportListener(JavaParserLabeledListener):
         self.repository = []
         self.files = files
 
-    def enterImportDeclaration(self, ctx: JavaParserLabeled.CompilationUnitContext):
+    def enterImportDeclaration(self, ctx: JavaParserLabeled.importDeclaration):
         imported_class_longname = ctx.qualifiedName().getText()
         imported_class_name = imported_class_longname.split('.')[-1]
 
@@ -97,12 +97,27 @@ class ImportListener(JavaParserLabeledListener):
         })
 
 
-def get_parse_tree(file_path):
-    file = FileStream(file_path, encoding="utf-8")
-    lexer = JavaLexer(file)
-    tokens = CommonTokenStream(lexer)
-    parser = JavaParserLabeled(tokens)
-    return parser.compilationUnit()
+class ImportedEntityListener(JavaParserLabeledListener):
+    def __init__(self, name):
+        self.body = None
+        self.branches = None
+        self.type = None
+        self.name = name
+
+    def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
+        if self.name == ctx.IDENTIFIER().getText():
+            self.body = ctx.getText()
+            self.branches = ctx.parentCtx.children
+
+    def enterInterfaceDeclaration(self, ctx: JavaParserLabeled.InterfaceDeclarationContext):
+        if self.name == ctx.IDENTIFIER().getText():
+            self.body = ctx.getText()
+            self.branches = ctx.parentCtx.children
+
+    def enterEnumDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
+        if self.name == ctx.IDENTIFIER().getText():
+            self.body = ctx.getText()
+            self.branches = ctx.parentCtx.children
 
 
 def get_parent(parent_file_name, files):
@@ -117,7 +132,7 @@ def get_parent(parent_file_name, files):
     return parent_entity, parent_file_path
 
 
-def imported_entity_factory(i, files):
+def add_imported_entity(i, files):
     if i['is_built_in']:
         imported_entity, _ = EntityModel.get_or_create(
             _kind=84,  # Java Unknown Class Type Member
@@ -127,14 +142,65 @@ def imported_entity_factory(i, files):
         )
     else:
         parent_entity, parent_file_path = get_parent(i['imported_class_file_name'], files)
+        prefixes, class_body, kind = get_imported_entity(parent_file_path)
+        entity_kind = get_kind_name(prefixes, kind)
         imported_entity, _ = EntityModel.get_or_create(
-            _kind=98,  # Java Class Type Public Member
+            _kind=KindModel.get_or_none(_name=entity_kind).get_id(),
             _parent=parent_entity.get_id(),
             _name=i['imported_class_name'],
             _longname=i['imported_class_longname'],
-            _contents=get_class_body(parent_file_path),
+            _contents=class_body,
         )
     return imported_entity
+
+
+def get_imported_entity(file_path):
+    tree = get_parse_tree(file_path)
+    listener = ImportedEntityListener(Path(file_path).stem)
+    walker = ParseTreeWalker()
+    walker.walk(listener=listener, t=tree)
+
+    prefixes = ""
+    kind = ""
+    for branch in listener.branches:
+        if type(branch) == JavaParserLabeled.ClassDeclarationContext:
+            kind = "Class"
+            break
+        elif type(branch) == JavaParserLabeled.InterfaceDeclarationContext:
+            kind = "Interface"
+            break
+        elif type(branch) == JavaParserLabeled.EnumDeclarationContext:
+            kind = "Enum Class"
+            break
+        prefixes += branch.getText() + " "
+    return prefixes, listener.body, kind
+
+
+def get_kind_name(prefixes, kind):
+    pattern_static = ""
+    pattern_generic = ""
+    pattern_abstract = ""
+    pattern_visibility = "Default"
+    pattern_member = "Member"
+    if "static" in prefixes:
+        pattern_static = "Static"
+    if "generic" in prefixes:
+        pattern_generic = "Generic"
+    if "abstract" in prefixes:
+        pattern_abstract = "Abstract"
+    elif "final" in prefixes:
+        pattern_abstract = "Final"
+    if "private" in prefixes:
+        pattern_visibility = "Private"
+    elif "public" in prefixes:
+        pattern_visibility = "Public"
+    elif "protected" in prefixes:
+        pattern_visibility = "Protected"
+    if kind == "Interface":
+        pattern_member = ""
+    s = f"Java {pattern_static} {pattern_abstract} {pattern_generic} {kind} Type {pattern_visibility} {pattern_member}"
+    s = " ".join(s.split())
+    return s
 
 
 def add_java_file_entity(file_path, file_name):
@@ -166,13 +232,11 @@ def add_references(importing_ent, imported_ent, ref_dict):
         _scope=imported_ent.get_id(),
     )
 
-
-def get_class_body(file_path):
-    tree = get_parse_tree(file_path)
-    listener = ClassEntityListener()
-    walker = ParseTreeWalker()
-    walker.walk(listener=listener, t=tree)
-    return listener.class_body
+    # print(f'1. ref name: Java Import || inverse ref name: Java Importby')
+    # print(f'2. ref scope: {importing_ent._longname} || kind: {KindModel.get_or_none(_id=importing_ent._kind)._name}')
+    # print(f'3. ref ent: {imported_ent._longname} || kind: {KindModel.get_or_none(_id=imported_ent._kind)._name}')
+    # print(f'4. file location: {EntityModel.get_or_none(_id=importing_ent.get_id())} || line: {ref_dict["line"]}')
+    # print("-" * 25)
 
 
 def main():
@@ -190,7 +254,7 @@ def main():
         walker.walk(listener, tree)
 
         for i in listener.repository:
-            imported_entity = imported_entity_factory(i, p.files)
+            imported_entity = add_imported_entity(i, p.files)
             add_references(importing_entity, imported_entity, i)
 
 
