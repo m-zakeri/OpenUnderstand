@@ -8,7 +8,7 @@ from oudb.fill import main as db_fill
 from oudb.api import create_db, open as db_open
 from oudb.models import KindModel, EntityModel, ReferenceModel
 
-PRJ_INDEX = 0
+PRJ_INDEX = 3
 REF_NAME = "import"
 
 
@@ -177,28 +177,38 @@ def get_imported_entity(file_path):
 
 
 def get_kind_name(prefixes, kind):
-    pattern_static = ""
-    pattern_generic = ""
-    pattern_abstract = ""
-    pattern_visibility = "Default"
-    pattern_member = "Member"
+    p_static = ""
+    p_abstract = ""
+    p_generic = ""
+    p_type = "Type"
+    p_visibility = "Default"
+    p_member = "Member"
+
     if "static" in prefixes:
-        pattern_static = "Static"
+        p_static = "Static"
+
     if "generic" in prefixes:
-        pattern_generic = "Generic"
+        p_generic = "Generic"
+
     if "abstract" in prefixes:
-        pattern_abstract = "Abstract"
+        p_abstract = "Abstract"
     elif "final" in prefixes:
-        pattern_abstract = "Final"
+        p_abstract = "Final"
+
     if "private" in prefixes:
-        pattern_visibility = "Private"
+        p_visibility = "Private"
     elif "public" in prefixes:
-        pattern_visibility = "Public"
+        p_visibility = "Public"
     elif "protected" in prefixes:
-        pattern_visibility = "Protected"
+        p_visibility = "Protected"
+
     if kind == "Interface":
-        pattern_member = ""
-    s = f"Java {pattern_static} {pattern_abstract} {pattern_generic} {kind} Type {pattern_visibility} {pattern_member}"
+        p_member = ""
+
+    if kind == "Method":
+        p_type = ""
+
+    s = f"Java {p_static} {p_abstract} {p_generic} {kind} {p_type} {p_visibility} {p_member}"
     s = " ".join(s.split())
     return s
 
