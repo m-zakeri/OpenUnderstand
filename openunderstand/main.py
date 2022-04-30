@@ -17,7 +17,7 @@ from oudb.fill import main
 from analysis_passes.couple_coupleby import ImplementCoupleAndImplementByCoupleBy
 from analysis_passes.create_createby import CreateAndCreateBy
 from analysis_passes.declare_declarein import DeclareAndDeclareinListener
-from analysis_passes.define_defineby import  DefineListener
+from analysis_passes.define_definein import  DefineListener
 from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
 
 
@@ -223,7 +223,7 @@ if __name__ == '__main__':
     main()
     db = db_open("../benchmark_database.oudb")
 
-    path = r"D:\works\university\term6\compiler\Project\OpenUnderstand\benchmark\xerces2j"
+    path = r"D:\works\university\term6\compiler\Project\OpenUnderstand\benchmark\calculator_app"
     # path = "C:/Users/Diyar/Desktop/_uni/compiler/project/test"
     # path = "C:/Users/Diyar/Desktop/_uni/compiler/project/OpenUnderstand/benchmark/calculator_app"
     # path = "C:/Users/Diyar/Desktop/_uni/compiler/project/TheAlgorithms"
