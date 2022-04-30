@@ -2,7 +2,7 @@
 	Time Complexity = O(E), where E is equal to the number of edges
 */
 
-package A_Star;
+package A_Star.emad.javad;
 
 import java.util.*;
 
