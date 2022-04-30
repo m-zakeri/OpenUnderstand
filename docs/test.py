@@ -5,7 +5,7 @@ try:
 except ImportError:
     print("Can not import understand")
 
-db = understand.open(r"D:\works\university\term6\compiler\Project\OpenUnderstand\benchmark\JSON\JSON.udb")
+db = understand.open(r"D:\works\university\term6\compiler\Project\OpenUnderstand\benchmark\xerces2j\xerces2j\xerces2j1.udb")
 
 counter = 0
 

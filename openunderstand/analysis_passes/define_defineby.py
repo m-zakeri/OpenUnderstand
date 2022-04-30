@@ -112,3 +112,23 @@ class DefineListener(JavaParserLabeledListener):
         ent = ctx.variableDeclaratorId().IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
         self.add_define_info(ent, ent_parents)
+
+    def enterCatchClause(self, ctx:JavaParserLabeled.CatchClauseContext):
+        ent = ctx.IDENTIFIER()
+        ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
+        self.add_define_info(ent, ent_parents)
+
+    def enterTypeParameter(self, ctx:JavaParserLabeled.TypeParameterContext):
+        ent = ctx.IDENTIFIER()
+        ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
+        self.add_define_info(ent, ent_parents)
+
+    def enterConstantDeclarator(self, ctx:JavaParserLabeled.ConstantDeclaratorContext):
+        ent = ctx.IDENTIFIER()
+        ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
+        self.add_define_info(ent, ent_parents)
+
+    def enterLastFormalParameter(self, ctx:JavaParserLabeled.LastFormalParameterContext):
+        ent = ctx.variableDeclaratorId().IDENTIFIER()
+        ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
+        self.add_define_info(ent, ent_parents)

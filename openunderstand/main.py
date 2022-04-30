@@ -223,7 +223,7 @@ if __name__ == '__main__':
     main()
     db = db_open("../benchmark_database.oudb")
 
-    path = r"D:\works\university\term6\compiler\Project\OpenUnderstand\benchmark\JSON"
+    path = r"D:\works\university\term6\compiler\Project\OpenUnderstand\benchmark\xerces2j"
     # path = "C:/Users/Diyar/Desktop/_uni/compiler/project/test"
     # path = "C:/Users/Diyar/Desktop/_uni/compiler/project/OpenUnderstand/benchmark/calculator_app"
     # path = "C:/Users/Diyar/Desktop/_uni/compiler/project/TheAlgorithms"
