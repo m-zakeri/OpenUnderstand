@@ -5,11 +5,7 @@ try:
 except ImportError:
     print("Can not import understand")
 
-db = understand.open(r"D:\works\university\term6\compiler\Project\OpenUnderstand\benchmark\JSON\JSON.udb")
-# ent = db.lookup("Admin", "method")[0]
-# print(ent, ent.simplename())
-# for ref in ent.refs(entkindstring="method", unique=True):
-#     print(ref, ref.kind().longname())
+db = understand.open(r"D:\works\university\term6\compiler\Project\OpenUnderstand\benchmark\calculator_app\calculator_app\calculator_app1.udb")
 
 counter = 0
 
@@ -38,6 +34,5 @@ for ent in db.ents():
             print(f"ref.ent.name:{ref.ent().name()}, ref.ent.longname:{ref.ent().longname()} ,ref.ent.kind:{ref.ent().kind()}\n"
                   f"ref.ent.parent:{ref.ent().parent()}, ref.ent.value:{ref.ent().value()},ref.ent.type:{ref.ent().type()}\n")
             print("--------------------------------------------------------")
-
 
 print(counter)
