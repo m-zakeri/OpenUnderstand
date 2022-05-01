@@ -348,42 +348,6 @@ class some_class {
 |     Java Modifyby              |     `i`                                 |     `some_meth`                    |
 
 
-#### Modify (Deref) Partial and Modifyby (Deref) Partial
- This reference is like `Modify` and `Modifyby`. 
-But, it is used when an entity modifies some elements of a variable of collection type.
-
-
-```java
-public ProjectionProfile{
-  this.verticalProjection = new float[toFixed(areaHeight)];
-  this.horizontalProjection = new float[toFixed(areaWidth)];
- 
- private void addRectangle(Rectangle element) {
-        // calculate horizontal and vertical projection profiles
-        if (!area.contains(element)) {
-            return;
-        }
-        
-        this.minCharHeight = (float) Math.min(this.minCharHeight, element.getHeight());
-        this.minCharWidth = (float) Math.min(this.minCharWidth, element.getWidth());
-        
-        for (int k = toFixed(element.getLeft()); k < toFixed(element.getRight()); k++) {
-            this.horizontalProjection[k - toFixed(areaLeft)] += element.getHeight();
-            this.maxHorizontalProjection = Math.max(this.maxHorizontalProjection, this.horizontalProjection[k - toFixed(areaLeft)]);
-        }
-    }     
-}
-```
-
-
-
-|     Reference kind   string    |     Entity   performing references    |     Entity being   referenced    |
-|--------------------------------|---------------------------------------|----------------------------------|
-|     Java Modify Partial               |     `addRectangle`                         |     `horizontalProjection`                            |
-|     Java Modifyby  Partial            |     `horizontalProjection`                                 |     `addRectangle`                    |
-
-
-
 ### Java ModuleUse and ModuleUseby
 
 - [ ] **Todo:** add a short definition with and an example code and corresponding table for this reference kind.
