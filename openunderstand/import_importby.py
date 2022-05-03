@@ -125,7 +125,7 @@ def get_parent(parent_file_name, files):
     parent_file_index = file_names.index(parent_file_name)
     parent_file_path = file_paths[parent_file_index]
     parent_entity = EntityModel.get_or_none(
-        _kind=1,  # Java File
+        _kind=KindModel.get_or_none(_name="Java File").get_id(),
         _name=parent_file_name,
         _longname=parent_file_path,
     )
@@ -135,7 +135,7 @@ def get_parent(parent_file_name, files):
 def add_imported_entity(i, files):
     if i['is_built_in']:
         imported_entity, _ = EntityModel.get_or_create(
-            _kind=84,  # Java Unknown Class Type Member
+            _kind=KindModel.get_or_none(_name="Java Unknown Class Type Member").get_id(),
             _parent=None,
             _name=i['imported_class_name'],
             _longname=i['imported_class_longname'],
@@ -214,7 +214,7 @@ def get_kind_name(prefixes, kind):
 
 
 def add_java_file_entity(file_path, file_name):
-    kind_id = 1  # Java File
+    kind_id = KindModel.get_or_none(_name="Java File").get_id()
     obj, _ = EntityModel.get_or_create(
         _kind=kind_id,
         _name=file_name,
@@ -226,7 +226,7 @@ def add_java_file_entity(file_path, file_name):
 
 def add_references(importing_ent, imported_ent, ref_dict):
     ref, _ = ReferenceModel.get_or_create(
-        _kind=206,  # Java Import
+        _kind=KindModel.get_or_none(_name="Java Import").get_id(),
         _file=importing_ent.get_id(),
         _line=ref_dict['line'],
         _column=ref_dict['column'],
@@ -234,7 +234,7 @@ def add_references(importing_ent, imported_ent, ref_dict):
         _scope=importing_ent.get_id(),
     )
     inverse_ref, _ = ReferenceModel.get_or_create(
-        _kind=207,  # Java Importby
+        _kind=KindModel.get_or_none(_name="Java Importby").get_id(),
         _file=importing_ent.get_id(),
         _line=ref_dict['line'],
         _column=ref_dict['column'],

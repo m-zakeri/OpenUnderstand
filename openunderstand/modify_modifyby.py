@@ -136,13 +136,13 @@ class ModifyListener(JavaParserLabeledListener):
 
 def add_var_entity(var_name):
     obj, _ = EntityModel.get_or_create(
-        _kind=152,  # Java Unresolved Variable,
+        _kind=KindModel.get_or_none(_name="Java Unresolved Variable").get_id(),
         _name=var_name,
         _longname=var_name,
     )
     return {
         "id": obj.get_id(),
-        "kind_id": 152,
+        "kind_id": KindModel.get_or_none(_name="Java Unresolved Variable").get_id(),
         "name": var_name,
         "longname": var_name,
     }
@@ -150,7 +150,7 @@ def add_var_entity(var_name):
 
 def add_references(scope, ent, ref_dict):
     ref, _ = ReferenceModel.get_or_create(
-        _kind=208,  # Java Modify
+        _kind=KindModel.get_or_none(_name="Java Modify Deref Partial").get_id(),
         _file=ref_dict['file_id'],
         _line=ref_dict['line'],
         _column=ref_dict['column'],
@@ -158,7 +158,7 @@ def add_references(scope, ent, ref_dict):
         _scope=scope['id'],
     )
     inverse_ref, _ = ReferenceModel.get_or_create(
-        _kind=209,  # Java Modifyby
+        _kind=KindModel.get_or_none(_name="Java Modifyby Deref Partial").get_id(),
         _file=ref_dict['file_id'],
         _line=ref_dict['line'],
         _column=ref_dict['column'],
