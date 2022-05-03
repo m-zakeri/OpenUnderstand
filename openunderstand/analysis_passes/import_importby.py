@@ -12,9 +12,9 @@ from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 
-from oudb.models import *
-from oudb.api import open as db_open, create_db, Kind
-from oudb.fill import main
+from ..oudb.models import *
+from ..oudb.api import open as db_open, create_db, Kind
+from ..oudb.fill import main
 
 
 class ClassEntityListener(JavaParserLabeledListener):
@@ -104,7 +104,9 @@ def readFile():
             if '.java' in str(file):
                 filename.append(file)
                 listOfFiles.append(os.path.join(dirpath, file))
-    print("fuck===================================================1")
+
+    db = db_open(r"E:\uni\compiler\OpenUnderstand\database.oudb")
+
     for path, name in zip(listOfFiles, filename):
         # lexer and parser for the current file
         file = FileStream(path)
@@ -150,16 +152,9 @@ def readFile():
         obj2 = create_Entity(name, path, None, file, file_kind, None, None)
 
         # make reference
-        # ref_kind = KindModel.get_or_none(_name="Java Import")._id
-        print("fuck===================================================")
+        ref_kind = KindModel.get_or_none(_name="Java Import")._id
         for ent in entities:
-            print("fuck===================================================")
-            print()
-            print()
-            print()
-            print()
-            print(ent)
-            obj3 = create_Ref(206, name, listener.line, listener.col, ent, obj2._id)
+            obj3 = create_Ref(ref_kind, name, listener.line, listener.col, ent, obj2._id)
 
 
 readFile()

@@ -9,8 +9,8 @@ __author__ = 'Shaghayegh Mobasher , Setayesh kouloubandi ,Parisa Alaie, Zakeri'
 __version__ = '0.1.1'
 
 
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 
 
 class ClassPropertiesListener(JavaParserLabeledListener):
@@ -88,7 +88,6 @@ class InterfacePropertiesListener(JavaParserLabeledListener):
                     self.interface_properties["parent"] = self.interface_longname[-2]
                 self.interface_properties["modifiers"] = ClassPropertiesListener.findClassOrInterfaceModifiers(ctx)
                 self.interface_properties["contents"] = ctx.getText()
-
 
 
 
