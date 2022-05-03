@@ -64,6 +64,7 @@ Java Import
 Modify (Modifyby)
 
 Java Modify
+Java Modify Deref Partial
 
 
 ModuleUse (ModuleUseby)
