@@ -36,11 +36,6 @@ class ClassListener(JavaParserLabeledListener):
         )
 
 
-class VariableDeclaratorListener(JavaParserLabeledListener):
-    def enterVariableDeclarators(self, ctx: JavaParserLabeled.VariableDeclaratorContext):
-        print(ctx.getText())
-
-
 class ModifyListener(JavaParserLabeledListener):
     def __init__(self, files, file_name):
         self.files = files
