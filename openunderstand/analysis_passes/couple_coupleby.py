@@ -67,3 +67,4 @@ class ImplementCoupleAndImplementByCoupleBy(JavaParserLabeledListener):
                                            "line": line,
                                            "col": col[:-1],
                                            "type_ent_longname": myType_longname})
+

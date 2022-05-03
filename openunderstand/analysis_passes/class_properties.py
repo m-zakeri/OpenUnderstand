@@ -90,3 +90,5 @@ class InterfacePropertiesListener(JavaParserLabeledListener):
                 self.interface_properties["contents"] = ctx.getText()
 
 
+
+
