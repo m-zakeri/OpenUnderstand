@@ -32,6 +32,9 @@ def get_project_info(index, ref_name):
         db_path = db_path + ".oudb"
     project_path = f"../../benchmarks/{project_name}"
 
+    db_path = os.path.abspath(db_path)
+    project_path = os.path.abspath(project_path)
+
     return {
         'PROJECT_NAME': project_name,
         'DB_PATH': db_path,
@@ -65,6 +68,7 @@ class Project:
                 if '.java' in str(file):
                     path = os.path.join(dir_path, file)
                     path = path.replace("/", "\\")
+                    path = os.path.abspath(path)
                     self.files.append((file, path))
                     add_java_file_entity(path, file)
 
