@@ -19,6 +19,9 @@ from analysis_passes.create_createby import CreateAndCreateBy
 from analysis_passes.declare_declarein import DeclareAndDeclareinListener
 from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
 
+from  analysis_passes.set_setby import *
+from analysis_passes.setPartial_setPartialBy import *
+import argparse
 
 class Project():
     tree = None
@@ -193,6 +196,21 @@ class Project():
                 return False
         return True
 
+def MyMain(args):
+    stream = FileStream(args.file, encoding='utf8')
+    lexer = JavaLexer(stream)
+    token_stream = CommonTokenStream(lexer)
+    parser = JavaParserLabeled(token_stream)
+    parse_tree = parser.compilationUnit()
+
+    my_listener = SetPartialSetByPartial()
+
+    walker = ParseTreeWalker()
+    walker.walk(t=parse_tree, listener=my_listener)
+
+    print(f'Yo Yo : {my_listener.getPartialsList()}')
+
+
 
 if __name__ == '__main__':
     p = Project()
@@ -238,3 +256,17 @@ if __name__ == '__main__':
             p.addDeclareRefs(listener.declare, file_ent)
         except Exception as e:
             print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
+
+
+
+    ################################ Test Soheil ################################
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument(
+        '-n', '--file',
+        help='Input source', default=r'F:\University\4002 - Compiler\Compiler - HW1\softwareMetric\A.java'
+    )
+    args = argparser.parse_args()
+    MyMain(args)
+    ################################ Test Soheil ################################
+
+
