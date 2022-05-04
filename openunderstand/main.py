@@ -197,7 +197,7 @@ class Project():
 if __name__ == '__main__':
     p = Project()
     create_db("../benchmark2_database.oudb",
-              project_dir="..\benchmark")
+              project_dir="../benchmark")
     main()
     db = db_open("../benchmark2_database.oudb")
 
