@@ -1,5 +1,5 @@
 import understand as und
-from import_importby import get_project_info
+from analysis_passes.g10_import_importby import get_project_info
 
 PRJ_INDEX = 0
 REF_NAME = "origin"

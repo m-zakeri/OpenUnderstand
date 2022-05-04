@@ -8,7 +8,7 @@ from oudb.fill import main as db_fill
 from oudb.api import create_db, open as db_open
 from oudb.models import KindModel, EntityModel, ReferenceModel
 
-PRJ_INDEX = 3
+PRJ_INDEX = 0
 REF_NAME = "import"
 
 
@@ -25,12 +25,12 @@ def get_project_info(index, ref_name):
         '105_freemind',
     ]
     project_name = project_names[index]
-    db_path = f"../../databases/{ref_name}/{project_name}"
+    db_path = f"../../../databases/{ref_name}/{project_name}"
     if ref_name == "origin":
         db_path = db_path + ".udb"
     else:
         db_path = db_path + ".oudb"
-    project_path = f"../../benchmarks/{project_name}"
+    project_path = f"../../../benchmarks/{project_name}"
 
     db_path = os.path.abspath(db_path)
     project_path = os.path.abspath(project_path)
