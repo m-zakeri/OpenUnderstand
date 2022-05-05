@@ -7,6 +7,8 @@ from fnmatch import fnmatch
 
 from antlr4 import *
 
+from analysis_passes.class_names import ImplementClassNames
+from analysis_passes.extendcouple_extendcoupleby import ExtendCoupleAndExtendCoupleBy
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaLexer import JavaLexer
 
@@ -14,7 +16,7 @@ from oudb.models import KindModel, EntityModel, ReferenceModel
 from oudb.api import open as db_open, create_db
 from oudb.fill import main
 
-from analysis_passes.couple_coupleby import ImplementCoupleAndImplementByCoupleBy
+from analysis_passes.couple_coupleby import CoupleAndCoupleBy
 from analysis_passes.create_createby import CreateAndCreateBy
 from analysis_passes.declare_declarein import DeclareAndDeclareinListener
 from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
@@ -93,6 +95,36 @@ class Project():
             implement_ref = ReferenceModel.get_or_create(_kind=188, _file=file_ent, _line=ref_dict["line"],
                                                          _column=ref_dict["col"], _ent=ent, _scope=scope)
             implementBy_ref = ReferenceModel.get_or_create(_kind=189, _file=file_ent, _line=ref_dict["line"],
+                                                           _column=ref_dict["col"], _ent=scope, _scope=ent)
+
+    def addCoupleOrCoupleByRefs(self, ref_dicts, file_ent, file_address):
+        for ref_dict in ref_dicts:
+            scope = EntityModel.get_or_create(_kind=self.findKindWithKeywords(ref_dict["scope_kind"],
+                                                                              ref_dict["scope_modifiers"]),
+                                              _name=ref_dict["scope_name"],
+                                              _parent=ref_dict["scope_parent"] if ref_dict[
+                                                                                      "scope_parent"] is not None else file_ent,
+                                              _longname=ref_dict["scope_longname"],
+                                              _contents=ref_dict["scope_contents"])[0]
+            ent = self.getImplementEntity(ref_dict["type_ent_longname"], file_address)
+            couple_ref = ReferenceModel.get_or_create(_kind=181, _file=file_ent, _line=ref_dict["line"],
+                                                         _column=ref_dict["col"], _ent=ent, _scope=scope)
+            coupleBy_ref = ReferenceModel.get_or_create(_kind=180, _file=file_ent, _line=ref_dict["line"],
+                                                           _column=ref_dict["col"], _ent=scope, _scope=ent)
+
+    def addExtendCoupleOrExtendCoupleByRefs(self, ref_dicts, file_ent, file_address):
+        for ref_dict in ref_dicts:
+            scope = EntityModel.get_or_create(_kind=self.findKindWithKeywords(ref_dict["scope_kind"],
+                                                                              ref_dict["scope_modifiers"]),
+                                              _name=ref_dict["scope_name"],
+                                              _parent=ref_dict["scope_parent"] if ref_dict[
+                                                                                      "scope_parent"] is not None else file_ent,
+                                              _longname=ref_dict["scope_longname"],
+                                              _contents=ref_dict["scope_contents"])[0]
+            ent = self.getImplementEntity(ref_dict["type_ent_longname"], file_address)
+            extend_ref = ReferenceModel.get_or_create(_kind=178, _file=file_ent, _line=ref_dict["line"],
+                                                         _column=ref_dict["col"], _ent=ent, _scope=scope)
+            extendBy_ref = ReferenceModel.get_or_create(_kind=179, _file=file_ent, _line=ref_dict["line"],
                                                            _column=ref_dict["col"], _ent=scope, _scope=ent)
 
     def addCreateRefs(self, ref_dicts, file_ent, file_address):
@@ -202,10 +234,22 @@ if __name__ == '__main__':
     db = db_open("../benchmark2_database.oudb")
 
     # path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
-    path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
+    path = "../ExampleJavaProject"
     files = p.getListOfFiles(path)
     ########## AGE KHASTID YEK FILE RO RUN KONID:
     # files = ["../../Java codes/javaCoupling.java"]
+    class_names_listener = ImplementClassNames()
+    class_names_listener.class_names = []
+
+    for file_address in files:
+        try:
+            file_ent = p.getFileEntity(file_address)
+            tree = p.Parse(file_address)
+            p.Walk(class_names_listener, tree)
+        except Exception as e:
+            print("An Error occurred in file:" + file_address + "\n" + str(e))
+            continue
+
 
     for file_address in files:
         try:
@@ -215,11 +259,10 @@ if __name__ == '__main__':
             print("An Error occurred in file:" + file_address + "\n" + str(e))
             continue
         try:
-            # implement
-            listener = ImplementCoupleAndImplementByCoupleBy()
-            listener.implement = []
+            listener = CoupleAndCoupleBy(class_names_listener.class_names)
             p.Walk(listener, tree)
-            p.addImplementOrImplementByRefs(listener.implement, file_ent, file_address)
+            # print(listener.implement)
+            p.addCoupleOrCoupleByRefs(listener.implement, file_ent, file_address)
         except Exception as e:
             print("An Error occurred for reference implement in file:" + file_address + "\n" + str(e))
         try:
@@ -238,3 +281,11 @@ if __name__ == '__main__':
             p.addDeclareRefs(listener.declare, file_ent)
         except Exception as e:
             print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
+        try:
+            listener = ExtendCoupleAndExtendCoupleBy()
+            listener.implement = []
+            p.Walk(listener, tree)
+            # print(listener.implement)
+            p.addExtendCoupleOrExtendCoupleByRefs(listener.implement, file_ent, file_address)
+        except Exception as e:
+            print("An Error occurred for ExtendCouple implement in file:" + file_address + "\n" + str(e))

@@ -1,12 +1,14 @@
+import os
+import sys
 import peewee
 import unittest
 
-from ..oudb.models import KindModel, EntityModel, ReferenceModel
-from ..oudb.utils import get_entity_object_from_understand
+from oudb.models import KindModel, EntityModel, ReferenceModel
+from oudb.utils import get_entity_object_from_understand
 
 
 def append_java_ent_kinds():
-    with open("./oudb/java_ent_kinds.txt", "r") as f:
+    with open(os.path.join(sys.path[0], "oudb/java_ent_kinds.txt"), "r") as f:
         for line in f.readlines():
             if line.startswith("Java"):
                 query = line.strip()
@@ -24,7 +26,7 @@ def append_java_ref_kind(kind: str, inverse: str, ref: str) -> int:
 
 def append_java_ref_kinds():
     kind, inv_kind = "", ""
-    with open("./oudb/java_ref_kinds.txt", "r") as f:
+    with open(os.path.join(sys.path[0], "oudb/java_ref_kinds.txt"), "r") as f:
         for line in f.readlines():
             line = line.strip()
             if line.startswith("Java"):
