@@ -28,7 +28,6 @@ class Set_Setby(JavaParserLabeledListener):
         self.inexp21 = False
 
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
-        self.functions.append(ctx.IDENTIFIER().getText())
         self.currentmethod = ctx.IDENTIFIER().getText()
 
     def enterExpression21(self, ctx: JavaParserLabeled.Expression21Context):
