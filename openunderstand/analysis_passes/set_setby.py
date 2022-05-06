@@ -21,54 +21,40 @@ import analysis_passes.class_properties as class_properties
 
 class Set_Setby(JavaParserLabeledListener):
     def __init__(self):
-        self.currentmethod = ""
-        self.allsets = []
-        self.counter = -1
-        self.invardec = False
-        self.inexp21 = False
+        self.current_method = ""
+        self.all_sets = []
 
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
-        self.currentmethod = ctx.IDENTIFIER().getText()
+        self.current_method = ctx.IDENTIFIER().getText()
 
     def enterExpression21(self, ctx: JavaParserLabeled.Expression21Context):
-        self.counter += 1
-        self.allsets.append({"variable": None, "method": None, "line": None, "col": None})
-        self.inexp21 = True
-
-    def enterExpression2(self, ctx: JavaParserLabeled.Expression2Context):
-        self.counter -= 1
-        self.allsets.pop()
-        self.inexp21 = False
-
-    def exitExpression21(self, ctx: JavaParserLabeled.Expression21Context):
-        self.inexp21 = False
-
-    def enterPrimary4(self, ctx: JavaParserLabeled.Primary4Context):
-        if self.inexp21:
-            self.allsets[self.counter]["variable"] = ctx.IDENTIFIER().getText()
-            self.allsets[self.counter]["method"] = self.currentmethod
-            self.allsets[self.counter]["line"] = str(ctx.start).split(",")[3].split(":")[0]
-            self.allsets[self.counter]["col"] = (str(ctx.start).split(",")[3].split(":")[1])[:-1]
+        try:
+            if str(ctx.ASSIGN()) == "=":
+                # print("--------------------------------")
+                try:
+                    self.all_sets.append({"variable": ctx.getChild(0).getChild(0).IDENTIFIER().getText()
+                                             , "method": self.current_method})
+                    # print("variable=" + ctx.getChild(0).getChild(0).IDENTIFIER().getText())
+                    # print("method=" + self.current_method)
+                except:
+                    self.all_sets.append({"variable": str(ctx.getChild(0).getChild(2)),
+                                          "method": self.current_method})
+                    # print("variable=" + str(ctx.getChild(0).getChild(2)))
+                    # print("method=" + self.current_method)
+                # print("--------------------------------")
+        except:
+            return {"variable": "undiscovered state",
+                    "method": self.current_method}
 
     def enterVariableDeclarator(self, ctx: JavaParserLabeled.VariableDeclaratorContext):
         if str(ctx.ASSIGN()) == "=":
-            self.counter += 1
-            self.allsets.append({"variable": None, "method": None, "line": None, "col": None})
-            self.invardec = True
-
-    def exitVariableDeclarator(self, ctx: JavaParserLabeled.VariableDeclaratorContext):
-        self.invardec = False
-
-    def enterVariableDeclaratorId(self, ctx: JavaParserLabeled.VariableDeclaratorIdContext):
-        if self.invardec:
-            self.allsets[self.counter]["variable"] = ctx.IDENTIFIER().getText()
-            self.allsets[self.counter]["method"] = self.currentmethod
-            self.allsets[self.counter]["line"] = str(ctx.start).split(",")[3].split(":")[0]
-            self.allsets[self.counter]["col"] = (str(ctx.start).split(",")[3].split(":")[1])[:-1]
-
-    def enterExpression1(self, ctx: JavaParserLabeled.Expression1Context):
-        if self.inexp21:
-            self.allsets[self.counter]["variable"] = ctx.IDENTIFIER().getText()
-            self.allsets[self.counter]["method"] = self.currentmethod
-            self.allsets[self.counter]["line"] = str(ctx.start).split(",")[3].split(":")[0]
-            self.allsets[self.counter]["col"] = (str(ctx.start).split(",")[3].split(":")[1])[:-1]
+            # print("--------------------------------")
+            str(ctx.start).split(",")[3].split(":")
+            self.all_sets.append({"variable": str(ctx.variableDeclaratorId().getChild(0)),
+                                  "method": self.current_method,
+                                  "line": str(ctx.start).split(",")[3].split(":")[0],
+                                  "col": str(ctx.start).split(",")[3].split(":")[1]})
+            # print("variable=" + str(ctx.variableDeclaratorId().getChild(0)))
+            # print("method=" + self.current_method)
+            # print()
+            # print("--------------------------------")
