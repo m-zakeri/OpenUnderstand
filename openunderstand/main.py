@@ -83,22 +83,20 @@ class Project():
 
     def addTypeRefs(self, d_type, file_ent):
         for type_tuple in d_type['typedBy']:
-            # kind : () Variable, () Method, Parameter
             ent, h_c1 = EntityModel.get_or_create(_kind=224, _parent=None, _name=type_tuple[1],
                                                   _longname=type_tuple[6]+'.'+type_tuple[1], _value=None,
                                                   _type=None, _contents=stream)
 
-            # kind : Enum type, () Class
             scope, h_c2 = EntityModel.get_or_create(_kind=225, _parent=None, _name=type_tuple[0],
                                                     _longname=type_tuple[6]+'.'+type_tuple[0], _value=None,
                                                     _type=None, _contents=stream)
 
             # 224		Java Typed
-            type_ref = ReferenceModel.get_or_create(_kind=224, _file=scope, _line=type_tuple[4],
+            typed_ref = ReferenceModel.get_or_create(_kind=224, _file=scope, _line=type_tuple[4],
                                                     _column=type_tuple[5],
                                                     _ent=ent, _scope=scope)
             # 225    	Java Typedby
-            typeBy_ref = ReferenceModel.get_or_create(_kind=225, _file=ent, _line=type_tuple[2],
+            typedby_ref = ReferenceModel.get_or_create(_kind=225, _file=ent, _line=type_tuple[2],
                                                       _column=type_tuple[3],
                                                       _ent=scope, _scope=ent)
 
@@ -113,11 +111,11 @@ class Project():
                                                     _type=None, _contents=stream)
 
             # 226		Java Use
-            ref1 = ReferenceModel.get_or_create(_kind=226, _file=file_ent,
+            use_ref = ReferenceModel.get_or_create(_kind=226, _file=file_ent,
                                                 _line=use_tuple[4], _column=use_tuple[5],
                                                 _ent=ent, _scope=scope)
             # 227	 	Java Useby
-            ref2 = ReferenceModel.get_or_create(_kind=227, _file=file_ent,
+            useby_ref = ReferenceModel.get_or_create(_kind=227, _file=file_ent,
                                                 _line=use_tuple[2], _column=use_tuple[3],
                                                 _ent=scope, _scope=ent)
 

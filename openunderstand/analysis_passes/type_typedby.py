@@ -6,13 +6,11 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
     def __init__(self, file_name):
         self.file_name = file_name
         self.package_name = ""
-        # self.typed = []
         self.typedBy = []
 
     @property
     def get_type(self):
         d = {}
-        # d['typed'] = self.typed
         d['typedBy'] = self.typedBy
         return d
 
@@ -22,28 +20,28 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
     def enterFieldDeclaration(self, ctx: JavaParserLabeled.FieldDeclarationContext):
         # ==========typed/typedby=============
         ctx1 = ctx.variableDeclarators()
-        ctx11 = ctx1.variableDeclarator()[0].variableDeclaratorId()
-        ctx2 = ctx.typeType()
+        ctx_name = ctx1.variableDeclarator()[0].variableDeclaratorId()
+        ctx_type = ctx.typeType()
 
-        line2 = ctx2.children[0].children[0].symbol.line
-        column2 = ctx2.children[0].children[0].symbol.column
-        line1 = ctx11.IDENTIFIER().symbol.line
-        column1 = ctx11.IDENTIFIER().symbol.column
+        type_line = ctx_type.children[0].children[0].symbol.line
+        type_column = ctx_type.children[0].children[0].symbol.column
+        name_line = ctx_name.IDENTIFIER().symbol.line
+        name_column = ctx_name.IDENTIFIER().symbol.column
 
-        self.typedBy.append((ctx11.getText(), ctx2.getText(), line1, column1, line2, column2, self.package_name))
-        # self.typed.append((ctx2.getText(), ctx11.getText()))
+        self.typedBy.append((ctx_name.getText(), ctx_type.getText(), name_line, name_column, type_line, type_column, self.package_name))
 
     # khode enum
     def enterEnumDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
-        name = ctx.IDENTIFIER()
-        type = ctx.ENUM()
+        ctx_name = ctx.IDENTIFIER()
+        ctx_type = ctx.ENUM()
 
-        line2 = ctx.ENUM().symbol.line
-        column2 = ctx.ENUM().symbol.column
-        line1 = ctx.IDENTIFIER().symbol.line
-        column1 = ctx.IDENTIFIER().symbol.column
+        type_line = ctx_type.symbol.line
+        type_column = ctx_type.symbol.column
+        name_line = ctx_name.symbol.line
+        name_column = ctx_name.symbol.column
 
-        self.typedBy.append((ctx.IDENTIFIER().getText(), type.getText(), line1, column1, line2, column2, self.package_name))
+        self.typedBy.append((ctx.IDENTIFIER().getText(), ctx_type.getText(),
+                            name_line, name_column, type_line, type_column, self.package_name))
 
     # type haye enum
     def enterEnumConstant(self, ctx: JavaParserLabeled.EnumConstantContext):
@@ -52,54 +50,55 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
         # esme khode enum
         pctx = ctx.parentCtx.parentCtx
 
-        line2 = enum_type.symbol.line
-        column2 = enum_type.symbol.column
-        line1 = pctx.IDENTIFIER().symbol.line
-        column1 = pctx.IDENTIFIER().symbol.column
+        type_line = enum_type.symbol.line
+        type_column = enum_type.symbol.column
+        name_line = pctx.IDENTIFIER().symbol.line
+        name_column = pctx.IDENTIFIER().symbol.column
 
-        self.typedBy.append((pctx.IDENTIFIER().getText(), ctx.getText(), line1, column1, line2, column2, self.package_name))
+        self.typedBy.append((pctx.IDENTIFIER().getText(), ctx.getText(),
+                            name_line, name_column, type_line, type_column, self.package_name))
 
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         # method types
         t = ctx.typeTypeOrVoid()
         try:
-
-            ctx2 = t.typeType()
-
-            line2 = ctx2.children[0].children[0].symbol.line
-            column2 = ctx2.children[0].children[0].symbol.column
-            line1 = ctx.IDENTIFIER().symbol.line
-            column1 = ctx.IDENTIFIER().symbol.column
+            ctx_type = t.typeType()
+            type_line = ctx_type.children[0].children[0].symbol.line
+            type_column = ctx_type.children[0].children[0].symbol.column
+            name_line = ctx.IDENTIFIER().symbol.line
+            name_column = ctx.IDENTIFIER().symbol.column
         except:
-            ctx2 = t.VOID()
+            ctx_type = t.VOID()
+            type_line = t.children[0].symbol.line
+            type_column = t.children[0].symbol.column
+            name_line = ctx.IDENTIFIER().symbol.line
+            name_column = ctx.IDENTIFIER().symbol.column
 
-            line2 = t.children[0].symbol.line
-            column2 = t.children[0].symbol.column
-            line1 = ctx.IDENTIFIER().symbol.line
-            column1 = ctx.IDENTIFIER().symbol.column
-
-        self.typedBy.append((ctx.IDENTIFIER().getText(), ctx2.getText(), line1, column1, line2, column2, self.package_name))
+        self.typedBy.append((ctx.IDENTIFIER().getText(), ctx_type.getText(),
+                            name_line, name_column, type_line, type_column, self.package_name))
 
     def enterFormalParameter(self, ctx: JavaParserLabeled.FormalParameterContext):
-        ctx1 = ctx.variableDeclaratorId()
-        ctx2 = ctx.typeType()
+        ctx_name = ctx.variableDeclaratorId()
+        ctx_type = ctx.typeType()
 
-        line2 = ctx2.children[0].children[0].symbol.line
-        column2 = ctx2.children[0].children[0].symbol.column
-        line1 = ctx1.IDENTIFIER().symbol.line
-        column1 = ctx1.IDENTIFIER().symbol.column
+        type_line = ctx_type.children[0].children[0].symbol.line
+        type_column = ctx_type.children[0].children[0].symbol.column
+        name_line = ctx_name.IDENTIFIER().symbol.line
+        name_column = ctx_name.IDENTIFIER().symbol.column
 
-        self.typedBy.append((ctx1.getText(), ctx2.getText(), line1, column1, line2, column2, self.package_name))
+        self.typedBy.append((ctx_name.getText(), ctx_type.getText(),
+                            name_line, name_column, type_line, type_column, self.package_name))
 
     def enterLocalVariableDeclaration(self, ctx: JavaParserLabeled.LocalVariableDeclarationContext):
         # baraye try va catch va function
         ctx1 = ctx.variableDeclarators()
-        ctx11 = ctx1.variableDeclarator()[0].variableDeclaratorId()
-        ctx2 = ctx.typeType()
+        ctx_name = ctx1.variableDeclarator()[0].variableDeclaratorId()
+        ctx_type = ctx.typeType()
 
-        line2 = ctx2.children[0].children[0].symbol.line
-        column2 = ctx2.children[0].children[0].symbol.column
-        line1 = ctx11.IDENTIFIER().symbol.line
-        column1 = ctx11.IDENTIFIER().symbol.column
+        type_line = ctx_type.children[0].children[0].symbol.line
+        type_column = ctx_type.children[0].children[0].symbol.column
+        name_line = ctx_name.IDENTIFIER().symbol.line
+        name_column = ctx_name.IDENTIFIER().symbol.column
 
-        self.typedBy.append((ctx11.getText(), ctx2.getText(), line1, column1, line2, column2, self.package_name))
+        self.typedBy.append((ctx_name.getText(), ctx_type.getText(),
+                            name_line, name_column, type_line, type_column, self.package_name))
