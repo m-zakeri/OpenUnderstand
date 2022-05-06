@@ -5,6 +5,7 @@ from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 class UseAndUseByListener(JavaParserLabeledListener):
     def __init__(self, file_name):
         self.file_name = file_name
+        self.package_name = ""
         # self.use = []
         self.useBy = []
 
@@ -14,6 +15,10 @@ class UseAndUseByListener(JavaParserLabeledListener):
         # d['use'] = self.use
         d['useBy'] = self.useBy
         return d
+
+
+    def enterPackageDeclaration(self, ctx:JavaParserLabeled.PackageDeclarationContext):
+        self.package_name = ctx.getText().replace("package", "").replace(";", "")
 
 
     def enterPrimary4(self, ctx: JavaParserLabeled.Primary4Context):
@@ -37,4 +42,4 @@ class UseAndUseByListener(JavaParserLabeledListener):
             column2 = ctx.IDENTIFIER().symbol.column
 
             # self.use.append((ctx.IDENTIFIER().getText(), VI.getText()))
-            self.useBy.append((VI.getText(), ctx.IDENTIFIER().getText(), line1, column1, line2, column2))
+            self.useBy.append((VI.getText(), ctx.IDENTIFIER().getText(), line1, column1, line2, column2, self.package_name))

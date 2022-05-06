@@ -83,33 +83,43 @@ class Project():
 
     def addTypeRefs(self, d_type, file_ent):
         for type_tuple in d_type['typedBy']:
+            # kind : () Variable, () Method, Parameter
             ent, h_c1 = EntityModel.get_or_create(_kind=224, _parent=None, _name=type_tuple[1],
-                                                  _longname=file_address, _value=None,
+                                                  _longname=type_tuple[6]+'.'+type_tuple[1], _value=None,
                                                   _type=None, _contents=stream)
+
+            # kind : Enum type, () Class
             scope, h_c2 = EntityModel.get_or_create(_kind=225, _parent=None, _name=type_tuple[0],
-                                                    _longname=file_address, _value=None,
+                                                    _longname=type_tuple[6]+'.'+type_tuple[0], _value=None,
                                                     _type=None, _contents=stream)
 
             # 224		Java Typed
-            type_ref = ReferenceModel.get_or_create(_kind=224, _file=scope, _line=type_tuple[4], _column=type_tuple[5],
-                                                _ent=ent, _scope=scope)
+            type_ref = ReferenceModel.get_or_create(_kind=224, _file=scope, _line=type_tuple[4],
+                                                    _column=type_tuple[5],
+                                                    _ent=ent, _scope=scope)
             # 225    	Java Typedby
-            typeBy_ref = ReferenceModel.get_or_create(_kind=225, _file=ent, _line=type_tuple[2], _column=type_tuple[3],
-                                                _ent=scope, _scope=ent)
+            typeBy_ref = ReferenceModel.get_or_create(_kind=225, _file=ent, _line=type_tuple[2],
+                                                      _column=type_tuple[3],
+                                                      _ent=scope, _scope=ent)
 
     def addUseRefs(self, d_use, file_ent):
         for use_tuple in d_use['useBy']:
-            ent, h_c1 = EntityModel.get_or_create(_kind=226, _parent=None, _name=use_tuple[1], _longname=file_address, _value=None,
-                                            _type=None, _contents=stream)
-            scope, h_c2 = EntityModel.get_or_create(_kind=227, _parent=None, _name=use_tuple[0], _longname=file_address, _value=None,
-                                              _type=None, _contents=stream)
+            ent, h_c1 = EntityModel.get_or_create(_kind=226, _parent=None, _name=use_tuple[1],
+                                                  _longname=use_tuple[6]+'.'+use_tuple[1], _value=None,
+                                                  _type=None, _contents=stream)
+
+            scope, h_c2 = EntityModel.get_or_create(_kind=227, _parent=None, _name=use_tuple[0],
+                                                    _longname=use_tuple[6]+'.'+use_tuple[0], _value=None,
+                                                    _type=None, _contents=stream)
 
             # 226		Java Use
-            ref1 = ReferenceModel.get_or_create(_kind=226, _file=file_ent, _line=use_tuple[4], _column=use_tuple[5], _ent=ent,
-                                                _scope=scope)
+            ref1 = ReferenceModel.get_or_create(_kind=226, _file=file_ent,
+                                                _line=use_tuple[4], _column=use_tuple[5],
+                                                _ent=ent, _scope=scope)
             # 227	 	Java Useby
-            ref2 = ReferenceModel.get_or_create(_kind=227, _file=file_ent, _line=use_tuple[2], _column=use_tuple[3], _ent=scope,
-                                                _scope=ent)
+            ref2 = ReferenceModel.get_or_create(_kind=227, _file=file_ent,
+                                                _line=use_tuple[2], _column=use_tuple[3],
+                                                _ent=scope, _scope=ent)
 
     def addImplementOrImplementByRefs(self, ref_dicts, file_ent, file_address):
         for ref_dict in ref_dicts:
@@ -234,7 +244,7 @@ if __name__ == '__main__':
     db = db_open("../benchmark2_database.oudb")
 
     # path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
-    path = "C:/Projects/Git/OpenUnderstandG15/benchmark"
+    path = "C:/git/OpenUnderstandG15/benchmark/jvlt-1.3.2"
     files = p.getListOfFiles(path)
     ########## AGE KHASTID YEK FILE RO RUN KONID:
     # files = ["../../Java codes/javaCoupling.java"]
@@ -277,22 +287,7 @@ if __name__ == '__main__':
             listener = TypedAndTypedByListener(file_address)
             p.Walk(listener=listener, tree=tree)
             d_type = listener.get_type
-            for type_tuple in d_type['typedBy']:
-                ent, h_c1 = EntityModel.get_or_create(_kind=224, _parent=None, _name=name,
-                                                      _longname=file_address, _value=None,
-                                                      _type=None, _contents=stream)
-                scope, h_c2 = EntityModel.get_or_create(_kind=225, _parent=None, _name=name,
-                                                        _longname=file_address, _value=None,
-                                                        _type=None, _contents=stream)
-
-                # 224		Java Typed
-                type_ref = ReferenceModel.get_or_create(_kind=224, _file=scope, _line=type_tuple[4],
-                                                        _column=type_tuple[5],
-                                                        _ent=ent, _scope=scope)
-                # 225    	Java Typedby
-                typeBy_ref = ReferenceModel.get_or_create(_kind=225, _file=ent, _line=type_tuple[2],
-                                                          _column=type_tuple[3],
-                                                          _ent=scope, _scope=ent)
+            p.addTypeRefs(d_type, file_ent)
         except Exception as e:
             print("An Error occurred for reference typed in file:" + file_address + "\n" + str(e))
         try:
@@ -300,21 +295,6 @@ if __name__ == '__main__':
             listener = UseAndUseByListener(file_address)
             p.Walk(listener, tree)
             d_use = listener.get_use
-            for use_tuple in d_use['useBy']:
-                ent, h_c1 = EntityModel.get_or_create(_kind=226, _parent=None, _name=use_tuple[1],
-                                                      _longname=file_address, _value=None,
-                                                      _type=None, _contents=stream)
-                scope, h_c2 = EntityModel.get_or_create(_kind=227, _parent=None, _name=use_tuple[0],
-                                                        _longname=file_address, _value=None,
-                                                        _type=None, _contents=stream)
-
-                # 226		Java Use
-                ref1 = ReferenceModel.get_or_create(_kind=226, _file=file_ent, _line=use_tuple[4], _column=use_tuple[5],
-                                                    _ent=ent,
-                                                    _scope=scope)
-                # 227	 	Java Useby
-                ref2 = ReferenceModel.get_or_create(_kind=227, _file=file_ent, _line=use_tuple[2], _column=use_tuple[3],
-                                                    _ent=scope,
-                                                    _scope=ent)
+            p.addUseRefs(d_use, file_ent)
         except Exception as e:
             print("An Error occurred for reference use in file:" + file_address + "\n" + str(e))
