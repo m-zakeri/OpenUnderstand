@@ -2,9 +2,9 @@ from antlr4 import *
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from oudb.models import KindModel, EntityModel, ReferenceModel
-from import_importby import Project, get_parse_tree, get_project_info, get_kind_name, get_parent
+from analysis_passes.g10_import_importby import Project, get_parse_tree, get_project_info, get_kind_name, get_parent
 
-PRJ_INDEX = 8
+PRJ_INDEX = 0
 REF_NAME = "modify"
 
 
