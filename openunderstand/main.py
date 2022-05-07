@@ -18,7 +18,9 @@ from analysis_passes.couple_coupleby import ImplementCoupleAndImplementByCoupleB
 from analysis_passes.create_createby import CreateAndCreateBy
 from analysis_passes.declare_declarein import DeclareAndDeclareinListener
 from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
-from analysis_passes.set_setby import *
+from  analysis_passes.set_setby import *
+from analysis_passes.setPartial_setPartialBy import *
+import argparse
 
 class Project():
     tree = None
@@ -193,6 +195,21 @@ class Project():
                 return False
         return True
 
+def MyMain(args):
+    stream = FileStream(args.file, encoding='utf8')
+    lexer = JavaLexer(stream)
+    token_stream = CommonTokenStream(lexer)
+    parser = JavaParserLabeled(token_stream)
+    parse_tree = parser.compilationUnit()
+
+    my_listener = SetPartialSetByPartial()
+
+    walker = ParseTreeWalker()
+    walker.walk(t=parse_tree, listener=my_listener)
+
+    print(f'Yo Yo : {my_listener.getPartialsList()}')
+
+
 
     def getSetandSetby(self, ref_dicts, file_ent, file_address):
         for ref_dict in ref_dicts:
@@ -224,11 +241,12 @@ class Project():
 if __name__ == '__main__':
     p = Project()
     create_db("../benchmark2_database.oudb",
-              project_dir="..\benchmark")
+              project_dir="../benchmark")
     main()
     db = db_open("../benchmark2_database.oudb")
 
     # path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
+
     path = "C:/Users/MOJTAB/Desktop/compiler_p1/OpenUnderstand/benchmark"
     files = p.getListOfFiles(path)
     ########## AGE KHASTID YEK FILE RO RUN KONID:
@@ -273,4 +291,5 @@ if __name__ == '__main__':
             p.Walk(listener, tree)
             p.getSetandSetby(listener.allsets, file_ent,file_address)
         except Exception as e:
+
             print("An Error occurred for reference set and setby in file:" + file_address + "\n" + str(e))
