@@ -54,7 +54,7 @@ class SetPartialSetByPartial(JavaParserLabeledListener):
 
         # Check the existence of the record before adding it to the list
         tmpDict = {"currentClass": self.currentClass, "currentMethod": self.currentMethod,
-                   "instanceName": self.instanceName, "fieldName": self.fieldName}
+                   "instanceName": self.instanceName, "fieldName": self.fieldName,"col":str(ctx.start).split(",")[3].split(":")[1],"line":str(ctx.start).split(",")[3].split(":")[0]}
 
         alreadyExists = False
         for dict in self.partialsList:
