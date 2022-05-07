@@ -3,7 +3,7 @@
 
 """
 ## Description
-This module find all OpenUnderstand call and callby references in a Java project
+This module find all OpenUnderstand set and setby references in a Java project
 
 
 ## References
@@ -11,7 +11,7 @@ This module find all OpenUnderstand call and callby references in a Java project
 
 """
 
-__author__ = 'Amirhossein Derakhshan'
+__author__ = 'Amirhossein Derakhshan ,Mojtaba Safari'
 __version__ = '0.1.0'
 
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
@@ -20,6 +20,10 @@ import analysis_passes.class_properties as class_properties
 
 
 class Set_Setby(JavaParserLabeledListener):
+    """
+    #Todo: Implementing the ANTLR listener pass for Java set and Java setby reference kind
+    """
+
     def __init__(self):
         self.current_method = ""
         self.all_sets = []

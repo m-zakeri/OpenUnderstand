@@ -18,7 +18,6 @@ from analysis_passes.couple_coupleby import ImplementCoupleAndImplementByCoupleB
 from analysis_passes.create_createby import CreateAndCreateBy
 from analysis_passes.declare_declarein import DeclareAndDeclareinListener
 from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
-
 from  analysis_passes.set_setby import *
 from analysis_passes.setPartial_setPartialBy import *
 import argparse
@@ -212,6 +211,33 @@ def MyMain(args):
 
 
 
+    def getSetandSetby(self, ref_dicts, file_ent, file_address):
+        for ref_dict in ref_dicts:
+            # scope = EntityModel.get_or_create(_kind=1)[0]
+
+            ent ,h = EntityModel.get_or_create(_kind=222,
+                                            _parent=None,
+                                            _longname=ref_dict["method"],
+                                            _contents = file_address,
+                                            _name= ref_dict["variable"],
+                                            _value=None,
+                                            _type=None)
+            scope,k = EntityModel.get_or_create(_kind=223,
+                                            _parent=None,
+                                            _longname=ref_dict["method"],
+                                            _contents = file_address,
+                                            _name= ref_dict["variable"],
+                                            _value=None,
+                                              _type=None)
+
+            set = ReferenceModel.get_or_create(_kind=222, _file=file_ent, _line=ref_dict["line"],
+                                                  _column=ref_dict["col"], _scope=scope, _ent=ent)[0]
+
+            setby = ReferenceModel.get_or_create(_kind=223, _file=file_ent, _line=ref_dict["line"],
+                                                    _column=ref_dict["col"], _scope=ent, _ent=scope)[0]
+
+
+
 if __name__ == '__main__':
     p = Project()
     create_db("../benchmark2_database.oudb",
@@ -220,7 +246,8 @@ if __name__ == '__main__':
     db = db_open("../benchmark2_database.oudb")
 
     # path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
-    path = "F:/University/4002 - Compiler/LastSemesterProj/tmpDB"
+
+    path = "C:/Users/MOJTAB/Desktop/compiler_p1/OpenUnderstand/benchmark"
     files = p.getListOfFiles(path)
     ########## AGE KHASTID YEK FILE RO RUN KONID:
     # files = ["../../Java codes/javaCoupling.java"]
@@ -232,41 +259,37 @@ if __name__ == '__main__':
         except Exception as e:
             print("An Error occurred in file:" + file_address + "\n" + str(e))
             continue
+        # try:
+        #     # implement
+        #     listener = ImplementCoupleAndImplementByCoupleBy()
+        #     listener.implement = []
+        #     p.Walk(listener, tree)
+        #     p.addImplementOrImplementByRefs(listener.implement, file_ent, file_address)
+        # except Exception as e:
+        #     print("An Error occurred for reference implement in file:" + file_address + "\n" + str(e))
+        # try:
+        #     # create
+        #     listener = CreateAndCreateBy()
+        #     listener.create = []
+        #     p.Walk(listener, tree)
+        #     p.addCreateRefs(listener.create, file_ent, file_address)
+        # except Exception as e:
+        #     print("An Error occurred for reference create in file:" + file_address + "\n" + str(e))
+        # try:
+        #     # declare
+        #     listener = DeclareAndDeclareinListener()
+        #     listener.declare = []
+        #     p.Walk(listener, tree)
+        #     p.addDeclareRefs(listener.declare, file_ent)
+        # except Exception as e:
+        #     print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
+
         try:
-            # implement
-            listener = ImplementCoupleAndImplementByCoupleBy()
-            listener.implement = []
+            # set
+            listener = Set_Setby()
+            listener.allsets = []
             p.Walk(listener, tree)
-            p.addImplementOrImplementByRefs(listener.implement, file_ent, file_address)
+            p.getSetandSetby(listener.allsets, file_ent,file_address)
         except Exception as e:
-            print("An Error occurred for reference implement in file:" + file_address + "\n" + str(e))
-        try:
-            # create
-            listener = CreateAndCreateBy()
-            listener.create = []
-            p.Walk(listener, tree)
-            p.addCreateRefs(listener.create, file_ent, file_address)
-        except Exception as e:
-            print("An Error occurred for reference create in file:" + file_address + "\n" + str(e))
-        try:
-            # declare
-            listener = DeclareAndDeclareinListener()
-            listener.declare = []
-            p.Walk(listener, tree)
-            p.addDeclareRefs(listener.declare, file_ent)
-        except Exception as e:
-            print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
 
-
-
-    ################################ Test Soheil ################################
-    argparser = argparse.ArgumentParser()
-    argparser.add_argument(
-        '-n', '--file',
-        help='Input source', default=r'F:\University\4002 - Compiler\Compiler - HW1\softwareMetric\A.java'
-    )
-    args = argparser.parse_args()
-    MyMain(args)
-    ################################ Test Soheil ################################
-
-
+            print("An Error occurred for reference set and setby in file:" + file_address + "\n" + str(e))
