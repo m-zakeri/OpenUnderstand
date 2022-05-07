@@ -271,6 +271,6 @@ if __name__ == '__main__':
             listener = Set_Setby()
             listener.allsets = []
             p.Walk(listener, tree)
-            p.Set_Setby(listener.allsets, file_ent,file_address)
+            p.getSetandSetby(listener.allsets, file_ent,file_address)
         except Exception as e:
             print("An Error occurred for reference set and setby in file:" + file_address + "\n" + str(e))
