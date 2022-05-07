@@ -194,23 +194,6 @@ class Project():
             if modifier.lower() not in kind._name.lower():
                 return False
         return True
-
-def MyMain(args):
-    stream = FileStream(args.file, encoding='utf8')
-    lexer = JavaLexer(stream)
-    token_stream = CommonTokenStream(lexer)
-    parser = JavaParserLabeled(token_stream)
-    parse_tree = parser.compilationUnit()
-
-    my_listener = SetPartialSetByPartial()
-
-    walker = ParseTreeWalker()
-    walker.walk(t=parse_tree, listener=my_listener)
-
-    print(f'Yo Yo : {my_listener.getPartialsList()}')
-
-
-
     def getSetandSetby(self, ref_dicts, file_ent, file_address):
         for ref_dict in ref_dicts:
             # scope = EntityModel.get_or_create(_kind=1)[0]
@@ -264,6 +247,23 @@ def MyMain(args):
                                                     _column=ref_dict["col"], _scope=ent, _ent=scope)[0]
 
 
+def MyMain(args):
+    stream = FileStream(args.file, encoding='utf8')
+    lexer = JavaLexer(stream)
+    token_stream = CommonTokenStream(lexer)
+    parser = JavaParserLabeled(token_stream)
+    parse_tree = parser.compilationUnit()
+
+    my_listener = SetPartialSetByPartial()
+
+    walker = ParseTreeWalker()
+    walker.walk(t=parse_tree, listener=my_listener)
+
+    print(f'Yo Yo : {my_listener.getPartialsList()}')
+
+
+
+
 
 if __name__ == '__main__':
     p = Project()
@@ -311,23 +311,23 @@ if __name__ == '__main__':
         # except Exception as e:
         #     print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
 
-        # try:
-        #     # set
-        #     listener = Set_Setby()
-        #     listener.allsets = []
-        #     p.Walk(listener, tree)
-        #     p.getSetandSetby(listener.allsets, file_ent,file_address)
-        # except Exception as e:
-        #
-        #     print("An Error occurred for reference set and setby in file:" + file_address + "\n" + str(e))
-
         try:
-            # set partial
-            listener = SetPartialSetByPartial()
-            listener.partialsList = []
+            # set
+            listener = Set_Setby()
+            listener.allsets = []
             p.Walk(listener, tree)
-            p.getSetandSetbypartial(listener.partialsList, file_ent,file_address)
+            p.getSetandSetby(listener.allsets, file_ent,file_address)
         except Exception as e:
 
-            print("An Error occurred for reference set and setby partial in file:" + file_address + "\n" + str(e))
+            print("An Error occurred for reference set and setby in file:" + file_address + "\n" + str(e))
 
+        # try:
+        #     # set partial
+        #     listener = SetPartialSetByPartial()
+        #     listener.partialsList = []
+        #     p.Walk(listener, tree)
+        #     p.getSetandSetbypartial(listener.partialsList, file_ent,file_address)
+        # except Exception as e:
+        #
+        #     print("An Error occurred for reference set and setby partial in file:" + file_address + "\n" + str(e))
+        #
