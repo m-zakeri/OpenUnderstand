@@ -1,0 +1,118 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_classcom_1_1calculator_1_1app_1_1method_1_1integral" xml:lang="en-US">
+<title>integral</title>
+<indexterm><primary>integral</primary></indexterm>
+Inheritance diagram for integral:<para>
+    <informalfigure>
+        <mediaobject>
+            <imageobject>
+                <imagedata width="50%" align="center" valign="middle" scalefit="0" fileref="classcom_1_1calculator_1_1app_1_1method_1_1integral__inherit__graph.png"></imagedata>
+            </imageobject>
+        </mediaobject>
+    </informalfigure>
+</para>
+Collaboration diagram for integral:<para>
+    <informalfigure>
+        <mediaobject>
+            <imageobject>
+                <imagedata width="50%" align="center" valign="middle" scalefit="0" fileref="classcom_1_1calculator_1_1app_1_1method_1_1integral__coll__graph.png"></imagedata>
+            </imageobject>
+        </mediaobject>
+    </informalfigure>
+</para>
+<simplesect>
+    <title>Public Member Functions    </title>
+        <itemizedlist>
+            <listitem><para>double <link linkend="_classcom_1_1calculator_1_1app_1_1method_1_1integral_1a6c3e2fd07c478bdbb4b9bb98f3d7a477">calculate_pow_x_n</link> (double from, double to, int n)</para>
+</listitem>
+            <listitem><para>double <link linkend="_classcom_1_1calculator_1_1app_1_1method_1_1integral_1ab0117e1d87b31eed214db20f0532f22c">calculate_rectangle</link> (int width, int height)</para>
+</listitem>
+            <listitem><para>double <link linkend="_classcom_1_1calculator_1_1app_1_1method_1_1integral_1a051ccb1d2fbf38706a4763cb74caafc2">calculate_x</link> (double from, double to, int n)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Private Attributes    </title>
+        <itemizedlist>
+            <listitem><para>double <link linkend="_classcom_1_1calculator_1_1app_1_1method_1_1integral_1a602207748be31bb15b42e30a54efae70">_value_1</link> = 0</para>
+</listitem>
+            <listitem><para>double <link linkend="_classcom_1_1calculator_1_1app_1_1method_1_1integral_1ad6d7889d47919f9f8d96f70d04b4a251">_value_2</link> = 0</para>
+</listitem>
+            <listitem><para>double <link linkend="_classcom_1_1calculator_1_1app_1_1method_1_1integral_1a0fa6cefb052cdabef44d043ea8badcf8">_value_3</link> = 0</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<simplesect>
+    <title>Additional Inherited Members    </title>
+</simplesect>
+<section>
+<title>Member Function Documentation</title>
+<anchor xml:id="_classcom_1_1calculator_1_1app_1_1method_1_1integral_1a6c3e2fd07c478bdbb4b9bb98f3d7a477"/>    <section>
+    <title>calculate_pow_x_n()</title>
+<indexterm><primary>calculate_pow_x_n</primary><secondary>integral</secondary></indexterm>
+<indexterm><primary>integral</primary><secondary>calculate_pow_x_n</secondary></indexterm>
+<para><computeroutput>double calculate_pow_x_n (double from, double to, int n)</computeroutput></para>Here is the call graph for this function:<para>
+    <informalfigure>
+        <mediaobject>
+            <imageobject>
+                <imagedata width="50%" align="center" valign="middle" scalefit="0" fileref="classcom_1_1calculator_1_1app_1_1method_1_1integral_a6c3e2fd07c478bdbb4b9bb98f3d7a477_cgraph.png"></imagedata>
+            </imageobject>
+        </mediaobject>
+    </informalfigure>
+</para>
+Here is the caller graph for this function:<para>
+    <informalfigure>
+        <mediaobject>
+            <imageobject>
+                <imagedata width="50%" align="center" valign="middle" scalefit="0" fileref="classcom_1_1calculator_1_1app_1_1method_1_1integral_a6c3e2fd07c478bdbb4b9bb98f3d7a477_icgraph.png"></imagedata>
+            </imageobject>
+        </mediaobject>
+    </informalfigure>
+</para>
+    </section><anchor xml:id="_classcom_1_1calculator_1_1app_1_1method_1_1integral_1ab0117e1d87b31eed214db20f0532f22c"/>    <section>
+    <title>calculate_rectangle()</title>
+<indexterm><primary>calculate_rectangle</primary><secondary>integral</secondary></indexterm>
+<indexterm><primary>integral</primary><secondary>calculate_rectangle</secondary></indexterm>
+<para><computeroutput>double calculate_rectangle (int width, int height)</computeroutput></para>    </section><anchor xml:id="_classcom_1_1calculator_1_1app_1_1method_1_1integral_1a051ccb1d2fbf38706a4763cb74caafc2"/>    <section>
+    <title>calculate_x()</title>
+<indexterm><primary>calculate_x</primary><secondary>integral</secondary></indexterm>
+<indexterm><primary>integral</primary><secondary>calculate_x</secondary></indexterm>
+<para><computeroutput>double calculate_x (double from, double to, int n)</computeroutput></para>Here is the call graph for this function:<para>
+    <informalfigure>
+        <mediaobject>
+            <imageobject>
+                <imagedata width="50%" align="center" valign="middle" scalefit="0" fileref="classcom_1_1calculator_1_1app_1_1method_1_1integral_a051ccb1d2fbf38706a4763cb74caafc2_cgraph.png"></imagedata>
+            </imageobject>
+        </mediaobject>
+    </informalfigure>
+</para>
+Here is the caller graph for this function:<para>
+    <informalfigure>
+        <mediaobject>
+            <imageobject>
+                <imagedata width="50%" align="center" valign="middle" scalefit="0" fileref="classcom_1_1calculator_1_1app_1_1method_1_1integral_a051ccb1d2fbf38706a4763cb74caafc2_icgraph.png"></imagedata>
+            </imageobject>
+        </mediaobject>
+    </informalfigure>
+</para>
+</section>
+</section>
+<section>
+<title>Member Data Documentation</title>
+<anchor xml:id="_classcom_1_1calculator_1_1app_1_1method_1_1integral_1a602207748be31bb15b42e30a54efae70"/>    <section>
+    <title>_value_1</title>
+<indexterm><primary>_value_1</primary><secondary>integral</secondary></indexterm>
+<indexterm><primary>integral</primary><secondary>_value_1</secondary></indexterm>
+<para><computeroutput>double _value_1 = 0<computeroutput>[private]</computeroutput></computeroutput></para>    </section><anchor xml:id="_classcom_1_1calculator_1_1app_1_1method_1_1integral_1ad6d7889d47919f9f8d96f70d04b4a251"/>    <section>
+    <title>_value_2</title>
+<indexterm><primary>_value_2</primary><secondary>integral</secondary></indexterm>
+<indexterm><primary>integral</primary><secondary>_value_2</secondary></indexterm>
+<para><computeroutput>double _value_2 = 0<computeroutput>[private]</computeroutput></computeroutput></para>    </section><anchor xml:id="_classcom_1_1calculator_1_1app_1_1method_1_1integral_1a0fa6cefb052cdabef44d043ea8badcf8"/>    <section>
+    <title>_value_3</title>
+<indexterm><primary>_value_3</primary><secondary>integral</secondary></indexterm>
+<indexterm><primary>integral</primary><secondary>_value_3</secondary></indexterm>
+<para><computeroutput>double _value_3 = 0<computeroutput>[private]</computeroutput></computeroutput></para></section>
+<para>
+The documentation for this class was generated from the following file:</para>
+src/com/calculator/app/method/<link linkend="_integral_8java">integral.java</link></section>
+</section>

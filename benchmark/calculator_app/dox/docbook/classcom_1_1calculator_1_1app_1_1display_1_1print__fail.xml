@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_classcom_1_1calculator_1_1app_1_1display_1_1print__fail" xml:lang="en-US">
+<title>print_fail</title>
+<indexterm><primary>print_fail</primary></indexterm>
+Collaboration diagram for print_fail:<para>
+    <informalfigure>
+        <mediaobject>
+            <imageobject>
+                <imagedata width="50%" align="center" valign="middle" scalefit="0" fileref="classcom_1_1calculator_1_1app_1_1display_1_1print__fail__coll__graph.png"></imagedata>
+            </imageobject>
+        </mediaobject>
+    </informalfigure>
+</para>
+<simplesect>
+    <title>Public Member Functions    </title>
+        <itemizedlist>
+            <listitem><para>void <link linkend="_classcom_1_1calculator_1_1app_1_1display_1_1print__fail_1a113eaf64d238627bca278b394ffaa4f4">print_fail_message</link> ()</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Member Function Documentation</title>
+<anchor xml:id="_classcom_1_1calculator_1_1app_1_1display_1_1print__fail_1a113eaf64d238627bca278b394ffaa4f4"/>    <section>
+    <title>print_fail_message()</title>
+<indexterm><primary>print_fail_message</primary><secondary>print_fail</secondary></indexterm>
+<indexterm><primary>print_fail</primary><secondary>print_fail_message</secondary></indexterm>
+<para><computeroutput>void print_fail_message ( )</computeroutput></para>Here is the caller graph for this function:<para>
+    <informalfigure>
+        <mediaobject>
+            <imageobject>
+                <imagedata width="50%" align="center" valign="middle" scalefit="0" fileref="classcom_1_1calculator_1_1app_1_1display_1_1print__fail_a113eaf64d238627bca278b394ffaa4f4_icgraph.png"></imagedata>
+            </imageobject>
+        </mediaobject>
+    </informalfigure>
+</para>
+</section>
+<para>
+The documentation for this class was generated from the following file:</para>
+src/com/calculator/app/display/<link linkend="_print__fail_8java">print_fail.java</link></section>
+</section>
