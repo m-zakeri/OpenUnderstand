@@ -18,6 +18,8 @@ from analysis_passes.couple_coupleby import ImplementCoupleAndImplementByCoupleB
 from analysis_passes.create_createby import CreateAndCreateBy
 from analysis_passes.declare_declarein import DeclareAndDeclareinListener
 from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
+from analysis_passes.type_typedby import TypedAndTypedByListener
+from analysis_passes.use_useby import UseAndUseByListener
 
 
 class Project():
@@ -78,6 +80,44 @@ class Project():
             # Declarein: kind id 193
             declarein_ref = ReferenceModel.get_or_create(_kind=193, _file=file_ent, _line=ref_dict["line"],
                                                          _column=ref_dict["col"], _scope=ent, _ent=scope)
+
+    def addTypeRefs(self, d_type, file_ent):
+        for type_tuple in d_type['typedBy']:
+            ent, h_c1 = EntityModel.get_or_create(_kind=224, _parent=None, _name=type_tuple[1],
+                                                  _longname=type_tuple[6]+'.'+type_tuple[1], _value=None,
+                                                  _type=None, _contents=stream)
+
+            scope, h_c2 = EntityModel.get_or_create(_kind=225, _parent=None, _name=type_tuple[0],
+                                                    _longname=type_tuple[6]+'.'+type_tuple[0], _value=None,
+                                                    _type=None, _contents=stream)
+
+            # 224		Java Typed
+            typed_ref = ReferenceModel.get_or_create(_kind=224, _file=scope, _line=type_tuple[4],
+                                                    _column=type_tuple[5],
+                                                    _ent=ent, _scope=scope)
+            # 225    	Java Typedby
+            typedby_ref = ReferenceModel.get_or_create(_kind=225, _file=ent, _line=type_tuple[2],
+                                                      _column=type_tuple[3],
+                                                      _ent=scope, _scope=ent)
+
+    def addUseRefs(self, d_use, file_ent):
+        for use_tuple in d_use['useBy']:
+            ent, h_c1 = EntityModel.get_or_create(_kind=226, _parent=None, _name=use_tuple[1],
+                                                  _longname=use_tuple[6]+'.'+use_tuple[1], _value=None,
+                                                  _type=None, _contents=stream)
+
+            scope, h_c2 = EntityModel.get_or_create(_kind=227, _parent=None, _name=use_tuple[0],
+                                                    _longname=use_tuple[6]+'.'+use_tuple[0], _value=None,
+                                                    _type=None, _contents=stream)
+
+            # 226		Java Use
+            use_ref = ReferenceModel.get_or_create(_kind=226, _file=file_ent,
+                                                _line=use_tuple[4], _column=use_tuple[5],
+                                                _ent=ent, _scope=scope)
+            # 227	 	Java Useby
+            useby_ref = ReferenceModel.get_or_create(_kind=227, _file=file_ent,
+                                                _line=use_tuple[2], _column=use_tuple[3],
+                                                _ent=scope, _scope=ent)
 
     def addImplementOrImplementByRefs(self, ref_dicts, file_ent, file_address):
         for ref_dict in ref_dicts:
@@ -197,12 +237,12 @@ class Project():
 if __name__ == '__main__':
     p = Project()
     create_db("../benchmark2_database.oudb",
-              project_dir="..\benchmark")
+              project_dir="../benchmark")
     main()
     db = db_open("../benchmark2_database.oudb")
 
     # path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
-    path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
+    path = "C:/git/OpenUnderstandG15/benchmark/jvlt-1.3.2"
     files = p.getListOfFiles(path)
     ########## AGE KHASTID YEK FILE RO RUN KONID:
     # files = ["../../Java codes/javaCoupling.java"]
@@ -211,30 +251,48 @@ if __name__ == '__main__':
         try:
             file_ent = p.getFileEntity(file_address)
             tree = p.Parse(file_address)
+            name = file_address.split("\\")[-1]
+            stream = FileStream(file_address, encoding="utf8")
         except Exception as e:
             print("An Error occurred in file:" + file_address + "\n" + str(e))
             continue
+        # try:
+        #     # implement
+        #     listener = ImplementCoupleAndImplementByCoupleBy()
+        #     listener.implement = []
+        #     p.Walk(listener, tree)
+        #     p.addImplementOrImplementByRefs(listener.implement, file_ent, file_address)
+        # except Exception as e:
+        #     print("An Error occurred for reference implement in file:" + file_address + "\n" + str(e))
+        # try:
+        #     # create
+        #     listener = CreateAndCreateBy()
+        #     listener.create = []
+        #     p.Walk(listener, tree)
+        #     p.addCreateRefs(listener.create, file_ent, file_address)
+        # except Exception as e:
+        #     print("An Error occurred for reference create in file:" + file_address + "\n" + str(e))
+        # try:
+        #     # declare
+        #     listener = DeclareAndDeclareinListener()
+        #     listener.declare = []
+        #     p.Walk(listener, tree)
+        #     p.addDeclareRefs(listener.declare, file_ent)
+        # except Exception as e:
+        #     print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
         try:
-            # implement
-            listener = ImplementCoupleAndImplementByCoupleBy()
-            listener.implement = []
-            p.Walk(listener, tree)
-            p.addImplementOrImplementByRefs(listener.implement, file_ent, file_address)
+            # typed
+            listener = TypedAndTypedByListener(file_address)
+            p.Walk(listener=listener, tree=tree)
+            d_type = listener.get_type
+            p.addTypeRefs(d_type, file_ent)
         except Exception as e:
-            print("An Error occurred for reference implement in file:" + file_address + "\n" + str(e))
+            print("An Error occurred for reference typed in file:" + file_address + "\n" + str(e))
         try:
-            # create
-            listener = CreateAndCreateBy()
-            listener.create = []
+            # use
+            listener = UseAndUseByListener(file_address)
             p.Walk(listener, tree)
-            p.addCreateRefs(listener.create, file_ent, file_address)
+            d_use = listener.get_use
+            p.addUseRefs(d_use, file_ent)
         except Exception as e:
-            print("An Error occurred for reference create in file:" + file_address + "\n" + str(e))
-        try:
-            # declare
-            listener = DeclareAndDeclareinListener()
-            listener.declare = []
-            p.Walk(listener, tree)
-            p.addDeclareRefs(listener.declare, file_ent)
-        except Exception as e:
-            print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
+            print("An Error occurred for reference use in file:" + file_address + "\n" + str(e))
