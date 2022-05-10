@@ -79,10 +79,13 @@ def test_open_understand():
 def test_understand_kinds():
     db = und.open(UDB_PATH)
     for ent in db.ents():
-        for ref in ent.refs("Declarein"):
-            print(f'ref.scope (entity performing reference)\t: "{ref.scope().longname()}", kind: "{ref.scope().kind()}"')
-            print(f'ref.ent (entity being referenced)\t\t: "{ref.ent().longname()}", kind: "{ref.ent().kind()}"')
-            print(f'File where the reference occurred: "{ref.file().longname()}", line: {ref.line()}')
+
+        for ref in ent.refs("Java Modify Deref Partial"):
+            print(f'1. ref name: {ref.kindname()}, inverse ref name: {ref.kind().inv().longname()}')
+            print(f'2. ref.scope (entity performing reference)\t: "{ref.scope().longname()}", kind: "{ref.scope().kind()}"')
+            print(f'3. ref.ent (entity being referenced)\t\t: "{ref.ent().longname()}", kind: "{ref.ent().kind()}"')
+            print(f'4. Location the reference occurred: "{ref.file().longname()}", line: {ref.line()}')
+            print(f'')
             # quit()
 
             # print(f"Entity longname: {ent.longname()}")
@@ -110,4 +113,5 @@ def test_understand_kinds():
 
 
 if __name__ == '__main__':
+
     test_understand_kinds()
