@@ -19,8 +19,8 @@ from analysis_passes.create_createby import CreateAndCreateBy
 from analysis_passes.declare_declarein import DeclareAndDeclareinListener
 from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
 
-from analysis_passes.Cast_CastBy import CastAndCastBy, implementListener
-from analysis_passes.Contain_ContainBy import ContainAndContainBy
+from analysis_passes.cast_cast_by import CastAndCastBy, implementListener
+from analysis_passes.contain_contain_by import ContainAndContainBy
 
 from analysis_passes.type_typedby import TypedAndTypedByListener
 from analysis_passes.use_useby import UseAndUseByListener
@@ -155,7 +155,7 @@ class Project():
             Createby = ReferenceModel.get_or_create(_kind=191, _file=file_ent, _line=ref_dict["line"],
                                                     _column=ref_dict["col"], _scope=ent, _ent=scope)
 
-    def addCastorCastByReferences(self, cast, file_ent, file_address):
+    def add_cast_or_cast_by_references(self, cast, file_ent, file_address):
         for ent in cast:
             cast_To = EntityModel.get_or_create(_kind=self.findKindWithKeywords(ent["kind"], ent["modifier"]),
                                                 _name=ent["name"],
@@ -176,7 +176,7 @@ class Project():
             castBy_ref = ReferenceModel.get_or_create(_kind=175, _file=file_ent, _line=ent["line"],
                                                       _column=ent["col"], _ent=cast, _scope=cast_To)
 
-    def addContainAndContainBy(self, contain, file_ent, file_address):
+    def add_contain_and_contain_by(self, contain, file_ent, file_address):
         for ent in contain:
             kind = self.findKindWithKeywords(ent["kind"], ent["modifiers"])
             if kind is not None:
@@ -367,7 +367,7 @@ if __name__ == '__main__':
             listener = CastAndCastBy(classes)
             listener.cast = []
             p.Walk(listener, tree)
-            p.addCastorCastByReferences(listener.cast, file_ent, file_address)
+            p.add_cast_or_cast_by_references(listener.cast, file_ent, file_address)
         except Exception as e:
             print("An Error occurred for reference cast in file:" + file_address + "\n" + str(e))
 
@@ -376,7 +376,7 @@ if __name__ == '__main__':
             listener = ContainAndContainBy()
             listener.contain = []
             p.Walk(listener, tree)
-            p.addContainAndContainBy(listener.contain, file_ent, file_address)
+            p.add_contain_and_contain_by(listener.contain, file_ent, file_address)
         except Exception as e:
             print("An Error occurred for reference contain in file:" + file_address + "\n" + str(e))
 

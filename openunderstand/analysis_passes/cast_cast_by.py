@@ -91,16 +91,3 @@ class CastAndCastBy(JavaParserLabeledListener):
 
         print(self.cast)
 
-    @staticmethod
-    def findClassParents(c):  # includes the ctx identifier
-        parents = []
-        current = c
-        while current is not None:
-            if type(current).__name__ == "ClassDeclarationContext" or type(
-                    current).__name__ == "MethodDeclarationContext" \
-                    or type(current).__name__ == "EnumDeclarationContext" \
-                    or type(current).__name__ == "InterfaceDeclarationContext" \
-                    or type(current).__name__ == "AnnotationTypeDeclarationContext":
-                parents.append(current.IDENTIFIER().getText())
-            current = current.parentCtx
-        return list(reversed(parents))
