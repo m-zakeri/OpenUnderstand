@@ -1,4 +1,6 @@
 import os
+import sys
+
 import peewee
 import unittest
 
@@ -7,7 +9,9 @@ from oudb.utils import get_entity_object_from_understand
 
 
 def append_java_ent_kinds():
+
     with open(f"{os.path.dirname(os.path.realpath(__file__))}/java_ent_kinds.txt", "r") as f:
+
         for line in f.readlines():
             if line.startswith("Java"):
                 query = line.strip()
@@ -25,6 +29,7 @@ def append_java_ref_kind(kind: str, inverse: str, ref: str) -> int:
 
 def append_java_ref_kinds():
     kind, inv_kind = "", ""
+
     with open(f"{os.path.dirname(os.path.realpath(__file__))}/java_ref_kinds.txt", "r") as f:
         for line in f.readlines():
             line = line.strip()

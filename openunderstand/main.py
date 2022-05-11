@@ -18,8 +18,13 @@ from analysis_passes.couple_coupleby import ImplementCoupleAndImplementByCoupleB
 from analysis_passes.create_createby import CreateAndCreateBy
 from analysis_passes.declare_declarein import DeclareAndDeclareinListener
 from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
+
+from analysis_passes.cast_cast_by import CastAndCastBy, implementListener
+from analysis_passes.contain_contain_by import ContainAndContainBy
+
 from analysis_passes.type_typedby import TypedAndTypedByListener
 from analysis_passes.use_useby import UseAndUseByListener
+
 
 
 class Project():
@@ -150,6 +155,50 @@ class Project():
             Createby = ReferenceModel.get_or_create(_kind=191, _file=file_ent, _line=ref_dict["line"],
                                                     _column=ref_dict["col"], _scope=ent, _ent=scope)
 
+    def add_cast_or_cast_by_references(self, cast, file_ent, file_address):
+        for ent in cast:
+            cast_To = EntityModel.get_or_create(_kind=self.findKindWithKeywords(ent["kind"], ent["modifier"]),
+                                                _name=ent["name"],
+                                                _parent=ent["parent"] if ent["parent"] is not None else file_ent,
+                                                _longname=ent["longname"],
+                                                _contents=ent["content"]
+                                                )[0]
+
+            cast = EntityModel.get_or_create(_kind=self.findKindWithKeywords(ent["p_kind"], ent["p_modifier"]),
+                                             _name=ent["p_name"],
+                                             _parent=ent["p_parent"] if ent["p_parent"] is not None else file_ent,
+                                             _longname=ent["p_longname"],
+                                             _contents=ent["p_content"]
+                                             )[0]
+
+            cast_ref = ReferenceModel.get_or_create(_kind=174, _file=file_ent, _line=ent["line"],
+                                                    _column=ent["col"], _ent=cast_To, _scope=cast)
+            castBy_ref = ReferenceModel.get_or_create(_kind=175, _file=file_ent, _line=ent["line"],
+                                                      _column=ent["col"], _ent=cast, _scope=cast_To)
+
+    def add_contain_and_contain_by(self, contain, file_ent, file_address):
+        for ent in contain:
+            kind = self.findKindWithKeywords(ent["kind"], ent["modifiers"])
+            if kind is not None:
+                Contain_class = EntityModel.get_or_create(_kind=kind,
+                                                          _name=ent["name"],
+                                                          _parent=ent["parent"] if ent[
+                                                                                       "parent"] is not None else file_ent,
+                                                          _longname=ent["longname"],
+                                                          _contents=ent["content"])[0]
+                Contain_package = EntityModel.get_or_create(_kind="72",
+                                                            _name=ent["package_name"],
+                                                            _parent=ent["package_parent"] if ent[
+                                                                                                 "package_parent"] is not None else file_ent,
+                                                            _longname=ent["package_longname"],
+                                                            _contents=ent["package_content"])[0]
+                contain_ref = ReferenceModel.get_or_create(_kind=176, _file=file_ent, _line=ent["line"],
+                                                           _column=ent["col"], _ent=Contain_class,
+                                                           _scope=Contain_package)
+                containIn_ref = ReferenceModel.get_or_create(_kind=177, _file=file_ent, _line=ent["line"],
+                                                             _column=ent["col"], _ent=Contain_package,
+                                                             _scope=Contain_class)
+
     def getPackageEntity(self, file_ent, name, longname):
         # package kind id: 72
         ent = EntityModel.get_or_create(_kind=72, _name=name, _parent=file_ent,
@@ -242,10 +291,25 @@ if __name__ == '__main__':
     db = db_open("../benchmark2_database.oudb")
 
     # path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
+
     path = "C:/git/OpenUnderstandG15/benchmark/jvlt-1.3.2"
+
     files = p.getListOfFiles(path)
     ########## AGE KHASTID YEK FILE RO RUN KONID:
     # files = ["../../Java codes/javaCoupling.java"]
+    classes = []  # for cast and cast by
+    for file_address in files:
+        try:
+            file_ent = p.getFileEntity(file_address)
+            tree = p.Parse(file_address)
+        except Exception as e:
+            print("An Error occurred in file:" + file_address + "\n" + str(e))
+            continue
+        try:
+            listener = implementListener(classes)
+            p.Walk(listener, tree)
+        except Exception as e:
+            print("An Error occurred in file:" + file_address + "\n" + str(e))
 
     for file_address in files:
         try:
@@ -295,4 +359,25 @@ if __name__ == '__main__':
             d_use = listener.get_use
             p.addUseRefs(d_use, file_ent)
         except Exception as e:
-            print("An Error occurred for reference use in file:" + file_address + "\n" + str(e))
+
+            print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
+
+        try:
+            # cast
+            listener = CastAndCastBy(classes)
+            listener.cast = []
+            p.Walk(listener, tree)
+            p.add_cast_or_cast_by_references(listener.cast, file_ent, file_address)
+        except Exception as e:
+            print("An Error occurred for reference cast in file:" + file_address + "\n" + str(e))
+
+        try:
+            # contain
+            listener = ContainAndContainBy()
+            listener.contain = []
+            p.Walk(listener, tree)
+            p.add_contain_and_contain_by(listener.contain, file_ent, file_address)
+        except Exception as e:
+            print("An Error occurred for reference contain in file:" + file_address + "\n" + str(e))
+
+

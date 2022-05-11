@@ -79,6 +79,7 @@ def test_open_understand():
 def test_understand_kinds():
     db = und.open(UDB_PATH)
     for ent in db.ents():
+
         for ref in ent.refs("Java Modify Deref Partial"):
             print(f'1. ref name: {ref.kindname()}, inverse ref name: {ref.kind().inv().longname()}')
             print(f'2. ref.scope (entity performing reference)\t: "{ref.scope().longname()}", kind: "{ref.scope().kind()}"')
@@ -112,4 +113,5 @@ def test_understand_kinds():
 
 
 if __name__ == '__main__':
+
     test_understand_kinds()
