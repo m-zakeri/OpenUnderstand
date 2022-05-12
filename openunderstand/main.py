@@ -24,6 +24,8 @@ from analysis_passes.contain_contain_by import ContainAndContainBy
 
 from analysis_passes.type_typedby import TypedAndTypedByListener
 from analysis_passes.use_useby import UseAndUseByListener
+from analysis_passes.set_setby import SetAndSetByListener
+from analysis_passes.setinit_setinitby import SetInitAndSetInitByListener
 
 
 
@@ -104,6 +106,44 @@ class Project():
             typedby_ref = ReferenceModel.get_or_create(_kind=225, _file=ent, _line=type_tuple[2],
                                                       _column=type_tuple[3],
                                                       _ent=scope, _scope=ent)
+
+    def addSetInitRefs(self, d, file_ent):
+        for type_tuple in d:
+            ent, h_c1 = EntityModel.get_or_create(_kind=220, _parent=None, _name=type_tuple[0],
+                                                  _longname=type_tuple[1], _value=type_tuple[3],
+                                                  _type=type_tuple[4], _contents=stream)
+
+            scope, h_c2 = EntityModel.get_or_create(_kind=221, _parent=None, _name=type_tuple[7],
+                                                    _longname=type_tuple[1], _value=None,
+                                                    _type=None, _contents=stream)
+            # 222: Java Set
+            set_ref = ReferenceModel.get_or_create(_kind=220, _file=scope, _line=type_tuple[5],
+                                                    _column=type_tuple[6],
+                                                    _ent=ent, _scope=scope)
+            # 223: Java Setby
+            setby_ref = ReferenceModel.get_or_create(_kind=221, _file=ent, _line=type_tuple[5],
+                                                      _column=type_tuple[6],
+                                                      _ent=scope, _scope=ent)
+            print("Set Init Added!")
+
+    def addSetRefs(self, d, file_ent):
+        for type_tuple in d:
+            ent, h_c1 = EntityModel.get_or_create(_kind=222, _parent=None, _name=type_tuple[0],
+                                                  _longname=type_tuple[1], _value=None,
+                                                  _type=None, _contents=stream)
+
+            scope, h_c2 = EntityModel.get_or_create(_kind=223, _parent=None, _name=type_tuple[7],
+                                                    _longname=type_tuple[1], _value=None,
+                                                    _type=None, _contents=stream)
+            # 222: Java Set
+            set_ref = ReferenceModel.get_or_create(_kind=222, _file=scope, _line=type_tuple[4],
+                                                    _column=type_tuple[5],
+                                                    _ent=ent, _scope=scope)
+            # 223: Java Setby
+            setby_ref = ReferenceModel.get_or_create(_kind=223, _file=ent, _line=type_tuple[4],
+                                                      _column=type_tuple[5],
+                                                      _ent=scope, _scope=ent)
+            print("Set Added!")
 
     def addUseRefs(self, d_use, file_ent):
         for use_tuple in d_use['useBy']:
@@ -292,7 +332,7 @@ if __name__ == '__main__':
 
     # path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
 
-    path = "C:/git/OpenUnderstandG15/benchmark/jvlt-1.3.2"
+    path = r"E:\OpenUnderstand\benchmark\calculator_app"
 
     files = p.getListOfFiles(path)
     ########## AGE KHASTID YEK FILE RO RUN KONID:
@@ -377,6 +417,22 @@ if __name__ == '__main__':
             listener.contain = []
             p.Walk(listener, tree)
             p.add_contain_and_contain_by(listener.contain, file_ent, file_address)
+        except Exception as e:
+            print("An Error occurred for reference contain in file:" + file_address + "\n" + str(e))
+
+        try:
+            listener = SetAndSetByListener(file_address)
+            p.Walk(listener=listener, tree=tree)
+            d = listener.setBy
+            p.addSetRefs(d, file_ent)
+        except Exception as e:
+            print("An Error occurred for reference contain in file:" + file_address + "\n" + str(e))
+
+        try:
+            listener = SetInitAndSetInitByListener(file_address)
+            p.Walk(listener=listener, tree=tree)
+            d = listener.set_init_by
+            p.addSetInitRefs(d, file_ent)
         except Exception as e:
             print("An Error occurred for reference contain in file:" + file_address + "\n" + str(e))
 
