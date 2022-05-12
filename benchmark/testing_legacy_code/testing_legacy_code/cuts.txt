@@ -1,1 +1,0 @@
-org.craftedsw.harddependencies.trip.TripService, org.craftedsw.harddependencies.user.User, org.craftedsw.harddependencies.user.UserSession, org.craftedsw.harddependencies.TripService_Original

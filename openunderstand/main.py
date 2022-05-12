@@ -87,10 +87,6 @@ class Project():
             else:  # a normal package
                 scope = self.getPackageEntity(file_ent, ref_dict["scope"], ref_dict["scope_longname"])
 
-            # if ref_dict["ent"] is None:  # the ent package is unnamed
-            #     ent = self.getUnnamedPackageEntity(file_ent)
-            # else:  # a normal package
-            #     ent = self.getPackageEntity(file_ent, ref_dict["ent"], ref_dict["ent_longname"])
             ent = self.getPackageEntity(file_ent, ref_dict["ent"], ref_dict["ent_longname"])
 
             # Define: kind id 194
@@ -239,30 +235,30 @@ if __name__ == '__main__':
         except Exception as e:
             print("An Error occurred in file:" + file_address + "\n" + str(e))
             continue
-        # try:
-        #     # implement
-        #     listener = ImplementCoupleAndImplementByCoupleBy()
-        #     listener.implement = []
-        #     p.Walk(listener, tree)
-        #     p.addImplementOrImplementByRefs(listener.implement, file_ent, file_address)
-        # except Exception as e:
-        #     print("An Error occurred for reference implement in file:" + file_address + "\n" + str(e))
-        # try:
-        #     # create
-        #     listener = CreateAndCreateBy()
-        #     listener.create = []
-        #     p.Walk(listener, tree)
-        #     p.addCreateRefs(listener.create, file_ent, file_address)
-        # except Exception as e:
-        #     print("An Error occurred for reference create in file:" + file_address + "\n" + str(e))
-        # try:
-        #     # declare
-        #     listener = DeclareAndDeclareinListener()
-        #     listener.declare = []
-        #     p.Walk(listener, tree)
-        #     p.addDeclareRefs(listener.declare, file_ent)
-        # except Exception as e:
-        #     print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
+        try:
+            # implement
+            listener = ImplementCoupleAndImplementByCoupleBy()
+            listener.implement = []
+            p.Walk(listener, tree)
+            p.addImplementOrImplementByRefs(listener.implement, file_ent, file_address)
+        except Exception as e:
+            print("An Error occurred for reference implement in file:" + file_address + "\n" + str(e))
+        try:
+            # create
+            listener = CreateAndCreateBy()
+            listener.create = []
+            p.Walk(listener, tree)
+            p.addCreateRefs(listener.create, file_ent, file_address)
+        except Exception as e:
+            print("An Error occurred for reference create in file:" + file_address + "\n" + str(e))
+        try:
+            # declare
+            listener = DeclareAndDeclareinListener()
+            listener.declare = []
+            p.Walk(listener, tree)
+            p.addDeclareRefs(listener.declare, file_ent)
+        except Exception as e:
+            print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
         try:
             # define
             listener = DefineListener()
