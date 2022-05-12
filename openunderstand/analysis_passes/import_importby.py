@@ -22,7 +22,7 @@ class ClassEntityListener(JavaParserLabeledListener):
         self.class_body = None
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
-        print("inside class declaration", ctx.getText())
+        # print("inside class declaration", ctx.getText())
         self.class_body = ctx.getText()
 
 
@@ -38,9 +38,9 @@ class ImportListener(JavaParserLabeledListener):
     def enterImportDeclaration(self, ctx: JavaParserLabeled.CompilationUnitContext):
         longname = ctx.qualifiedName().getText()
         self.longnames.append(longname)
-        print("longname", longname)
+        # print("longname", longname)
         name = longname.split('.')[-1]
-        print("name", name)
+        # print("name", name)
         self.names.append(name)
 
         if longname.split('.')[0] == 'java':
@@ -51,7 +51,7 @@ class ImportListener(JavaParserLabeledListener):
             parent = name + ".java"
 
         self.parents.append(parent)
-        print("parent", parent)
+        # print("parent", parent)
 
         self.line = ctx.children[0].symbol.line
         self.col = ctx.children[0].symbol.column
