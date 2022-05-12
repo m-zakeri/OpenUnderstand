@@ -1,5 +1,5 @@
 """
-The helper module for couple_coupleby.py, create_createby.py, declare_declareby.py modules
+The helper module for couple_coupleby.py, create_createby_G11.py, declare_declareby.py modules
 
 Todo: Must be document well
 """
