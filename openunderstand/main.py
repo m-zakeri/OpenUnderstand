@@ -129,6 +129,7 @@ class Project():
             print("Set Init Added!")
 
     def addSetRefs(self, d, file_ent):
+
         for type_tuple in d:
             par = EntityModel.get(_name=type_tuple[7])
             ent, h_c1 = EntityModel.get_or_create(_kind=222, _parent=par._id, _name=type_tuple[0],
@@ -147,6 +148,7 @@ class Project():
                                                       _column=type_tuple[5],
                                                       _ent=scope, _scope=ent)
             print("Set Added!")
+
 
     def addUseRefs(self, d_use, file_ent):
         for use_tuple in d_use['useBy']:
@@ -335,7 +337,7 @@ if __name__ == '__main__':
 
     # path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
 
-    path = r"C:\Users\Parsa\PycharmProjects\pythonProject\java_files"
+    path = r"E:\OpenUnderstand\benchmark\calculator_app\calculator_app"
 
     files = p.getListOfFiles(path)
     ########## AGE KHASTID YEK FILE RO RUN KONID:
@@ -353,7 +355,7 @@ if __name__ == '__main__':
             p.Walk(listener, tree)
         except Exception as e:
             print("An Error occurred in file:" + file_address + "\n" + str(e))
-
+    number_of_sets=0
     for file_address in files:
         try:
             file_ent = p.getFileEntity(file_address)
@@ -427,9 +429,12 @@ if __name__ == '__main__':
             listener = SetAndSetByListener(file_address)
             p.Walk(listener=listener, tree=tree)
             d = listener.setBy
+
+            number_of_sets= number_of_sets + len(d)
             p.addSetRefs(d, file_ent)
+
         except Exception as e:
-            print("An Error occurred for reference contain in file:" + file_address + "\n" + str(e))
+            print("An set Error occurred for reference contain in file:" + file_address + "\n" + str(e))
 
         try:
             listener = SetInitAndSetInitByListener(file_address)
@@ -439,4 +444,5 @@ if __name__ == '__main__':
         except Exception as e:
             print("An Error occurred for reference contain in file:" + file_address + "\n" + str(e))
 
+    print(number_of_sets)
 
