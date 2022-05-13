@@ -24,6 +24,7 @@ from oudb.fill import main
 from analysis_passes.couple_coupleby import ImplementCoupleAndImplementByCoupleBy
 from analysis_passes.create_createby_G11 import CreateAndCreateBy
 from analysis_passes.declare_declarein import DeclareAndDeclareinListener
+from analysis_passes.define_definein import  DefineListener
 from analysis_passes.modify_modifyby import ModifyListener
 from analysis_passes.usemodule_usemoduleby_G11 import UseModuleUseModuleByListener
 from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
@@ -68,6 +69,56 @@ class Project:
 
         return allFiles
 
+    def getFileEntity(self, path):
+        # kind id: 1
+        path = path.replace("/", "\\")
+        name = path.split("\\")[-1]
+        file = open(path, mode='r')
+        file_ent = EntityModel.get_or_create(_kind=1, _name=name, _longname=path, _contents=file.read())[0]
+        file.close()
+        print("processing file:", file_ent)
+        return file_ent
+
+    def addDeclareRefs(self, ref_dicts, file_ent):
+        for ref_dict in ref_dicts:
+            if ref_dict["scope"] is None:  # the scope is the file
+                scope = file_ent
+            else:  # a normal package
+                scope = self.getPackageEntity(file_ent, ref_dict["scope"], ref_dict["scope_longname"])
+
+            if ref_dict["ent"] is None:  # the ent package is unnamed
+                ent = self.getUnnamedPackageEntity(file_ent)
+            else:  # a normal package
+                ent = self.getPackageEntity(file_ent, ref_dict["ent"], ref_dict["ent_longname"])
+
+            # Declare: kind id 192
+            declare_ref = ReferenceModel.get_or_create(_kind=192, _file=file_ent, _line=ref_dict["line"],
+                                                       _column=ref_dict["col"], _ent=ent, _scope=scope)
+
+            # Declarein: kind id 193
+            declarein_ref = ReferenceModel.get_or_create(_kind=193, _file=file_ent, _line=ref_dict["line"],
+                                                         _column=ref_dict["col"], _scope=ent, _ent=scope)
+
+    def addDefineRefs(self, ref_dicts, file_ent):
+        for ref_dict in ref_dicts:
+            if ref_dict["scope"] is None:  # the scope is the file
+                scope = file_ent
+            else:  # a normal package
+                scope = self.getPackageEntity(file_ent, ref_dict["scope"], ref_dict["scope_longname"])
+
+            ent = self.getPackageEntity(file_ent, ref_dict["ent"], ref_dict["ent_longname"])
+
+            # Define: kind id 194
+            define_ref = ReferenceModel.get_or_create(_kind=194, _file=file_ent, _line=ref_dict["line"],
+                                                       _column=ref_dict["col"], _ent=ent, _scope=scope)
+
+            # Definein: kind id 195
+            definein_ref = ReferenceModel.get_or_create(_kind=195, _file=file_ent, _line=ref_dict["line"],
+                                                         _column=ref_dict["col"], _scope=ent, _ent=scope)
+
+    def addImplementOrImplementByRefs(self, ref_dicts, file_ent, file_address):
+        pass
+    
     @staticmethod
     def add_create_and_createby_reference(ref_dicts):
         for ref_dict in ref_dicts:
@@ -124,9 +175,10 @@ class Project:
 
 if __name__ == '__main__':
     p = Project()
-    create_db("../benchmark2_database.oudb",
+    create_db("../benchmark_database.oudb",
               project_dir="..\benchmark")
     main()
+
     db = db_open("../benchmark2_database.oudb")
     # get file name
     rawPath = str(os.path.dirname(__file__).replace("\\", "/"))
@@ -168,7 +220,15 @@ if __name__ == '__main__':
             Project.Walk(listener, parse_tree)
             modify_modifyby_list = modify_modifyby_list + listener.modify
         except Exception as e:
-            print("An Error occurred for reference create/createBy in file:" + file_address + "\n" + str(e))
+             print("An Error occurred for reference create/createBy in file:" + file_address + "\n" + str(e))
+            
+        try:
+            # define
+            listener = DefineListener()
+            p.Walk(listener, tree)
+            p.addDefineRefs(listener.defines, file_ent)
+        except Exception as e:
+            print("An Error occurred for reference define in file:" + file_address + "\n" + str(e))       
 
     Project.add_create_and_createby_reference(create_createby_list)
     Project.add_modify_and_modifyby_reference(modify_modifyby_list)
