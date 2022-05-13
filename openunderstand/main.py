@@ -274,7 +274,7 @@ if __name__ == '__main__':
 
     # path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
 
-    path = "C:/Users/MOJTAB/Desktop/compiler_p1/OpenUnderstand/benchmark"
+    path = "E://univresity//00-01-2//compiler//project_phase1final//OpenUnderstand//benchmark"
     files = p.getListOfFiles(path)
     ########## AGE KHASTID YEK FILE RO RUN KONID:
     # files = ["../../Java codes/javaCoupling.java"]
@@ -321,13 +321,13 @@ if __name__ == '__main__':
 
             print("An Error occurred for reference set and setby in file:" + file_address + "\n" + str(e))
 
-        # try:
-        #     # set partial
-        #     listener = SetPartialSetByPartial()
-        #     listener.partialsList = []
-        #     p.Walk(listener, tree)
-        #     p.getSetandSetbypartial(listener.partialsList, file_ent,file_address)
-        # except Exception as e:
-        #
-        #     print("An Error occurred for reference set and setby partial in file:" + file_address + "\n" + str(e))
-        #
+        try:
+            # set partial
+            listener = SetPartialSetByPartial()
+            listener.partialsList = []
+            p.Walk(listener, tree)
+            p.getSetandSetbypartial(listener.partialsList, file_ent,file_address)
+        except Exception as e:
+
+            print("An Error occurred for reference set and setby partial in file:" + file_address + "\n" + str(e))
+

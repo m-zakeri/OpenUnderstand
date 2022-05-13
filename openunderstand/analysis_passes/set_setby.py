@@ -45,7 +45,7 @@ class Set_Setby(JavaParserLabeledListener):
 
     def enterPrimary4(self, ctx: JavaParserLabeled.Primary4Context):
         if self.inexp21:
-            self.allsets[self.counter]["variable"] = ctx.IDENTIFIER().getText()
+            self.allsets[self.counter]["variable"] = str(ctx.IDENTIFIER())
             self.allsets[self.counter]["method"] = self.currentmethod
             self.allsets[self.counter]["line"] = str(ctx.start).split(",")[3].split(":")[0]
             self.allsets[self.counter]["col"] = (str(ctx.start).split(",")[3].split(":")[1])[:-1]
@@ -68,7 +68,7 @@ class Set_Setby(JavaParserLabeledListener):
 
     def enterExpression1(self, ctx: JavaParserLabeled.Expression1Context):
         if self.inexp21:
-            self.allsets[self.counter]["variable"] = ctx.IDENTIFIER().getText()
+            self.allsets[self.counter]["variable"] = str(ctx.IDENTIFIER())
             self.allsets[self.counter]["method"] = self.currentmethod
             self.allsets[self.counter]["line"] = str(ctx.start).split(",")[3].split(":")[0]
             self.allsets[self.counter]["col"] = (str(ctx.start).split(",")[3].split(":")[1])[:-1]

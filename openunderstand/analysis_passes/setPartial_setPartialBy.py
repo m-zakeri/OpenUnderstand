@@ -42,15 +42,15 @@ class SetPartialSetByPartial(JavaParserLabeledListener):
 
     # Save the name of the current method
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
-        self.currentMethod = ctx.IDENTIFIER().getText()
+        self.currentMethod = str(ctx.IDENTIFIER())
 
     # Save the name of the field and the instance
     def enterExpression1(self, ctx: JavaParserLabeled.Expression1Context):
-        self.fieldName = ctx.IDENTIFIER().getText()
+        self.fieldName = str(ctx.IDENTIFIER())
 
         # Check if we have a field assignment
         if ctx.DOT().getText() == ".":
-            self.instanceName = ctx.expression().getText()
+            self.instanceName = str(ctx.expression())
 
         # Check the existence of the record before adding it to the list
         tmpDict = {"currentClass": self.currentClass, "currentMethod": self.currentMethod,
@@ -67,7 +67,7 @@ class SetPartialSetByPartial(JavaParserLabeledListener):
 
     # Save the name of the current class
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
-        self.currentClass = ctx.IDENTIFIER().getText()
+        self.currentClass = str(ctx.IDENTIFIER())
 
     ############################ ALi
     @property
