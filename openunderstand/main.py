@@ -337,7 +337,7 @@ if __name__ == '__main__':
 
     # path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
 
-    path = r"E:\OpenUnderstand\benchmark\calculator_app\calculator_app"
+    path = "C:/git/OpenUnderstandG15/benchmark/jvlt-1.3.2"
 
     files = p.getListOfFiles(path)
     ########## AGE KHASTID YEK FILE RO RUN KONID:
