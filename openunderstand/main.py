@@ -355,7 +355,7 @@ if __name__ == '__main__':
             p.Walk(listener, tree)
         except Exception as e:
             print("An Error occurred in file:" + file_address + "\n" + str(e))
-    number_of_sets=0
+
     for file_address in files:
         try:
             file_ent = p.getFileEntity(file_address)
@@ -429,8 +429,6 @@ if __name__ == '__main__':
             listener = SetAndSetByListener(file_address)
             p.Walk(listener=listener, tree=tree)
             d = listener.setBy
-
-            number_of_sets= number_of_sets + len(d)
             p.addSetRefs(d, file_ent)
 
         except Exception as e:
@@ -444,5 +442,4 @@ if __name__ == '__main__':
         except Exception as e:
             print("An Error occurred for reference contain in file:" + file_address + "\n" + str(e))
 
-    print(number_of_sets)
 
