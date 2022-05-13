@@ -109,7 +109,9 @@ class Project():
 
     def addSetInitRefs(self, d, file_ent):
         for type_tuple in d:
-            ent, h_c1 = EntityModel.get_or_create(_kind=220, _parent=None, _name=type_tuple[0],
+            par=EntityModel.get(_name=type_tuple[7])
+
+            ent, h_c1 = EntityModel.get_or_create(_kind=220, _parent=par._id, _name=type_tuple[0],
                                                   _longname=type_tuple[1], _value=type_tuple[3],
                                                   _type=type_tuple[4], _contents=stream)
 
@@ -128,8 +130,9 @@ class Project():
 
     def addSetRefs(self, d, file_ent):
         for type_tuple in d:
-            ent, h_c1 = EntityModel.get_or_create(_kind=222, _parent=None, _name=type_tuple[0],
-                                                  _longname=type_tuple[1], _value=None,
+            par = EntityModel.get(_name=type_tuple[7])
+            ent, h_c1 = EntityModel.get_or_create(_kind=222, _parent=par._id, _name=type_tuple[0],
+                                                  _longname=type_tuple[1], _value=type_tuple[3],
                                                   _type=None, _contents=stream)
 
             scope, h_c2 = EntityModel.get_or_create(_kind=223, _parent=None, _name=type_tuple[7],
@@ -332,7 +335,7 @@ if __name__ == '__main__':
 
     # path = "D:/Term 7/Compiler/Final proj/github/OpenUnderstand/benchmark"
 
-    path = r"E:\OpenUnderstand\benchmark\calculator_app"
+    path = r"C:\Users\Parsa\PycharmProjects\pythonProject\java_files"
 
     files = p.getListOfFiles(path)
     ########## AGE KHASTID YEK FILE RO RUN KONID:

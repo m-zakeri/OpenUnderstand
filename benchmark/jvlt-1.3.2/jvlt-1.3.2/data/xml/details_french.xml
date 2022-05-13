@@ -1,0 +1,93 @@
+<?xml version="1.0"?>
+<schema lang="french">
+	<class name="noun"/>
+	<class name="adjective"/>
+	<class name="pron"/>
+	<class name="numeral"/>
+	<class name="verb"/>
+	<class name="adverb"/>
+	<class name="preposition"/>
+	<class name="conjunction"/>
+	<class name="expression"/>
+	<class name="interjection"/>
+
+	<attribute name="gender" classes="noun;adjective" group="declension">
+		<choice name="masculine"/>
+		<choice name="feminine"/>
+	</attribute>
+
+	<attribute name="number" classes="noun;adjective" group="declension">
+		<choice name="singular"/>
+		<choice name="plural"/>
+	</attribute>
+
+	<attribute name="verb_group" classes="verb" group="conjugation">
+		<choice name="regular_er"/>
+		<choice name="irregular_er"/>
+		<choice name="regular_ir"/>
+		<choice name="irregular_ir"/>
+		<choice name="regular_re"/>
+		<choice name="irregular_re"/>
+		<choice name="stem_change"/>
+		<choice name="spell_change"/>
+	</attribute>
+
+	<attribute name="pres_sg_1st" classes="verb" group="prest"/>
+	<attribute name="pres_sg_2nd" classes="verb" group="prest"/>
+	<attribute name="pres_sg_3rd" classes="verb" group="prest"/>
+	<attribute name="pres_pl_1st" classes="verb" group="prest"/>
+	<attribute name="pres_pl_2nd" classes="verb" group="prest"/>
+	<attribute name="pres_pl_3rd" classes="verb" group="prest"/>
+
+	<attribute name="imperativ_sg_2nd" classes="verb" group="imperative"/>
+	<attribute name="imperativ_pl_1st" classes="verb" group="imperative"/>
+	<attribute name="imperativ_pl_2nd" classes="verb" group="imperative"/>
+
+	<attribute name="pastp" classes="verb" group="pastcmp"/>
+	<attribute name="aux_verb" classes="verb" group="pastcmp"/>
+
+	<attribute name="fut_sg_1st" classes="verb" group="futur"/>
+	<attribute name="fut_sg_2nd" classes="verb" group="futur"/>
+	<attribute name="fut_sg_3rd" classes="verb" group="futur"/>
+	<attribute name="fut_pl_1st" classes="verb" group="futur"/>
+	<attribute name="fut_pl_2nd" classes="verb" group="futur"/>
+	<attribute name="fut_pl_3rd" classes="verb" group="futur"/>
+
+	<attribute name="imp_sg_1st" classes="verb" group="imperfect"/>
+	<attribute name="imp_sg_2nd" classes="verb" group="imperfect"/>
+	<attribute name="imp_sg_3rd" classes="verb" group="imperfect"/>
+	<attribute name="imp_pl_1st" classes="verb" group="imperfect"/>
+	<attribute name="imp_pl_2nd" classes="verb" group="imperfect"/>
+	<attribute name="imp_pl_3rd" classes="verb" group="imperfect"/>
+
+	<attribute name="pres_sub_sg_1st" classes="verb" group="pres_sub"/>
+	<attribute name="pres_sub_sg_2nd" classes="verb" group="pres_sub"/>
+	<attribute name="pres_sub_sg_3rd" classes="verb" group="pres_sub"/>
+	<attribute name="pres_sub_pl_1st" classes="verb" group="pres_sub"/>
+	<attribute name="pres_sub_pl_2nd" classes="verb" group="pres_sub"/>
+	<attribute name="pres_sub_pl_3rd" classes="verb" group="pres_sub"/>
+
+	<attribute name="cond_sg_1st" classes="verb" group="condform"/>
+	<attribute name="cond_sg_2nd" classes="verb" group="condform"/>
+	<attribute name="cond_sg_3rd" classes="verb" group="condform"/>
+	<attribute name="cond_pl_1st" classes="verb" group="condform"/>
+	<attribute name="cond_pl_2nd" classes="verb" group="condform"/>
+	<attribute name="cond_pl_3rd" classes="verb" group="condform"/>
+
+	<attribute name="past_sg_1st" classes="verb" group="pastt"/>
+	<attribute name="past_sg_2nd" classes="verb" group="pastt"/>
+	<attribute name="past_sg_3rd" classes="verb" group="pastt"/>
+	<attribute name="past_pl_1st" classes="verb" group="pastt"/>
+	<attribute name="past_pl_2nd" classes="verb" group="pastt"/>
+	<attribute name="past_pl_3rd" classes="verb" group="pastt"/>
+
+	<attribute name="imp_sub_sg_1st" classes="verb" group="imp_sub"/>
+	<attribute name="imp_sub_sg_2nd" classes="verb" group="imp_sub"/>
+	<attribute name="imp_sub_sg_3rd" classes="verb" group="imp_sub"/>
+	<attribute name="imp_sub_pl_1st" classes="verb" group="imp_sub"/>
+	<attribute name="imp_sub_pl_2nd" classes="verb" group="imp_sub"/>
+	<attribute name="imp_sub_pl_3rd" classes="verb" group="imp_sub"/>
+
+	<attribute name="presentppl" classes="verb" group="presentppl"/>
+</schema>
+

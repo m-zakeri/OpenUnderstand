@@ -1,0 +1,14 @@
+jVLT is a vocabulary learning tool written in Java. You can build your
+vocabulary with it and specify examples containing one or many of the
+vocabulary words. jVLT also can perform quizzes, querying only those words
+which you often did not know in the past or which have not been queried
+for a long time. During a quiz, jVLT shows the examples of each word,
+letting you better memorize its usage.
+
+Further information can be found at http://jvlt.sourceforge.net
+
+Config file settings not adjustable via dialog:
+# Show tooltips in tables
+Table.showTooltips=true/false
+# Reverse arrows in entry table
+entry_table_arrow_direction_reversed=true/false

@@ -1,0 +1,138 @@
+<?xml version="1.0"?>
+<schema lang="sanskrit">
+	<class name="nominal"/>
+		<class name="subs" extends="nominal"/>
+		<class name="pron" extends="nominal"/>
+		<class name="des" extends="nominal"/>
+		<class name="adjective" extends="nominal"/>
+			<class name="desadj" extends="adjective"/>
+			<class name="futppl" extends="adjective"/>
+			<class name="grdv" extends="adjective"/>
+			<class name="ppp" extends="adjective"/>
+			<class name="perfectppl" extends="adjective"/>
+			<class name="presentppl" extends="adjective"/>
+			<class name="pronadj" extends="adjective"/>
+	<attribute name="gender" classes="nominal" occurrence="multiple">
+		<choice name="feminine"/>
+		<choice name="masculine"/>
+		<choice name="neuter"/>
+	</attribute>
+	<attribute name="nompl" classes="nominal" group="Declension"/>
+	<attribute name="inspl" classes="nominal" group="Declension"/>
+	<attribute name="ablpl" classes="nominal" group="Declension"/>
+	<attribute name="deriv" classes="nominal;ind" group="Derivation">
+		<choice name="Primary"/>
+		<choice name="Secondary"/>
+	</attribute>
+	<attribute name="base" classes="nominal;ind" group="Derivation"/>
+	<attribute name="base-sense" classes="nominal;ind" group="Derivation"/>
+	<attribute name="affix" classes="nominal;ind" group="Derivation"/>
+	<attribute name="affix-sense" classes="nominal;ind" group="Derivation"/>
+	<attribute name="analysis" classes="nominal;ind" group="Derivation"/>
+	<attribute name="analysistr" classes="nominal;ind" group="Derivation"/>
+	<attribute name="comp1" classes="nominal;ind" group="Compounds">
+		<choice name="dvandva"/>
+			<choice name="dvandva_itara" extends="dvandva"/>
+			<choice name="dvandva_samahara" extends="dvandva"/>
+			<choice name="ekasesa" extends="dvandva"/>
+		<choice name="tatpurusa"/>
+			<choice name="karmadharaya" extends="tatpurusa"/>
+				<choice name="karma_visesana_purva" extends="karmadharaya"/>
+				<choice name="karma_visesana_ubhaya" extends="karmadharaya"/>
+				<choice name="karma_visesya_purva" extends="karmadharaya"/>
+				<choice name="karma_upamana_purva" extends="karmadharaya"/>
+				<choice name="karma_upamana_uttara" extends="karmadharaya"/>
+				<choice name="karma_avadharana_purva" extends="karmadharaya"/>
+				<choice name="karma_sambhavana_purva" extends="karmadharaya"/>
+				<choice name="karma_madhyama_lopin" extends="karmadharaya"/>
+				<choice name="karma_mayura_vyamsaka" extends="karmadharaya"/>
+			<choice name="dvigu" extends="tatpurusa"/>
+				<choice name="dvigu_taddhita" extends="dvigu"/>
+				<choice name="dvigu_uttarapada" extends="dvigu"/>
+				<choice name="dvigu_samahara" extends="dvigu"/>
+			<choice name="tatpurusa_vibhakti" extends="tatpurusa"/>
+				<choice name="tatpurusa_dvitiya" extends="tatpurusa_vibhakti"/>
+				<choice name="tatpurusa_trtiya" extends="tatpurusa_vibhakti"/>
+				<choice name="tatpurusa_caturthi" extends="tatpurusa_vibhakti"/>
+				<choice name="tatpurusa_pancami" extends="tatpurusa_vibhakti"/>
+				<choice name="tatpurusa_sasthi" extends="tatpurusa_vibhakti"/>
+				<choice name="tatpurusa_saptami" extends="tatpurusa_vibhakti"/>
+			<choice name="tatpurusa_upapada" extends="tatpurusa"/>
+			<choice name="tatpurusa_ekadesin" extends="tatpurusa"/>
+			<choice name="tatpurusa_nan" extends="tatpurusa"/>
+			<choice name="tatpurusa_ku" extends="tatpurusa"/>
+			<choice name="tatpurusa_pradi" extends="tatpurusa"/>
+			<choice name="tatpurusa_gati" extends="tatpurusa"/>
+				<choice name="tatpurusa_cvi" extends="tatpurusa_gati"/>
+		<choice name="avyayibhava"/>
+			<choice name="avyayibhava_avyaya" extends="avyayibhava"/>
+			<choice name="avyayibhava_nama" extends="avyayibhava"/>
+		<choice name="nitya_samasa"/>
+		<choice name="supsupa"/>
+		<choice name="prsodara"/>
+	</attribute>
+	<attribute name="comp2" classes="nominal;ind" group="Compounds">
+		<choice name="bahuvrihi"/>
+			<choice name="bahuvrihi_samanadhikarana" extends="bahuvrihi"/>
+			<choice name="bahuvrihi_vyadhikarana" extends="bahuvrihi"/>
+			<choice name="bahuvrihi_nan" extends="bahuvrihi"/>
+			<choice name="bahuvrihi_saha" extends="bahuvrihi"/>
+			<choice name="bahuvrihi_samkhya" extends="bahuvrihi"/>
+			<choice name="bahuvrihi_dig" extends="bahuvrihi"/>
+			<choice name="bahuvrihi_karma" extends="bahuvrihi"/>
+			<choice name="bahuvrihi_aneka" extends="bahuvrihi"/>
+			<choice name="bahuvrihi_irregular" extends="bahuvrihi"/>
+	</attribute>
+	<attribute name="vigraha" classes="nominal;ind" group="Compounds"/>
+	<attribute name="vigrahatr" classes="nominal;ind" group="Compounds"/>
+	
+	<class name="verb"/>
+	<attribute name="class" classes="verb" occurrence="multiple">
+		<choice name="class01"/>
+		<choice name="class02"/>
+		<choice name="class03"/>
+		<choice name="class04"/>
+		<choice name="class05"/>
+		<choice name="class06"/>
+		<choice name="class07"/>
+		<choice name="class08"/>
+		<choice name="class09"/>
+		<choice name="class10"/>
+		<choice name="pass_root"/>
+		<choice name="caus_root"/>
+		<choice name="des_root"/>
+		<choice name="den_root"/>
+		<choice name="int_root"/>
+	</attribute>
+	<attribute name="padam" classes="verb">
+		<choice name="parasmai"/>
+		<choice name="atmane"/>
+		<choice name="ubhaya"/>
+	</attribute>
+	<attribute name="transitivity" classes="verb" occurrence="multiple">
+		<choice name="intrans"/>
+		<choice name="trans"/>
+		<choice name="ditrans"/>
+	</attribute>
+	<attribute name="future" classes="verb" group="Conjugations"/>
+	<attribute name="perfect" classes="verb" group="Conjugations"/>
+	<attribute name="aorist" classes="verb" group="Conjugations"/>
+	<attribute name="benedictive" classes="verb" group="Conjugations"/>
+	<attribute name="gerund" classes="verb" group="Indeclinables"/>
+	<attribute name="inf" classes="verb" group="Indeclinables"/>
+	<attribute name="grdv" classes="verb" group="Verbal adjectives"/>
+	<attribute name="ppp" classes="verb" group="Verbal adjectives"/>
+	<attribute name="pass" classes="verb" group="Secondary Conjugations"/>
+	<attribute name="caus" classes="verb" group="Secondary Conjugations"/>
+	<attribute name="desid" classes="verb" group="Secondary Conjugations"/>
+	<attribute name="intens" classes="verb" group="Secondary Conjugations"/>
+
+	<class name="ind"/>
+		<class name="avyayibhava" extends="ind"/>
+		<class name="avyayi_gati" extends="ind"/>
+		<class name="gerund" extends="ind"/>
+		<class name="inf" extends="ind"/>
+		<class name="interjection" extends="ind"/>
+		<class name="upasarga" extends="ind"/>
+</schema>
+

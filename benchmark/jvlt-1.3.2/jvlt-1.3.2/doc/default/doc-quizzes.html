@@ -1,0 +1,265 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>jVLT - Quizzes</title>
+<link href="style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<table>
+<tr>
+<td><img alt="jVLT logo" height="128" src="jvlt.png" width="128"></td><td>
+<h1>jVLT - a vocabulary learning tool</h1>
+</td>
+</tr>
+<tr>
+<td class="bluebox" valign="top">
+<div style="margin-left:0px">
+<a href="doc.html">Documentation</a>
+</div>
+<div style="margin-left:10px">
+<a href="doc-vocabulary.html">Vocabulary</a>
+</div>
+<div style="margin-left:10px">
+<a href="doc-examples.html">Examples</a>
+</div>
+<div style="margin-left:10px">Quizzes</div>
+<div style="margin-left:10px">
+<a href="doc-settings.html">Settings</a>
+</div>
+<div style="margin-left:10px">
+<a href="doc-menus.html">Menu Entries</a>
+</div>
+<div style="margin-left:10px">
+<a href="doc-misc.html">Miscellaneous</a>
+</div>
+</td><td class="content">
+
+jVLT offers an option to perform quizzes on your vocabulary. Words are
+assigned to different batches depending on whether
+you knew it during the quiz. The batch number of known words increases
+(for example, a word with batch No. 1 is assigned
+to batch No. 2 after the quiz), not known words are
+assigned to batch No. 0. After the quiz, a word
+becomes inactive for a certain period of time which depends on its
+current batch. "Inactive" means that a word will not appear in
+a quiz. The date a word becomes active again is also called
+"expiry date". The time until expiry can be adjusted in the
+<a href="doc-settings.html#general_settings">settings dialog</a>. The
+default values are given below:
+<ul>
+
+<li>Batch No. 0: 0 days</li>
+
+<li>Batch No. 1: 1 days</li>
+
+<li>Batch No. 2: 3 days</li>
+
+<li>Batch No. 3: 9 days</li>
+
+<li>Batch No. 4: 27 days</li>
+
+<li>Batch No. 5: 81 days</li>
+
+<li>Batch No. 6: 283 days</li>
+
+<li>Batch No. 7: 849 days</li>
+
+</ul>
+To start a quiz, press the "Start" button on the quiz
+tab.<br>
+<br>
+
+<img alt="Quiz tab" src="quiz.png"> <br>
+<br>
+
+
+<h2>
+<a name="before_the_quiz">Before the quiz</a>
+</h2>
+Before starting a quiz, you can select a quiz type,
+specify certain options, and restrict the
+set of words that may appear during a quiz.
+
+<h3>Selecting words</h3>
+After pressing the "Select words..." button a dialog appears
+that allows to select words by using one of four different methods.
+<ul>
+
+<li>
+<b>All words:</b>
+All words will be quizzed.
+</li>
+
+<li>
+<b>Only words matching the specified filter:</b>
+Only words that match a certain filter will be quizzed. If this option
+is selected, a filter has to be specified by pressing the "Filter..." button.
+The dialog that opens thereafter is described
+<a href="doc-vocabulary.html#word_list">here</a>.
+</li>
+
+<li>
+<b>Apply multiple filters successively:</b>
+You can also select multiple filters that will be applied successively. For
+example, you can specify that first all the words that have not been tested
+before will be quizzed, and after that the words of a certain lesson. You can
+add new filters by clicking on the "Manager filters..." button.
+</li>
+
+<li>
+<b>Only words matching criteria specified below:</b>
+Select this option if you want to quickly select the lessons
+or categories that should (not) be quizzed.
+</li>
+
+</ul>
+
+<br>
+<br>
+
+<img alt="Select words" src="select_words.png">
+<br>
+<br>
+
+
+<h3>Selecting the quiz type</h3>
+jVLT quizzes on the "Original" field by default. You can design
+other types of quizzes by using the dialog that appears after pressing
+the "Manage quiz types..." button.
+<br>
+<br>
+
+<img alt="Manage quiz types" src="quiz_type_dialog.png">
+<br>
+<br>
+In the dialog, you select the fields to quiz on, and the fields which are
+shown during the quiz question. You also have to name the newly created
+quiz type by entering a name into the text field at the top of the dialog
+and pressing "New/Update" afterwards. You can also change existing
+quiz types by selecting them via the drop-down menu at the top of the dialog
+and pressing "New/Update" after the changes have been made.
+<br>
+<br>
+After having added a new quiz type and closing the dialog by pressing
+"OK", you can select the new quiz type via the
+"Select quiz type" drop-down menu.
+
+<h3>Quiz options</h3>
+
+<p>In the quiz options dialog, you can choose
+between several options that determine
+how a quiz is performed.
+</p>
+
+<p>
+<img alt="Quiz options" src="quiz_options.png"></p>
+
+<ul>
+
+<li>
+<b>Input answer:</b>
+By selecting this option, you determine
+whether you want to enter the solution
+during a quiz.
+</li>
+
+<li>
+<b>Ignore upper and lower case of entered answer:</b>
+This determines whether the entered answer
+will be checked for upper and lower case.
+If the checkbox is selected, the answer "spain" for the word "Spain"
+will be considered correct.
+</li>
+
+<li>
+<b>Set default answer:</b>
+If this checkbox is selected, you can set a default answer
+(either "Yes" or "No") for each word in a quiz.
+</li>
+
+<li>
+<b>Ignore expiry time:</b>
+By selecting this option, the expiry time of words will be
+ignored during a quiz. That way you can immediately test words again
+that have just been quizzed and that therefore are not yet expired.
+</li>
+
+<li>
+<b>...but update the batches after the quiz:</b>
+If the check mark next to this option is visible, the words' batches are
+updated after a quiz even if the expiry time is ignored during a quiz.
+</li>
+
+<li>
+<b>Play audio files when answer is shown:</b>
+If there is an audio file assigned to a word it is played once the answer for
+this word is shown during a quiz. In case multiple audio files have been
+specified for a word only the first one is played.
+</li>
+
+</ul>
+
+
+<h2>
+<a name="during_the_quiz">During the quiz</a>
+</h2>
+Dependent on what you configured in the
+quiz options,
+a quiz can be performed in two different ways. The first possibility is
+that you enter the solution which is shown in the figure below.
+<br>
+<br>
+
+<img alt="Input Answer" src="quiz_input_answer.png">
+<br>
+<br>
+After you pressed "Next", the solution is shown and a message appears
+saying whether your answer was correct or not.
+<br>
+<br>
+
+<img alt="Show Answer" src="quiz_show_answer.png">
+<br>
+<br>
+The second possibility is that you do not enter the solution (you can write
+it on a piece of paper instead), and jVLT asks you - after you pressed
+"Next" - whether you knew the correct answer.
+<br>
+<br>
+
+<img alt="Show Answer" src="quiz-2.png">
+<br>
+<br>
+
+<p>It's also possible to set the flags described in the
+<a href="doc-vocabulary.html#advanced_settings_flags">advanced
+settings dialog</a> during a quiz. Once a flag is set, the word
+is excluded from later quizzes.
+</p>
+You can cancel a quiz at any time by pressing "Finish". In the next
+section, it is described what happens thereafter.
+
+<h2>
+<a name="after_the_quiz">After the quiz</a>
+</h2>
+If you decided to finish the quiz, jVLT asks whether you want to repeat the
+words you did not know. Afterwards two lists are displayed which show those
+words you knew and those you did not know, respectively. If you mistakenly
+classified known words as not known or vice versa, you can now correct
+your mistakes by selecting the respective words and press the arrow buttons.
+You can also assign <a href="doc-vocabulary.html#advanced_settings_flags">
+flags</a> to the words that were quizzed by selecting the
+check boxes in the two lists.
+At last, you can decide whether to save the results of this quiz so they
+can be taken into account for future quizzes.<br>
+<br>
+
+<img alt="Quiz results" src="quiz-3.png"><br>
+<br>
+
+
+</td>
+</tr>
+</table>
+</body>
+</html>
