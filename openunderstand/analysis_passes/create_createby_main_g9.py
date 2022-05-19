@@ -204,7 +204,7 @@ if __name__ == '__main__':
     ]
 
     p = Project()
-    create_db(f"../../databases/{project_list[project_index]}.db", project_dir="../benchmark")
+    create_db(f"../../databases/{project_list[project_index]}.db", project_dir="../../benchmark")
     main()
     db = db_open(f"../../databases/{project_list[project_index]}.db")
     path = f"C:\Compiler\OpenUnderstand\\benchmark\\{project_list[project_index]}"
