@@ -1,5 +1,5 @@
 """
-The helper module for couple_coupleby.py, create_createby.py, declare_declareby.py modules
+The helper module for couple_coupleby.py, create_createby_g11.py, declare_declareby.py modules
 
 Todo: Must be document well
 """
@@ -9,8 +9,9 @@ __author__ = 'Shaghayegh Mobasher , Setayesh kouloubandi ,Parisa Alaie, Zakeri'
 __version__ = '0.1.1'
 
 
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from antlr4 import *
 
 
 class ClassPropertiesListener(JavaParserLabeledListener):
@@ -21,14 +22,18 @@ class ClassPropertiesListener(JavaParserLabeledListener):
         return set(ClassPropertiesListener.findParents(c)) & set(list(reversed(self.class_longname)))
 
     @staticmethod
-    def findParents(c):  # includes the ctx identifier
+    def findParents(c: ParserRuleContext):  # includes the ctx identifier
         parents = []
-        current = c
+        current = c.parentCtx
         while current is not None:
-            if type(current).__name__ == "ClassDeclarationContext" or type(current).__name__ == "MethodDeclarationContext"\
-                    or type(current).__name__ == "EnumDeclarationContext"\
-                    or type(current).__name__ == "InterfaceDeclarationContext"\
-                    or type(current).__name__ == "AnnotationTypeDeclarationContext":
+            if current.getRuleIndex() in [
+                JavaParserLabeled.RULE_classDeclaration,
+                JavaParserLabeled.RULE_methodDeclaration,
+                JavaParserLabeled.RULE_enumDeclaration,
+                JavaParserLabeled.RULE_interfaceDeclaration,
+                JavaParserLabeled.RULE_constructorDeclaration,
+                JavaParserLabeled.RULE_annotationTypeDeclaration,
+            ]:
                 parents.append(current.IDENTIFIER().getText())
             current = current.parentCtx
         return list(reversed(parents))
