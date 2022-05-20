@@ -19,7 +19,7 @@ __version__ = "1.0.0"
 import re
 from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.analysis_passes.entity_manager_G11 import EntityGenerator
+from openunderstand.analysis_passes.entity_manager_g11 import EntityGenerator
 
 
 class CreateAndCreateBy(JavaParserLabeledListener):
