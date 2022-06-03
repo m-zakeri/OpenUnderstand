@@ -1,8 +1,8 @@
-site_name: OpenUnderstand Docs (v0.1.1dev)
-site_url: https://m-zakeri.github.io/OpenUnderstand
-repo_url: https://github.com/m-zakeri/OpenUnderstand
+site_name: OpenUnderstand Docs (v0.1.0dev)
+site_url: https://m-zakeri.github.io/OpenUndertsand
+repo_url: https://github.com/m-zakeri/OpenUndertsand
 site_description: An open-source implementation of Understand Python API for Java language
-site_author: Morteza Zakeri, Saeed Parsa
+site_author: Morteza Zakeri, Ali Ayati, Sadegh Jafari, Saeed Parsa
 copyright: © 2021-2022 OpenUnderstand project - IUST Reverse Engineering Research Laboratory
 
 theme:
@@ -36,13 +36,11 @@ nav:
     - Home: index.md
     - Entity kinds: entity_kinds.md
     - References kinds: reference_kinds.md
-    - Source code metrics: source_code_metrics.md
     - Benchmarks: benchmarks.md
     - Development proposals:
         - Core entity-reference development: proposals/core_entity_reference_development.md
         - Core source code metrics development: proposals/core_source_code_metrics_development.md
         - Core code graphs and visualiztion development: proposals/core_code_graphs_development.md
-        - Code review and bug fixing: proposals/code_review_and_bug_fixing.md
     - Analysis passes:
         - Call and Callby: reference_kinds/call_callby.md
     - Code graph and visulization:
