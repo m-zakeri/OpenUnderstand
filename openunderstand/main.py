@@ -35,7 +35,8 @@ from analysis_passes.type_typedby import TypedAndTypedByListener
 from analysis_passes.use_useby import UseAndUseByListener
 from analysis_passes.set_setby import SetAndSetByListener
 from analysis_passes.setinit_setinitby import SetInitAndSetInitByListener
-
+from openunderstand.override_overrideby__G12 import overridelistener
+from openunderstand.couple_coupleby__G12 import CoupleAndCoupleBy
 
 
 class Project():
@@ -86,6 +87,24 @@ class Project():
         file.close()
         print("processing file:", file_ent)
         return file_ent
+
+    def findKindWithKeywords(self, type, modifiers):
+        if len(modifiers) == 0:
+            modifiers.append("default")
+        leastspecific_kind_selected = None
+        for kind in KindModel.select().where(KindModel._name.contains(type)):
+            if self.checkModifiersInKind(modifiers, kind):
+                if not leastspecific_kind_selected \
+                        or len(leastspecific_kind_selected._name) > len(kind._name):
+                    leastspecific_kind_selected = kind
+        return leastspecific_kind_selected
+
+    def checkModifiersInKind(self, modifiers, kind):
+        for modifier in modifiers:
+            if modifier.lower() not in kind._name.lower():
+                return False
+        return True
+
 
     def addDeclareRefs(self, ref_dicts, file_ent):
         for ref_dict in ref_dicts:
@@ -263,6 +282,88 @@ class Project():
             )
 
 
+    def addoverridereference(self , classes , extendedfiles):
+        for tuples in extendedfiles:
+            main = tuples[0]
+            fromx = tuples[1]
+            methodsmain = classes[main]
+            for x in  methodsmain:
+                file = x['File']
+                file_ent = self.getFileEntity(file)
+                kindx = self.findKindWithKeywords(x["scope_kind"], x["scope_modifiers"])
+                if kindx is None:
+                    kindx = x['modifiersx']
+                scope = EntityModel.get_or_create(_kind= kindx,_name=x["scope_name"],
+                                                  _parent=x["scope_parent"] if x["scope_parent"] is not None else file_ent,
+                                                  _longname=x["scope_longname"],
+                                                  _contents=x["scope_contents"] , _type = x['Methodkind'])
+                methodname1 = x['MethodIs']
+                if (fromx in classes):
+                    mathodsfrom = classes[fromx]
+                    for y in mathodsfrom:
+                        if y['MethodIs'] == methodname1:
+                           
+                            fe = self.getFileEntity(y['File'])
+                            kind = self.findKindWithKeywords(y["scope_kind"],y["scope_modifiers"])
+                            if kind is None:
+                                kind = y['modifiersx']
+                            ent = EntityModel.get_or_create(_kind= kind ,_name=y["scope_name"],
+                                                      _parent=y["scope_parent"] if y["scope_parent"] is not None else  fe,
+                                                      _longname=y["scope_longname"],
+                                                      _contents=y["scope_contents"] ,_type = y['Methodkind']  )
+
+                
+                            override_ref = ReferenceModel.get_or_create(_kind=211, _file=file_ent, _line=x["line"],_column= x["col"], _ent=ent[0], _scope=scope[0])
+                            overrideBy_ref = ReferenceModel.get_or_create(_kind=212, _file= fe , _line=y["line"], _column=y["col"], _ent=scope[0] ,  _scope= ent[0])
+                elif(x['is_overrided']):
+                    overrideword = x[0]
+                    if(overrideword not in classes):
+                        ent = EntityModel.get_or_create(
+                            _kind= 'Unknown Method',
+                            _name=overrideword[1],
+                            _parent= file_ent,
+                            _longname= overrideword,
+                            _contents= '', )
+                        override_ref = ReferenceModel.get_or_create(_kind=211, _file=file_ent, _line=x["line"],
+                                                                    _column=x["col"], _ent=ent[0], _scope=scope[0])
+
+
+
+    def addcouplereference(self, classes , couples):
+        keykind = ''
+        for c in couples:
+            file_ent = self.getFileEntity(c['File'])
+            scope = EntityModel.get_or_create(_kind=self.findKindWithKeywords(c["scope_kind"],c["scope_modifiers"]), _name=c["scope_name"],
+                                              _parent=c["scope_parent"] if c["scope_parent"] is not None else file_ent,
+                                              _longname=c["scope_longname"],
+                                              _contents=c["scope_contents"])
+            if 'type_ent_longname' in c:
+                keylist = c['type_ent_longname']
+                if (len(keylist)!= 0):
+                    for key in keylist:
+                        if key in classes:
+                            c1 = classes[key]
+                            file_ent2 = self.getFileEntity(c1['File'])
+                            keykind = self.findKindWithKeywords(c1["scope_kind"],c1["scope_modifiers"])
+                            ent   = EntityModel.get_or_create(_kind=self.findKindWithKeywords(c1["scope_kind"],c1["scope_modifiers"]), _name=c1["scope_name"],
+                                                          _parent=c1["scope_parent"] if c1["scope_parent"] is not None else file_ent2,
+                                                          _longname=c1["scope_longname"],
+                                                          _contents=c1["scope_contents"])
+                            CoupleBy_ref = ReferenceModel.get_or_create(_kind=180, _file=file_ent2, _line=c["line"],
+                                                                        _column=c["col"], _ent=scope[0], _scope=ent[0])
+
+                        else :
+                            kw = key.split('.')
+                            keykind = "Unknown Class"
+                            ent = EntityModel.get_or_create(_kind="Unknown Class", _name= kw[-1],
+                                                          _parent= file_ent,
+                                                          _longname=key,
+                                                          )
+                        Couple_ref = ReferenceModel.get_or_create(_kind=179, _file=file_ent, _line=c["line"],
+                                                                _column=c["col"], _ent=ent[0], _scope=scope[0])
+                      
+
+
 if __name__ == '__main__':
     p = Project()
     create_db("../benchmark_database.oudb",
@@ -278,7 +379,10 @@ if __name__ == '__main__':
     # Lists
     create_createby_list = []
     modify_modifyby_list = []
-
+    
+    classesx= {}
+    extendedlist= []
+    classescoupleby = {}
     for file_address in files:
         try:
             parse_tree = p.Parse(file_address)
@@ -337,6 +441,40 @@ if __name__ == '__main__':
         except Exception as e:
             print("An Error occurred for reference contain in file:" + file_address + "\n" + str(e))
 
+        try:
+            file_ent = p.getFileEntity(file_address)
+            tree = p.Parse(file_address)
+            print('files' , file_address)
+        except Exception as e:
+            print("An Error occurred in file:" + file_address + "\n" + str(e))
+            continue
+
+        try:
+            listener = overridelistener()
+            listener.set_file(file_address)
+            listener.extendedtoentity = {}
+            listener.set_dictionary(classesx)
+            listener.set_list(extendedlist)
+            p.Walk(listener, tree)
+            classesx = listener.get_classes
+            extendedlist = listener.get_extendeds
+        except Exception as e:
+            print("An Error occurred in override reference in file :" + file_address + "\n" + str(e))
+            continue
+
+        try:
+            listener = CoupleAndCoupleBy()
+            listener.set_file(filex=file_address)
+            listener.set_classesx(classesx =classescoupleby)
+            listener.set_couples( couples=couple)
+            p.Walk(listener, tree)
+            classescoupleby = listener.get_classes
+            couple = listener.get_couples
+        except Exception as e:
+            print("An Error occurred in couple reference in file :" + file_address + "\n" + str(e))
+            continue 
 
     Project.add_create_and_createby_reference(create_createby_list)
     Project.add_modify_and_modifyby_reference(modify_modifyby_list)
+    p.addoverridereference(classesx, extendedlist)
+    p.addcouplereference(classescoupleby , couple)
