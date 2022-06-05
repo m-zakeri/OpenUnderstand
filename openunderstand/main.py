@@ -297,7 +297,6 @@ from analysis_passes.g6_create_createby import CreateAndCreateByListener
 from analysis_passes.g6_declare_declarein import DeclareAndDeclareinListener
 from analysis_passes.g6_class_properties import ClassPropertiesListener, InterfacePropertiesListener
 
-
 class Project():
 
     tree = None
@@ -914,6 +913,6 @@ if __name__ == '__main__':
     except Exception as e:
         print("An Error occurred in override reference " + str(e))
     
-        
+
     # Project.add_create_and_createby_reference(create_createby_list)
     # Project.add_modify_and_modifyby_reference(modify_modifyby_list)
