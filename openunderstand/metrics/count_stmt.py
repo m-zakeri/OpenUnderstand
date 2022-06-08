@@ -1,12 +1,8 @@
 import os
 from antlr4 import *
-from pathlib import Path
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from oudb.fill import main as db_fill
-from oudb.api import create_db, open as db_open
-from oudb.models import KindModel, EntityModel, ReferenceModel
 
 
 PRJ_INDEX = 0
@@ -50,25 +46,28 @@ class StatementListener(JavaParserLabeledListener):
         self.counter = 0
 
     def enterPackageDeclaration(self, ctx:JavaParserLabeled.PackageDeclarationContext):
+        line = ctx.children[0].symbol.line
         self.counter += 1
-        self.save_result()
+        self.save_result(line)
 
     def enterImportDeclaration(self, ctx:JavaParserLabeled.ImportDeclarationContext):
+        line = ctx.children[0].symbol.line
         self.counter += 1
-        self.save_result()
+        self.save_result(line)
 
     def enterStatement15(self, ctx:JavaParserLabeled.Statement15Context):
+        line = ctx.children[0].symbol.line
         self.counter += 1
-        self.save_result()
+        self.save_result(line)
 
     def enterLocalVariableDeclaration(self, ctx: JavaParserLabeled.LocalVariableDeclarationContext):
+        line = ctx.children[0].symbol.line
         self.counter += 1
-        self.save_result()
+        self.save_result(line)
 
-    def save_result(self):
+    def save_result(self, line):
         self.repository.append({
             'line': line,
-            'column': col,
         })
 
 
@@ -86,7 +85,6 @@ class Project:
                     path = path.replace("/", "\\")
                     path = os.path.abspath(path)
                     self.files.append((file, path))
-                    add_java_file_entity(path, file)
 
 
 def main():
