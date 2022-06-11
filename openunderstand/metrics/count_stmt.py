@@ -39,14 +39,12 @@ def get_project_info(index):
 
 class StatementListener(JavaParserLabeledListener):
     def __init__(self, files):
-        self.repository = {'Java Package': 0,
-                           'Java Import': 0}
+        self.repository = {'Java Import': 0}
         self.files = files
         self.counter = 0
 
     def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
-        self.repository['Java Package'] += 1
-        self.counter += 1
+        self.update_repository(ctx, 1)
 
     def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
         self.repository['Java Import'] += 1
@@ -72,15 +70,29 @@ class StatementListener(JavaParserLabeledListener):
 
     def enterStatement3(self, ctx: JavaParserLabeled.Statement3Context):
         self.update_repository(ctx, 3)
+        for i in ctx.children:
+            if i == ';':
+                self.update_repository(ctx, 1)
+
+    def enterStatement14(self, ctx: JavaParserLabeled.Statement14Context):
+        self.update_repository(ctx, 1)
 
     def update_repository(self, ctx, increment):
         self.counter += increment
         res = self.find_scope(ctx)
-        if res in self.repository:
-            self.repository[res] += increment
+        if res['kind_name'] == 'Java Package':
+            key = str(res['kind_name']) + '-' + str(res['method_name'])
+        elif res['static_type'] != '':
+            key = str(res['kind_name']) + '-' + str(res['access_type']) + ' ' + str(res['static_type']) + ' ' \
+                + str(res['return_type']) + ' ' + str(res['method_name'])
         else:
-            new_dict = {res: 0}
-            new_dict[res] += increment
+            key = str(res['kind_name']) + '-' + str(res['access_type']) + ' ' \
+                  + str(res['return_type']) + ' ' + str(res['method_name'])
+        if key in self.repository:
+            self.repository[key] += increment
+        else:
+            new_dict = {key: 0}
+            new_dict[key] += increment
             self.repository.update(new_dict)
 
     @staticmethod
@@ -93,6 +105,13 @@ class StatementListener(JavaParserLabeledListener):
                 return current
             current = current.parentCtx
         return None
+
+    @staticmethod
+    def get_parent(parent_file_name, files):
+        file_names, file_paths = zip(*files)
+        parent_file_index = file_names.index(parent_file_name)
+        parent_file_path = file_paths[parent_file_index]
+        return parent_file_path
 
     @staticmethod
     def get_prefixes(ctx, ctx_type):
@@ -144,12 +163,38 @@ class StatementListener(JavaParserLabeledListener):
     def make_scope_class(self, ctx):
         prefixes = self.get_prefixes(ctx, "ClassDeclarationContext")
         kind_name = self.get_kind_name(prefixes, kind="Class")
-        return kind_name
+        class_name = ctx.children[1]
+        return_type = ctx.children[0].getText()
+        access_type = ctx.parentCtx.parentCtx.children[0].getText()
+        if ctx.parentCtx.parentCtx.children[1].getText() == 'static':
+            static_type = ctx.parentCtx.parentCtx.children[1].getText()
+        else:
+            static_type = ''
+        return {
+            'kind_name': kind_name,
+            'method_name': class_name,
+            'return_type': return_type,
+            'access_type': access_type,
+            'static_type': static_type
+        }
 
     def make_scope_method(self, ctx):
         prefixes = self.get_prefixes(ctx, "MethodDeclarationContext")
         kind_name = self.get_kind_name(prefixes, kind="Method")
-        return kind_name
+        method_name = ctx.children[1]
+        return_type = ctx.children[0].getText()
+        access_type = ctx.parentCtx.parentCtx.children[0].getText()
+        if ctx.parentCtx.parentCtx.children[1].getText() == 'static':
+            static_type = ctx.parentCtx.parentCtx.children[1].getText()
+        else:
+            static_type = ''
+        return {
+            'kind_name': kind_name,
+            'method_name': method_name,
+            'return_type': return_type,
+            'access_type': access_type,
+            'static_type': static_type
+        }
 
     def make_scope_interface(self, ctx):
         prefixes = self.get_prefixes(ctx, "InterfaceDeclarationContext")
@@ -163,6 +208,14 @@ class StatementListener(JavaParserLabeledListener):
 
     def find_scope(self, ctx):
         scope = None
+        if str(ctx.children[0]) == 'package':
+            return {
+                'kind_name': 'Java Package',
+                'method_name': ctx.children[1].getText(),
+                'return_type': '',
+                'access_type': '',
+                'static_type': ''
+            }
         scope_ctx = self.search_scope(ctx, ["ClassDeclarationContext", "MethodDeclarationContext",
                                             "InterfaceDeclarationContext", "AnnotationTypeDeclarationContext"])
         if type(scope_ctx).__name__ == "ClassDeclarationContext":
@@ -201,10 +254,22 @@ def main():
         listener = StatementListener(p.files)
         walker = ParseTreeWalker()
         walker.walk(listener, tree)
+        print('Java File')
         print(file_name)
         print(listener.counter)
-        print(listener.repository)
-        print('-' * 25)
+        print('-' * 20)
+        for item in listener.repository:
+            key = item.split('-')
+            if key[0] == 'Java Import':
+                continue
+            print(key[0])
+            print(key[1])
+            if key[0] == 'Java Package':
+                print(listener.counter)
+            else:
+                print(listener.repository[item])
+            print('-' * 20)
+        print('\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
 
 
 if __name__ == '__main__':
