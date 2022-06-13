@@ -1,5 +1,8 @@
-import os
+import os, sys
 from antlr4 import *
+
+BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, BASE)
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
@@ -114,13 +117,29 @@ class StatementListener(JavaParserLabeledListener):
         return parent_file_path
 
     @staticmethod
-    def get_prefixes(ctx, ctx_type):
+    def get_class_prefixes(ctx, ctx_type):
         branches = ctx.parentCtx.children
         prefixes = ""
         for branch in branches:
             if type(branch).__name__ == ctx_type:
                 break
             prefixes += branch.getText() + " "
+        return prefixes
+
+    @staticmethod
+    def get_method_prefixes(ctx):
+        access_branches = ctx.parentCtx.parentCtx.children
+        type_branches = ctx.children
+        prefixes = []
+
+        for branch in access_branches:
+            if type(branch).__name__ == "ModifierContext":
+                prefixes.append(branch.getText())
+
+        for branch in type_branches:
+            if type(branch).__name__ == "TypeTypeOrVoidContext":
+                prefixes.append(branch.getText())
+
         return prefixes
 
     @staticmethod
@@ -161,7 +180,7 @@ class StatementListener(JavaParserLabeledListener):
         return s
 
     def make_scope_class(self, ctx):
-        prefixes = self.get_prefixes(ctx, "ClassDeclarationContext")
+        prefixes = self.get_class_prefixes(ctx, "ClassDeclarationContext")
         kind_name = self.get_kind_name(prefixes, kind="Class")
         class_name = ctx.children[1]
         return_type = ctx.children[0].getText()
@@ -179,7 +198,7 @@ class StatementListener(JavaParserLabeledListener):
         }
 
     def make_scope_method(self, ctx):
-        prefixes = self.get_prefixes(ctx, "MethodDeclarationContext")
+        prefixes = self.get_method_prefixes(ctx)
         kind_name = self.get_kind_name(prefixes, kind="Method")
         method_name = ctx.children[1]
         return_type = ctx.children[0].getText()
@@ -197,12 +216,12 @@ class StatementListener(JavaParserLabeledListener):
         }
 
     def make_scope_interface(self, ctx):
-        prefixes = self.get_prefixes(ctx, "InterfaceDeclarationContext")
+        prefixes = self.get_class_prefixes(ctx, "InterfaceDeclarationContext")
         kind_name = self.get_kind_name(prefixes, kind="Interface")
         return kind_name
 
     def make_scope_annotation(self, ctx):
-        prefixes = self.get_prefixes(ctx, "AnnotationTypeDeclarationContext")
+        prefixes = self.get_class_prefixes(ctx, "AnnotationTypeDeclarationContext")
         kind_name = self.get_kind_name(prefixes, kind="Annotation")
         return kind_name
 

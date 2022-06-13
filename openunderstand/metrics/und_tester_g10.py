@@ -61,5 +61,6 @@ def test_understand_kinds():
     for i in my_set:
         print(i)
 
+
 if __name__ == '__main__':
     test_understand_kinds()
