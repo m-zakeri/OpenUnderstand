@@ -53,9 +53,6 @@ class StatementListener(JavaParserLabeledListener):
         self.repository['Java Import'] += 1
         self.counter += 1
 
-    def enterStatement15(self, ctx: JavaParserLabeled.Statement15Context):
-        self.update_repository(ctx, 1)
-
     def enterAnnotationMethodOrConstantRest0(self, ctx: JavaParserLabeled.AnnotationMethodOrConstantRest0Context):
         self.update_repository(ctx, 1)
 
@@ -68,46 +65,66 @@ class StatementListener(JavaParserLabeledListener):
     def enterFieldDeclaration(self, ctx: JavaParserLabeled.FieldDeclarationContext):
         self.update_repository(ctx, 1)
 
+    # return
     def enterStatement10(self, ctx: JavaParserLabeled.Statement10Context):
         self.update_repository(ctx, 1)
 
+    # for
     def enterStatement3(self, ctx: JavaParserLabeled.Statement3Context):
         self.update_repository(ctx, 3)
         for i in ctx.children:
             if i == ';':
                 self.update_repository(ctx, 1)
 
+    # break
+    def enterStatement12(self, ctx: JavaParserLabeled.Statement12Context):
+        self.update_repository(ctx, 1)
+        
+    # throw
+    def enterStatement11(self, ctx: JavaParserLabeled.Statement11Context):
+        self.update_repository(ctx, 1)
+
+    # continue
+    def enterStatement13(self, ctx: JavaParserLabeled.Statement13Context):
+        self.update_repository(ctx, 1)
+
     def enterStatement14(self, ctx: JavaParserLabeled.Statement14Context):
+        self.update_repository(ctx, 1)
+
+    # call
+    def enterStatement15(self, ctx: JavaParserLabeled.Statement15Context):
         self.update_repository(ctx, 1)
 
     def update_repository(self, ctx, increment):
         self.counter += increment
-        res = self.find_scope(ctx)
-        if res['kind_name'] == 'Java Package':
-            key = str(res['kind_name']) + '-' + str(res['method_name'])
-        elif res['static_type'] != '':
-            key = str(res['kind_name']) + '-' + str(res['access_type']) + ' ' + str(res['static_type']) + ' ' \
-                + str(res['return_type']) + ' ' + str(res['method_name'])
-        else:
-            key = str(res['kind_name']) + '-' + str(res['access_type']) + ' ' \
-                  + str(res['return_type']) + ' ' + str(res['method_name'])
-        if key in self.repository:
-            self.repository[key] += increment
-        else:
-            new_dict = {key: 0}
-            new_dict[key] += increment
-            self.repository.update(new_dict)
+        result = self.find_scope(ctx)
+        for res in result:
+            if res['kind_name'] == "Java Package":
+                key = str(res['kind_name']) + '-' + str(res['method_name'])
+            elif res['static_type'] != '':
+                key = str(res['kind_name']) + '-' + str(res['access_type']) + ' ' + str(res['static_type']) + ' ' \
+                    + str(res['return_type']) + ' ' + str(res['method_name'])
+            else:
+                key = str(res['kind_name']) + '-' + str(res['access_type']) + ' ' \
+                    + str(res['return_type']) + ' ' + str(res['method_name'])
+            if key in self.repository:
+                self.repository[key] += increment
+            else:
+                new_dict = {key: 0}
+                new_dict[key] += increment
+                self.repository.update(new_dict)
 
     @staticmethod
     def search_scope(ctx, type_names):
         # Traverse bottom up until reaching a class or method
+        scope_list = []
         current = ctx.parentCtx
         while current is not None:
             type_name = type(current).__name__
             if type_name in type_names:
-                return current
+                scope_list.append(current)
             current = current.parentCtx
-        return None
+        return scope_list
 
     @staticmethod
     def get_parent(parent_file_name, files):
@@ -203,10 +220,10 @@ class StatementListener(JavaParserLabeledListener):
         method_name = ctx.children[1]
         return_type = ctx.children[0].getText()
         access_type = ctx.parentCtx.parentCtx.children[0].getText()
-        if ctx.parentCtx.parentCtx.children[1].getText() == 'static':
-            static_type = ctx.parentCtx.parentCtx.children[1].getText()
-        else:
-            static_type = ''
+        static_type = ''
+        if len(ctx.parentCtx.parentCtx.children) > 1:
+            if ctx.parentCtx.parentCtx.children[1].getText() == 'static':
+                static_type = ctx.parentCtx.parentCtx.children[1].getText()
         return {
             'kind_name': kind_name,
             'method_name': method_name,
@@ -217,34 +234,61 @@ class StatementListener(JavaParserLabeledListener):
 
     def make_scope_interface(self, ctx):
         prefixes = self.get_class_prefixes(ctx, "InterfaceDeclarationContext")
-        kind_name = self.get_kind_name(prefixes, kind="Interface")
-        return kind_name
+        kind_name = self.get_kind_name(prefixes, kind="Class")
+        class_name = ctx.children[1]
+        return_type = ctx.children[0].getText()
+        access_type = ctx.parentCtx.parentCtx.children[0].getText()
+        if ctx.parentCtx.parentCtx.children[1].getText() == 'static':
+            static_type = ctx.parentCtx.parentCtx.children[1].getText()
+        else:
+            static_type = ''
+        return {
+            'kind_name': kind_name,
+            'method_name': class_name,
+            'return_type': return_type,
+            'access_type': access_type,
+            'static_type': static_type
+        }
 
     def make_scope_annotation(self, ctx):
         prefixes = self.get_class_prefixes(ctx, "AnnotationTypeDeclarationContext")
-        kind_name = self.get_kind_name(prefixes, kind="Annotation")
-        return kind_name
+        kind_name = self.get_kind_name(prefixes, kind="Class")
+        class_name = ctx.children[1]
+        return_type = ctx.children[0].getText()
+        access_type = ctx.parentCtx.parentCtx.children[0].getText()
+        if ctx.parentCtx.parentCtx.children[1].getText() == 'static':
+            static_type = ctx.parentCtx.parentCtx.children[1].getText()
+        else:
+            static_type = ''
+        return {
+            'kind_name': kind_name,
+            'method_name': class_name,
+            'return_type': return_type,
+            'access_type': access_type,
+            'static_type': static_type
+        }
 
     def find_scope(self, ctx):
-        scope = None
+        scope = []
         if str(ctx.children[0]) == 'package':
-            return {
+            return[{
                 'kind_name': 'Java Package',
                 'method_name': ctx.children[1].getText(),
                 'return_type': '',
                 'access_type': '',
                 'static_type': ''
-            }
+            }]
         scope_ctx = self.search_scope(ctx, ["ClassDeclarationContext", "MethodDeclarationContext",
                                             "InterfaceDeclarationContext", "AnnotationTypeDeclarationContext"])
-        if type(scope_ctx).__name__ == "ClassDeclarationContext":
-            scope = self.make_scope_class(scope_ctx)
-        elif type(scope_ctx).__name__ == "MethodDeclarationContext":
-            scope = self.make_scope_method(scope_ctx)
-        elif type(scope_ctx).__name__ == "InterfaceDeclarationContext":
-            scope = self.make_scope_interface(scope_ctx)
-        elif type(scope_ctx).__name__ == "AnnotationTypeDeclarationContext":
-            scope = self.make_scope_annotation(scope_ctx)
+        for item in scope_ctx:
+            if type(item).__name__ == "ClassDeclarationContext":
+                scope.append(self.make_scope_class(item))
+            elif type(item).__name__ == "MethodDeclarationContext":
+                scope.append(self.make_scope_method(item))
+            elif type(item).__name__ == "InterfaceDeclarationContext":
+                scope.append(self.make_scope_interface(item))
+            elif type(item).__name__ == "AnnotationTypeDeclarationContext":
+                scope.append(self.make_scope_annotation(item))
         return scope
 
 
@@ -275,6 +319,7 @@ def main():
         walker.walk(listener, tree)
         print('Java File')
         print(file_name)
+        print(file_path)
         print(listener.counter)
         print('-' * 20)
         for item in listener.repository:

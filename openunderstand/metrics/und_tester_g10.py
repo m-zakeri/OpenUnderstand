@@ -1,5 +1,8 @@
-import understand as und
 import os
+
+os.add_dll_directory("C:\Program Files\SciTools\\bin\pc-win64")
+
+import understand as und
 
 
 def get_project_info(index, ref_name):
@@ -13,7 +16,7 @@ def get_project_info(index, ref_name):
         'jfreechart',
         'ganttproject',
         '105_freemind',
-        'custom'
+        'temp'
     ]
     project_name = project_names[index]
     db_path = f"../../../databases/{ref_name}/{project_name}"
@@ -33,7 +36,7 @@ def get_project_info(index, ref_name):
     }
 
 
-PRJ_INDEX = 5
+PRJ_INDEX = -1
 REF_NAME = "origin"
 
 
@@ -42,7 +45,7 @@ def test_understand_kinds():
     db = und.open(info['DB_PATH'])
     my_set = set()
     for ent in db.ents():
-        cycle = ent.metric(['Cyclomatic']).get('Cyclomatic', 0)
+        cycle = ent.metric(['CountStmt']).get('CountStmt', 0)
         ent_kind = ent.kind()
         if cycle and 'Java' in ent_kind.__repr__():
             my_set.add(ent_kind.__repr__())
