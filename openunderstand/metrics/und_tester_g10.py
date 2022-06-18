@@ -45,7 +45,7 @@ def test_understand_kinds():
     db = und.open(info['DB_PATH'])
     my_set = set()
     for ent in db.ents():
-        cycle = ent.metric(['CountStmt']).get('CountStmt', 0)
+        cycle = ent.metric(['CountStmtExe']).get('CountStmtExe', 0)
         ent_kind = ent.kind()
         if cycle and 'Java' in ent_kind.__repr__():
             my_set.add(ent_kind.__repr__())
