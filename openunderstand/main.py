@@ -353,10 +353,11 @@ if __name__ == '__main__':
               project_dir="..\benchmark")
     main()
     db = db_open("../benchmark2_database.oudb")
-    # # get file name
-    # rawPath = str(os.path.dirname(__file__).replace("\\", "/"))
-    # pathArray = rawPath.split('/')
-    path = r"C:\Users\ASUS\Desktop\term_4002\Compiler\project\phase2\OpenUnderstand\benchmark\calculator_app"
+    # get file name
+    rawPath = str(os.path.dirname(__file__).replace("\\", "/"))
+    pathArray = rawPath.split('/')
+    path = Project.listToString(pathArray) + "benchmark"
+    # path = r"C:\Users\ASUS\Desktop\term_4002\Compiler\project\phase2\OpenUnderstand\benchmark\calculator_app"
     files = p.getListOfFiles(path)
     # Lists
     modify_modifyby_list = []
