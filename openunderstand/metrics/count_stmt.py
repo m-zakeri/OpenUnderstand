@@ -3,7 +3,7 @@ from antlr4 import *
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE)
-from utils import Project, get_project_info, get_parse_tree, find_scope
+from utils_g10 import Project, get_project_info, get_parse_tree, find_scope
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
