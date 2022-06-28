@@ -1,11 +1,13 @@
-import os, sys
+import os
+import sys
 from antlr4 import *
+from utils_g10 import Project, get_project_info, get_parse_tree, find_scope
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE)
-from gen.javaLabeled.JavaLexer import JavaLexer
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+
 
 PRJ_INDEX = 0
 
@@ -49,7 +51,7 @@ class StatementListener(JavaParserLabeledListener):
 
     def update_repository(self, ctx, increment):
         self.counter += increment
-        result = self.find_scope(ctx)
+        result = find_scope(ctx)
         for res in result:
             if res['kind_name'] == "Java Package":
                 key = str(res['kind_name']) + '-' + str(res['method_name'])
