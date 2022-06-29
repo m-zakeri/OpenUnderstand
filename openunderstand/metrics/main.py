@@ -1,7 +1,7 @@
 from antlr4 import *
 from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from metric import DSCmetric
+from metric import DSCmetric, DSCmetric2
 from pathlib import Path
 import argparse
 import os.path
@@ -53,6 +53,21 @@ def main(args):
     except:
         pass
 
+def main2(args, file_path):
+    stream = FileStream(args.file, encoding='utf8')
+    lexer = JavaLexer(stream)
+    token_stream = CommonTokenStream(lexer)
+    parser = JavaParserLabeled(token_stream)
+    parse_tree = parser.compilationUnit()
+
+    my_listener = DSCmetric2(file_path)
+
+    walker = ParseTreeWalker()
+    walker.walk(t=parse_tree, listener=my_listener)
+
+    my_listener.get_res
+
+
 if __name__ == '__main__':
     inp = str(input("Enter the path to the Java project:"))
     # C:\Users\Roozbeh\PycharmProjects\pythonProject\Software Metrics
@@ -72,4 +87,5 @@ if __name__ == '__main__':
                 help='Input source', default=os.path.join(dirpath, filename))
             args = argparser.parse_args()
             #main(args)
-            main_(inp+"\\"+filename)
+            filepath = inp+"\\"+filename
+            main2(args, filepath)

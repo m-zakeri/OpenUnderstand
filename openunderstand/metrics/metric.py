@@ -1,6 +1,6 @@
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-
+from halstead import main_
 
 class DSCmetric(JavaParserLabeledListener):
     def __init__(self):
@@ -65,3 +65,45 @@ class DSCmetric(JavaParserLabeledListener):
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         self.name.append(ctx.IDENTIFIER().getText())
 
+
+class DSCmetric2(JavaParserLabeledListener):
+    def __init__(self, file_path):
+        self.assign = 0
+        self.add = 0
+        self.sub = 0
+        self.mul = 0
+        self.div = 0
+        self.add_assign = 0
+        self.mul_assign = 0
+        self.sub_assign = 0
+        self.div_assign = 0
+        self.path = file_path
+
+    @property
+    def get_res(self):
+        main_(self.path)
+
+    def enterExpression21(self, ctx:JavaParserLabeled.Expression21Context):
+        if ctx.getChild(2).getText() == "=":
+            self.assign += 1
+        elif ctx.getChild(2).getText() == "+=":
+            self.add_assign += 1
+        elif ctx.getChild(2).getText() == "-=":
+            self.sub_assign += 1
+        elif ctx.getChild(2).getText() == "*=":
+            self.mul_assign += 1
+        elif ctx.getChild(2).getText() == "/=":
+            self.div_assign += 1
+
+
+    def enterExpression9(self, ctx:JavaParserLabeled.Expression9Context):
+        if ctx.getChild(2).getText() == "*":
+            self.mul += 1
+        elif ctx.getChild(2).getText() == "/":
+            self.div += 1
+
+    def enterExpression10(self, ctx:JavaParserLabeled.Expression10Context):
+        if ctx.getChild(2).getText() == "+":
+            self.add += 1
+        elif ctx.getChild(2).getText() == "-":
+            self.sub += 1
