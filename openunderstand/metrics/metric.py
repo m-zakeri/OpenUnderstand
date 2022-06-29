@@ -64,3 +64,4 @@ class DSCmetric(JavaParserLabeledListener):
 
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         self.name.append(ctx.IDENTIFIER().getText())
+
