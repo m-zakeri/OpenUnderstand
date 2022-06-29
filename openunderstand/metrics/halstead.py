@@ -114,18 +114,14 @@ def calculate_halstead(n1, N1, n2, N2):
 
     difficulty = (n1 / 2) * (N2 / n2)
     effort = difficulty * volume
-    time = effort / 18
     bugs = volume / 3000
 
     return {
         "Program vocabulary": n,
         "Program length": N,
-        "Estimated length": estimated_length,
-        "Purity ratio": purity_ratio,
         "Volume": volume,
         "Difficulty": difficulty,
         "Program effort": effort,
-        "Time required to program": time,
         "Number of delivered bugs": bugs,
     }
 
@@ -141,41 +137,28 @@ def print_table(data, headers=[], title=None):
         print("\n", title, "\n")
     print(tabulate(data.items(), headers=headers, tablefmt='fancy_grid'))
 
+def main_(args):
 
-parser = argparse.ArgumentParser(
-    description='outputs Halstead metrics and cyclomatic complexity for a given java file')
-parser.add_argument('java_file', metavar='JAVA_FILE', type=str,
-                    help='path to the java file')
+    with open(args) as file:
+        code = file.read()
+        tokens = list(tokenizer.tokenize(code))
 
-args = parser.parse_args()
+        operators, operands = get_operators_operands_count(tokens)
 
-if not os.path.isfile(args.java_file):
-    print('Invalid Java File')
-    sys.exit()
+        n1 = len(operators)
+        n2 = len(operands)
+        N1 = sum(operators.values())
+        N2 = sum(operands.values())
 
-with open(args.java_file, 'r', encoding='utf-8') as file:
-    code = file.read()
-    tokens = list(tokenizer.tokenize(code))
+        print_table({"Number of Distinct Operators": n1,
+                     "Number of Distinct Operands": n2,
+                     "Number of Operators": N1,
+                     "Number of Operands": N2,
+                     **calculate_halstead(
+                         n1, N1, n2, N2)}, ['Metric', 'Value'], 'Halstead Metrics:')
 
-    operators, operands = get_operators_operands_count(tokens)
-
-    print_table(
-        {'Cyclomatic complexity': calculate_cyclomatic(operators)})
-
-    n1 = len(operators)
-    n2 = len(operands)
-    N1 = sum(operators.values())
-    N2 = sum(operands.values())
-
-    print_table({"Number of Distinct Operators": n1,
-                 "Number of Distinct Operands": n2,
-                 "Number of Operators": N1,
-                 "Number of Operands": N2,
-                 **calculate_halstead(
-                     n1, N1, n2, N2)}, ['Metric', 'Value'], 'Halstead Metrics:')
-
-    print_table(operators, ['Operator', 'Count'], 'Operators:')
-
-    print_table(operands, ['Operand', 'Count'], 'Operands:')
+        # print_table(operators, ['Operator', 'Count'], 'Operators:')
+        #
+        # print_table(operands, ['Operand', 'Count'], 'Operands:')
 
 

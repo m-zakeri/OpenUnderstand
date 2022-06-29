@@ -7,6 +7,7 @@ import argparse
 import os.path
 import numpy as np
 import json
+from halstead import main_
 
 
 def main(args):
@@ -52,7 +53,6 @@ def main(args):
     except:
         pass
 
-
 if __name__ == '__main__':
     inp = str(input("Enter the path to the Java project:"))
     # C:\Users\Roozbeh\PycharmProjects\pythonProject\Software Metrics
@@ -71,4 +71,5 @@ if __name__ == '__main__':
                 '-n', '--file',
                 help='Input source', default=os.path.join(dirpath, filename))
             args = argparser.parse_args()
-            main(args)
+            #main(args)
+            main_(inp+"\\"+filename)
