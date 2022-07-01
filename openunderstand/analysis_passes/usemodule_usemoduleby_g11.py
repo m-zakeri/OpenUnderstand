@@ -37,8 +37,8 @@ class UseModuleUseModuleByListener(JavaParserLabeledListener):
         })
 
     def enterPackageDeclaration(self, ctx:JavaParserLabeled.PackageDeclarationContext):
-        packageNameArray = ctx.getText().replace('package', '').split('.')
-        if len(packageNameArray) == 4 and packageNameArray[0] == 'com':
+        package_name_array = ctx.getText().replace('package', '').split('.')
+        if len(package_name_array) == 4 and package_name_array[0] == 'com':
             self.useUnknownModules.append({
                 "scope": None, "ent": ctx.getChild(1).IDENTIFIER()[3].getText(), "name":ctx.getChild(1).IDENTIFIER()[2].getText(),
                 "line": 1, "col": 1
