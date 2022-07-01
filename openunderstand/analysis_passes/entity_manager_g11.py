@@ -42,7 +42,7 @@ class EntityGenerator:
         # Making entities
         self.path = path
         self.tree = tree
-        self.file_ent = file_manager.get_or_creat_file_entity()
+        self.file_ent = file_manager.get_or_create_file_entity()
         self.package_ent = PackageEntityManager(path, self.file_ent, tree)
         self.package_entities_list = self.package_ent.get_or_create_package_entity()
         self.package_string = self.package_ent.package_string
@@ -239,15 +239,16 @@ class EntityGenerator:
     def findKindWithKeywords(self, entity_type, modifiers):
         if len(modifiers) == 0:
             modifiers.append("default")
-        leastspecific_kind_selected = None
+        least_specific_kind_selected = None
         for kind in KindModel.select().where(KindModel._name.contains(entity_type)):
             if self.checkModifiersInKind(modifiers, kind):
-                if not leastspecific_kind_selected \
-                        or len(leastspecific_kind_selected._name) > len(kind._name):
-                    leastspecific_kind_selected = kind
-        return leastspecific_kind_selected
+                if not least_specific_kind_selected \
+                        or len(least_specific_kind_selected._name) > len(kind._name):
+                    least_specific_kind_selected = kind
+        return least_specific_kind_selected
 
-    def checkModifiersInKind(self, modifiers, kind):
+    @staticmethod
+    def checkModifiersInKind(modifiers, kind):
         """check if modifier is in kind and return it"""
         for modifier in modifiers:
             if modifier.lower() not in kind._name.lower():
@@ -267,7 +268,7 @@ class FileEntityManager:
         self.contents = file_reader.read()
         file_reader.close()
 
-    def get_or_creat_file_entity(self):
+    def get_or_create_file_entity(self):
         """Create or get if it exists a file entity and return it according to object fields."""
         file_ent, success = EntityModel.get_or_create(
             _kind=FILE_KIND_ID,
