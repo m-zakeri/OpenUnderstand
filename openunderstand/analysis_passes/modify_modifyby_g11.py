@@ -24,11 +24,9 @@ class ModifyModifyByListener(JavaParserLabeledListener):
 
     def enterClassDeclaration(self, ctx:JavaParserLabeled.ClassDeclarationContext):
         self.scope = ctx.IDENTIFIER().getText()
-        # print(self.scope)
 
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         self.scope = ctx.IDENTIFIER().getText()
-        # print(self.scope)
 
     def enterExpression0(self, ctx:JavaParserLabeled.Expression0Context):
         self.ent = ctx.getText()
@@ -36,8 +34,7 @@ class ModifyModifyByListener(JavaParserLabeledListener):
     def exitExpression0(self, ctx:JavaParserLabeled.Expression0Context):
         if self.isE7:
             line_col = str(ctx.children[1].start).split(",")[3][:-1].split(':')
-            # print("Modify ----", end=" ")
-            # print("Expression 7 ->", line_col, self.scope)
+
             self.modifyBy.append({
                 "scope": self.scope,
                 "ent": self.ent,
@@ -48,8 +45,6 @@ class ModifyModifyByListener(JavaParserLabeledListener):
     def enterExpression6(self, ctx: JavaParserLabeled.Expression6Context):
         self.isE7 = False
         line_col = str(ctx.children[0].start).split(",")[3][:-1].split(':')
-        # print("Modify ----", end=" ")
-        # print("Expression 6 ->", line_col, self.scope)
         self.modifyBy.append({
             "scope": self.scope,
             "ent": self.ent,
@@ -65,8 +60,6 @@ class ModifyModifyByListener(JavaParserLabeledListener):
         operations = ['+=', '-=', '/=', '*=', '&=', '|=', '^=', '%=']
         line_col = str(ctx.children[0].start).split(",")[3][:-1].split(':')
         if ctx.children[1].getText() in operations:
-            # print("Modify ----", end=" ")
-            # print("Expression 21 ->", line_col, self.scope)
             self.modifyBy.append({
                 "scope": self.scope,
                 "ent": self.ent,
