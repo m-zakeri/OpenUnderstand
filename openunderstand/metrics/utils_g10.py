@@ -15,7 +15,8 @@ class Project:
     def get_java_files(self):
         for dir_path, _, file_names in os.walk(self.project_dir):
             for file in file_names:
-                if '.java' in str(file):
+                lowercase_file = str(file).lower()
+                if lowercase_file.endswith('.java'):
                     path = os.path.join(dir_path, file)
                     path = path.replace("/", "\\")
                     path = os.path.abspath(path)
@@ -140,9 +141,9 @@ def make_scope_interface(ctx):
     }
 
 
-def make_scope_class(ctx):
-    prefixes = get_class_prefixes(ctx, "ClassDeclarationContext")
-    kind_name = get_kind_name(prefixes, kind="Class")
+def make_scope_Lambda(ctx):
+    prefixes = get_class_prefixes(ctx, "LambdaExpressionContext")
+    kind_name = get_kind_name(prefixes, kind="Class", is_lambda=True)
     class_name = ctx.children[1]
     return_type = ctx.children[0].getText()
     access_type = ctx.parentCtx.parentCtx.children[0].getText()
@@ -150,6 +151,25 @@ def make_scope_class(ctx):
         static_type = ctx.parentCtx.parentCtx.children[1].getText()
     else:
         static_type = ''
+    return {
+        'kind_name': kind_name,
+        'method_name': class_name,
+        'return_type': return_type,
+        'access_type': access_type,
+        'static_type': static_type
+    }
+
+
+def make_scope_class(ctx):
+    prefixes = get_class_prefixes(ctx, "ClassDeclarationContext")
+    kind_name = get_kind_name(prefixes, kind="Class")
+    class_name = ctx.children[1].getText()
+    return_type = ctx.children[0].getText()
+    access_type = ctx.parentCtx.parentCtx.children[0].getText()
+    static_type = ''
+    if len(ctx.parentCtx.parentCtx.children) > 1:
+        if ctx.parentCtx.parentCtx.children[1].getText() == 'static':
+            static_type = ctx.parentCtx.parentCtx.children[1].getText()
     return {
         'kind_name': kind_name,
         'method_name': class_name,
@@ -178,19 +198,19 @@ def make_scope_method(ctx):
     }
 
 
-def make_scope_annotation(ctx):
-    prefixes = get_class_prefixes(ctx, "AnnotationTypeDeclarationContext")
-    kind_name = get_kind_name(prefixes, kind="Class")
-    class_name = ctx.children[1]
+def make_scope_constructor(ctx):
+    prefixes = get_method_prefixes(ctx)
+    kind_name = get_kind_name(prefixes, kind="Method", is_constructor=True)
+    method_name = ctx.children[1]
     return_type = ctx.children[0].getText()
     access_type = ctx.parentCtx.parentCtx.children[0].getText()
-    if ctx.parentCtx.parentCtx.children[1].getText() == 'static':
-        static_type = ctx.parentCtx.parentCtx.children[1].getText()
-    else:
-        static_type = ''
+    static_type = ''
+    if len(ctx.parentCtx.parentCtx.children) > 1:
+        if ctx.parentCtx.parentCtx.children[1].getText() == 'static':
+            static_type = ctx.parentCtx.parentCtx.children[1].getText()
     return {
         'kind_name': kind_name,
-        'method_name': class_name,
+        'method_name': method_name,
         'return_type': return_type,
         'access_type': access_type,
         'static_type': static_type
@@ -222,20 +242,23 @@ def find_scope(ctx):
             'static_type': ''
         }]
     scope_ctx = search_scope(ctx, ["ClassDeclarationContext", "MethodDeclarationContext",
-                                   "InterfaceDeclarationContext", "AnnotationTypeDeclarationContext"])
+                                   "InterfaceDeclarationContext", "AnnotationTypeDeclarationContext",
+                                   "ConstructorDeclarationContext", "LambdaExpressionContext"])
     for item in scope_ctx:
         if type(item).__name__ == "ClassDeclarationContext":
             scope.append(make_scope_class(item))
+        elif type(item).__name__ == "ConstructorDeclarationContext":
+            scope.append(make_scope_constructor(item))
         elif type(item).__name__ == "MethodDeclarationContext":
             scope.append(make_scope_method(item))
         elif type(item).__name__ == "InterfaceDeclarationContext":
             scope.append(make_scope_interface(item))
-        elif type(item).__name__ == "AnnotationTypeDeclarationContext":
-            scope.append(make_scope_annotation(item))
+        elif type(ctx).__name__ == "LambdaExpressionContext":
+            scope.append(make_scope_lambda(item))
     return scope
 
 
-def get_kind_name(prefixes, kind):
+def get_kind_name(prefixes, kind, is_constructor=False, is_lambda=False):
     p_static = ""
     p_abstract = ""
     p_generic = ""
@@ -254,6 +277,11 @@ def get_kind_name(prefixes, kind):
     elif "final" in prefixes:
         p_abstract = "Final"
 
+    if is_constructor:
+        s = f"Java Method Constructor Member {p_visibility}"
+        s = " ".join(s.split())
+        return s
+
     if "private" in prefixes:
         p_visibility = "Private"
     elif "public" in prefixes:
@@ -266,6 +294,11 @@ def get_kind_name(prefixes, kind):
 
     if kind == "Method":
         p_type = ""
+
+    elif is_lambda:
+        s = f"Java Method Lambda"
+        s = " ".join(s.split())
+        return s
 
     s = f"Java {p_static} {p_abstract} {p_generic} {kind} {p_type} {p_visibility} {p_member}"
     s = " ".join(s.split())

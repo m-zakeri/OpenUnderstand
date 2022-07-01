@@ -51,10 +51,6 @@ class StatementListener(JavaParserLabeledListener):
     def enterStatement13(self, ctx: JavaParserLabeled.Statement13Context):
         self.update_repository(ctx, 1)
 
-    # must check and debug to find this case belong to which class
-    def enterStatement14(self, ctx: JavaParserLabeled.Statement14Context):
-        self.update_repository(ctx, 1)
-
     def update_repository(self, ctx, increment):
         self.counter += increment
         result = find_scope(ctx)

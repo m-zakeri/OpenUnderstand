@@ -41,7 +41,7 @@ class StatementListener(JavaParserLabeledListener):
     def enterStatement3(self, ctx: JavaParserLabeled.Statement3Context):
         self.update_repository(ctx, 1)
 
-    # must check and debug to find this case belong to which class
+    # ;
     def enterStatement14(self, ctx: JavaParserLabeled.Statement14Context):
         self.update_repository(ctx, 1)
 
