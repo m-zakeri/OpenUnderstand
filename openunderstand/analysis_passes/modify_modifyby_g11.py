@@ -1,13 +1,8 @@
-# expression -> NEW creator
-
-
 """
 ## Description
 This module find all OpenUnderstand call and callby references in a Java project
 
-
 ## References
-
 
 """
 
@@ -21,7 +16,6 @@ from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 class ModifyModifyByListener(JavaParserLabeledListener):
     """
     #Todo: Implementing the ANTLR listener pass for Java Call and Java Callby reference kind
-
     """
     modifyBy = []
     scope = None
@@ -45,8 +39,10 @@ class ModifyModifyByListener(JavaParserLabeledListener):
             # print("Modify ----", end=" ")
             # print("Expression 7 ->", line_col, self.scope)
             self.modifyBy.append({
-                "scope": self.scope, "ent": self.ent,
-                "line": line_col[0], "col": line_col[1]
+                "scope": self.scope,
+                "ent": self.ent,
+                "line": line_col[0],
+                "col": line_col[1]
             })
 
     def enterExpression6(self, ctx: JavaParserLabeled.Expression6Context):
@@ -55,8 +51,10 @@ class ModifyModifyByListener(JavaParserLabeledListener):
         # print("Modify ----", end=" ")
         # print("Expression 6 ->", line_col, self.scope)
         self.modifyBy.append({
-            "scope": self.scope, "ent": self.ent,
-            "line": line_col[0], "col": line_col[1]
+            "scope": self.scope,
+            "ent": self.ent,
+            "line": line_col[0],
+            "col": line_col[1]
         })
 
     def enterExpression7(self, ctx: JavaParserLabeled.Expression7Context):
@@ -70,6 +68,8 @@ class ModifyModifyByListener(JavaParserLabeledListener):
             # print("Modify ----", end=" ")
             # print("Expression 21 ->", line_col, self.scope)
             self.modifyBy.append({
-                "scope": self.scope, "ent": self.ent,
-                "line": line_col[0], "col": line_col[1]
+                "scope": self.scope,
+                "ent": self.ent,
+                "line": line_col[0],
+                "col": line_col[1]
             })
