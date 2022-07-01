@@ -19,7 +19,6 @@ __version__ = "1.0.0"
 import re
 from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.analysis_passes.entity_manager_g11 import EntityGenerator
 
 
 class CreateAndCreateBy(JavaParserLabeledListener):
@@ -32,10 +31,10 @@ class CreateAndCreateBy(JavaParserLabeledListener):
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         self.parents = self.parents + self.entity_manager.get_or_create_parent_entities(ctx)
 
-    def enterClassDeclaration(self, ctx:JavaParserLabeled.ClassDeclarationContext):
+    def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         self.parents = self.parents + self.entity_manager.get_or_create_parent_entities(ctx)
 
-    def enterInterfaceDeclaration(self, ctx:JavaParserLabeled.InterfaceDeclarationContext):
+    def enterInterfaceDeclaration(self, ctx: JavaParserLabeled.InterfaceDeclarationContext):
         self.parents = self.parents + self.entity_manager.get_or_create_parent_entities(ctx)
 
     def enterExpression4(self, ctx: JavaParserLabeled.Expression4Context):
@@ -47,7 +46,6 @@ class CreateAndCreateBy(JavaParserLabeledListener):
             'file': self.entity_manager.file_ent,
             'line': line,
             'column': col.replace("]", ""),
-            'ent_name':  re.split('\W+', ctx.creator().getText())[0],
+            'ent_name':  re.split(r'\W+', ctx.creator().getText())[0],
             'scope': parent[0]
         })
-
