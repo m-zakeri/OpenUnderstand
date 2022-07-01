@@ -127,13 +127,13 @@ class EntityGenerator:
                 parent_entity_contents = entity.getText()
                 props = self.getInterfaceProperties(parent_entity_longname)
                 parent_entity_kind = self.findKindWithKeywords("Interface", props["modifiers"])
-                Interface_ent = EntityModel.get_or_create(
+                interface_ent = EntityModel.get_or_create(
                     _kind=parent_entity_kind,
                     _parent=parent_entity_parent,
                     _name=parent_entity_name,
                     _longname=parent_entity_longname,
                     _contents=parent_entity_contents)
-                result_entities.append((parent_entity_kind, Interface_ent))
+                result_entities.append((parent_entity_kind, interface_ent))
         return result_entities
 
     @staticmethod
