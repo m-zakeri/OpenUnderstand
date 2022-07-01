@@ -1,15 +1,8 @@
-
-
-#expression -> NEW creator
-
-
 """
 ## Description
 This module find all OpenUnderstand call and callby references in a Java project
 
-
 ## References
-
 
 """
 
@@ -23,7 +16,6 @@ from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 class UseModuleUseModuleByListener(JavaParserLabeledListener):
     """
     #Todo: Implementing the ANTLR listener pass for Java Call and Java Callby reference kind
-
     """
     useModules = []
     useUnknownModules = []
@@ -60,4 +52,3 @@ class UseModuleUseModuleByListener(JavaParserLabeledListener):
                 "name": ctx.getChild(1).IDENTIFIER()[2].getText(),
                 "line": 1, "col": 1
             })
-
