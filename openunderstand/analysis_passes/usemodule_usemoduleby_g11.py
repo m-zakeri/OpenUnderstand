@@ -1,6 +1,6 @@
 """
 ## Description
-This module find all OpenUnderstand call and callby references in a Java project
+This module find all OpenUnderstand Usemodule and Usemoduleby references in a Java project
 
 ## References
 
@@ -15,7 +15,7 @@ from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 
 class UseModuleUseModuleByListener(JavaParserLabeledListener):
     """
-    #Todo: Implementing the ANTLR listener pass for Java Call and Java Callby reference kind
+    #Todo: Implementing the ANTLR listener pass for Java Usemodule and Java Usemoduleby reference kind
     """
     useModules = []
     useUnknownModules = []
@@ -25,7 +25,7 @@ class UseModuleUseModuleByListener(JavaParserLabeledListener):
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         self.methods.append(ctx.IDENTIFIER().getText())
 
-    def enterAnnotation(self, ctx:JavaParserLabeled.AnnotationContext):
+    def enterAnnotation(self, ctx: JavaParserLabeled.AnnotationContext):
         line_col = str(ctx.start).split(",")[3][:-1].split(':')
         self.useModules.append({
             "scope": None,
@@ -42,7 +42,7 @@ class UseModuleUseModuleByListener(JavaParserLabeledListener):
             "col": line_col[1]
         })
 
-    def enterPackageDeclaration(self, ctx:JavaParserLabeled.PackageDeclarationContext):
+    def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
         package_name_array = ctx.getText().replace('package', '').split('.')
         if len(package_name_array) == 4 and package_name_array[0] == 'com':
             self.useUnknownModules.append({
