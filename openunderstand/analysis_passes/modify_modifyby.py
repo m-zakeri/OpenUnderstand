@@ -11,165 +11,108 @@ from antlr4 import *
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-
-from ..oudb.models import *
-from ..oudb.api import open as db_open, create_db, Kind
-from ..oudb.fill import main
-from ..analysis_passes.define_defineby import *
+from analysis_passes.entity_manager_g11 import get_created_entity_longname
 
 
 class ModifyListener(JavaParserLabeledListener):
-    def __init__(self):
-        self.scopes = []
-        self.scope_info = []
-        self.line = []
-        self.column = []
+    def __init__(self, entity_manager_object):
+        self.entity_manager = entity_manager_object
+        self.package = ""
+        self._class = ""
+        self.parent = ""
+        self.name = ""
+        self.enter_modify = False
+        self.modify = []
 
-    def make_scope_method(self, current):
-        content = current.getText()
-        name = current.IDENTIFIER().getText()
-        if type(current).__name__ == "MethodDeclarationContext":
-            if "static" in current.getText():
-                kind = KindModel.get_or_none(_name="Java Static Method Public Member")._id
-            else:
-                kind = KindModel.get_or_none(_name="Java Method Public Member")._id
-        current = current.parentCtx
-        while current is not None:
-            if type(current).__name__ == "ClassDeclarationContext":
-                parent = self.make_scope_class(current)
-                break
-            current = current.parentCtx
-        self.scope_info.append({"parent": parent, "kind": kind, "name": name, "content": content})
+    # package
+    def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
+        self.package = ctx.qualifiedName().getText()
 
-    def make_scope_class(self, current):
-        content = current.getText()
-        name = current.IDENTIFIER().getText()
-        kind = KindModel.get_or_none(_name="Java Class Type Public Member")._id
-        parent = "file"
-        return {"parent": parent, "kind": kind, "name": name, "content": content}
+    # class parent
+    def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
+        self._class = ctx.IDENTIFIER().getText() + '.'
+        self.parent = ctx.IDENTIFIER().getText()
 
-    def search_scope(self, ctx):
-        current = ctx.parentCtx
-        while current is not None:
-            if type(current).__name__ == "ClassDeclarationContext" or type(
-                    current).__name__ == "MethodDeclarationContext":
-                self.scopes.append(current.IDENTIFIER().getText())
-                if type(current).__name__ == "ClassDeclarationContext":
-                    self.scope_info.append(self.make_scope_class(current))
-                elif type(current).__name__ == "MethodDeclarationContext":
-                    self.make_scope_method(current)
-                return
-            current = current.parentCtx
-        self.scopes.append(" ")
+    # exit class parent
+    def exitClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
+        self._class = ""
+
+    # method parent
+    def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
+        self.parent = self._class + ctx.IDENTIFIER().getText()
+
+    # interface parent
+    def enterInterfaceDeclaration(self, ctx: JavaParserLabeled.InterfaceDeclarationContext):
+        self.parent = ctx.IDENTIFIER().getText()
+
+    def enterExpression1(self, ctx: JavaParserLabeled.Expression1Context):
+        if self.enter_modify:
+            self.name = ctx.IDENTIFIER().getText()
 
     def enterExpression6(self, ctx: JavaParserLabeled.Expression6Context):
-        line_col = str(ctx.children[0].start).split(",")[3][:-1].split(':')
-        self.line.append(line_col[0])
-        self.column.append(line_col[1])
-        self.search_scope(ctx)
+        [line, col] = str(ctx.start).split(",")[3].split(":")
+        parents = self.entity_manager.get_or_create_parent_entities(ctx)
+        parent = parents[-1][1]
+        name = ctx.expression().getText().replace("this", "").replace(".", "").lstrip('_')
+        longname = self.package + '.' + self.parent + '.' + name
+        self.modify.append({
+            'kind': 208,
+            'file': self.entity_manager.file_ent,
+            'line': line,
+            'column': col.replace("]", ""),
+            'ent': longname,
+            'scope': parent[0]
+        })
+
+    def enterExpression7(self, ctx: JavaParserLabeled.Expression7Context):
+        [line, col] = str(ctx.start).split(",")[3].split(":")
+        parents = self.entity_manager.get_or_create_parent_entities(ctx)
+        parent = parents[-1][1]
+        name = ctx.expression().getText().replace("this", "").replace(".", "").lstrip('_')
+        longname = self.package + '.' + self.parent + '.' + name
+        if name in ['1', '2', '3', '4', '5', '6', '7', '8', '9'] == False:
+            self.modify.append({
+                'kind': 208,
+                'file': self.entity_manager.file_ent,
+                'line': line,
+                'column': col.replace("]", ""),
+                'ent': longname,
+                'scope': parent[0]
+            })
 
     def enterExpression21(self, ctx: JavaParserLabeled.Expression21Context):
         operations = ['+=', '-=', '/=', '*=', '&=', '|=', '^=', '%=']
         if ctx.children[1].getText() in operations:
-            self.search_scope(ctx)
-            line_col = str(ctx.children[0].start).split(",")[3][:-1].split(':')
-            self.line.append(line_col[0])
-            self.column.append(line_col[1])
+            name = ctx.expression()[0].getText().replace("this", "").replace(".", "").lstrip('_')
+            longname = self.package + '.' + self.parent + '.' + name
+            [line, col] = str(ctx.start).split(",")[3].split(":")
+            parents = self.entity_manager.get_or_create_parent_entities(ctx)
+            parent = parents[-1][1]
+            self.modify.append({
+                'kind': 208,
+                'file': self.entity_manager.file_ent,
+                'line': line,
+                'column': col.replace("]", ""),
+                'ent': longname,
+                'scope': parent[0]
+            })
 
+    def exitExpression6(self, ctx: JavaParserLabeled.Expression6Context):
+        self.enter_modify = False
 
-def ent_scope(parent, name, path):
-    # create entity for reference
-    # make parent entity type of class
-    if parent['parent'] == "file":
-        file_entity = create_Entity(name, path, None, FileStream(path),
-                                    KindModel.get_or_none(_name="Java File")._id, None, None)
-        path_parts = path.split('\\')
-        i = path_parts.index("src")
-        longname = '.'.join(path_parts[i + 1:])
-        parent_entity = create_Entity(parent['name'], longname, file_entity, parent['content']
-                                      , parent['kind'], None, None)
-    # make parent entity type of method
-    else:
-        parent_class = parent['parent']
-        file_entity = create_Entity(name, path, None, FileStream(path),
-                                    KindModel.get_or_none(_name="Java File")._id, None, None)
-        path_parts = path.split('\\')
-        i = path_parts.index("src")
-        longname = '.'.join(path_parts[i + 1:])
-        class_entity = create_Entity(parent_class['name'], longname, file_entity, parent_class['content']
-                                     , parent_class['kind'], None, None)
-        longname_method = longname + "." + parent['name']
-        parent_entity = create_Entity(parent['name'], longname_method, class_entity, parent['content']
-                                      , parent['kind'], None, None)
-    return (parent_entity, longname, file_entity)
+    def exitExpression7(self, ctx: JavaParserLabeled.Expression7Context):
+        self.enter_modify = False
 
+    def exitExpression21(self, ctx: JavaParserLabeled.Expression21Context):
+        self.enter_modify = False
 
-def readFile():
-    listOfFiles = list()
-    filename = []
-    for (dirpath, dirnames, filenames) in os.walk(r"E:\uni\compiler\OpenUnderstand\benchmark\calculator_app"):
-        for file in filenames:
-            if '.java' in str(file):
-                filename.append(file)
-                listOfFiles.append(os.path.join(dirpath, file))
-
-    db = db_open(r"E:\uni\compiler\OpenUnderstand\database.oudb")
-
-    types = [JavaLexer.ADD_ASSIGN, JavaLexer.SUB_ASSIGN, JavaLexer.MUL_ASSIGN, JavaLexer.DIV_ASSIGN,
-             JavaLexer.AND_ASSIGN, JavaLexer.OR_ASSIGN, JavaLexer.XOR_ASSIGN, JavaLexer.MOD_ASSIGN,
-             JavaLexer.LSHIFT_ASSIGN, JavaLexer.RSHIFT_ASSIGN, JavaLexer.URSHIFT_ASSIGN, JavaLexer.DEC,
-             JavaLexer.INC]
-
-    for path, name in zip(listOfFiles, filename):
-        file = FileStream(path)
-        lexer = JavaLexer(file)
-
-        tokens = CommonTokenStream(lexer)
-        tokens.fill()
-
-        previous_token = None
-        modified_vars = []
-        for token in tokens.tokens:
-            if token.type == JavaLexer.WS:
-                continue
-            if token.type in types:
-                modified_vars.append(previous_token.text)
-            previous_token = token
-
-        # if the file doesn't contain any modifying variable, then continue
-        if len(modified_vars) == 0:
-            continue
-
-        parser = JavaParserLabeled(tokens)
-
-        tree = parser.compilationUnit()
-
-        listener = DefineListener()
-        scope_listener = ModifyListener()
-
-        walker = ParseTreeWalker()
-        walker.walk(listener=listener, t=tree)
-        walker.walk(listener=scope_listener, t=tree)
-
-        idx = 0
-        idx2 = 0
-        for n, parent in zip(listener.names, listener.parent_info):
-            if n not in modified_vars:
-                idx += 1
-                continue
-
-            parent_entity, longname, _ = ent_scope(parent, name, path)
-
-            var_entity = create_Entity(listener.names[idx], longname + '.' + listener.names[idx],
-                                       parent_entity, "", listener.kind[idx], listener.values[idx],
-                                       listener.types[idx])
-
-            scope, longname, file_ent = ent_scope(scope_listener.scope_info[idx2], name, path)
-
-            ref = create_Ref(KindModel.get_or_none(_name="Java Modify")._id, file_ent, scope_listener.line[idx2],
-                             scope_listener.column[idx2], var_entity, scope)
-            idx += 1
-            idx2 += 1
-
-
-readFile()
+    @staticmethod
+    def get_different_combinations(longname):
+        names_array = longname.split(".")
+        variable_name = names_array[-1]
+        for i in range(1, len(names_array)):
+            candidate_longname = ".".join(names_array[0:len(names_array) - i])
+            ent = get_created_entity_longname(candidate_longname + "." + variable_name)
+            if ent is not None:
+                return ent
+        return None

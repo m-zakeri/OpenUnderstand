@@ -1,0 +1,1461 @@
++++++++++++++++++++++++++
+entity: A_Star.java
+, ref: Define A_Star A_Star.java(5)
+ ref.scope: A_Star.java, ref.ent: A_Star
+ref.line: 5, ref.col: 8, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star, ref.ent.longname:A_Star ,ref.ent.kind:Package
+ref.ent.parent:A_Star.java, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.java
+, ref: Define A_Star.JsonSerializable A_Star.java(9)
+ ref.scope: A_Star.java, ref.ent: A_Star.JsonSerializable
+ref.line: 9, ref.col: 18, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.JsonSerializable, ref.ent.longname:A_Star.JsonSerializable ,ref.ent.kind:Public Annotation
+ref.ent.parent:A_Star.java, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.java
+, ref: Define A_Star.Level A_Star.java(12)
+ ref.scope: A_Star.java, ref.ent: A_Star.Level
+ref.line: 12, ref.col: 5, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.Level, ref.ent.longname:A_Star.Level ,ref.ent.kind:Enum Type
+ref.ent.parent:A_Star.java, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.java
+, ref: Define A_Star.Base A_Star.java(18)
+ ref.scope: A_Star.java, ref.ent: A_Star.Base
+ref.line: 18, ref.col: 6, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.Base, ref.ent.longname:A_Star.Base ,ref.ent.kind:Class
+ref.ent.parent:A_Star.java, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.java
+, ref: Define A_Star.Derived A_Star.java(29)
+ ref.scope: A_Star.java, ref.ent: A_Star.Derived
+ref.line: 29, ref.col: 6, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.Derived, ref.ent.longname:A_Star.Derived ,ref.ent.kind:Class
+ref.ent.parent:A_Star.java, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.java
+, ref: Define A_Star.A_Star A_Star.java(54)
+ ref.scope: A_Star.java, ref.ent: A_Star.A_Star
+ref.line: 54, ref.col: 13, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.A_Star, ref.ent.longname:A_Star.A_Star ,ref.ent.kind:Public Class
+ref.ent.parent:A_Star.java, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star
+, ref: Define A_Star.java A_Star.java(5)
+ ref.scope: A_Star, ref.ent: A_Star.java
+ref.line: 5, ref.col: 8, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.java, ref.ent.longname:D:\works\university\term6\compiler\Project\OpenUnderstand\benchmark\JSON\A_Star.java ,ref.ent.kind:File
+ref.ent.parent:None, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.A_Star
+, ref: Define A_Star.java A_Star.java(54)
+ ref.scope: A_Star.A_Star, ref.ent: A_Star.java
+ref.line: 54, ref.col: 13, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.java, ref.ent.longname:D:\works\university\term6\compiler\Project\OpenUnderstand\benchmark\JSON\A_Star.java ,ref.ent.kind:File
+ref.ent.parent:None, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.A_Star
+, ref: Define A_Star.Graph A_Star.java(56)
+ ref.scope: A_Star.A_Star, ref.ent: A_Star.Graph
+ref.line: 56, ref.col: 25, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.Graph, ref.ent.longname:A_Star.A_Star.Graph ,ref.ent.kind:Private Static Class
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.A_Star
+, ref: Define A_Star.Edge A_Star.java(79)
+ ref.scope: A_Star.A_Star, ref.ent: A_Star.Edge
+ref.line: 79, ref.col: 25, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.Edge, ref.ent.longname:A_Star.A_Star.Edge ,ref.ent.kind:Private Static Class
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.A_Star
+, ref: Define A_Star.PathAndDistance A_Star.java(104)
+ ref.scope: A_Star.A_Star, ref.ent: A_Star.PathAndDistance
+ref.line: 104, ref.col: 25, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.PathAndDistance, ref.ent.longname:A_Star.A_Star.PathAndDistance ,ref.ent.kind:Private Static Class
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.A_Star
+, ref: Define A_Star.initializeGraph A_Star.java(136)
+ ref.scope: A_Star.A_Star, ref.ent: A_Star.initializeGraph
+ref.line: 136, ref.col: 24, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.initializeGraph, ref.ent.longname:A_Star.A_Star.initializeGraph ,ref.ent.kind:Private Static Method
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:void
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.A_Star
+, ref: Define A_Star.main A_Star.java(169)
+ ref.scope: A_Star.A_Star, ref.ent: A_Star.main
+ref.line: 169, ref.col: 23, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.main, ref.ent.longname:A_Star.A_Star.main ,ref.ent.kind:Public Static Method
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:void
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.A_Star
+, ref: Define A_Star.aStar A_Star.java(190)
+ ref.scope: A_Star.A_Star, ref.ent: A_Star.aStar
+ref.line: 190, ref.col: 34, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.aStar, ref.ent.longname:A_Star.A_Star.aStar ,ref.ent.kind:Public Static Method
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:PathAndDistance
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.Edge
+, ref: Define A_Star.A_Star A_Star.java(79)
+ ref.scope: A_Star.Edge, ref.ent: A_Star.A_Star
+ref.line: 79, ref.col: 25, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.A_Star, ref.ent.longname:A_Star.A_Star ,ref.ent.kind:Public Class
+ref.ent.parent:A_Star.java, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.Edge
+, ref: Define Edge.from A_Star.java(80)
+ ref.scope: A_Star.Edge, ref.ent: Edge.from
+ref.line: 80, ref.col: 20, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Edge.from, ref.ent.longname:A_Star.A_Star.Edge.from ,ref.ent.kind:Private Variable
+ref.ent.parent:A_Star.Edge, ref.ent.value:None,ref.ent.type:int
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.Edge
+, ref: Define Edge.to A_Star.java(81)
+ ref.scope: A_Star.Edge, ref.ent: Edge.to
+ref.line: 81, ref.col: 20, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Edge.to, ref.ent.longname:A_Star.A_Star.Edge.to ,ref.ent.kind:Private Variable
+ref.ent.parent:A_Star.Edge, ref.ent.value:None,ref.ent.type:int
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.Edge
+, ref: Define Edge.weight A_Star.java(82)
+ ref.scope: A_Star.Edge, ref.ent: Edge.weight
+ref.line: 82, ref.col: 20, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Edge.weight, ref.ent.longname:A_Star.A_Star.Edge.weight ,ref.ent.kind:Private Variable
+ref.ent.parent:A_Star.Edge, ref.ent.value:None,ref.ent.type:int
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.Edge
+, ref: Define Edge.Edge A_Star.java(84)
+ ref.scope: A_Star.Edge, ref.ent: Edge.Edge
+ref.line: 84, ref.col: 15, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Edge.Edge, ref.ent.longname:A_Star.A_Star.Edge.Edge ,ref.ent.kind:Public Constructor
+ref.ent.parent:A_Star.Edge, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.Edge
+, ref: Define Edge.getFrom A_Star.java(90)
+ ref.scope: A_Star.Edge, ref.ent: Edge.getFrom
+ref.line: 90, ref.col: 19, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Edge.getFrom, ref.ent.longname:A_Star.A_Star.Edge.getFrom ,ref.ent.kind:Public Method
+ref.ent.parent:A_Star.Edge, ref.ent.value:None,ref.ent.type:int
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.Edge
+, ref: Define Edge.getTo A_Star.java(94)
+ ref.scope: A_Star.Edge, ref.ent: Edge.getTo
+ref.line: 94, ref.col: 19, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Edge.getTo, ref.ent.longname:A_Star.A_Star.Edge.getTo ,ref.ent.kind:Public Method
+ref.ent.parent:A_Star.Edge, ref.ent.value:None,ref.ent.type:int
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.Edge
+, ref: Define Edge.getWeight A_Star.java(98)
+ ref.scope: A_Star.Edge, ref.ent: Edge.getWeight
+ref.line: 98, ref.col: 19, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Edge.getWeight, ref.ent.longname:A_Star.A_Star.Edge.getWeight ,ref.ent.kind:Public Method
+ref.ent.parent:A_Star.Edge, ref.ent.value:None,ref.ent.type:int
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Edge.Edge
+, ref: Define A_Star.Edge A_Star.java(84)
+ ref.scope: Edge.Edge, ref.ent: A_Star.Edge
+ref.line: 84, ref.col: 15, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.Edge, ref.ent.longname:A_Star.A_Star.Edge ,ref.ent.kind:Private Static Class
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Edge.Edge
+, ref: Define from A_Star.java(84)
+ ref.scope: Edge.Edge, ref.ent: from
+ref.line: 84, ref.col: 24, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:from, ref.ent.longname:A_Star.A_Star.Edge.Edge.from ,ref.ent.kind:Parameter
+ref.ent.parent:Edge.Edge, ref.ent.value:None,ref.ent.type:int
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Edge.Edge
+, ref: Define to A_Star.java(84)
+ ref.scope: Edge.Edge, ref.ent: to
+ref.line: 84, ref.col: 34, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:to, ref.ent.longname:A_Star.A_Star.Edge.Edge.to ,ref.ent.kind:Parameter
+ref.ent.parent:Edge.Edge, ref.ent.value:None,ref.ent.type:int
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Edge.Edge
+, ref: Define weight A_Star.java(84)
+ ref.scope: Edge.Edge, ref.ent: weight
+ref.line: 84, ref.col: 42, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:weight, ref.ent.longname:A_Star.A_Star.Edge.Edge.weight ,ref.ent.kind:Parameter
+ref.ent.parent:Edge.Edge, ref.ent.value:None,ref.ent.type:int
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: from
+, ref: Define Edge.Edge A_Star.java(84)
+ ref.scope: from, ref.ent: Edge.Edge
+ref.line: 84, ref.col: 24, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Edge.Edge, ref.ent.longname:A_Star.A_Star.Edge.Edge ,ref.ent.kind:Public Constructor
+ref.ent.parent:A_Star.Edge, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: to
+, ref: Define Edge.Edge A_Star.java(84)
+ ref.scope: to, ref.ent: Edge.Edge
+ref.line: 84, ref.col: 34, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Edge.Edge, ref.ent.longname:A_Star.A_Star.Edge.Edge ,ref.ent.kind:Public Constructor
+ref.ent.parent:A_Star.Edge, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: weight
+, ref: Define Edge.Edge A_Star.java(84)
+ ref.scope: weight, ref.ent: Edge.Edge
+ref.line: 84, ref.col: 42, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Edge.Edge, ref.ent.longname:A_Star.A_Star.Edge.Edge ,ref.ent.kind:Public Constructor
+ref.ent.parent:A_Star.Edge, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Edge.getFrom
+, ref: Define A_Star.Edge A_Star.java(90)
+ ref.scope: Edge.getFrom, ref.ent: A_Star.Edge
+ref.line: 90, ref.col: 19, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.Edge, ref.ent.longname:A_Star.A_Star.Edge ,ref.ent.kind:Private Static Class
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Edge.getTo
+, ref: Define A_Star.Edge A_Star.java(94)
+ ref.scope: Edge.getTo, ref.ent: A_Star.Edge
+ref.line: 94, ref.col: 19, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.Edge, ref.ent.longname:A_Star.A_Star.Edge ,ref.ent.kind:Private Static Class
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Edge.getWeight
+, ref: Define A_Star.Edge A_Star.java(98)
+ ref.scope: Edge.getWeight, ref.ent: A_Star.Edge
+ref.line: 98, ref.col: 19, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.Edge, ref.ent.longname:A_Star.A_Star.Edge ,ref.ent.kind:Private Static Class
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Edge.from
+, ref: Define A_Star.Edge A_Star.java(80)
+ ref.scope: Edge.from, ref.ent: A_Star.Edge
+ref.line: 80, ref.col: 20, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.Edge, ref.ent.longname:A_Star.A_Star.Edge ,ref.ent.kind:Private Static Class
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Edge.to
+, ref: Define A_Star.Edge A_Star.java(81)
+ ref.scope: Edge.to, ref.ent: A_Star.Edge
+ref.line: 81, ref.col: 20, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.Edge, ref.ent.longname:A_Star.A_Star.Edge ,ref.ent.kind:Private Static Class
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Edge.weight
+, ref: Define A_Star.Edge A_Star.java(82)
+ ref.scope: Edge.weight, ref.ent: A_Star.Edge
+ref.line: 82, ref.col: 20, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.Edge, ref.ent.longname:A_Star.A_Star.Edge ,ref.ent.kind:Private Static Class
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.Graph
+, ref: Define A_Star.A_Star A_Star.java(56)
+ ref.scope: A_Star.Graph, ref.ent: A_Star.A_Star
+ref.line: 56, ref.col: 25, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.A_Star, ref.ent.longname:A_Star.A_Star ,ref.ent.kind:Public Class
+ref.ent.parent:A_Star.java, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.Graph
+, ref: Define Graph.graph A_Star.java(58)
+ ref.scope: A_Star.Graph, ref.ent: Graph.graph
+ref.line: 58, ref.col: 34, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Graph.graph, ref.ent.longname:A_Star.A_Star.Graph.graph ,ref.ent.kind:Private Variable
+ref.ent.parent:A_Star.Graph, ref.ent.value:None,ref.ent.type:ArrayList<Edge>[]
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.Graph
+, ref: Define Graph.Graph A_Star.java(61)
+ ref.scope: A_Star.Graph, ref.ent: Graph.Graph
+ref.line: 61, ref.col: 15, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Graph.Graph, ref.ent.longname:A_Star.A_Star.Graph.Graph ,ref.ent.kind:Public Constructor
+ref.ent.parent:A_Star.Graph, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.Graph
+, ref: Define Graph.getNeighbours A_Star.java(68)
+ ref.scope: A_Star.Graph, ref.ent: Graph.getNeighbours
+ref.line: 68, ref.col: 32, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Graph.getNeighbours, ref.ent.longname:A_Star.A_Star.Graph.getNeighbours ,ref.ent.kind:Private Method
+ref.ent.parent:A_Star.Graph, ref.ent.value:None,ref.ent.type:ArrayList
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.Graph
+, ref: Define Graph.addEdge A_Star.java(73)
+ ref.scope: A_Star.Graph, ref.ent: Graph.addEdge
+ref.line: 73, ref.col: 21, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Graph.addEdge, ref.ent.longname:A_Star.A_Star.Graph.addEdge ,ref.ent.kind:Private Method
+ref.ent.parent:A_Star.Graph, ref.ent.value:None,ref.ent.type:void
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Graph.Graph
+, ref: Define A_Star.Graph A_Star.java(61)
+ ref.scope: Graph.Graph, ref.ent: A_Star.Graph
+ref.line: 61, ref.col: 15, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.Graph, ref.ent.longname:A_Star.A_Star.Graph ,ref.ent.kind:Private Static Class
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Graph.Graph
+, ref: Define size A_Star.java(61)
+ ref.scope: Graph.Graph, ref.ent: size
+ref.line: 61, ref.col: 25, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:size, ref.ent.longname:A_Star.A_Star.Graph.Graph.size ,ref.ent.kind:Parameter
+ref.ent.parent:Graph.Graph, ref.ent.value:None,ref.ent.type:int
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Graph.Graph
+, ref: Define i A_Star.java(63)
+ ref.scope: Graph.Graph, ref.ent: i
+ref.line: 63, ref.col: 21, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:i, ref.ent.longname:A_Star.A_Star.Graph.Graph.(for_loop_1).i ,ref.ent.kind:Variable
+ref.ent.parent:Graph.Graph, ref.ent.value:0,ref.ent.type:int
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: i
+, ref: Define Graph.Graph A_Star.java(63)
+ ref.scope: i, ref.ent: Graph.Graph
+ref.line: 63, ref.col: 21, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Graph.Graph, ref.ent.longname:A_Star.A_Star.Graph.Graph ,ref.ent.kind:Public Constructor
+ref.ent.parent:A_Star.Graph, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: size
+, ref: Define Graph.Graph A_Star.java(61)
+ ref.scope: size, ref.ent: Graph.Graph
+ref.line: 61, ref.col: 25, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Graph.Graph, ref.ent.longname:A_Star.A_Star.Graph.Graph ,ref.ent.kind:Public Constructor
+ref.ent.parent:A_Star.Graph, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Graph.addEdge
+, ref: Define A_Star.Graph A_Star.java(73)
+ ref.scope: Graph.addEdge, ref.ent: A_Star.Graph
+ref.line: 73, ref.col: 21, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.Graph, ref.ent.longname:A_Star.A_Star.Graph ,ref.ent.kind:Private Static Class
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Graph.addEdge
+, ref: Define edge A_Star.java(73)
+ ref.scope: Graph.addEdge, ref.ent: edge
+ref.line: 73, ref.col: 34, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:edge, ref.ent.longname:A_Star.A_Star.Graph.addEdge.edge ,ref.ent.kind:Parameter
+ref.ent.parent:Graph.addEdge, ref.ent.value:None,ref.ent.type:Edge
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: edge
+, ref: Define Graph.addEdge A_Star.java(73)
+ ref.scope: edge, ref.ent: Graph.addEdge
+ref.line: 73, ref.col: 34, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Graph.addEdge, ref.ent.longname:A_Star.A_Star.Graph.addEdge ,ref.ent.kind:Private Method
+ref.ent.parent:A_Star.Graph, ref.ent.value:None,ref.ent.type:void
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Graph.getNeighbours
+, ref: Define A_Star.Graph A_Star.java(68)
+ ref.scope: Graph.getNeighbours, ref.ent: A_Star.Graph
+ref.line: 68, ref.col: 32, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.Graph, ref.ent.longname:A_Star.A_Star.Graph ,ref.ent.kind:Private Static Class
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Graph.getNeighbours
+, ref: Define from A_Star.java(68)
+ ref.scope: Graph.getNeighbours, ref.ent: from
+ref.line: 68, ref.col: 50, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:from, ref.ent.longname:A_Star.A_Star.Graph.getNeighbours.from ,ref.ent.kind:Parameter
+ref.ent.parent:Graph.getNeighbours, ref.ent.value:None,ref.ent.type:int
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: from
+, ref: Define Graph.getNeighbours A_Star.java(68)
+ ref.scope: from, ref.ent: Graph.getNeighbours
+ref.line: 68, ref.col: 50, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Graph.getNeighbours, ref.ent.longname:A_Star.A_Star.Graph.getNeighbours ,ref.ent.kind:Private Method
+ref.ent.parent:A_Star.Graph, ref.ent.value:None,ref.ent.type:ArrayList
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Graph.graph
+, ref: Define A_Star.Graph A_Star.java(58)
+ ref.scope: Graph.graph, ref.ent: A_Star.Graph
+ref.line: 58, ref.col: 34, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.Graph, ref.ent.longname:A_Star.A_Star.Graph ,ref.ent.kind:Private Static Class
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.PathAndDistance
+, ref: Define A_Star.A_Star A_Star.java(104)
+ ref.scope: A_Star.PathAndDistance, ref.ent: A_Star.A_Star
+ref.line: 104, ref.col: 25, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.A_Star, ref.ent.longname:A_Star.A_Star ,ref.ent.kind:Public Class
+ref.ent.parent:A_Star.java, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.PathAndDistance
+, ref: Define PathAndDistance.distance A_Star.java(105)
+ ref.scope: A_Star.PathAndDistance, ref.ent: PathAndDistance.distance
+ref.line: 105, ref.col: 20, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:PathAndDistance.distance, ref.ent.longname:A_Star.A_Star.PathAndDistance.distance ,ref.ent.kind:Private Variable
+ref.ent.parent:A_Star.PathAndDistance, ref.ent.value:None,ref.ent.type:int
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.PathAndDistance
+, ref: Define PathAndDistance.path A_Star.java(106)
+ ref.scope: A_Star.PathAndDistance, ref.ent: PathAndDistance.path
+ref.line: 106, ref.col: 35, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:PathAndDistance.path, ref.ent.longname:A_Star.A_Star.PathAndDistance.path ,ref.ent.kind:Private Variable
+ref.ent.parent:A_Star.PathAndDistance, ref.ent.value:None,ref.ent.type:ArrayList<Integer>
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.PathAndDistance
+, ref: Define PathAndDistance.estimated A_Star.java(108)
+ ref.scope: A_Star.PathAndDistance, ref.ent: PathAndDistance.estimated
+ref.line: 108, ref.col: 16, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:PathAndDistance.estimated, ref.ent.longname:A_Star.A_Star.PathAndDistance.estimated ,ref.ent.kind:Private Variable
+ref.ent.parent:A_Star.PathAndDistance, ref.ent.value:None,ref.ent.type:int
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.PathAndDistance
+, ref: Define PathAndDistance.PathAndDistance A_Star.java(110)
+ ref.scope: A_Star.PathAndDistance, ref.ent: PathAndDistance.PathAndDistance
+ref.line: 110, ref.col: 15, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:PathAndDistance.PathAndDistance, ref.ent.longname:A_Star.A_Star.PathAndDistance.PathAndDistance ,ref.ent.kind:Public Constructor
+ref.ent.parent:A_Star.PathAndDistance, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.PathAndDistance
+, ref: Define PathAndDistance.getDistance A_Star.java(116)
+ ref.scope: A_Star.PathAndDistance, ref.ent: PathAndDistance.getDistance
+ref.line: 116, ref.col: 19, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:PathAndDistance.getDistance, ref.ent.longname:A_Star.A_Star.PathAndDistance.getDistance ,ref.ent.kind:Public Method
+ref.ent.parent:A_Star.PathAndDistance, ref.ent.value:None,ref.ent.type:int
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.PathAndDistance
+, ref: Define PathAndDistance.getPath A_Star.java(120)
+ ref.scope: A_Star.PathAndDistance, ref.ent: PathAndDistance.getPath
+ref.line: 120, ref.col: 34, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:PathAndDistance.getPath, ref.ent.longname:A_Star.A_Star.PathAndDistance.getPath ,ref.ent.kind:Public Method
+ref.ent.parent:A_Star.PathAndDistance, ref.ent.value:None,ref.ent.type:ArrayList
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.PathAndDistance
+, ref: Define PathAndDistance.getEstimated A_Star.java(124)
+ ref.scope: A_Star.PathAndDistance, ref.ent: PathAndDistance.getEstimated
+ref.line: 124, ref.col: 19, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:PathAndDistance.getEstimated, ref.ent.longname:A_Star.A_Star.PathAndDistance.getEstimated ,ref.ent.kind:Public Method
+ref.ent.parent:A_Star.PathAndDistance, ref.ent.value:None,ref.ent.type:int
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.PathAndDistance
+, ref: Define PathAndDistance.printSolution A_Star.java(128)
+ ref.scope: A_Star.PathAndDistance, ref.ent: PathAndDistance.printSolution
+ref.line: 128, ref.col: 21, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:PathAndDistance.printSolution, ref.ent.longname:A_Star.A_Star.PathAndDistance.printSolution ,ref.ent.kind:Private Method
+ref.ent.parent:A_Star.PathAndDistance, ref.ent.value:None,ref.ent.type:void
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: PathAndDistance.PathAndDistance
+, ref: Define A_Star.PathAndDistance A_Star.java(110)
+ ref.scope: PathAndDistance.PathAndDistance, ref.ent: A_Star.PathAndDistance
+ref.line: 110, ref.col: 15, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.PathAndDistance, ref.ent.longname:A_Star.A_Star.PathAndDistance ,ref.ent.kind:Private Static Class
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: PathAndDistance.PathAndDistance
+, ref: Define distance A_Star.java(110)
+ ref.scope: PathAndDistance.PathAndDistance, ref.ent: distance
+ref.line: 110, ref.col: 35, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:distance, ref.ent.longname:A_Star.A_Star.PathAndDistance.PathAndDistance.distance ,ref.ent.kind:Parameter
+ref.ent.parent:PathAndDistance.PathAndDistance, ref.ent.value:None,ref.ent.type:int
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: PathAndDistance.PathAndDistance
+, ref: Define path A_Star.java(110)
+ ref.scope: PathAndDistance.PathAndDistance, ref.ent: path
+ref.line: 110, ref.col: 64, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:path, ref.ent.longname:A_Star.A_Star.PathAndDistance.PathAndDistance.path ,ref.ent.kind:Parameter
+ref.ent.parent:PathAndDistance.PathAndDistance, ref.ent.value:None,ref.ent.type:ArrayList<Integer>
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: PathAndDistance.PathAndDistance
+, ref: Define estimated A_Star.java(110)
+ ref.scope: PathAndDistance.PathAndDistance, ref.ent: estimated
+ref.line: 110, ref.col: 74, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:estimated, ref.ent.longname:A_Star.A_Star.PathAndDistance.PathAndDistance.estimated ,ref.ent.kind:Parameter
+ref.ent.parent:PathAndDistance.PathAndDistance, ref.ent.value:None,ref.ent.type:int
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: distance
+, ref: Define PathAndDistance.PathAndDistance A_Star.java(110)
+ ref.scope: distance, ref.ent: PathAndDistance.PathAndDistance
+ref.line: 110, ref.col: 35, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:PathAndDistance.PathAndDistance, ref.ent.longname:A_Star.A_Star.PathAndDistance.PathAndDistance ,ref.ent.kind:Public Constructor
+ref.ent.parent:A_Star.PathAndDistance, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: estimated
+, ref: Define PathAndDistance.PathAndDistance A_Star.java(110)
+ ref.scope: estimated, ref.ent: PathAndDistance.PathAndDistance
+ref.line: 110, ref.col: 74, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:PathAndDistance.PathAndDistance, ref.ent.longname:A_Star.A_Star.PathAndDistance.PathAndDistance ,ref.ent.kind:Public Constructor
+ref.ent.parent:A_Star.PathAndDistance, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: path
+, ref: Define PathAndDistance.PathAndDistance A_Star.java(110)
+ ref.scope: path, ref.ent: PathAndDistance.PathAndDistance
+ref.line: 110, ref.col: 64, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:PathAndDistance.PathAndDistance, ref.ent.longname:A_Star.A_Star.PathAndDistance.PathAndDistance ,ref.ent.kind:Public Constructor
+ref.ent.parent:A_Star.PathAndDistance, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: PathAndDistance.getDistance
+, ref: Define A_Star.PathAndDistance A_Star.java(116)
+ ref.scope: PathAndDistance.getDistance, ref.ent: A_Star.PathAndDistance
+ref.line: 116, ref.col: 19, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.PathAndDistance, ref.ent.longname:A_Star.A_Star.PathAndDistance ,ref.ent.kind:Private Static Class
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: PathAndDistance.getEstimated
+, ref: Define A_Star.PathAndDistance A_Star.java(124)
+ ref.scope: PathAndDistance.getEstimated, ref.ent: A_Star.PathAndDistance
+ref.line: 124, ref.col: 19, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.PathAndDistance, ref.ent.longname:A_Star.A_Star.PathAndDistance ,ref.ent.kind:Private Static Class
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: PathAndDistance.getPath
+, ref: Define A_Star.PathAndDistance A_Star.java(120)
+ ref.scope: PathAndDistance.getPath, ref.ent: A_Star.PathAndDistance
+ref.line: 120, ref.col: 34, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.PathAndDistance, ref.ent.longname:A_Star.A_Star.PathAndDistance ,ref.ent.kind:Private Static Class
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: PathAndDistance.printSolution
+, ref: Define A_Star.PathAndDistance A_Star.java(128)
+ ref.scope: PathAndDistance.printSolution, ref.ent: A_Star.PathAndDistance
+ref.line: 128, ref.col: 21, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.PathAndDistance, ref.ent.longname:A_Star.A_Star.PathAndDistance ,ref.ent.kind:Private Static Class
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: PathAndDistance.distance
+, ref: Define A_Star.PathAndDistance A_Star.java(105)
+ ref.scope: PathAndDistance.distance, ref.ent: A_Star.PathAndDistance
+ref.line: 105, ref.col: 20, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.PathAndDistance, ref.ent.longname:A_Star.A_Star.PathAndDistance ,ref.ent.kind:Private Static Class
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: PathAndDistance.estimated
+, ref: Define A_Star.PathAndDistance A_Star.java(108)
+ ref.scope: PathAndDistance.estimated, ref.ent: A_Star.PathAndDistance
+ref.line: 108, ref.col: 16, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.PathAndDistance, ref.ent.longname:A_Star.A_Star.PathAndDistance ,ref.ent.kind:Private Static Class
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: PathAndDistance.path
+, ref: Define A_Star.PathAndDistance A_Star.java(106)
+ ref.scope: PathAndDistance.path, ref.ent: A_Star.PathAndDistance
+ref.line: 106, ref.col: 35, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.PathAndDistance, ref.ent.longname:A_Star.A_Star.PathAndDistance ,ref.ent.kind:Private Static Class
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.aStar
+, ref: Define A_Star.A_Star A_Star.java(190)
+ ref.scope: A_Star.aStar, ref.ent: A_Star.A_Star
+ref.line: 190, ref.col: 34, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.A_Star, ref.ent.longname:A_Star.A_Star ,ref.ent.kind:Public Class
+ref.ent.parent:A_Star.java, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.aStar
+, ref: Define from A_Star.java(190)
+ ref.scope: A_Star.aStar, ref.ent: from
+ref.line: 190, ref.col: 44, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:from, ref.ent.longname:A_Star.A_Star.aStar.from ,ref.ent.kind:Parameter
+ref.ent.parent:A_Star.aStar, ref.ent.value:None,ref.ent.type:int
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.aStar
+, ref: Define to A_Star.java(190)
+ ref.scope: A_Star.aStar, ref.ent: to
+ref.line: 190, ref.col: 54, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:to, ref.ent.longname:A_Star.A_Star.aStar.to ,ref.ent.kind:Parameter
+ref.ent.parent:A_Star.aStar, ref.ent.value:None,ref.ent.type:int
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.aStar
+, ref: Define graph A_Star.java(190)
+ ref.scope: A_Star.aStar, ref.ent: graph
+ref.line: 190, ref.col: 64, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:graph, ref.ent.longname:A_Star.A_Star.aStar.graph ,ref.ent.kind:Parameter
+ref.ent.parent:A_Star.aStar, ref.ent.value:None,ref.ent.type:Graph
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.aStar
+, ref: Define heuristic A_Star.java(190)
+ ref.scope: A_Star.aStar, ref.ent: heuristic
+ref.line: 190, ref.col: 77, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:heuristic, ref.ent.longname:A_Star.A_Star.aStar.heuristic ,ref.ent.kind:Parameter
+ref.ent.parent:A_Star.aStar, ref.ent.value:None,ref.ent.type:int[]
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.aStar
+, ref: Define queue A_Star.java(194)
+ ref.scope: A_Star.aStar, ref.ent: queue
+ref.line: 194, ref.col: 39, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:queue, ref.ent.longname:A_Star.A_Star.aStar.queue ,ref.ent.kind:Variable
+ref.ent.parent:A_Star.aStar, ref.ent.value:PriorityQueue(Comparator.comparingInt),ref.ent.type:PriorityQueue<PathAndDistance>
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.aStar
+, ref: Define aStar.(lambda_expr_1) A_Star.java(195)
+ ref.scope: A_Star.aStar, ref.ent: aStar.(lambda_expr_1)
+ref.line: 195, ref.col: 60, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:aStar.(lambda_expr_1), ref.ent.longname:A_Star.A_Star.aStar.(lambda_expr_1) ,ref.ent.kind:Lambda Method
+ref.ent.parent:A_Star.aStar, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.aStar
+, ref: Define solutionFound A_Star.java(200)
+ ref.scope: A_Star.aStar, ref.ent: solutionFound
+ref.line: 200, ref.col: 16, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:solutionFound, ref.ent.longname:A_Star.A_Star.aStar.solutionFound ,ref.ent.kind:Variable
+ref.ent.parent:A_Star.aStar, ref.ent.value:false,ref.ent.type:boolean
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.aStar
+, ref: Define currentData A_Star.java(201)
+ ref.scope: A_Star.aStar, ref.ent: currentData
+ref.line: 201, ref.col: 24, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:currentData, ref.ent.longname:A_Star.A_Star.aStar.currentData ,ref.ent.kind:Variable
+ref.ent.parent:A_Star.aStar, ref.ent.value:PathAndDistance(-1null,-1,),ref.ent.type:PathAndDistance
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.aStar
+, ref: Define currentPosition A_Star.java(204)
+ ref.scope: A_Star.aStar, ref.ent: currentPosition
+ref.line: 204, ref.col: 16, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:currentPosition, ref.ent.longname:A_Star.A_Star.aStar.currentPosition ,ref.ent.kind:Variable
+ref.ent.parent:A_Star.aStar, ref.ent.value:get,ref.ent.type:int
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.aStar
+, ref: Define edge A_Star.java(208)
+ ref.scope: A_Star.aStar, ref.ent: edge
+ref.line: 208, ref.col: 26, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:edge, ref.ent.longname:A_Star.A_Star.aStar.(for_loop_3).edge ,ref.ent.kind:Variable
+ref.ent.parent:A_Star.aStar, ref.ent.value:None,ref.ent.type:Edge
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.aStar
+, ref: Define updatedPath A_Star.java(210)
+ ref.scope: A_Star.aStar, ref.ent: updatedPath
+ref.line: 210, ref.col: 43, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:updatedPath, ref.ent.longname:A_Star.A_Star.aStar.(for_loop_3).updatedPath ,ref.ent.kind:Variable
+ref.ent.parent:A_Star.aStar, ref.ent.value:ArrayList(currentData.getPath),ref.ent.type:ArrayList<Integer>
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: aStar.(lambda_expr_1)
+, ref: Define A_Star.aStar A_Star.java(195)
+ ref.scope: aStar.(lambda_expr_1), ref.ent: A_Star.aStar
+ref.line: 195, ref.col: 60, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.aStar, ref.ent.longname:A_Star.A_Star.aStar ,ref.ent.kind:Public Static Method
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:PathAndDistance
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: aStar.(lambda_expr_1)
+, ref: Define a A_Star.java(195)
+ ref.scope: aStar.(lambda_expr_1), ref.ent: a
+ref.line: 195, ref.col: 60, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:a, ref.ent.longname:A_Star.A_Star.aStar.(lambda_expr_1).a ,ref.ent.kind:Parameter
+ref.ent.parent:aStar.(lambda_expr_1), ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: a
+, ref: Define aStar.(lambda_expr_1) A_Star.java(195)
+ ref.scope: a, ref.ent: aStar.(lambda_expr_1)
+ref.line: 195, ref.col: 60, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:aStar.(lambda_expr_1), ref.ent.longname:A_Star.A_Star.aStar.(lambda_expr_1) ,ref.ent.kind:Lambda Method
+ref.ent.parent:A_Star.aStar, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: edge
+, ref: Define A_Star.aStar A_Star.java(208)
+ ref.scope: edge, ref.ent: A_Star.aStar
+ref.line: 208, ref.col: 26, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.aStar, ref.ent.longname:A_Star.A_Star.aStar ,ref.ent.kind:Public Static Method
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:PathAndDistance
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: updatedPath
+, ref: Define A_Star.aStar A_Star.java(210)
+ ref.scope: updatedPath, ref.ent: A_Star.aStar
+ref.line: 210, ref.col: 43, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.aStar, ref.ent.longname:A_Star.A_Star.aStar ,ref.ent.kind:Public Static Method
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:PathAndDistance
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: currentData
+, ref: Define A_Star.aStar A_Star.java(201)
+ ref.scope: currentData, ref.ent: A_Star.aStar
+ref.line: 201, ref.col: 24, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.aStar, ref.ent.longname:A_Star.A_Star.aStar ,ref.ent.kind:Public Static Method
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:PathAndDistance
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: currentPosition
+, ref: Define A_Star.aStar A_Star.java(204)
+ ref.scope: currentPosition, ref.ent: A_Star.aStar
+ref.line: 204, ref.col: 16, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.aStar, ref.ent.longname:A_Star.A_Star.aStar ,ref.ent.kind:Public Static Method
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:PathAndDistance
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: from
+, ref: Define A_Star.aStar A_Star.java(190)
+ ref.scope: from, ref.ent: A_Star.aStar
+ref.line: 190, ref.col: 44, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.aStar, ref.ent.longname:A_Star.A_Star.aStar ,ref.ent.kind:Public Static Method
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:PathAndDistance
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: graph
+, ref: Define A_Star.aStar A_Star.java(190)
+ ref.scope: graph, ref.ent: A_Star.aStar
+ref.line: 190, ref.col: 64, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.aStar, ref.ent.longname:A_Star.A_Star.aStar ,ref.ent.kind:Public Static Method
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:PathAndDistance
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: heuristic
+, ref: Define A_Star.aStar A_Star.java(190)
+ ref.scope: heuristic, ref.ent: A_Star.aStar
+ref.line: 190, ref.col: 77, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.aStar, ref.ent.longname:A_Star.A_Star.aStar ,ref.ent.kind:Public Static Method
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:PathAndDistance
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: queue
+, ref: Define A_Star.aStar A_Star.java(194)
+ ref.scope: queue, ref.ent: A_Star.aStar
+ref.line: 194, ref.col: 39, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.aStar, ref.ent.longname:A_Star.A_Star.aStar ,ref.ent.kind:Public Static Method
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:PathAndDistance
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: solutionFound
+, ref: Define A_Star.aStar A_Star.java(200)
+ ref.scope: solutionFound, ref.ent: A_Star.aStar
+ref.line: 200, ref.col: 16, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.aStar, ref.ent.longname:A_Star.A_Star.aStar ,ref.ent.kind:Public Static Method
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:PathAndDistance
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: to
+, ref: Define A_Star.aStar A_Star.java(190)
+ ref.scope: to, ref.ent: A_Star.aStar
+ref.line: 190, ref.col: 54, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.aStar, ref.ent.longname:A_Star.A_Star.aStar ,ref.ent.kind:Public Static Method
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:PathAndDistance
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.initializeGraph
+, ref: Define A_Star.A_Star A_Star.java(136)
+ ref.scope: A_Star.initializeGraph, ref.ent: A_Star.A_Star
+ref.line: 136, ref.col: 24, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.A_Star, ref.ent.longname:A_Star.A_Star ,ref.ent.kind:Public Class
+ref.ent.parent:A_Star.java, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.initializeGraph
+, ref: Define graph A_Star.java(136)
+ ref.scope: A_Star.initializeGraph, ref.ent: graph
+ref.line: 136, ref.col: 46, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:graph, ref.ent.longname:A_Star.A_Star.initializeGraph.graph ,ref.ent.kind:Parameter
+ref.ent.parent:A_Star.initializeGraph, ref.ent.value:None,ref.ent.type:Graph
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.initializeGraph
+, ref: Define data A_Star.java(136)
+ ref.scope: A_Star.initializeGraph, ref.ent: data
+ref.line: 136, ref.col: 72, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:data, ref.ent.longname:A_Star.A_Star.initializeGraph.data ,ref.ent.kind:Parameter
+ref.ent.parent:A_Star.initializeGraph, ref.ent.value:None,ref.ent.type:ArrayList<Integer>
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.initializeGraph
+, ref: Define i A_Star.java(137)
+ ref.scope: A_Star.initializeGraph, ref.ent: i
+ref.line: 137, ref.col: 17, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:i, ref.ent.longname:A_Star.A_Star.initializeGraph.(for_loop_2).i ,ref.ent.kind:Variable
+ref.ent.parent:A_Star.initializeGraph, ref.ent.value:0,ref.ent.type:int
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: i
+, ref: Define A_Star.initializeGraph A_Star.java(137)
+ ref.scope: i, ref.ent: A_Star.initializeGraph
+ref.line: 137, ref.col: 17, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.initializeGraph, ref.ent.longname:A_Star.A_Star.initializeGraph ,ref.ent.kind:Private Static Method
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:void
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: data
+, ref: Define A_Star.initializeGraph A_Star.java(136)
+ ref.scope: data, ref.ent: A_Star.initializeGraph
+ref.line: 136, ref.col: 72, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.initializeGraph, ref.ent.longname:A_Star.A_Star.initializeGraph ,ref.ent.kind:Private Static Method
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:void
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: graph
+, ref: Define A_Star.initializeGraph A_Star.java(136)
+ ref.scope: graph, ref.ent: A_Star.initializeGraph
+ref.line: 136, ref.col: 46, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.initializeGraph, ref.ent.longname:A_Star.A_Star.initializeGraph ,ref.ent.kind:Private Static Method
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:void
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.main
+, ref: Define A_Star.A_Star A_Star.java(169)
+ ref.scope: A_Star.main, ref.ent: A_Star.A_Star
+ref.line: 169, ref.col: 23, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.A_Star, ref.ent.longname:A_Star.A_Star ,ref.ent.kind:Public Class
+ref.ent.parent:A_Star.java, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.main
+, ref: Define args A_Star.java(169)
+ ref.scope: A_Star.main, ref.ent: args
+ref.line: 169, ref.col: 37, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:args, ref.ent.longname:A_Star.A_Star.main.args ,ref.ent.kind:Parameter
+ref.ent.parent:A_Star.main, ref.ent.value:None,ref.ent.type:String[]
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.main
+, ref: Define heuristic A_Star.java(171)
+ ref.scope: A_Star.main, ref.ent: heuristic
+ref.line: 171, ref.col: 14, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:heuristic, ref.ent.longname:A_Star.A_Star.main.heuristic ,ref.ent.kind:Variable
+ref.ent.parent:A_Star.main, ref.ent.value:None,ref.ent.type:int[]
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.main
+, ref: Define graph A_Star.java(175)
+ ref.scope: A_Star.main, ref.ent: graph
+ref.line: 175, ref.col: 14, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:graph, ref.ent.longname:A_Star.A_Star.main.graph ,ref.ent.kind:Variable
+ref.ent.parent:A_Star.main, ref.ent.value:Graph(20),ref.ent.type:Graph
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.main
+, ref: Define graphData A_Star.java(176)
+ ref.scope: A_Star.main, ref.ent: graphData
+ref.line: 176, ref.col: 27, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:graphData, ref.ent.longname:A_Star.A_Star.main.graphData ,ref.ent.kind:Variable
+ref.ent.parent:A_Star.main, ref.ent.value:ArrayList(Arrays.asList),ref.ent.type:ArrayList<Integer>
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.main
+, ref: Define solution A_Star.java(186)
+ ref.scope: A_Star.main, ref.ent: solution
+ref.line: 186, ref.col: 24, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:solution, ref.ent.longname:A_Star.A_Star.main.solution ,ref.ent.kind:Variable
+ref.ent.parent:A_Star.main, ref.ent.value:aStar,ref.ent.type:PathAndDistance
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: args
+, ref: Define A_Star.main A_Star.java(169)
+ ref.scope: args, ref.ent: A_Star.main
+ref.line: 169, ref.col: 37, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.main, ref.ent.longname:A_Star.A_Star.main ,ref.ent.kind:Public Static Method
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:void
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: graph
+, ref: Define A_Star.main A_Star.java(175)
+ ref.scope: graph, ref.ent: A_Star.main
+ref.line: 175, ref.col: 14, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.main, ref.ent.longname:A_Star.A_Star.main ,ref.ent.kind:Public Static Method
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:void
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: graphData
+, ref: Define A_Star.main A_Star.java(176)
+ ref.scope: graphData, ref.ent: A_Star.main
+ref.line: 176, ref.col: 27, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.main, ref.ent.longname:A_Star.A_Star.main ,ref.ent.kind:Public Static Method
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:void
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: heuristic
+, ref: Define A_Star.main A_Star.java(171)
+ ref.scope: heuristic, ref.ent: A_Star.main
+ref.line: 171, ref.col: 14, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.main, ref.ent.longname:A_Star.A_Star.main ,ref.ent.kind:Public Static Method
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:void
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: solution
+, ref: Define A_Star.main A_Star.java(186)
+ ref.scope: solution, ref.ent: A_Star.main
+ref.line: 186, ref.col: 24, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.main, ref.ent.longname:A_Star.A_Star.main ,ref.ent.kind:Public Static Method
+ref.ent.parent:A_Star.A_Star, ref.ent.value:None,ref.ent.type:void
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.Base
+, ref: Define A_Star.java A_Star.java(18)
+ ref.scope: A_Star.Base, ref.ent: A_Star.java
+ref.line: 18, ref.col: 6, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.java, ref.ent.longname:D:\works\university\term6\compiler\Project\OpenUnderstand\benchmark\JSON\A_Star.java ,ref.ent.kind:File
+ref.ent.parent:None, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.Base
+, ref: Define Base.display A_Star.java(21)
+ ref.scope: A_Star.Base, ref.ent: Base.display
+ref.line: 21, ref.col: 16, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Base.display, ref.ent.longname:A_Star.Base.display ,ref.ent.kind:Public Method
+ref.ent.parent:A_Star.Base, ref.ent.value:None,ref.ent.type:void
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Base.display
+, ref: Define A_Star.Base A_Star.java(21)
+ ref.scope: Base.display, ref.ent: A_Star.Base
+ref.line: 21, ref.col: 16, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.Base, ref.ent.longname:A_Star.Base ,ref.ent.kind:Class
+ref.ent.parent:A_Star.java, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.Derived
+, ref: Define A_Star.java A_Star.java(29)
+ ref.scope: A_Star.Derived, ref.ent: A_Star.java
+ref.line: 29, ref.col: 6, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.java, ref.ent.longname:D:\works\university\term6\compiler\Project\OpenUnderstand\benchmark\JSON\A_Star.java ,ref.ent.kind:File
+ref.ent.parent:None, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.Derived
+, ref: Define Derived.display A_Star.java(32)
+ ref.scope: A_Star.Derived, ref.ent: Derived.display
+ref.line: 32, ref.col: 26, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Derived.display, ref.ent.longname:A_Star.Derived.display ,ref.ent.kind:Public Method
+ref.ent.parent:A_Star.Derived, ref.ent.value:None,ref.ent.type:void
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.Derived
+, ref: Define Derived.main A_Star.java(40)
+ ref.scope: A_Star.Derived, ref.ent: Derived.main
+ref.line: 40, ref.col: 23, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Derived.main, ref.ent.longname:A_Star.Derived.main ,ref.ent.kind:Public Static Method
+ref.ent.parent:A_Star.Derived, ref.ent.value:None,ref.ent.type:void
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Derived.display
+, ref: Define A_Star.Derived A_Star.java(32)
+ ref.scope: Derived.display, ref.ent: A_Star.Derived
+ref.line: 32, ref.col: 26, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.Derived, ref.ent.longname:A_Star.Derived ,ref.ent.kind:Class
+ref.ent.parent:A_Star.java, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Derived.display
+, ref: Define x A_Star.java(32)
+ ref.scope: Derived.display, ref.ent: x
+ref.line: 32, ref.col: 38, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:x, ref.ent.longname:A_Star.Derived.display.x ,ref.ent.kind:Parameter
+ref.ent.parent:Derived.display, ref.ent.value:None,ref.ent.type:int
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: x
+, ref: Define Derived.display A_Star.java(32)
+ ref.scope: x, ref.ent: Derived.display
+ref.line: 32, ref.col: 38, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Derived.display, ref.ent.longname:A_Star.Derived.display ,ref.ent.kind:Public Method
+ref.ent.parent:A_Star.Derived, ref.ent.value:None,ref.ent.type:void
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Derived.main
+, ref: Define A_Star.Derived A_Star.java(40)
+ ref.scope: Derived.main, ref.ent: A_Star.Derived
+ref.line: 40, ref.col: 23, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.Derived, ref.ent.longname:A_Star.Derived ,ref.ent.kind:Class
+ref.ent.parent:A_Star.java, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Derived.main
+, ref: Define args A_Star.java(40)
+ ref.scope: Derived.main, ref.ent: args
+ref.line: 40, ref.col: 35, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:args, ref.ent.longname:A_Star.Derived.main.args ,ref.ent.kind:Parameter
+ref.ent.parent:Derived.main, ref.ent.value:None,ref.ent.type:String[]
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Derived.main
+, ref: Define obj A_Star.java(43)
+ ref.scope: Derived.main, ref.ent: obj
+ref.line: 43, ref.col: 16, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:obj, ref.ent.longname:A_Star.Derived.main.obj ,ref.ent.kind:Variable
+ref.ent.parent:Derived.main, ref.ent.value:Derived(),ref.ent.type:Derived
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: args
+, ref: Define Derived.main A_Star.java(40)
+ ref.scope: args, ref.ent: Derived.main
+ref.line: 40, ref.col: 35, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Derived.main, ref.ent.longname:A_Star.Derived.main ,ref.ent.kind:Public Static Method
+ref.ent.parent:A_Star.Derived, ref.ent.value:None,ref.ent.type:void
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: obj
+, ref: Define Derived.main A_Star.java(43)
+ ref.scope: obj, ref.ent: Derived.main
+ref.line: 43, ref.col: 16, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Derived.main, ref.ent.longname:A_Star.Derived.main ,ref.ent.kind:Public Static Method
+ref.ent.parent:A_Star.Derived, ref.ent.value:None,ref.ent.type:void
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.JsonSerializable
+, ref: Define A_Star.java A_Star.java(9)
+ ref.scope: A_Star.JsonSerializable, ref.ent: A_Star.java
+ref.line: 9, ref.col: 18, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.java, ref.ent.longname:D:\works\university\term6\compiler\Project\OpenUnderstand\benchmark\JSON\A_Star.java ,ref.ent.kind:File
+ref.ent.parent:None, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.Level
+, ref: Define A_Star.java A_Star.java(12)
+ ref.scope: A_Star.Level, ref.ent: A_Star.java
+ref.line: 12, ref.col: 5, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.java, ref.ent.longname:D:\works\university\term6\compiler\Project\OpenUnderstand\benchmark\JSON\A_Star.java ,ref.ent.kind:File
+ref.ent.parent:None, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.Level
+, ref: Define Level.LOW A_Star.java(13)
+ ref.scope: A_Star.Level, ref.ent: Level.LOW
+ref.line: 13, ref.col: 4, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Level.LOW, ref.ent.longname:A_Star.Level.LOW ,ref.ent.kind:Public EnumConstant
+ref.ent.parent:A_Star.Level, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.Level
+, ref: Define Level.MEDIUM A_Star.java(14)
+ ref.scope: A_Star.Level, ref.ent: Level.MEDIUM
+ref.line: 14, ref.col: 4, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Level.MEDIUM, ref.ent.longname:A_Star.Level.MEDIUM ,ref.ent.kind:Public EnumConstant
+ref.ent.parent:A_Star.Level, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.Level
+, ref: Define Level.HIGH A_Star.java(15)
+ ref.scope: A_Star.Level, ref.ent: Level.HIGH
+ref.line: 15, ref.col: 4, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Level.HIGH, ref.ent.longname:A_Star.Level.HIGH ,ref.ent.kind:Public EnumConstant
+ref.ent.parent:A_Star.Level, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.Level
+, ref: Define Level.values A_Star.java(12)
+ ref.scope: A_Star.Level, ref.ent: Level.values
+ref.line: 12, ref.col: 5, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Level.values, ref.ent.longname:A_Star.Level.values ,ref.ent.kind:Public Method
+ref.ent.parent:A_Star.Level, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: A_Star.Level
+, ref: Define Level.valueOf A_Star.java(12)
+ ref.scope: A_Star.Level, ref.ent: Level.valueOf
+ref.line: 12, ref.col: 5, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Level.valueOf, ref.ent.longname:A_Star.Level.valueOf ,ref.ent.kind:Public Method
+ref.ent.parent:A_Star.Level, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Level.valueOf
+, ref: Define A_Star.Level A_Star.java(12)
+ ref.scope: Level.valueOf, ref.ent: A_Star.Level
+ref.line: 12, ref.col: 5, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.Level, ref.ent.longname:A_Star.Level ,ref.ent.kind:Enum Type
+ref.ent.parent:A_Star.java, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Level.valueOf
+, ref: Define s A_Star.java(12)
+ ref.scope: Level.valueOf, ref.ent: s
+ref.line: 12, ref.col: 5, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:s, ref.ent.longname:A_Star.Level.valueOf.s ,ref.ent.kind:Parameter
+ref.ent.parent:Level.valueOf, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: s
+, ref: Define Level.valueOf A_Star.java(12)
+ ref.scope: s, ref.ent: Level.valueOf
+ref.line: 12, ref.col: 5, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:Level.valueOf, ref.ent.longname:A_Star.Level.valueOf ,ref.ent.kind:Public Method
+ref.ent.parent:A_Star.Level, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Level.values
+, ref: Define A_Star.Level A_Star.java(12)
+ ref.scope: Level.values, ref.ent: A_Star.Level
+ref.line: 12, ref.col: 5, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.Level, ref.ent.longname:A_Star.Level ,ref.ent.kind:Enum Type
+ref.ent.parent:A_Star.java, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Level.HIGH
+, ref: Define A_Star.Level A_Star.java(15)
+ ref.scope: Level.HIGH, ref.ent: A_Star.Level
+ref.line: 15, ref.col: 4, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.Level, ref.ent.longname:A_Star.Level ,ref.ent.kind:Enum Type
+ref.ent.parent:A_Star.java, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Level.LOW
+, ref: Define A_Star.Level A_Star.java(13)
+ ref.scope: Level.LOW, ref.ent: A_Star.Level
+ref.line: 13, ref.col: 4, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.Level, ref.ent.longname:A_Star.Level ,ref.ent.kind:Enum Type
+ref.ent.parent:A_Star.java, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
++++++++++++++++++++++++++
+entity: Level.MEDIUM
+, ref: Define A_Star.Level A_Star.java(14)
+ ref.scope: Level.MEDIUM, ref.ent: A_Star.Level
+ref.line: 14, ref.col: 4, ref.file: A_Star.java
+--------------------------------------------------------
+ref.ent.name:A_Star.Level, ref.ent.longname:A_Star.Level ,ref.ent.kind:Enum Type
+ref.ent.parent:A_Star.java, ref.ent.value:None,ref.ent.type:None
+
+--------------------------------------------------------
+146

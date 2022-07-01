@@ -17,18 +17,18 @@ BENCHMARK_INDEX = int(os.environ.get("BENCHMARK_INDEX", 0))
 BENCHMARKS = {
     # Project Path
     'PROJ': [
-        '10_water-simulator',
-        '61_noen',
-        '88_jopenchart',
-        '104_vuze',  # Not ready
-        '105_freemind',
-        '107_weka',
-        'commons-codec',
-        'ganttproject_1_11_1_original',
-        'jfreechart-master',
-        'JSON20201115',
-        'jvlt-1.3.2',
-        'tabula-java',
+        '10_water-simulator',  # 0
+        '61_noen',  # 1
+        '88_jopenchart',  # 2
+        '104_vuze',  # 3
+        '105_freemind',  # 4
+        '107_weka',  # 5
+        'commons-codec',  # 6
+        'ganttproject_1_11_1_original',  # 7
+        'jfreechart-master',  # 8
+        'JSON20201115',  # 9
+        'jvlt-1.3.2',  # 10
+        'tabula-java',  # 11
     ],
 
     # Understand DB Path
@@ -78,13 +78,23 @@ def test_open_understand():
 
 def test_understand_kinds():
     db = und.open(UDB_PATH)
-    for ent in db.ents():
-        for ref in ent.refs("Java Modify Deref Partial"):
-            print(f'1. ref name: {ref.kindname()}, inverse ref name: {ref.kind().inv().longname()}')
-            print(f'2. ref.scope (entity performing reference)\t: "{ref.scope().longname()}", kind: "{ref.scope().kind()}"')
-            print(f'3. ref.ent (entity being referenced)\t\t: "{ref.ent().longname()}", kind: "{ref.ent().kind()}"')
-            print(f'4. Location the reference occurred: "{ref.file().longname()}", line: {ref.line()}')
-            print(f'')
+
+    for ent in db.ents('Java Class ~Unknown ~Unresolved'):
+        # Example for metrics computation
+        print(ent.longname())
+        # With understand API
+        public_methods1 = ent.metric(['CountDeclMethodPublic']).get('CountDeclMethodPublic', 0)
+
+        # With db query
+        public_methods2 = len(ent.ents("Define", "Java Method Public Member"))
+
+        print('With API', public_methods1, '\nWith query', public_methods2)
+
+        quit()
+        for ref in ent.refs("Declarein"):
+            print(f'ref.scope (entity performing reference)\t: "{ref.scope().longname()}", kind: "{ref.scope().kind()}"')
+            print(f'ref.ent (entity being referenced)\t\t: "{ref.ent().longname()}", kind: "{ref.ent().kind()}"')
+            print(f'File where the reference occurred: "{ref.file().longname()}", line: {ref.line()}')
             # quit()
 
             # print(f"Entity longname: {ent.longname()}")

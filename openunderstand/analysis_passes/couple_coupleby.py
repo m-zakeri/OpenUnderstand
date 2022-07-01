@@ -8,61 +8,123 @@ This module find all OpenUnderstand call and callby references in a Java project
 
 """
 
-__author__ = 'Shaghayegh Mobasher , Setayesh kouloubandi ,Parisa Alaie'
+__author__ = ''
 __version__ = '0.1.0'
 
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-import analysis_passes.class_properties as class_properties
 
 
-class ImplementCoupleAndImplementByCoupleBy(JavaParserLabeledListener):
-    """
-    #Todo: Implementing the ANTLR listener pass for Java Call and Java Callby reference kind
-    """
-    implement = []
+class CoupleAndCoupleBy(JavaParserLabeledListener):
+    couples = []
+
+    def __init__(self):
+        self.couples = []
+
+    def addReference(self, scope_kind, scope_name, scope_longname, scope_parent, scope_contents, scope_modifiers, line, col ,type_ent_longname):
+
+        if scope_name is not None and type_ent_longname is not None:
+            print('Couple', [
+                scope_name,
+                type_ent_longname,
+                line,
+                col
+            ])
+            self.couples.append({
+                "scope_kind": scope_kind,
+                "scope_name": scope_name,
+                "scope_longname": scope_longname,
+                "scope_parent": scope_parent,
+                "scope_contents": scope_contents,
+                "scope_modifiers": scope_modifiers,
+                "line": line,
+                "col": col,
+                "type_ent_longname": type_ent_longname
+            })
+
+    def addStaticClassesToCouples(self, ctx, expression: JavaParserLabeled.Expression0Context):
+        self.addReference(
+            "Class",
+            ctx.IDENTIFIER().getText(),
+            ctx.IDENTIFIER().getText(),
+            None,
+            ctx.getText(),
+            [],
+            expression.primary().children[0].symbol.line,
+            expression.primary().children[0].symbol.column,
+            str(expression.primary().getText())
+        )
+
+    def addClassObjectsToCouples(self, ctx, field):
+        typeType = field.typeType()
+        targetClass = typeType.classOrInterfaceType()
+
+        if targetClass is not None:
+
+            self.addReference(
+                "Class",
+                ctx.IDENTIFIER().getText(),
+                ctx.IDENTIFIER().getText(),
+                None,
+                ctx.getText(),
+                [],
+                targetClass.children[0].symbol.line,
+                targetClass.children[0].symbol.column,
+                str(targetClass.IDENTIFIER()[0])
+            )
+
+    def globalClassVariablesAnalyzer(self,ctx, member):
+        field = member.fieldDeclaration()
+        self.addClassObjectsToCouples(ctx, field)
+
+    def parameterVariablesAnalyzer(self, ctx, formalParameters):
+        for formalParameter in formalParameters.formalParameter():
+            self.addClassObjectsToCouples(ctx, formalParameter)
+
+    def recursiveExpressions(self, ctx, expression: JavaParserLabeled.Expression1Context):
+        mainExpression = expression.expression()
+        while type(mainExpression) != JavaParserLabeled.Expression0Context and mainExpression.expression() and type(mainExpression.expression()) == JavaParserLabeled.Expression0Context:
+            mainExpression = mainExpression.expression()
+        if type(mainExpression) == JavaParserLabeled.Expression0Context:
+            self.addStaticClassesToCouples(ctx, mainExpression)
+            methodCall = expression.methodCall()
+            if type(methodCall) == JavaParserLabeled.MethodCall0Context and type(methodCall.expressionList()) == JavaParserLabeled.ExpressionListContext:
+                expressionList = methodCall.expressionList()
+                if expressionList.expression():
+                    for subExpression in expressionList.expression():
+                        if type(subExpression) == JavaParserLabeled.Expression1Context:
+                            self.recursiveExpressions(ctx, subExpression)
+
+    def localMethodVariablesAnalyzer(self, ctx, block):
+        for blockStatement in block.blockStatement():
+            if type(blockStatement) == JavaParserLabeled.BlockStatement0Context:
+                variable = blockStatement.localVariableDeclaration()
+                self.addClassObjectsToCouples(ctx, variable)
+            elif type(blockStatement) == JavaParserLabeled.BlockStatement1Context:
+                statement = blockStatement.statement()
+                if type(statement) == JavaParserLabeled.Statement15Context:
+                    expression = statement.expression()
+                    if type(expression) == JavaParserLabeled.Expression1Context:
+                        self.recursiveExpressions(ctx, expression)
+
+    def methodAnalyzer(self,ctx, member):
+        formalParameters = member.methodDeclaration().formalParameters().formalParameterList()
+        if type(formalParameters) == JavaParserLabeled.FormalParameterList0Context:
+            self.parameterVariablesAnalyzer(ctx, formalParameters)
+
+        block = member.methodDeclaration().methodBody().block()
+        self.localMethodVariablesAnalyzer(ctx,block)
 
     def enterClassDeclaration(self, ctx:JavaParserLabeled.ClassDeclarationContext):
-        if ctx.IMPLEMENTS():
-            scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-            if len(scope_parents) == 1:
-                scope_longname = scope_parents[0]
-            else:
-                scope_longname = ".".join(scope_parents)
+        for item in ctx.classBody().classBodyDeclaration():
+            member = item.memberDeclaration()
 
-            [line, col] = str(ctx.start).split(",")[3].split(":")
-            for myType in ctx.typeList().typeType():
-                if myType.classOrInterfaceType():
-                    myType_longname = ".".join([x.getText() for x in myType.classOrInterfaceType().IDENTIFIER()])
-                    self.implement.append({"scope_kind": "Class", "scope_name": ctx.IDENTIFIER().__str__(),
-                                           "scope_longname": scope_longname,
-                                           "scope_parent": scope_parents[-2] if len(scope_parents) > 2 else None,
-                                           "scope_contents": ctx.getText(),
-                                           "scope_modifiers":
-                                               class_properties.ClassPropertiesListener.findClassOrInterfaceModifiers(ctx),
-                                           "line": line,
-                                           "col": col[:-1],
-                                           "type_ent_longname": myType_longname})
+            if type(item) == JavaParserLabeled.ClassBodyDeclaration2Context and type(member) == JavaParserLabeled.MemberDeclaration2Context:
+                # Global class variables declaration
+                self.globalClassVariablesAnalyzer(ctx, member)
 
-    def enterEnumDeclaration(self, ctx:JavaParserLabeled.EnumDeclarationContext):
-        if ctx.IMPLEMENTS():
-            scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-            if len(scope_parents) == 1:
-                scope_longname = scope_parents[0]
-            else:
-                scope_longname = ".".join(scope_parents)
+            elif type(item) == JavaParserLabeled.ClassBodyDeclaration2Context and type(member) == JavaParserLabeled.MemberDeclaration0Context:
+                # Method declaration
+                self.methodAnalyzer(ctx, member)
 
-            [line, col] = str(ctx.start).split(",")[3].split(":")  # line, column
-            for myType in ctx.typeList().typeType():
-                if myType.classOrInterfaceType():
-                    myType_longname = ".".join([x.getText() for x in myType.classOrInterfaceType().IDENTIFIER()])
-                    self.implement.append({"scope_kind": "Enum", "scope_name": ctx.IDENTIFIER().__str__(),
-                                           "scope_longname": scope_longname,
-                                           "scope_parent": scope_parents[-2] if len(scope_parents) > 2 else None,
-                                           "scope_contents": ctx.getText(),
-                                           "scope_modifiers":
-                                               class_properties.ClassPropertiesListener.findClassOrInterfaceModifiers(
-                                                   ctx),
-                                           "line": line,
-                                           "col": col[:-1],
-                                           "type_ent_longname": myType_longname})
+
