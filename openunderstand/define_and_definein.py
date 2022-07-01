@@ -1,14 +1,11 @@
 import os
-
 from antlr4 import *
-
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from oudb.api import create_db, open as db_open
 from oudb.fill import main as db_fill
+from oudb.api import create_db, open as db_open
 from oudb.models import KindModel, EntityModel, ReferenceModel
-
 
 def config_entity_type(type_entity):
     if type_entity == "class":
@@ -62,9 +59,8 @@ def extract_all_kind(prefixes, type_entity, is_constructor) -> str:
         result_str = result_str.replace("Member", "").strip()
     return result_str
 
-
-DB_PATH = "../../database/jvlt-1.3.2.oudb"
-PROJECT_PATH = "../../benchmark/jvlt-1.3.2"
+DB_PATH = "../database/calculator_define.oudb"
+PROJECT_PATH = "../projects/calculator_app"
 PROJECT_NAME = "Sample App"
 
 
@@ -204,10 +200,7 @@ def add_declaration(ctx, which_declaration, kind_name, save_dict, prefix_needed,
     line = ctx.start.line  # get line
     column = ctx.start.column  # get column
 
-    def get_key():
-        return f"{parent_name}.{entity_name}.{line}"
-
-    save_dict[get_key()] = {
+    save_dict[f"{parent_name}.{entity_name}"] = {
         "name": entity_name,
         "type": entity_type,
         "value": entity_value,
@@ -217,12 +210,12 @@ def add_declaration(ctx, which_declaration, kind_name, save_dict, prefix_needed,
         "contents": ctx.getText() if needs_content else ""
     }
     if prefix_needed[0]:
-        save_dict[get_key()]["prefixes"] = form_prefix(ctx, prefix_needed, stop_prefix)
+        save_dict[f"{parent_name}.{entity_name}"]["prefixes"] = form_prefix(ctx, prefix_needed, stop_prefix)
     else:
-        save_dict[get_key()]["kind_name"] = kind_name
+        save_dict[f"{parent_name}.{entity_name}"]["kind_name"] = kind_name
 
     if is_generic:
-        save_dict[get_key()]["prefixes"] += " generic"
+        save_dict[f"{parent_name}.{entity_name}"]["prefixes"] += " generic"
 
 
 def define_is_generic(ctx):
@@ -318,7 +311,7 @@ def add_entity_package(package_name, file_path):
         _kind_id=KindModel.get_or_none(_name="Java Package")._id,
         _parent_id=file_entity._id,
         _name=package_name["package_name"].split(".")[-1],
-        _longname=f"{file_path}.{package_name['package_name']}",
+        _longname=package_name["package_name"],
         _contents=""
     )
     ReferenceModel.get_or_create(
@@ -343,7 +336,7 @@ def define_parent(entity_type, entity_values, file_path, package_name):
     if entity_type == "class" or entity_type == "interface":
         return EntityModel.get_or_none(_longname=file_path)
     else:
-        return EntityModel.get_or_none(_longname=f"{file_path}.{package_name}.{entity_values['parent_name']}")
+        return EntityModel.get_or_none(_longname=f"{package_name}.{entity_values['parent_name']}")
 
 
 def add_defined_entities(entities, entity_type, package_name, file_path):
@@ -366,9 +359,9 @@ def add_defined_entities(entities, entity_type, package_name, file_path):
             model_value = model_value[index_equal + 1:]
         else:
             model_value = ""
-        model_longname = f"{file_path}.{package_name}.{entity_values['parent_name']}.{model_name}" if entity_values[
-                                                                                                          'parent_name'] != "" \
-            else f"{file_path}.{package_name}.{model_name}"
+        model_longname = f"{package_name}.{entity_values['parent_name']}.{model_name}" if entity_values[
+                                                                                              'parent_name'] != "" \
+            else f"{package_name}.{model_name}"
         model_contents = entity_values["contents"]
         model_parent = define_parent(entity_type, entity_values, file_path, package_name)
 
@@ -424,8 +417,7 @@ def main():
             add_defined_entities(define_listener.methods, "method", package_name, file_path)
             add_defined_entities(define_listener.local_variables, "local variable", package_name, file_path)
             add_defined_entities(define_listener.formal_parameters, "parameter", package_name, file_path)
-        except Exception as e:
-            print(e)
+        except:
             print("some exception happened")
             continue
 
