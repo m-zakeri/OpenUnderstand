@@ -27,8 +27,6 @@ class UseModuleUseModuleByListener(JavaParserLabeledListener):
 
     def enterAnnotation(self, ctx:JavaParserLabeled.AnnotationContext):
         line_col = str(ctx.start).split(",")[3][:-1].split(':')
-        # print("Module ----")
-        # print(ctx.AT(), ctx.children[1].IDENTIFIER()[0].getText(), line_col)
         self.useModules.append({
             "scope": None, "ent": None, "name": ctx.children[1].IDENTIFIER()[0].getText(),
             "line": line_col[0], "col": line_col[1]
@@ -41,8 +39,6 @@ class UseModuleUseModuleByListener(JavaParserLabeledListener):
     def enterPackageDeclaration(self, ctx:JavaParserLabeled.PackageDeclarationContext):
         packageNameArray = ctx.getText().replace('package', '').split('.')
         if len(packageNameArray) == 4 and packageNameArray[0] == 'com':
-            # print("Unknown Module ----")
-            # print(ctx.getChild(1).IDENTIFIER()[2].getText())
             self.useUnknownModules.append({
                 "scope": None, "ent": ctx.getChild(1).IDENTIFIER()[3].getText(), "name":ctx.getChild(1).IDENTIFIER()[2].getText(),
                 "line": 1, "col": 1
