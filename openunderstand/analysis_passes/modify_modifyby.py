@@ -1,14 +1,3 @@
-"""
-
-
-"""
-
-import os
-from pathlib import Path
-
-from antlr4 import *
-
-from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from analysis_passes.entity_manager_g11 import get_created_entity_longname
@@ -70,7 +59,7 @@ class ModifyListener(JavaParserLabeledListener):
         parent = parents[-1][1]
         name = ctx.expression().getText().replace("this", "").replace(".", "").lstrip('_')
         longname = self.package + '.' + self.parent + '.' + name
-        if name in ['1', '2', '3', '4', '5', '6', '7', '8', '9'] == False:
+        if name not in ['1', '2', '3', '4', '5', '6', '7', '8', '9']:
             self.modify.append({
                 'kind': 208,
                 'file': self.entity_manager.file_ent,
