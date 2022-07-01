@@ -79,6 +79,7 @@ class EntityGenerator:
                 parents.append(current)
             current = current.parentCtx
         parents_entities = list(reversed(parents))
+        parent_entity_parent = None
         for i in range(len(parents_entities) - 1):
             entity = parents_entities[i]
             if i == 0:
@@ -152,7 +153,8 @@ class EntityGenerator:
         return modifiers
 
     def get_variable_kind(self, modifiers):
-        if 'public' not in modifiers and 'private' not in modifiers and 'protected' not in modifiers and 'local' not in modifiers:
+        if 'public' not in modifiers and 'private' not in modifiers and \
+                'protected' not in modifiers and 'local' not in modifiers:
             modifiers.append("default")
         kind_selected = None
         for kind in KindModel.select().where(KindModel._name.contains("Variable")):
@@ -179,10 +181,10 @@ class EntityGenerator:
                     kind_selected = kind
         return kind_selected
 
-    def getClassProperties(self, class_longname):
+    def getClassProperties(self, class_longname) -> dict:
         listener = ClassPropertiesListener()
         listener.class_longname = class_longname.split(".")
-        listener.class_properties = None
+        listener.class_properties = {}
         walker = ParseTreeWalker()
         walker.walk(listener=listener, t=self.tree)
         return listener.class_properties
