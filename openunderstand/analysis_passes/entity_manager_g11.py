@@ -17,8 +17,6 @@ __version__ = "1.0.0"
 
 from oudb.models import EntityModel, KindModel
 from antlr4 import *
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaLexer import JavaLexer
 # Listeners
 from analysis_passes.package_entity_listener_g11 import PackageListener
 from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
@@ -31,17 +29,10 @@ def get_created_entity(name):
     entity = EntityModel.get_or_none(_name=name)
     return entity
 
+
 def get_created_entity_longname(longname):
     entity = EntityModel.get_or_none(_longname=longname)
     return entity
-
-
-def checkModifiersInKind(modifiers, kind):
-    """check if modifier is in kind and return it"""
-    for modifier in modifiers:
-        if modifier.lower() not in kind._name.lower():
-            return False
-    return True
 
 
 class EntityGenerator:
@@ -165,7 +156,7 @@ class EntityGenerator:
             modifiers.append("default")
         kind_selected = None
         for kind in KindModel.select().where(KindModel._name.contains("Variable")):
-            if checkModifiersInKind(modifiers, kind):
+            if self.checkModifiersInKind(modifiers, kind):
                 if not kind_selected or len(kind_selected._name) > len(kind._name):
                     kind_selected = kind
         # print(kind_selected)
