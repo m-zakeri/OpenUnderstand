@@ -24,6 +24,9 @@ class StatementListener(JavaParserLabeledListener):
     def enterInterfaceMethodDeclaration(self, ctx: JavaParserLabeled.InterfaceMethodDeclarationContext):
         self.update_repository(ctx, 1)
 
+    def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
+        self.update_repository(ctx, 1)
+
     def enterFieldDeclaration(self, ctx: JavaParserLabeled.FieldDeclarationContext):
         self.update_repository(ctx, 1)
 
