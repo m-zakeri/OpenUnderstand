@@ -20,7 +20,7 @@ from antlr4 import *
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaLexer import JavaLexer
 # Listeners
-from analysis_passes.package_entity_listener_G11 import PackageListener
+from analysis_passes.package_entity_listener_g11 import PackageListener
 from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
 
 # Constants
