@@ -271,7 +271,7 @@ def make_scope_method(ctx):
 def make_scope_constructor(ctx):
     prefixes = get_method_prefixes(ctx)
     kind_name = get_kind_name(prefixes, kind="Method", is_constructor=True)
-    method_name = ctx.children[1]
+    method_name = ctx.IDENTIFIER().getText()
     return_type = ctx.children[0].getText()
     access_type = ctx.parentCtx.parentCtx.children[0].getText()
     static_type = ''
@@ -292,7 +292,7 @@ def make_scope_constructor(ctx):
 def search_scope(ctx, type_names):
     # Traverse bottom up until reaching a class or method
     scope_list = []
-    current = ctx.parentCtx
+    current = ctx
     while current is not None:
         type_name = type(current).__name__
         if type_name in type_names:
