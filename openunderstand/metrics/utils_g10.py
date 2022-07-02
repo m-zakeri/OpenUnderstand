@@ -141,8 +141,6 @@ def stmt_main(prj_index, listener_class, metric_name, last_log=False):
             ent_name = ent.split('$$$')[0]
             remain = ent.split('$$$')[1]
             ent_kind, ent_longname = remain.split('-', 1)
-            if ent_kind == "Java Import":
-                continue
             if str(ent_name).startswith('package'):
                 ent_longname = ent_longname.replace('package', '')
                 ent_longname = ent_longname.replace('; class', '.')
@@ -181,9 +179,7 @@ def get_keys(ctx):
     result = find_scope(ctx)
     keys = []
     for res in result:
-        if res['kind_name'] == "Java Package":
-            key = str(res['method_name']) + '$$$' + str(res['kind_name']) + '-' + str(res['method_name'])
-        elif res['static_type'] != '':
+        if res['static_type'] != '':
             key = str(res['method_name']) + '$$$' + str(res['kind_name']) + '-' + str(res['access_type']) + ' ' + str(res['static_type']) + ' ' \
                   + str(res['return_type']) + ' ' + str(res['method_name'])
         else:
@@ -201,16 +197,12 @@ def make_scope_interface(ctx):
     class_name = ctx.children[1]
     return_type = ctx.children[0].getText()
     access_type = ctx.parentCtx.parentCtx.children[0].getText()
-    if ctx.parentCtx.parentCtx.children[1].getText() == 'static':
-        static_type = ctx.parentCtx.parentCtx.children[1].getText()
-    else:
-        static_type = ''
     return {
         'kind_name': kind_name,
         'method_name': class_name,
         'return_type': return_type,
         'access_type': access_type,
-        'static_type': static_type
+        'static_type': ''
     }
 
 
