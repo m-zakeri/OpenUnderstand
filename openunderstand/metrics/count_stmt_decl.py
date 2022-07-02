@@ -10,7 +10,7 @@ sys.path.insert(0, BASE)
 
 PRJ_INDEX = 10
 METRIC_NAME = 'CountStmtDecl'
-LAST_LOG = True
+LAST_LOG = False
 
 
 class StatementListener(JavaParserLabeledListener):
