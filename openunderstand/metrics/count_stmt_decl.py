@@ -8,24 +8,27 @@ BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE)
 
 
-PRJ_INDEX = 0
+PRJ_INDEX = 10
 METRIC_NAME = 'CountStmtDecl'
+LAST_LOG = True
 
 
 class StatementListener(JavaParserLabeledListener):
     def __init__(self, files):
-        self.repository = {'$$$Java Import-': 0}
+        self.repository = {}
         self.files = files
         self.counter = 0
 
     def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
-        self.update_repository(ctx, 1)
+        self.counter += 1
 
     def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
-        self.repository['$$$Java Import-'] += 1
         self.counter += 1
 
     def enterAnnotationMethodOrConstantRest0(self, ctx: JavaParserLabeled.AnnotationMethodOrConstantRest0Context):
+        self.update_repository(ctx, 1)
+
+    def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         self.update_repository(ctx, 1)
 
     def enterLocalVariableDeclaration(self, ctx: JavaParserLabeled.LocalVariableDeclarationContext):
@@ -62,4 +65,4 @@ class StatementListener(JavaParserLabeledListener):
 
 
 if __name__ == '__main__':
-    stmt_main(PRJ_INDEX, StatementListener, METRIC_NAME)
+    stmt_main(PRJ_INDEX, StatementListener, METRIC_NAME, LAST_LOG)

@@ -119,7 +119,7 @@ def get_method_prefixes(ctx):
 
 # Statement Helper Functions
 
-def stmt_main(prj_index, listener_class, metric_name):
+def stmt_main(prj_index, listener_class, metric_name, last_log=False):
     info = get_project_info(prj_index)
     p = Project(info['PROJECT_PATH'], info['PROJECT_NAME'])
     p.get_java_files()
@@ -154,7 +154,8 @@ def stmt_main(prj_index, listener_class, metric_name):
                 'kind': ent_kind,
                 'longname': ent_longname
             }
-            print({i: new_metric[i] for i in new_metric if i != 'longname'})
+            if not last_log:
+                print({i: new_metric[i] for i in new_metric if i != 'longname'})
 
             project_metric_list.append(new_metric)
             project_metric_counter += count
@@ -166,12 +167,14 @@ def stmt_main(prj_index, listener_class, metric_name):
             'kind': 'Java File',
             'longname': file_path
         }
-        print({i: new_metric[i] for i in new_metric if i != 'longname'})
+        if not last_log:
+            print({i: new_metric[i] for i in new_metric if i != 'longname'})
 
         project_metric_list.append(new_metric)
         project_metric_counter += file_metric_count
 
-    # report_metric(project_metric_counter, ent_kind_set, project_metric_list, metric_name)
+    if last_log:
+        report_metric(project_metric_counter, ent_kind_set, project_metric_list, metric_name)
 
 
 def get_keys(ctx):
