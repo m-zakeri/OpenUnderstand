@@ -62,7 +62,7 @@ class CyclomaticModifiedMetric:
 
 class CyclomaticModifiedMetricListener(JavaParserLabeledListener):
     def __init__(self, method_entity=None):
-        self.count_cyclomatic_modified_metric = 1
+        self.count_cyclomatic_modified_metric = 0
         self.method = method_entity
         self.method_entered = False
 
@@ -76,6 +76,7 @@ class CyclomaticModifiedMetricListener(JavaParserLabeledListener):
             if self.method_entered:
                 self.count_cyclomatic_modified_metric += 1
         else:
+            
             self.count_cyclomatic_modified_metric += 1
 
     # enter while loop
@@ -84,10 +85,26 @@ class CyclomaticModifiedMetricListener(JavaParserLabeledListener):
             if self.method_entered:
                 self.count_cyclomatic_modified_metric += 1
         else:
+            
             self.count_cyclomatic_modified_metric += 1
 
     # enter for loop
     def enterStatement3(self, ctx: JavaParserLabeled.Statement3Context):
+        if self.method is not None:
+            if self.method_entered:
+                self.count_cyclomatic_modified_metric += 1
+        else:
+            
+            self.count_cyclomatic_modified_metric += 1
+
+    def enterExpression9(self, ctx: JavaParserLabeled.Expression9Context):
+        if self.method is not None:
+            if self.method_entered:
+                self.count_cyclomatic_modified_metric += 1
+        else:
+            self.count_cyclomatic_modified_metric += 1
+
+    def enterExpression10(self, ctx: JavaParserLabeled.Expression10Context):
         if self.method is not None:
             if self.method_entered:
                 self.count_cyclomatic_modified_metric += 1
@@ -118,6 +135,41 @@ class CyclomaticModifiedMetricListener(JavaParserLabeledListener):
         else:
             self.count_cyclomatic_modified_metric += 1
 
+    def enterGenericMethodDeclaration(self, ctx: JavaParserLabeled.GenericMethodDeclarationContext):
+        if self.method is not None:
+            if self.method_entered:
+                self.count_cyclomatic_modified_metric += 1
+        else:
+            self.count_cyclomatic_modified_metric += 1
+
+    def enterGenericConstructorDeclaration(self, ctx: JavaParserLabeled.GenericConstructorDeclarationContext):
+        if self.method is not None:
+            if self.method_entered:
+                self.count_cyclomatic_modified_metric += 1
+        else:
+            self.count_cyclomatic_modified_metric += 1
+
+    def enterConstructorDeclaration(self, ctx: JavaParserLabeled.ConstructorDeclarationContext):
+        if self.method is not None:
+            if self.method_entered:
+                self.count_cyclomatic_modified_metric += 1
+        else:
+            self.count_cyclomatic_modified_metric += 1
+
+    def enterEnumDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
+        if self.method is not None:
+            if self.method_entered:
+                self.count_cyclomatic_modified_metric += 1
+        else:
+            self.count_cyclomatic_modified_metric += 1
+
+    def enterLambdaExpression(self, ctx: JavaParserLabeled.LambdaExpressionContext):
+        if self.method is not None:
+            if self.method_entered:
+                self.count_cyclomatic_modified_metric += 1
+        else:
+            self.count_cyclomatic_modified_metric += 1
+
     # enter ? clause
     def enterExpression20(self, ctx: JavaParserLabeled.Expression20Context):
         if self.method is not None:
@@ -140,7 +192,7 @@ class CyclomaticModifiedMetricListener(JavaParserLabeledListener):
 if __name__ == '__main__':
     create_db("../../benchmark2_database.oudb", project_dir="..\..\benchmark")
     db = db_open("../../benchmark2_database.oudb")
-    # try:
-    cyclomatic_modified_manager = CyclomaticModifiedMetric('com.calculator.app.display.print_success.main')
-    # except Exception as e:
-    # print("Error:", e)
+    try:
+        cyclomatic_modified_manager = CyclomaticModifiedMetric()
+    except Exception as e:
+        print("Error:", e)

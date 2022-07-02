@@ -62,7 +62,7 @@ class CyclomaticStrictMetric:
 
 class CyclomaticStrictMetricListener(JavaParserLabeledListener):
     def __init__(self, method_entity=None):
-        self.count_cyclomatic_strict_metric = 1
+        self.count_cyclomatic_strict_metric = 0
         self.method = method_entity
         self.method_entered = False
 
@@ -125,6 +125,41 @@ class CyclomaticStrictMetricListener(JavaParserLabeledListener):
             self.count_cyclomatic_strict_metric += 1
         # print('enter catch clause')
 
+    def enterGenericMethodDeclaration(self, ctx: JavaParserLabeled.GenericMethodDeclarationContext):
+        if self.method is not None:
+            if self.method_entered:
+                self.count_cyclomatic_strict_metric += 1
+        else:
+            self.count_cyclomatic_strict_metric += 1
+
+    def enterGenericConstructorDeclaration(self, ctx: JavaParserLabeled.GenericConstructorDeclarationContext):
+        if self.method is not None:
+            if self.method_entered:
+                self.count_cyclomatic_strict_metric += 1
+        else:
+            self.count_cyclomatic_strict_metric += 1
+
+    def enterConstructorDeclaration(self, ctx: JavaParserLabeled.ConstructorDeclarationContext):
+        if self.method is not None:
+            if self.method_entered:
+                self.count_cyclomatic_strict_metric += 1
+        else:
+            self.count_cyclomatic_strict_metric += 1
+
+    def enterEnumDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
+        if self.method is not None:
+            if self.method_entered:
+                self.count_cyclomatic_strict_metric += 1
+        else:
+            self.count_cyclomatic_strict_metric += 1
+
+    def enterLambdaExpression(self, ctx: JavaParserLabeled.LambdaExpressionContext):
+        if self.method is not None:
+            if self.method_entered:
+                self.count_cyclomatic_strict_metric += 1
+        else:
+            self.count_cyclomatic_strict_metric += 1
+
     # enter and clause
     def enterExpression18(self, ctx: JavaParserLabeled.Expression18Context):
         if self.method is not None:
@@ -152,6 +187,20 @@ class CyclomaticStrictMetricListener(JavaParserLabeledListener):
             self.count_cyclomatic_strict_metric += 1
         # print('enter ? clause')
 
+    def enterExpression9(self, ctx: JavaParserLabeled.Expression9Context):
+        if self.method is not None:
+            if self.method_entered:
+                self.count_cyclomatic_strict_metric += 1
+        else:
+            self.count_cyclomatic_strict_metric += 1
+
+    def enterExpression10(self, ctx: JavaParserLabeled.Expression10Context):
+        if self.method is not None:
+            if self.method_entered:
+                self.count_cyclomatic_strict_metric += 1
+        else:
+            self.count_cyclomatic_strict_metric += 1
+
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         if self.method is not None:
             if ctx.IDENTIFIER().getText() == self.method._name:
@@ -166,7 +215,7 @@ class CyclomaticStrictMetricListener(JavaParserLabeledListener):
 if __name__ == '__main__':
     create_db("../../benchmark2_database.oudb", project_dir="..\..\benchmark")
     db = db_open("../../benchmark2_database.oudb")
-    # try:
-    cyclomatic_strict_manager = CyclomaticStrictMetric('com.calculator.app.display.print_success.main')
-    # except Exception as e:
-    # print("Error:", e)
+    try:
+        cyclomatic_strict_manager = CyclomaticStrictMetric()
+    except Exception as e:
+        print("Error:", e)

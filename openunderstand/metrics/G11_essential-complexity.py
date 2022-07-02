@@ -68,7 +68,7 @@ class EssentialMetricListener(JavaParserLabeledListener):
         self.layers = []
         self.counts = []
         self.count_essential_metric = 1
-        self.entered_switch = False
+        self.entered_loop = True
 
     @property
     def essential_metric(self):
@@ -108,12 +108,14 @@ class EssentialMetricListener(JavaParserLabeledListener):
     def enterStatement4(self, ctx: JavaParserLabeled.Statement4Context):
         if self.method is not None:
             if self.method_entered:
-                if len(self.layers) == 0:
+                self.entered_loop = True
+                if self.index == 0:
                     self.count_essential_metric += 1
                 else:
                     self.counts[-1] += 1
         else:
-            if len(self.layers) == 0:
+            self.entered_loop = True
+            if self.index == 0:
                 self.count_essential_metric += 1
             else:
                 self.counts[-1] += 1
@@ -122,12 +124,14 @@ class EssentialMetricListener(JavaParserLabeledListener):
     def enterStatement3(self, ctx: JavaParserLabeled.Statement3Context):
         if self.method is not None:
             if self.method_entered:
-                if len(self.layers) == 0:
+                self.entered_loop = True
+                if self.index == 0:
                     self.count_essential_metric += 1
                 else:
                     self.counts[-1] += 1
         else:
-            if len(self.layers) == 0:
+            self.entered_loop = True
+            if self.index == 0:
                 self.count_essential_metric += 1
             else:
                 self.counts[-1] += 1
@@ -136,32 +140,43 @@ class EssentialMetricListener(JavaParserLabeledListener):
     def enterStatement5(self, ctx: JavaParserLabeled.Statement5Context):
         if self.method is not None:
             if self.method_entered:
-                if len(self.layers) == 0:
+                self.entered_loop = True
+                if self.index == 0:
                     self.count_essential_metric += 1
                 else:
                     self.counts[-1] += 1
         else:
-            if len(self.layers) == 0:
+            self.entered_loop = True
+            if self.index == 0:
                 self.count_essential_metric += 1
             else:
                 self.counts[-1] += 1
 
-    # enter switch clause
-    def enterStatement8(self, ctx: JavaParserLabeled.Statement8Context):
-        self.entered_switch = True
+    def enterExpression9(self, ctx: JavaParserLabeled.Expression9Context):
+        if self.method is not None:
+            if self.method_entered:
+                self.count_essential_metric += 1
+        else:
+            self.count_essential_metric += 1
 
-    def exitStatement8(self, ctx: JavaParserLabeled.Statement8Context):
-        self.entered_switch = False
+    def enterExpression10(self, ctx: JavaParserLabeled.Expression10Context):
+        if self.method is not None:
+            if self.method_entered:
+                self.count_essential_metric += 1
+        else:
+            self.count_essential_metric += 1
 
     def enterStatement12(self, ctx: JavaParserLabeled.Statement12Context):
-        if not self.entered_switch:
-            if self.layers[-1] < 2:
-                self.layers[-1] += 1
+        if self.entered_loop:
+            if len(self.layers) != 0:
+                if self.layers[-1] < 2:
+                    self.layers[-1] += 1
 
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         if self.method is not None:
             if ctx.IDENTIFIER().getText() == self.method._name:
                 self.method_entered = True
+
 
     def exitMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         if self.method is not None:
@@ -173,6 +188,6 @@ if __name__ == '__main__':
     create_db("../../benchmark2_database.oudb", project_dir="..\..\benchmark")
     db = db_open("../../benchmark2_database.oudb")
     # try:
-    essential_manager = EssentialMetric('com.calculator.app.display.print_success.main')
+    essential_manager = EssentialMetric()
     # except Exception as e:
     # print("Error:", e)
