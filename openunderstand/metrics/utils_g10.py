@@ -137,32 +137,41 @@ def stmt_main(prj_index, listener_class, metric_name):
         file_metric_dict = listener.repository
         file_metric_count = listener.counter
 
-        project_metric_list.append({
+        for ent, count in file_metric_dict.items():
+            ent_name = ent.split('$$$')[0]
+            remain = ent.split('$$$')[1]
+            ent_kind, ent_longname = remain.split('-', 1)
+            if ent_kind == "Java Import":
+                continue
+            if str(ent_name).startswith('package'):
+                ent_longname = ent_longname.replace('package', '')
+                ent_longname = ent_longname.replace('; class', '.')
+                ent_longname = ent_longname.replace(' ', '')
+
+            new_metric = {
+                'val': count,
+                'name': ent_name,
+                'kind': ent_kind,
+                'longname': ent_longname
+            }
+            print({i: new_metric[i] for i in new_metric if i != 'longname'})
+
+            project_metric_list.append(new_metric)
+            project_metric_counter += count
+            ent_kind_set.add(ent_kind)
+
+        new_metric = {
             'val': file_metric_count,
             'name': file_name,
             'kind': 'Java File',
             'longname': file_path
-        })
+        }
+        print({i: new_metric[i] for i in new_metric if i != 'longname'})
+
+        project_metric_list.append(new_metric)
         project_metric_counter += file_metric_count
 
-        for ent, count in file_metric_dict.items():
-            ent_kind, ent_name = ent.split('-')
-            if ent_kind == "Java Import":
-                continue
-            if str(ent_name).startswith('package'):
-                ent_name = ent_name.replace('package', '')
-                ent_name = ent_name.replace('; class', '.')
-                ent_name = ent_name.replace(' ', '')
-            project_metric_list.append({
-                'val': count,
-                'name': ent_name,
-                'kind': ent_kind,
-                'longname': ''
-            })
-            project_metric_counter += count
-            ent_kind_set.add(ent_kind)
-
-    report_metric(project_metric_counter, ent_kind_set, project_metric_list, metric_name)
+    # report_metric(project_metric_counter, ent_kind_set, project_metric_list, metric_name)
 
 
 def get_keys(ctx):
@@ -170,12 +179,12 @@ def get_keys(ctx):
     keys = []
     for res in result:
         if res['kind_name'] == "Java Package":
-            key = str(res['kind_name']) + '-' + str(res['method_name'])
+            key = str(res['method_name']) + '$$$' + str(res['kind_name']) + '-' + str(res['method_name'])
         elif res['static_type'] != '':
-            key = str(res['kind_name']) + '-' + str(res['access_type']) + ' ' + str(res['static_type']) + ' ' \
+            key = str(res['method_name']) + '$$$' + str(res['kind_name']) + '-' + str(res['access_type']) + ' ' + str(res['static_type']) + ' ' \
                   + str(res['return_type']) + ' ' + str(res['method_name'])
         else:
-            key = str(res['kind_name']) + '-' + str(res['access_type']) + ' ' \
+            key = str(res['method_name']) + '$$$' + str(res['kind_name']) + '-' + str(res['access_type']) + ' ' \
                   + str(res['return_type']) + ' ' + str(res['method_name'])
         keys.append(key)
     return keys

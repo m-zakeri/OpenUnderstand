@@ -14,7 +14,7 @@ METRIC_NAME = 'CountStmtExe'
 
 class StatementListener(JavaParserLabeledListener):
     def __init__(self, files):
-        self.repository = {'Java Import-': 0}
+        self.repository = {'$$$Java Import-': 0}
         self.files = files
         self.counter = 0
 

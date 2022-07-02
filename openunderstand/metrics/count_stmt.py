@@ -8,13 +8,13 @@ BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE)
 
 
-PRJ_INDEX = 0
+PRJ_INDEX = 3
 METRIC_NAME = 'CountStmt'
 
 
 class StatementListener(JavaParserLabeledListener):
     def __init__(self, files):
-        self.repository = {'Java Import-': 0}
+        self.repository = {'$$$Java Import-': 0}
         self.files = files
         self.counter = 0
 
