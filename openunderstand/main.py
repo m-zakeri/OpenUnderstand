@@ -14,13 +14,9 @@ from oudb.api import open as db_open, create_db
 from oudb.fill import main
 from openunderstand.override_overrideby__G12 import overridelistener
 from openunderstand.couple_coupleby__G12 import CoupleAndCoupleBy
-from analysis_passes.couple_coupleby import ImplementCoupleAndImplementByCoupleBy
-from analysis_passes.create_createby_g11 import CreateAndCreateBy
-from analysis_passes.declare_declarein import DeclareAndDeclareinListener
 from analysis_passes.modify_modifyby import ModifyListener
-from analysis_passes.usemodule_usemoduleby_g11 import UseModuleUseModuleByListener
 from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
-from analysis_passes.entity_manager_g11 import EntityGenerator, FileEntityManager, get_created_entity
+from analysis_passes.entity_manager_g11 import EntityGenerator, get_created_entity
 from analysis_passes.g6_create_createby import CreateAndCreateByListener
 from analysis_passes.g6_declare_declarein import DeclareAndDeclareinListener
 from analysis_passes.g6_class_properties import ClassPropertiesListener
