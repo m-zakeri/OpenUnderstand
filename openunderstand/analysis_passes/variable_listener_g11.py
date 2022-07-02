@@ -59,7 +59,7 @@ class VariableListener(JavaParserLabeledListener):
         # print("self.method:", self._method)
         # print("self.parent:", self.parent)
 
-    def exitMethodDeclaration(self, ctx:JavaParserLabeled.MethodDeclarationContext):
+    def exitMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         method_array = self._method.split(".")
         if "" in method_array:
             method_array.remove("")
@@ -80,7 +80,7 @@ class VariableListener(JavaParserLabeledListener):
             self.parent = self._interface[:-1]
         # print("self.parent:", self.parent)
 
-    def exitInterfaceDeclaration(self, ctx:JavaParserLabeled.InterfaceDeclarationContext):
+    def exitInterfaceDeclaration(self, ctx: JavaParserLabeled.InterfaceDeclarationContext):
         interface_array = self._interface.split(".")
         if "" in interface_array:
             interface_array.remove("")
@@ -122,7 +122,7 @@ class VariableListener(JavaParserLabeledListener):
         self.type = ctx.typeType().getText()
 
     # value
-    def enterVariableInitializer1(self, ctx:JavaParserLabeled.VariableInitializer1Context):
+    def enterVariableInitializer1(self, ctx: JavaParserLabeled.VariableInitializer1Context):
         self.value = ctx.getText()
 
     # interface variable
