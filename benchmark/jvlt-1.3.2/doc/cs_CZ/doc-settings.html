@@ -1,0 +1,241 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>jVLT - Nastavení</title>
+<link href="style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<table>
+<tr>
+<td><img alt="logo jVLT" height="128" src="jvlt.png" width="128"></td><td>
+<h1>jVLT &ndash; nástroj pro učení se slovíček</h1>
+</td>
+</tr>
+<tr>
+<td class="bluebox" valign="top">
+<div style="margin-left:0px">
+<a href="doc.html">Dokumentace</a>
+</div>
+<div style="margin-left:10px">
+<a href="doc-vocabulary.html">Slovíčka</a>
+</div>
+<div style="margin-left:10px">
+<a href="doc-examples.html">Příklady</a>
+</div>
+<div style="margin-left:10px">
+<a href="doc-quizzes.html">Kvízy</a>
+</div>
+<div style="margin-left:10px">Nastavení</div>
+<div style="margin-left:10px">
+<a href="doc-menus.html">Položky nabídky</a>
+</div>
+<div style="margin-left:10px">
+<a href="doc-misc.html">Různé</a>
+</div>
+</td><td class="content">
+
+Zvolením položky &bdquo;Předvolby...&ldquo; z nabídky &bdquo;Edit&ldquo;
+se otevře dialog, ve kterém můžete měnit několik nastavení jVLT.
+
+<h2>
+<a name="appearance_settings">Nastavení vzhledu</a>
+</h2>
+Na záložce &bdquo;Vzhled&ldquo; lze nastavit téma vzhledu, písma, jazyk
+a pole, která se zobrazí v HTML oblasti. Při výběru písma lze použít buď
+přednastavené písmo, anebo uživatelské písmo, které lze vybrat volbou
+&bdquo;Výběr písma...&ldquo; v rozbalovací nabídce.
+<ul>
+
+<li>
+<b>Téma vzhledu:</b>
+Téma vzhledu rozhoduje o celkovém vzhledu aplikace. Počet témat vzhledu
+k dispozici závisí na operačním systému.
+</li>
+
+<li>
+<b>Písmo uživatelského rozhraní:</b>
+Písmo uživatelského rozhraní se používá pro všechny komponenty mimo
+detailního náhledu na slova a příklady a mimo komponenty, pro něž
+se nastavuje písmo prostřednictvím následujících dvou nastavení.
+Vezměte na vědomí, že přizpůsobit písma aplikace je možné pouze
+v případě, že je použito téma vzhledu &bdquo;Metal&ldquo;.
+</li>
+
+<li>
+<b>Písmo uživatelského rozhraní pro "Originál":</b>
+Toto písmo se používá u slov a příkladů v původním jazyce.
+
+</li>
+ 
+<li>
+<b>Písmo uživatelského rozhraní pro "Výslovnost":</b>
+Uživatelské písmo lze definovat i pro výslovnost.
+</li>
+
+<li>
+<b>HTML písmo:</b>
+Toto písmo se používá pro oblasti HTML v záložkách Slovíčka, Příklady
+a Kvíz.
+</li>
+
+<li>
+<b>HTML písmo pole &bdquo;Originál&ldquo;:</b>
+Toto nastavení určuje písmo pole &bdquo;Originál&ldquo; v
+<a href="doc-vocabulary.html#detailed_view">detailním náhledu</a>.
+</li>
+
+<li>
+<b>HTML písmo pole &bdquo;Výslovnost&ldquo;:</b>
+Můžete také vybrat písmo pro zobrazování výslovnosti v detailním
+náhledu.
+</li>
+
+<li>
+<b>Jazyk rozhraní:</b>
+Toto nastavení určuje jazyk textových řetězců aplikace.
+</li>
+
+<li>
+<b>Pole zobrazovaná v HTML oblasti:</b>
+Zde můžete vybrat, která pole se budou zobrazovat
+<a href="doc-vocabulary.html#detailed_view">detailním náhledu</a>
+na záložce slovíček.
+</li>
+
+</ul>
+Vezměte na vědomí, že změna kteréhokoli z výše uvedených nastavení
+si vyžádá restart aplikace.
+<br>
+<br>
+
+<img alt="nastavení vzhledu" src="settings_appearance.png">
+<br>
+<br>
+
+
+<h2>
+<a name="general_settings">Obecná nastavení</a>
+</h2>
+Na záložce &bdquo;Obecné&ldquo; můžete v současné době provádět
+následující nastavení:
+<ul>
+
+<li>
+<b>Po spuštění obnovit minule otevřený soubor:</b>
+Pokud toto políčko zaškrtnete, jVLT si bude pamatovat, se kterým souborem jste
+pracovali během vašeho posledního sezení, a po novém spuštění ho nahraje.
+</li>
+
+<li>
+<b>Písmo tisku:</b>
+Pro <a href="doc-misc.html#printing">tisk</a>
+můžete použít buď přednastavené písmo, anebo vybrat uživatelské písmo,
+a to volbou &bdquo;Výběr písma...&ldquo; v rozbalovací nabídce.
+</li>
+
+</ul>
+
+<br>
+<br>
+
+<img alt="obecná nastavení" src="settings_general.png">
+<br>
+<br>
+
+
+<h3>Doba vypršení</h3>
+Doba vypršení rozhoduje o tom, kdy se slovo po kvízu znovu aktivuje (viz
+<a href="doc-quizzes.html">oddíl o kvízech</a>). Nastavení, jimiž se doba
+vypršení upravuje, jsou tři:
+<ul>
+
+<li>
+<b>Počet sad:</b>
+Maximální počet sad přiřazených ke slovu. Pokud budete během kvízu vědět
+slovo, které už má maximální číslo sady, toto číslo se nezmění (normálně se
+o jedno zvýší).
+</li>
+
+<li>
+<b>Činitel vypršení:</b>
+Určuje dobu, po jejímž uplynutí se slovo znovu aktivuje. Je-li činitel
+vypršení <i>X</i>, slovo přiřazené do sady č. <i>i</i> se aktivuje po
+<i>X</i><i style="vertical-align:super">i-1</i> časových jednotkách.
+Tzn. slovo v sadě č. <i>1</i> se aktivuje po jedné časové jednotce,
+slovo v sadě č. <i>2</i> po <i>X</i> časových jednotkách, slovo v sadě
+č. <i>3</i> po <i>X</i><i style="vertical-align:super">2</i> časových
+jednotkách atd.
+</li>
+
+<li>
+<b>Jednotka:</b>
+Časovou jednotkou mohou být buď dny, anebo hodiny.
+</li>
+
+</ul>
+
+
+<h2>
+<a name="multimedia_settings">Nastavení pro multimédia</a>
+</h2>
+Na této záložce můžete přizpůsobovat to, jak jVLT zachází s multimediálními
+soubory zadanými v <a href="doc-vocabulary.html#add_word">dialogu slov</a>.
+<br>
+<br>
+
+<img alt="typy souborů" src="settings_file_types.png">
+<ul>
+
+<li>
+<b>Přehrát zvukové soubory okamžitě po vybrání slova:</b>
+Po zaškrtnutí tohoto políčka bude jVLT automaticky přehrávat zvukové soubory
+ve chvíli, kdy v <a href="doc-vocabulary.html#word list">seznamu slov</a>
+vyberete některé slovo.
+</li>
+
+</ul>
+
+<h3>Typy souborů</h3>
+V oblasti &bdquo;Typy souborů&ldquo; lze definovat externí příkazy pro
+přehrávání nebo zobrazování multimediálních souborů. Po stisknutí tlačítka
+&bdquo;Upravit&ldquo; nebo &bdquo;Přidat&ldquo; se otevře nový dialog, který
+vám umožní upravovat určitý typ souborů. Význam součástí dialogu je popsán
+níže:
+<ul>
+
+<li>
+<b>Přípona souborů:</b>
+Přípona souborů, např. "mp3". U předvolených souborů nelze tuto hodnotu
+změnit.
+</li>
+
+<li>
+<b>Typ:</b>
+Typ souborů. Toto nastavení je nezávazné, rozhoduje pouze o tom,
+jaká ikona se použije v
+<a href="doc-vocabulary.html#detailed_view">detailním náhledu slova</a>.
+</li>
+
+<li>
+<b>K přehrání/zobrazení použít jVLT:</b>
+Toto zaškrtávací políčko můžete použít pouze pro předvolené typy souborů.
+Je-li zaškrtnuto, jVLT se pokusí místo spuštění externího příkazu přehrát
+soubor sám.
+</li>
+
+<li>
+<b>Příkaz:</b>
+Příkaz, který se má použít pro přehrání nebo zobrazení souboru
+s aktuální příponou. Na jeho konci musíte uvést %f jako zástupce
+pro jméno souboru.
+</li>
+
+</ul>
+
+<img alt="úpravy typů souborů" src="settings_edit_file_type.png">
+
+</td>
+</tr>
+</table>
+</body>
+</html>

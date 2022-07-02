@@ -109,12 +109,9 @@ class CyclomaticListener(JavaParserLabeledListener):
         if num==0 and ctx.children[0].getText() == "else":
             self.count = self.count + 1
 
-        if  ctx.children[1].getText() == "?":
+        if ctx.children[1].getText() == "?":
             self.count = self.count + 1
 
-        if num==1 and ctx.children[3].getText() == "else":
-            if ctx.children[4].children[0].getText() != "if":
-                self.count=self.count+1
         if num == 2 and ctx.children[0].getText() == "do" and ctx.children[2].getText() == "while":
             self.count = self.count + 1
 
@@ -142,8 +139,9 @@ def main(args):
     walker = ParseTreeWalker()
     walker.walk(t=parser_tree,listener=my_listener)
 
-
-    print(f"Average Cyclomatic:{my_listener.get_dict}")
+    with open('Results.txt', 'a') as f:
+        f.write(f"Average Cyclomatic:{my_listener.get_dict}")
+        f.write('\n')
 
 
 if __name__ == '__main__':

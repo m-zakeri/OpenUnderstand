@@ -1,0 +1,48 @@
+<project name="Clover Report" default="current">
+
+    <clover-format id="clover.format" type="${type}" orderBy="${orderBy}" filter="${filter}"/>
+    <clover-setup initString="${cloverdb}"/>
+
+    <clover-columns id="clover.columns">
+        <totalChildren/>
+        <avgMethodComplexity/>
+		<totalStatements format="raw"/>
+		<coveredStatements format="raw"/>
+		<coveredStatements format="%"/>
+		<totalBranches format="raw"/>
+		<coveredBranches format="raw"/>
+		<coveredBranches format="%"/>
+		<totalElements format="raw"/>
+		<coveredElements format="raw"/>
+		<coveredElements format="%"/>
+		<uncoveredElements format="raw"/>
+        <uncoveredElements format="%"/>
+        <totalPercentageCovered format="longbar"/>
+    </clover-columns>
+
+
+    <target name="historical">
+        <clover-report>
+            <current outfile="${output}"  summary="${summary}">
+                <format refid="clover.format"/>
+                <testsources dir="${tests}"/>
+                <columns refid="clover.columns"/>
+            </current>
+            <historical outfile="${historyout}" historydir="${history}">
+                <format refid="clover.format"/>
+                <columns refid="clover.columns"/>
+            </historical>
+        </clover-report>
+    </target>
+
+    <target name="current">
+        <clover-report>
+            <current outfile="${output}" title="${title}" summary="${summary}">
+                <format refid="clover.format"/>
+                <testsources dir="${tests}"/>
+                <columns refid="clover.columns"/>
+            </current>
+        </clover-report>
+    </target>
+
+</project>

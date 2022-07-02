@@ -16,7 +16,7 @@ class CyclomaticListener(JavaParserLabeledListener):
         self.dict = {}
         self.name = ""
         self.cycle=[]
-        self.symbols=['if', 'for', 'while', 'case', 'else', 'and', 'or', '?', 'do','switch']
+        self.symbols = ['if', 'for', 'while', 'and', 'or', '?', 'do']
 
     @property
     def get_dict(self):
@@ -34,13 +34,12 @@ class CyclomaticListener(JavaParserLabeledListener):
             pass    
 
     def enterStatement12(self, ctx:JavaParserLabeled.Statement12Context):
-
         try:
+            arr = []
             temp = ctx
             while type(temp) != 'gen.JavaParserLabeled.JavaParserLabeled.MethodBodyContext':
 
                 if not hasattr(temp,'parentCtx'):
-
                     break
                 child = temp
                 temp = temp.parentCtx
@@ -60,6 +59,9 @@ class CyclomaticListener(JavaParserLabeledListener):
                             if hasattr(y, 'symbol'):
                                 if y.symbol in self.cycle:
                                     continue
+                                arr.append(y.symbol)
+                                if arr[0].text != 'if':
+                                    return
                                 self.count += 1
                                 self.cycle.append(y.symbol)
                                 continue
@@ -70,6 +72,9 @@ class CyclomaticListener(JavaParserLabeledListener):
                     if hasattr(x, 'symbol'):
                         if x.symbol in self.cycle:
                             continue
+                        arr.append(x.symbol)
+                        if arr[0].text != 'if':
+                            return
                         self.count += 1
                         self.cycle.append(x.symbol)
                         continue
@@ -80,15 +85,20 @@ class CyclomaticListener(JavaParserLabeledListener):
                     if hasattr(x.children[0], 'symbol'):
                         if x.children[0].symbol in self.cycle:
                             continue
+
+                        arr.append(x.children[0].symbol)
+                        if arr[0].text != 'if':
+                            return
                         self.count += 1
                         self.cycle.append(x.children[0].symbol)
                         continue
+
         except:
-            pass                
+            pass
 
     def enterStatement10(self, ctx:JavaParserLabeled.Statement12Context):
-
         try:
+            arr = []
             temp = ctx
             while type(temp) != 'gen.JavaParserLabeled.JavaParserLabeled.MethodBodyContext':
 
@@ -113,6 +123,9 @@ class CyclomaticListener(JavaParserLabeledListener):
                             if hasattr(y, 'symbol'):
                                 if y.symbol in self.cycle:
                                     continue
+                                arr.append(y.symbol)
+                                if arr[0].text != 'if':
+                                    return
                                 self.count += 1
                                 self.cycle.append(y.symbol)
                                 continue
@@ -123,6 +136,9 @@ class CyclomaticListener(JavaParserLabeledListener):
                     if hasattr(x, 'symbol'):
                         if x.symbol in self.cycle:
                             continue
+                        arr.append(x.symbol)
+                        if arr[0].text != 'if':
+                            return
                         self.count += 1
                         self.cycle.append(x.symbol)
                         continue
@@ -133,13 +149,14 @@ class CyclomaticListener(JavaParserLabeledListener):
                     if hasattr(x.children[0], 'symbol'):
                         if x.children[0].symbol in self.cycle:
                             continue
+                        arr.append(x.children[0].symbol)
+                        if arr[0].text != 'if':
+                            return
                         self.count += 1
                         self.cycle.append(x.children[0].symbol)
                         continue
-
         except:
-            pass              
-
+            pass
 
     def enterMethodDeclaration(self, ctx:JavaParserLabeled.MethodDeclarationContext):
         try:
@@ -166,8 +183,9 @@ def main(args):
     walker = ParseTreeWalker()
     walker.walk(t=parser_tree,listener=my_listener)
 
-
-    print(f"Average Cyclomatic Essential:{my_listener.get_dict}")
+    with open('Results.txt', 'a') as f:
+        f.write(f"Average Cyclomatic Essential:{my_listener.get_dict}")
+        f.write('\n')
 
 
 if __name__ == '__main__':
