@@ -4,7 +4,9 @@ The script is used to test the definition of Understand and Open-understand refe
 """
 
 import os
+
 from dotenv import load_dotenv
+import understand as und
 
 import openunderstand.oudb.api
 
@@ -60,12 +62,11 @@ BENCHMARKS = {
     ],
 }
 
-PROJECT_PATH = os.path.join(PROJECT_ROOT_DIR, BENCHMARKS['PROJ'][BENCHMARK_INDEX]).replace('/', '\\')
-UDB_PATH = os.path.join(UDB_ROOT_DIR, BENCHMARKS['UDB'][BENCHMARK_INDEX]).replace('/', '\\')
-
 try:
     import understand as und
 except ImportError:
+    import understand as und
+
     print("Can not import understand")
 
 
@@ -77,49 +78,31 @@ def test_open_understand():
 
 
 def test_understand_kinds():
-    db = und.open(UDB_PATH)
+    db = und.open(r"../../benchmark/SalaryCalculator-master/SalaryCalculator-master.und")
+    und_all_results = {}
+    und_default_results = {}
+    und_private_results = {}
+    und_protected_results = {}
 
+    print("Understand Results \n")
     for ent in db.ents('Java Class ~Unknown ~Unresolved'):
-        # Example for metrics computation
-        print(ent.longname())
-        # With understand API
-        public_methods1 = ent.metric(['CountDeclMethodPublic']).get('CountDeclMethodPublic', 0)
+        ent_name = ent.name()
+        all_methods = ent.metric(['CountDeclMethodAll']).get('CountDeclMethodAll', 0)
+        und_all_results[ent_name] = all_methods
 
-        # With db query
-        public_methods2 = len(ent.ents("Define", "Java Method Public Member"))
+        default_methods = ent.metric(['CountDeclMethodDefault']).get('CountDeclMethodDefault', 0)
+        und_default_results[ent_name] = default_methods
 
-        print('With API', public_methods1, '\nWith query', public_methods2)
+        private_methods = ent.metric(['CountDeclMethodPrivate']).get('CountDeclMethodPrivate', 0)
+        und_private_results[ent_name] = private_methods
 
-        quit()
-        for ref in ent.refs("Declarein"):
-            print(f'ref.scope (entity performing reference)\t: "{ref.scope().longname()}", kind: "{ref.scope().kind()}"')
-            print(f'ref.ent (entity being referenced)\t\t: "{ref.ent().longname()}", kind: "{ref.ent().kind()}"')
-            print(f'File where the reference occurred: "{ref.file().longname()}", line: {ref.line()}')
-            # quit()
+        protected_methods = ent.metric(['CountDeclMethodProtected']).get('CountDeclMethodProtected', 0)
+        und_protected_results[ent_name] = protected_methods
 
-            # print(f"Entity longname: {ent.longname()}")
-            # print(f"Entity parent: {ent.parent()}")
-            # print(f"Entity kind: {ent.kind()}")
-            # print(f"Entity value: {ent.value()}")
-            # print(f"Entity type: {ent.type()}")
-            # print(f"Entity contents: {ent.contents()}")
-            print('-' * 50)
-
-            # print(f"File kind: {ref.file().kind()}")
-            # print(f"Parent: {ref.file().parent()}, long name: {ref.file().longname()}")
-            # print(f"Value: {ref.file().value()}, type: {ref.file().type()}")
-            # print(f"Contents: {ref.file().contents()}, name: {ref.file().name()}")
-            # print('-' * 50)
-
-
-            # print(f"ref.line: {ref.line()}, ref.col: {ref.column()}, ref.file: {ref.file().name()}")
-            # print('-' * 50)
-            # print(f"ref.ent.longname:{ref.ent().longname()}, ref.ent.kind:{ref.ent().kind()}")
-            # print(f"ref.ent.parent:{ref.ent().parent()}, ref.ent.value:{ref.ent().value()}, "
-            #       f"ref.ent.type:{ref.ent().type()}")
-            # print(f"ref.ent.contents:{ref.ent().contents()}")
-            # print('-' * 50)
-
+    print("All methods : ", und_all_results)
+    print("Default methods : ", und_default_results)
+    print("Private methods : ", und_private_results)
+    print("Protected methods : ", und_protected_results)
 
 if __name__ == '__main__':
     test_understand_kinds()
