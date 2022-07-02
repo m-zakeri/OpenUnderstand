@@ -18,9 +18,8 @@ from analysis_passes.couple_coupleby import CoupleAndCoupleBy
 from analysis_passes.create_createby_g11 import CreateAndCreateBy
 from analysis_passes.declare_declarein import DeclareAndDeclareinListener
 from analysis_passes.modify_modifyby import ModifyListener
-from analysis_passes.usemodule_usemoduleby_g11 import UseModuleUseModuleByListener
 from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
-from analysis_passes.entity_manager_g11 import EntityGenerator, FileEntityManager, get_created_entity
+from analysis_passes.entity_manager_g11 import EntityGenerator, get_created_entity
 from analysis_passes.g6_create_createby import CreateAndCreateByListener
 from analysis_passes.g6_declare_declarein import DeclareAndDeclareinListener
 from analysis_passes.g6_class_properties import ClassPropertiesListener
@@ -90,6 +89,29 @@ class Project:
             # Definein: kind id 195
             definein_ref = ReferenceModel.get_or_create(_kind=195, _file=file_ent, _line=ref_dict["line"],
                                                          _column=ref_dict["col"], _scope=ent, _ent=scope)
+                                                         
+    def addThrows_TrowsByRefs(self, ref_dicts, file_ent, file_address,id1,id2,Throw):
+        for ref_dict in ref_dicts:
+
+            scope = EntityModel.get_or_create(_kind=self.findKindWithKeywords("Method", ref_dict["scopemodifiers"]),
+                                              _name=ref_dict["scopename"],
+                                              _parent= ref_dict["scope_parent"] if ref_dict["scope_parent"] is not None else file_ent,
+                                              _longname=ref_dict["scopelongname"],
+                                              _contents=ref_dict["scopecontent"])[0]
+
+            if not Throw:
+                if ref_dict["refent"] is None:
+                    ent = self.getUnnamedPackageEntity(file_ent)
+                else:
+                    ent = self.getPackageEntity(file_ent, ref_dict["refent"], ref_dict["refent"])
+            else:
+                ent = self.getThrowEntity(ref_dict["refent"], file_address)
+
+            implement_ref = ReferenceModel.get_or_create(_kind=id1, _file=file_ent, _line=ref_dict["line"],
+                                                         _column=ref_dict["col"], _ent=ent, _scope=scope)
+            implementBy_ref = ReferenceModel.get_or_create(_kind=id2, _file=file_ent, _line=ref_dict["line"],
+                                                           _column=ref_dict["col"], _ent=scope, _scope=ent)
+
 
     def addDeclareRefs(self, ref_dicts, file_ent):
         for ref_dict in ref_dicts:
@@ -256,6 +278,12 @@ class Project:
                                             _contents=props["contents"])
         return ent[0]
 
+    def getThrowEntity(self, longname, file_address):
+        ent = self.getInterfaceEntity(longname, file_address)
+        if not ent:
+            ent = self.getClassEntity(longname, file_address)
+        return ent
+
     def getImplementEntity(self, longname, file_address):
         ent = self.getInterfaceEntity(longname, file_address)
         if not ent:
@@ -374,8 +402,8 @@ if __name__ == '__main__':
     # get file name
     rawPath = str(os.path.dirname(__file__).replace("\\", "/"))
     pathArray = rawPath.split('/')
-    path = Project.listToString(pathArray) + "benchmark"
-    # path = r"../benchmark/SalaryCalculator-master"
+    # path = Project.listToString(pathArray) + "benchmark"
+    path = r"C:\Users\ASUS\Desktop\term_4002\Compiler\project\phase2\OpenUnderstand\benchmark\SalaryCalculator-master"
     files = p.getListOfFiles(path)
     # Lists
     modify_modifyby_list = []
