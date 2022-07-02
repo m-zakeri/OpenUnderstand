@@ -1,157 +1,310 @@
-"""
-
-
-"""
-
 import os
 from antlr4 import *
-
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from pathlib import Path
 from gen.javaLabeled.JavaLexer import JavaLexer
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from oudb.fill import main as db_fill
+from oudb.api import create_db, open as db_open
+from oudb.models import KindModel, EntityModel, ReferenceModel
 
-from oudb.models import *
-from oudb.api import open as db_open
+PRJ_INDEX = 8
+REF_NAME = "import"
 
-from analysis_passes.class_properties import ClassPropertiesListener
+
+def get_project_info(index, ref_name):
+    project_names = [
+        'calculator_app',
+        'JSON',
+        'testing_legacy_code',
+        'jhotdraw-develop',
+        'xerces2j',
+        'jvlt-1.3.2',
+        'jfreechart',
+        'ganttproject',
+        '105_freemind',
+    ]
+    project_name = project_names[index]
+    db_path = f"../databases/{ref_name}/{project_name}"
+    if ref_name == "origin":
+        db_path = db_path + ".udb"
+    else:
+        db_path = db_path + ".oudb"
+    project_path = f"../benchmark/{project_name}"
+    return {
+        'PROJECT_NAME': project_name,
+        'DB_PATH': db_path,
+        'PROJECT_PATH': project_path,
+    }
+
+
+def get_parse_tree(file_path):
+    file = FileStream(file_path, encoding="utf-8")
+    lexer = JavaLexer(file)
+    tokens = CommonTokenStream(lexer)
+    parser = JavaParserLabeled(tokens)
+    return parser.compilationUnit()
+
+
+class Project:
+    def __init__(self, db_name, project_dir, project_name=None):
+        self.db_name = db_name
+        self.project_dir = project_dir
+        self.project_name = project_name
+        self.files = []
+
+    def init_db(self):
+        create_db(self.db_name, self.project_dir, self.project_name)
+        db_fill()
+        db_open(self.db_name)
+
+    def get_java_files(self):
+        for dir_path, _, file_names in os.walk(self.project_dir):
+            for file in file_names:
+                if '.java' in str(file):
+                    path = os.path.join(dir_path, file)
+                    self.files.append((file, path))
+                    # add java file entity to database
+                    # add_java_file_entity(path, file)
 
 
 class OpenListener(JavaParserLabeledListener):
-    def __init__(self):
-        self.interfaces = []
-        self.classes = []
-        self.files = []
-        self.functions = []
-        self.loops = []
-        self.conditions = []
-        self.switch = []
-        self.enums = []
-        self.parents = []
-        self.parent_info = []
-        self.entities = []
-        self.open = []
+    def __init__(self, files):
+        self.repository = []
+        self.files = files
+
+    def _get_class_long_name(self, ctx):
+        type_declaration_ctx = ctx.parentCtx
+        if type(type_declaration_ctx) != JavaParserLabeled.TypeDeclarationContext:
+            type_declaration_ctx = type_declaration_ctx.parentCtx
+            modifiers = type_declaration_ctx.modifier()
+        else:
+            modifiers = type_declaration_ctx.classOrInterfaceModifier()
+        class_or_interface_modifier = ' '.join([modifier.getText() for modifier in
+                                                modifiers])
+        class_modifier = ctx.CLASS().getText()
+        identifier = ctx.IDENTIFIER().getText()
+        if ctx.EXTENDS():
+            extends = []
+            extend_identifiers = ctx.typeType().classOrInterfaceType().IDENTIFIER()
+            for i in extend_identifiers:
+                extends.append(i.getText())
+            extends = ', '.join(extends)
+            extends_modifier = ctx.EXTENDS().getText() + f' {extends}'
+        else:
+            extends_modifier = ""
+
+        if ctx.IMPLEMENTS():
+            implements = []
+            for typeType in ctx.typeList().typeType():
+                implements_identifiers = typeType.classOrInterfaceType().IDENTIFIER()
+                for i in implements_identifiers:
+                    implements.append(i.getText())
+            implements = ','.join(implements)
+            implements_modifier = ctx.IMPLEMENTS().getText() + f' {implements}'
+        else:
+            implements_modifier = ""
+        name_list = [class_modifier, identifier,]
+        if class_or_interface_modifier:
+            name_list.insert(0, class_or_interface_modifier)
+        if extends_modifier:
+            name_list.append(extends_modifier)
+        if implements_modifier:
+            name_list.append(implements_modifier)
+        return " ".join(name_list)
+
+    def _get_interface_long_name(self, ctx):
+        type_declaration_ctx = ctx.parentCtx
+        if type(type_declaration_ctx) != JavaParserLabeled.TypeDeclarationContext:
+            type_declaration_ctx = type_declaration_ctx.parentCtx
+            modifiers = type_declaration_ctx.modifier()
+        else:
+            modifiers = type_declaration_ctx.classOrInterfaceModifier()
+        class_or_interface_modifier = ' '.join([modifier.getText() for modifier in
+                                                modifiers])
+        interface_modifier = ctx.INTERFACE().getText()
+        if ctx.EXTENDS():
+            extends = []
+            for typeType in ctx.typeList().typeType():
+                extend_identifiers = typeType.classOrInterfaceType().IDENTIFIER()
+                for i in extend_identifiers:
+                    extends.append(i.getText())
+            extends = ','.join(extends)
+            extends_modifier = ctx.EXTENDS().getText() + f' {extends}'
+        else:
+            extends_modifier = ""
+        identifier = ctx.IDENTIFIER().getText()
+        return " ".join([class_or_interface_modifier, interface_modifier, identifier, extends_modifier, ])
+
+    def _get_enum_long_name(self, ctx):
+        type_declaration_ctx = ctx.parentCtx
+        class_or_interface_modifier = ' '.join([modifier.getText() for modifier in
+                                                type_declaration_ctx.classOrInterfaceModifier()])
+        enum_modifier = ctx.ENUM().getText()
+        if ctx.IMPLEMENTS():
+            implements_modifier = ctx.IMPLEMENTS().getText()
+        else:
+            implements_modifier = ""
+        identifier = ctx.IDENTIFIER().getText()
+        return " ".join([class_or_interface_modifier, enum_modifier, implements_modifier, identifier])
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
-        scope_parents = ClassPropertiesListener.findParents(ctx)
-        if len(scope_parents) == 1:
-            scope_longname = scope_parents[0]
-        else:
-            scope_longname = ".".join(scope_parents)
+        class_longname = self._get_class_long_name(ctx)
+        class_name = ctx.IDENTIFIER().getText()
+        line = ctx.children[0].symbol.line
+        col = ctx.children[0].symbol.column
 
-        [line, col] = str(ctx.start).split(",")[3].split(":")
-        for ent_type in ctx.typeList().typeType():
-            if ent_type.classOrInterfaceType():
-                ent_long_name = ".".join([x.getText() for x in ent_type.classOrInterfaceType().IDENTIFIER()])
-                self.entities.append({
-                    "scope_kind": "Class", "scope_name": ctx.IDENTIFIER().__str__(),
-                    ''"scope_longname": scope_longname,
-                    "scope_parent": scope_parents[-2] if len(scope_parents) > 2 else None,
-                    "scope_contents": ctx.getText(),
-                    "scope_modifiers": ClassPropertiesListener.findClassOrInterfaceModifiers(ctx),
-                    "line": line,
-                    "col": col[:-1],
-                    "type_ent_longname": ent_long_name
-                })
+        self.repository.append({
+            'name': class_name,
+            'longname': class_longname,
+            'line': line,
+            'column': col,
+            'kind': 'Class',
+            'body': ctx.getText(),
+        })
 
     def enterEnumDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
-        scope_parents = ClassPropertiesListener.findParents(ctx)
-        if len(scope_parents) == 1:
-            scope_longname = scope_parents[0]
-        else:
-            scope_longname = ".".join(scope_parents)
+        enum_longname = self._get_enum_long_name(ctx)
+        enum_name = enum_longname.split('.')[-1]
+        line = ctx.children[0].symbol.line
+        col = ctx.children[0].symbol.column
 
-        [line, col] = str(ctx.start).split(",")[3].split(":")  # line, column
-        for ent_type in ctx.typeList().typeType():
-            if ent_type.classOrInterfaceType():
-                ent_long_name = ".".join([x.getText() for x in ent_type.classOrInterfaceType().IDENTIFIER()])
-                self.entities.append({
-                    "scope_kind": "Enum", "scope_name": ctx.IDENTIFIER().__str__(),
-                    "scope_longname": scope_longname,
-                    "scope_parent": scope_parents[-2] if len(scope_parents) > 2 else None,
-                    "scope_contents": ctx.getText(),
-                    "scope_modifiers": ClassPropertiesListener.findClassOrInterfaceModifiers(ctx),
-                    "line": line,
-                    "col": col[:-1],
-                    "type_ent_longname": ent_long_name
-                })
+        self.repository.append({
+            'name': enum_name,
+            'longname': enum_longname,
+            'line': line,
+            'column': col,
+            'kind': 'Enum',
+            'body': ctx.getText(),
+        })
 
-    def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
-        pass
+    def enterInterfaceDeclaration(self, ctx: JavaParserLabeled.InterfaceDeclarationContext):
+        interface_longname = self._get_interface_long_name(ctx)
+        interface_name = ctx.IDENTIFIER().getText()
+        line = ctx.children[0].symbol.line
+        col = ctx.children[0].symbol.column
+        self.repository.append({
+            'name': interface_name,
+            'longname': interface_longname,
+            'line': line,
+            'column': col,
+            'kind': 'Interface',
+            'body': ctx.getText(),
+        })
 
 
-def create_entity(name, longname, parent, contents, kind, value, entity_type):
-    obj, has_created = EntityModel.get_or_create(_kind=kind,
-                                                 _parent=parent,
-                                                 _name=name,
-                                                 _longname=longname,
-                                                 _value=value,
-                                                 _type=entity_type,
-                                                 _contents=contents
-                                                 )
+def get_parent(parent_file_name, files):
+    file_names, file_paths = zip(*files)
+    parent_file_index = file_names.index(parent_file_name)
+    parent_file_path = file_paths[parent_file_index]
+    parent_entity = EntityModel.get_or_none(
+        _kind=1,  # Java File
+        _name=parent_file_name,
+        _longname=parent_file_path,
+    )
+    return parent_entity, parent_file_path
+
+
+def add_imported_entity(entity, files):
+    entity_kind = get_kind_name(entity['longname'], entity['kind'])
+    imported_entity, _ = EntityModel.get_or_create(
+        _kind=KindModel.get_or_none(_name=entity_kind).get_id(),
+        # _parent=parent_entity.get_id(),
+        _parent=None,
+        _name=entity['name'],
+        _longname=entity['longname'],
+        _contents=entity['body'],
+    )
+    return imported_entity
+
+
+def get_kind_name(prefixes, kind):
+    p_static = ""
+    p_abstract = ""
+    p_generic = ""
+    p_type = "Type"
+    p_visibility = "Default"
+    p_member = "Member"
+
+    if "static" in prefixes:
+        p_static = "Static"
+
+    if "generic" in prefixes:
+        p_generic = "Generic"
+
+    if "abstract" in prefixes:
+        p_abstract = "Abstract"
+    elif "final" in prefixes:
+        p_abstract = "Final"
+
+    if "private" in prefixes:
+        p_visibility = "Private"
+    elif "public" in prefixes:
+        p_visibility = "Public"
+    elif "protected" in prefixes:
+        p_visibility = "Protected"
+
+    if kind == "Interface":
+        p_member = ""
+        p_static = ""
+
+    if kind == "Method":
+        p_type = ""
+
+    s = f"Java {p_static} {p_abstract} {p_generic} {kind} {p_type} {p_visibility} {p_member}"
+    s = " ".join(s.split())
+    print(s)
+    return s
+
+
+def add_java_file_entity(file_path, file_name):
+    kind_id = 1  # Java File
+    obj, _ = EntityModel.get_or_create(
+        _kind=kind_id,
+        _name=file_name,
+        _longname=file_path,
+        _contents=FileStream(file_path, encoding="utf-8"),
+    )
     return obj
 
 
-def create_ref(kind, file, line, column, ent, scope):
-    obj, has_created = ReferenceModel.get_or_create(_kind=kind,
-                                                    _file=file,
-                                                    _line=line,
-                                                    _column=column,
-                                                    _ent=ent,
-                                                    _scope=scope
-                                                    )
-    return obj
+def add_references(importing_ent, imported_ent, ref_dict):
+    ref, _ = ReferenceModel.get_or_create(
+        _kind=234,  # Java Open
+        _file=importing_ent.get_id(),
+        _line=ref_dict['line'],
+        _column=ref_dict['column'],
+        _ent=imported_ent.get_id(),
+        _scope=importing_ent.get_id(),
+    )
+    inverse_ref, _ = ReferenceModel.get_or_create(
+        _kind=235,  # Java OpenBy
+        _file=importing_ent.get_id(),
+        _line=ref_dict['line'],
+        _column=ref_dict['column'],
+        _ent=importing_ent.get_id(),
+        _scope=imported_ent.get_id(),
+    )
 
 
-def read_files():
-    files = list()
-    filename = []
-    for (dir_path, dir_names, file_names) in os.walk("../../benchmark/105_freemind"):
-        for file in file_names:
-            if '.java' in str(file):
-                filename.append(file)
-                files.append(os.path.join(dir_path, file))
+def main():
+    info = get_project_info(PRJ_INDEX, REF_NAME)
+    p = Project(info['DB_PATH'], info['PROJECT_PATH'], info['PROJECT_NAME'])
+    p.init_db()
+    p.get_java_files()
 
-    db_open("../benchmark2_database.oudb")
+    for file_name, file_path in p.files:
+        importing_entity = add_java_file_entity(file_path, file_name)
 
-    for path, name in zip(files, filename):
-        file = FileStream(path)
-        lexer = JavaLexer(file)
-        tokens = CommonTokenStream(lexer)
-        tokens.fill()
-        parser = JavaParserLabeled(tokens)
-        tree = parser.compilationUnit()
-        listener = OpenListener()
+        tree = get_parse_tree(file_path)
+        listener = OpenListener(p.files)
         walker = ParseTreeWalker()
-        walker.walk(listener=listener, t=tree)
+        walker.walk(listener, tree)
 
-        for idx, parent in enumerate(listener.parent_info):
-            # make parent entity type of class
-            if parent['parent'] == "file":
-                file_entity = create_entity(name, path, None, FileStream(path),
-                                            KindModel.get_or_none(_name="Java File")._id, None, None)
-                path_parts = path.split('\\')
-                i = path_parts.index("src")
-                longname = '.'.join(path_parts[i + 1:])
-                parent_entity = create_entity(parent['name'], longname, file_entity, parent['content']
-                                              , parent['kind'], None, None)
-            # make parent entity type of method
-            else:
-                parent_class = parent['parent']
-                file_entity = create_entity(name, path, None, FileStream(path),
-                                            KindModel.get_or_none(_name="Java File")._id, None, None)
-                path_parts = path.split('\\')
-                i = path_parts.index("src")
-                longname = '.'.join(path_parts[i + 1:])
-                class_entity = create_entity(parent_class['name'], longname, file_entity, parent_class['content']
-                                             , parent_class['kind'], None, None)
-                longname_method = longname + "." + parent['name']
-                parent_entity = create_entity(parent['name'], longname_method, class_entity, parent['content']
-                                              , parent['kind'], None, None)
-
-            var_entity = create_entity(listener.names[idx], longname + '.' + listener.names[idx],
-                                       parent_entity, "", listener.kind[idx], listener.values[idx], listener.types[idx])
-            create_ref(KindModel.get_or_none(_name="Java Define")._id, file_entity, listener.lines[idx],
-                       listener.columns[idx], var_entity, parent_entity)
+        for i in listener.repository:
+            imported_entity = add_imported_entity(i, p.files)
+            add_references(importing_entity, imported_entity, i)
 
 
-read_files()
+if __name__ == '__main__':
+    main()
