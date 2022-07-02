@@ -22,7 +22,7 @@ class StatementListener(JavaParserLabeledListener):
         self.update_repository(ctx, 1)
 
     def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
-        self.repository['Java Import-'] += 1
+        self.repository['$$$Java Import-'] += 1
         self.counter += 1
 
     def enterAnnotationMethodOrConstantRest0(self, ctx: JavaParserLabeled.AnnotationMethodOrConstantRest0Context):
