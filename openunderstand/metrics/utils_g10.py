@@ -139,8 +139,8 @@ def stmt_main(prj_index, listener_class, metric_name):
 
         project_metric_list.append({
             'val': file_metric_count,
-            'name': 'Java File',
-            'kind': file_name,
+            'name': file_name,
+            'kind': 'Java File',
             'longname': file_path
         })
         project_metric_counter += file_metric_count
@@ -179,7 +179,6 @@ def get_keys(ctx):
                   + str(res['return_type']) + ' ' + str(res['method_name'])
         keys.append(key)
     return keys
-
 
 
 # Scope makers
