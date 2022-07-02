@@ -25,9 +25,6 @@ class StatementListener(JavaParserLabeledListener):
     def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
         self.counter += 1
 
-    def enterLocalVariableDeclaration(self, ctx: JavaParserLabeled.LocalVariableDeclarationContext):
-        self.update_repository(ctx, 1)
-
     def enterInterfaceMethodDeclaration(self, ctx: JavaParserLabeled.InterfaceMethodDeclarationContext):
         self.update_repository(ctx, 1)
 
@@ -37,8 +34,7 @@ class StatementListener(JavaParserLabeledListener):
     def enterFieldDeclaration(self, ctx: JavaParserLabeled.FieldDeclarationContext):
         self.update_repository(ctx, 1)
 
-    # return
-    def enterStatement10(self, ctx: JavaParserLabeled.Statement10Context):
+    def enterLocalVariableDeclaration(self, ctx: JavaParserLabeled.LocalVariableDeclarationContext):
         self.update_repository(ctx, 1)
 
     # for
@@ -50,6 +46,18 @@ class StatementListener(JavaParserLabeledListener):
         for i in ctx.children:
             if i == ';':
                 self.update_repository(ctx, 1)
+
+    # semi-colon
+    def enterStatement14(self, ctx: JavaParserLabeled.Statement14Context):
+        self.update_repository(ctx, 1)
+
+    # call
+    def enterStatement15(self, ctx: JavaParserLabeled.Statement15Context):
+        self.update_repository(ctx, 1)
+
+    # return
+    def enterStatement10(self, ctx: JavaParserLabeled.Statement10Context):
+        self.update_repository(ctx, 1)
 
     # break
     def enterStatement12(self, ctx: JavaParserLabeled.Statement12Context):
@@ -63,11 +71,7 @@ class StatementListener(JavaParserLabeledListener):
     def enterStatement13(self, ctx: JavaParserLabeled.Statement13Context):
         self.update_repository(ctx, 1)
 
-    def enterStatement14(self, ctx: JavaParserLabeled.Statement14Context):
-        self.update_repository(ctx, 1)
-
-    # call
-    def enterStatement15(self, ctx: JavaParserLabeled.Statement15Context):
+    def enterAnnotationMethodOrConstantRest0(self, ctx: JavaParserLabeled.AnnotationMethodOrConstantRest0Context):
         self.update_repository(ctx, 1)
 
     def update_repository(self, ctx, increment):

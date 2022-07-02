@@ -25,31 +25,31 @@ class StatementListener(JavaParserLabeledListener):
     def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
         self.counter += 1
 
-    def enterAnnotationMethodOrConstantRest0(self, ctx: JavaParserLabeled.AnnotationMethodOrConstantRest0Context):
+    def enterInterfaceMethodDeclaration(self, ctx: JavaParserLabeled.InterfaceMethodDeclarationContext):
         self.update_repository(ctx, 1)
 
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         self.update_repository(ctx, 1)
 
-    def enterLocalVariableDeclaration(self, ctx: JavaParserLabeled.LocalVariableDeclarationContext):
-        self.update_repository(ctx, 1)
-
-    def enterInterfaceMethodDeclaration(self, ctx: JavaParserLabeled.InterfaceMethodDeclarationContext):
-        self.update_repository(ctx, 1)
-
     def enterFieldDeclaration(self, ctx: JavaParserLabeled.FieldDeclarationContext):
+        self.update_repository(ctx, 1)
+
+    def enterLocalVariableDeclaration(self, ctx: JavaParserLabeled.LocalVariableDeclarationContext):
         self.update_repository(ctx, 1)
 
     # for
     def enterStatement3(self, ctx: JavaParserLabeled.Statement3Context):
         self.update_repository(ctx, 1)
 
-    # ;
+    # semi-colon
     def enterStatement14(self, ctx: JavaParserLabeled.Statement14Context):
         self.update_repository(ctx, 1)
 
     # call
     def enterStatement15(self, ctx: JavaParserLabeled.Statement15Context):
+        self.update_repository(ctx, 1)
+
+    def enterAnnotationMethodOrConstantRest0(self, ctx: JavaParserLabeled.AnnotationMethodOrConstantRest0Context):
         self.update_repository(ctx, 1)
 
     def update_repository(self, ctx, increment):

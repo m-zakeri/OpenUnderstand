@@ -19,12 +19,6 @@ class StatementListener(JavaParserLabeledListener):
         self.files = files
         self.counter = 0
 
-    def enterAnnotationMethodOrConstantRest0(self, ctx: JavaParserLabeled.AnnotationMethodOrConstantRest0Context):
-        self.update_repository(ctx, 1)
-
-    def enterInterfaceMethodDeclaration(self, ctx: JavaParserLabeled.InterfaceMethodDeclarationContext):
-        self.update_repository(ctx, 1)
-
     # return
     def enterStatement10(self, ctx: JavaParserLabeled.Statement10Context):
         self.update_repository(ctx, 1)
@@ -43,6 +37,9 @@ class StatementListener(JavaParserLabeledListener):
 
     # continue
     def enterStatement13(self, ctx: JavaParserLabeled.Statement13Context):
+        self.update_repository(ctx, 1)
+
+    def enterAnnotationMethodOrConstantRest0(self, ctx: JavaParserLabeled.AnnotationMethodOrConstantRest0Context):
         self.update_repository(ctx, 1)
 
     def update_repository(self, ctx, increment):
