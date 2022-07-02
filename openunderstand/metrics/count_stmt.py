@@ -1,20 +1,20 @@
 import os
 import sys
-from antlr4 import *
-from utils_g10 import Project, get_project_info, get_parse_tree, find_scope
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from utils_g10 import get_keys, stmt_main
 
 BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE)
 
 
 PRJ_INDEX = 0
+METRIC_NAME = 'CountStmt'
 
 
 class StatementListener(JavaParserLabeledListener):
     def __init__(self, files):
-        self.repository = {'Java Import': 0}
+        self.repository = {'Java Import-': 0}
         self.files = files
         self.counter = 0
 
@@ -62,14 +62,8 @@ class StatementListener(JavaParserLabeledListener):
 
     def update_repository(self, ctx, increment):
         self.counter += increment
-        result = find_scope(ctx)
-        for res in result:
-            if res['static_type'] != '':
-                key = str(res['kind_name']) + '-' + str(res['access_type']) + ' ' + str(res['static_type']) + ' ' \
-                    + str(res['return_type']) + ' ' + str(res['method_name'])
-            else:
-                key = str(res['kind_name']) + '-' + str(res['access_type']) + ' ' \
-                    + str(res['return_type']) + ' ' + str(res['method_name'])
+        keys = get_keys(ctx)
+        for key in keys:
             if key in self.repository:
                 self.repository[key] += increment
             else:
@@ -78,41 +72,5 @@ class StatementListener(JavaParserLabeledListener):
                 self.repository.update(new_dict)
 
 
-def main():
-    info = get_project_info(PRJ_INDEX)
-    p = Project(info['PROJECT_PATH'], info['PROJECT_NAME'])
-    p.get_java_files()
-    myset = []
-    for file_name, file_path in p.files:
-        tree = get_parse_tree(file_path)
-        listener = StatementListener(p.files)
-        walker = ParseTreeWalker()
-        walker.walk(listener, tree)
-        print('Java File')
-        print(file_name)
-        print(file_path)
-        print(listener.counter)
-        print('-' * 20)
-        for item in listener.repository:
-            key = item.split('-')
-            if key[0] == 'Java Import':
-                continue
-            if str(key[1]).startswith('package'):
-                key[1] = key[1].replace('package', '')
-                key[1] = key[1].replace('; class', '.')
-                key[1] = key[1].replace(' ', '')
-            print(key[0])
-            print(key[1])
-            if key[0] not in myset:
-                myset.append(key[0])
-            print(listener.repository[item])
-            print('-' * 20)
-        print('\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n')
-    print('Java File')
-    for item in myset:
-        print(item)
-    print('-' * 20)
-
-
 if __name__ == '__main__':
-    main()
+    stmt_main(PRJ_INDEX, StatementListener, METRIC_NAME)

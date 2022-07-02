@@ -28,13 +28,13 @@ def get_project_info(index, ref_name=None):
         'calculator_app',       # 0
         'JSON',                 # 1
         'testing_legacy_code',  # 2
-        'TheAlgorithms',        # 3*
+        'TheAlgorithms',        # 3
         'jhotdraw-develop',     # 4
         'xerces2j',             # 5
         'jvlt-1.3.2',           # 6
         'jfreechart',           # 7
-        'ganttproject',         # 8*
-        '105_freemind',         # 9*
+        'ganttproject',         # 8
+        '105_freemind',         # 9
         'custom'                # 10
     ]
     project_name = project_names[index]
@@ -70,6 +70,25 @@ def get_parent(parent_file_name, files):
     return parent_file_path
 
 
+def report_metric(project_metric_count, ent_kind_set, project_metric_list, metric_name):
+    sorted_list = sorted(project_metric_list, key=lambda d: (d['val'], d['name']))
+    for e in sorted_list:
+        print({
+            'val': e['val'],
+            'name': e['name'],
+            'kind': e['kind'],
+            # 'ln': e['longname']
+        })
+    print("-" * 25)
+
+    print(f"Entities with {metric_name}: {len(ent_kind_set)}")
+    for i in sorted(ent_kind_set):
+        print(i)
+    print("-" * 25)
+
+    print(f"Project total {metric_name}: {project_metric_count}")
+
+
 # Prefix producers
 
 def get_class_prefixes(ctx, ctx_type):
@@ -98,26 +117,69 @@ def get_method_prefixes(ctx):
     return prefixes
 
 
-# Cyclomatic Helper Functions
+# Statement Helper Functions
 
-def report_cyclomatic(project_cyclomatic, ent_kind_set, cyclomatic_list):
-    sorted_cyclomatic_list = sorted(cyclomatic_list, key=lambda d: (d['cyclomatic'], d['name']))
-    for e in sorted_cyclomatic_list:
-        print({
-            'val': e['cyclomatic'],
-            'name': e['name'],
-            'kind': e['kind'],
-            # 'ln': e['longname']
+def stmt_main(prj_index, listener_class, metric_name):
+    info = get_project_info(prj_index)
+    p = Project(info['PROJECT_PATH'], info['PROJECT_NAME'])
+    p.get_java_files()
+    walker = ParseTreeWalker()
+
+    ent_kind_set = {'Java File'}
+    project_metric_list = []
+    project_metric_counter = 0
+
+    for file_name, file_path in p.files:
+        tree = get_parse_tree(file_path)
+        listener = listener_class(p.files)
+        walker.walk(listener, tree)
+
+        file_metric_dict = listener.repository
+        file_metric_count = listener.counter
+
+        project_metric_list.append({
+            'val': file_metric_count,
+            'name': 'Java File',
+            'kind': file_name,
+            'longname': file_path
         })
-    print("-" * 25)
+        project_metric_counter += file_metric_count
 
-    print(f"Entities with cyclomatic: {len(ent_kind_set)}")
-    for i in sorted(ent_kind_set):
-        print(i)
-    print("-" * 25)
+        for ent, count in file_metric_dict.items():
+            ent_kind, ent_name = ent.split('-')
+            if ent_kind == "Java Import":
+                continue
+            if str(ent_name).startswith('package'):
+                ent_name = ent_name.replace('package', '')
+                ent_name = ent_name.replace('; class', '.')
+                ent_name = ent_name.replace(' ', '')
+            project_metric_list.append({
+                'val': count,
+                'name': ent_name,
+                'kind': ent_kind,
+                'longname': ''
+            })
+            project_metric_counter += count
+            ent_kind_set.add(ent_kind)
 
-    print("Project Cyclomatic Summary")
-    print(f"Project total cyclomatic: {project_cyclomatic}")
+    report_metric(project_metric_counter, ent_kind_set, project_metric_list, metric_name)
+
+
+def get_keys(ctx):
+    result = find_scope(ctx)
+    keys = []
+    for res in result:
+        if res['kind_name'] == "Java Package":
+            key = str(res['kind_name']) + '-' + str(res['method_name'])
+        elif res['static_type'] != '':
+            key = str(res['kind_name']) + '-' + str(res['access_type']) + ' ' + str(res['static_type']) + ' ' \
+                  + str(res['return_type']) + ' ' + str(res['method_name'])
+        else:
+            key = str(res['kind_name']) + '-' + str(res['access_type']) + ' ' \
+                  + str(res['return_type']) + ' ' + str(res['method_name'])
+        keys.append(key)
+    return keys
+
 
 
 # Scope makers
@@ -141,7 +203,7 @@ def make_scope_interface(ctx):
     }
 
 
-def make_scope_Lambda(ctx):
+def make_scope_lambda(ctx):
     prefixes = get_class_prefixes(ctx, "LambdaExpressionContext")
     kind_name = get_kind_name(prefixes, kind="Class", is_lambda=True)
     class_name = ctx.children[1]
