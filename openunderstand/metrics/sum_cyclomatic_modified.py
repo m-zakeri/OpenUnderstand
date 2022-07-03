@@ -50,10 +50,10 @@ if __name__ == '__main__':
     # enter file name here
     entity_longname = None
 
-    files = []
+    files = {}
     if entity_longname is None:
         for ent in EntityModel.select().where(EntityModel._kind_id == 1):
-            files.append(ent._contents)
+            files[ent._contents] = 0
         listener = CyclomaticModifiedListener()
     else:
         # search in db
