@@ -35,6 +35,25 @@ def get_created_entity_longname(longname):
     return entity
 
 
+
+def get_created_entity_id(parent_id):
+    entity = EntityModel.get_or_none(_id=parent_id)
+    return entity
+
+def get_all_files():
+    methods = []
+    for ent in EntityModel.select().where(EntityModel._kind_id == 1):
+        methods.append(ent._contents)
+    return methods
+
+def checkModifiersInKind(modifiers, kind):
+    """check if modifier is in kind and return it"""
+    for modifier in modifiers:
+        if modifier.lower() not in kind._name.lower():
+            return False
+    return True
+    
+    
 class EntityGenerator:
     def __init__(self, path, tree):
         """Automatically generates all entities are required for create and createBy reference."""
@@ -46,6 +65,13 @@ class EntityGenerator:
         self.package_ent = PackageEntityManager(path, self.file_ent, tree)
         self.package_entities_list = self.package_ent.get_or_create_package_entity()
         self.package_string = self.package_ent.package_string
+
+    @staticmethod
+    def extract_original_text(ctx):
+        token_source = ctx.start.getTokenSource()
+        input_stream = token_source.inputStream
+        start, stop = ctx.start.start, ctx.stop.stop
+        return input_stream.getText(start, stop)
 
     def get_or_create_variable_entity(self, res_dict):
         _name = res_dict['name']
@@ -93,7 +119,7 @@ class EntityGenerator:
                 parent_entity_name = entity.IDENTIFIER().getText()
                 parent_entity_longname = self.package_string + "." + entity.IDENTIFIER().getText()
                 self.package_string = self.package_string + "." + entity.IDENTIFIER().getText()
-                parent_entity_contents = entity.getText()
+                parent_entity_contents = EntityGenerator.extract_original_text(entity)
                 parent_entity_type = entity.typeTypeOrVoid().getText()
                 method_modifiers = self.get_method_accessor(entity)
                 # print(method_modifiers)
@@ -110,7 +136,7 @@ class EntityGenerator:
                 parent_entity_name = entity.IDENTIFIER().getText()
                 parent_entity_longname = self.package_string + "." + entity.IDENTIFIER().getText()
                 self.package_string = self.package_string + "." + entity.IDENTIFIER().getText()
-                parent_entity_contents = entity.getText()
+                parent_entity_contents = EntityGenerator.extract_original_text(entity)
                 props = self.getClassProperties(parent_entity_longname)
                 parent_entity_kind = self.findKindWithKeywords("Class", props["modifiers"])
                 class_ent = EntityModel.get_or_create(
@@ -124,7 +150,7 @@ class EntityGenerator:
                 parent_entity_name = entity.IDENTIFIER().getText()
                 parent_entity_longname = self.package_string + "." + entity.IDENTIFIER().getText()
                 self.package_string = self.package_string + "." + entity.IDENTIFIER().getText()
-                parent_entity_contents = entity.getText()
+                parent_entity_contents = EntityGenerator.extract_original_text(entity)
                 props = self.getInterfaceProperties(parent_entity_longname)
                 parent_entity_kind = self.findKindWithKeywords("Interface", props["modifiers"])
                 interface_ent = EntityModel.get_or_create(
