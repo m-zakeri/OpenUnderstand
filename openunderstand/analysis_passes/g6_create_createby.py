@@ -28,64 +28,57 @@ class CreateAndCreateByListener(JavaParserLabeledListener):
         self.refers = {}
         self.create = []
 
-    def get_refers(self):
-        print(self.refers)
-        return self.refers
-
-    def get_create(self):
-        return self.create
-
-    def get_class_name(self):
-        return self.class_name
-
-    def get_method_content(self, c):
+    def get_method_content(self, ctx) -> tuple(str, str):
+        # TODO Parents is always equal to ""
         parents = ""
         content = ""
-        current = c
+        current = ctx
+
         while current is not None:
             if type(current.parentCtx).__name__ == "ClassBodyDeclaration2Context":
-                content = self.extract_original_text(current.parentCtx);
+                content = self.extract_original_text(current.parentCtx)
                 break
-                parents = (current.parentCtx.typeTypeOrVoid().getText())
             current = current.parentCtx
-
-        # print(f"Entity context : {content}")
 
         return parents, content
 
-    def get_new_class_path(self, c):
+    def get_new_class_path(self, ctx) -> str:
         path = ""
-        current = c
-        while current is not None:
-            if type(current.parentCtx).__name__ == "CompilationUnitContext":
-                # print(getText())
-                current = current.parentCtx
-                child=None;
+
+        while ctx is not None:
+            if type(ctx.parentCtx).__name__ == "CompilationUnitContext":
+                ctx = ctx.parentCtx
                 i = 1
-                while 1:
-                    child = current.getChild(i)
-                    if child is None:
+                while True:
+
+                    if ctx.getChild(i) is None:
                         break
-                    import_list = current.getChild(i).getChild(1).getText().split(".");
+
+                    import_list = ctx.getChild(i).getChild(1).getText().split(".")
+
                     if import_list[-1] == self.new_class_name:
-                        path = "\\".join(import_list)+".java"
+                        path = "\\".join(import_list) + ".java"
                         break
+
                     i += 1
-            current = current.parentCtx
+            ctx = ctx.parentCtx
+
         return path
 
-    def get_method_modifiers(self, c):
+    def get_method_modifiers(self, ctx) -> list:
         parents = ""
         modifiers = []
-        current = c
+        current = ctx
         while current is not None:
             if "ClassBodyDeclaration" in type(current.parentCtx).__name__:
                 parents = (current.parentCtx.modifier())
                 break
             current = current.parentCtx
-        for x in parents:
-            if x.classOrInterfaceModifier():
-                modifiers.append(x.classOrInterfaceModifier().getText())
+
+        for p in parents:
+            if p.classOrInterfaceModifier():
+                modifiers.append(p.classOrInterfaceModifier().getText())
+
         return modifiers
 
     def extract_original_text(self, ctx):
@@ -104,7 +97,6 @@ class CreateAndCreateByListener(JavaParserLabeledListener):
 
         self.new_class_name = ctx.creator().createdName().IDENTIFIER()[0].getText()
         new_class_path = self.get_new_class_path(ctx)
-        # print(new_class_path)
         if not self.refers.__contains__(self.class_name):
             self.refers[self.class_name] = []
         self.refers[self.class_name].append(self.new_class_name)
@@ -116,11 +108,16 @@ class CreateAndCreateByListener(JavaParserLabeledListener):
             modifiers = self.get_method_modifiers(ctx)
             method_return, method_context = self.get_method_content(ctx)
             self.create.append(
-                {"scope_name": all_refs[-1], "scope_longname": ".".join(all_refs), "scope_modifiers": modifiers,
-                 "scope_return_type": method_return, "scope_content": method_context,
-                 "line": line, "col": col[:-1], "new_class_name": self.new_class_name,
+                {"scope_name": all_refs[-1],
+                 "scope_longname": ".".join(all_refs),
+                 "scope_modifiers": modifiers,
+                 "scope_return_type": method_return,
+                 "scope_content": method_context,
+                 "line": line,
+                 "col": col[:-1],
+                 "new_class_name": self.new_class_name,
                  "scope_parent": all_refs[-2] if len(all_refs) > 2 else None,
-                 "package_name": self.package_name,"new_class_path":new_class_path})
-
+                 "package_name": self.package_name,
+                 "new_class_path": new_class_path})
 
 

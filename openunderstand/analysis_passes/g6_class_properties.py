@@ -1,6 +1,5 @@
 """
 The helper module for couple_coupleby.py, create_createby_G11.py, declare_declareby.py modules
-
 Todo: Must be document well
 """
 
@@ -13,87 +12,77 @@ from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from antlr4 import *
 
 
+RULES = [JavaParserLabeled.RULE_classDeclaration,
+        JavaParserLabeled.RULE_methodDeclaration,
+        JavaParserLabeled.RULE_enumDeclaration,
+        JavaParserLabeled.RULE_interfaceDeclaration,
+        JavaParserLabeled.RULE_constructorDeclaration,
+        JavaParserLabeled.RULE_annotationTypeDeclaration]
+
 class ClassPropertiesListener(JavaParserLabeledListener):
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.class_name = None
         self.package_name = None
-        self.class_longname = []
         self.class_properties = None
+        self.class_longname = []
 
-    def checkParents(self, c):
-        return set(ClassPropertiesListener.findParents(c)) and set(list(reversed(self.class_longname)))
+    def checkParents(self, ctx: JavaParserLabeled.ClassDeclarationContext) -> set:
+        return set(ClassPropertiesListener.findParents(ctx)) & set(self.class_longname[::-1])
 
-    def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
+    def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext) -> None:
         self.package_name = ctx.qualifiedName().getText()
 
     @staticmethod
-    def findParents(c: ParserRuleContext):  # includes the ctx identifier
+    def findParents(ctx: ParserRuleContext) -> list:  # includes the ctx identifier
         parents = []
-        current = c.parentCtx
+        current = ctx.parentCtx
         while current is not None:
-            if current.getRuleIndex() in [
-                JavaParserLabeled.RULE_classDeclaration,
-                JavaParserLabeled.RULE_methodDeclaration,
-                JavaParserLabeled.RULE_enumDeclaration,
-                JavaParserLabeled.RULE_interfaceDeclaration,
-                JavaParserLabeled.RULE_constructorDeclaration,
-                JavaParserLabeled.RULE_annotationTypeDeclaration,
-            ]:
+            if current.getRuleIndex() in RULES:
                 parents.append(current.IDENTIFIER().getText())
             current = current.parentCtx
-        return list(reversed(parents))
+        return parents[::-1]
 
-    def extract_original_text(self, ctx):
+    def extractOriginalText(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         token_source = ctx.start.getTokenSource()
         input_stream = token_source.inputStream
         start, stop = ctx.start.start, ctx.stop.stop
         return input_stream.getText(start, stop)
 
-    def enterClassDeclaration(self, ctx:JavaParserLabeled.ClassDeclarationContext):
+    def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext) -> None:
         if self.class_properties:  # already found the class
-            return
+            return None
 
-        if self.class_longname[-1] == ctx.IDENTIFIER().getText():
-            self.checkParents(ctx)
+        if self.class_longname[-1] == ctx.IDENTIFIER().getText() and self.checkParents(ctx):
+
             # this is the exact class we wanted.
-            self.class_properties = {}
-            self.class_properties["name"] = self.class_longname[-1]
-            self.class_properties["longname"] = ".".join(self.class_longname)
-            self.class_properties["package_name"] = self.package_name
-
-            if len(self.class_longname) == 1:
-                self.class_properties["parent"] = None
-            else:
-                self.class_properties["parent"] = self.class_longname[-2]
-            self.class_properties["modifiers"] = ctx.parentCtx.getChild(0).getText()
-            self.class_properties["contents"] = self.extract_original_text(ctx.parentCtx)
+            self.class_properties = {
+            "name": self.class_longname[-1],
+            "longname": ".".join(self.class_longname),
+            "package_name": self.package_name,
+            "parent": None if len(self.class_longname) == 1 else self.class_longname[-2],
+            "modifiers": ctx.parentCtx.getChild(0).getText(),
+            "contents": self.extractOriginalText(ctx.parentCtx)}
 
 
 class InterfacePropertiesListener(JavaParserLabeledListener):
-    interface_longname = []
-    interface_properties = None
+    def __init__(self) -> None:
+        self.interface_longname = []
+        self.interface_properties = None
 
-    def checkParents(self, c):
-        return set(ClassPropertiesListener.findParents(c)) & set(list(reversed(self.interface_longname)))
+    def checkParents(self, ctx: JavaParserLabeled.InterfaceDeclarationContext) -> set:
+        return set(ClassPropertiesListener.findParents(ctx)) & set(self.interface_longname[::-1])
 
-    def enterInterfaceDeclaration(self, ctx:JavaParserLabeled.InterfaceDeclarationContext):
+    def enterInterfaceDeclaration(self, ctx:JavaParserLabeled.InterfaceDeclarationContext) -> None:
         if self.interface_properties:  # already found the interface
             return
-        if self.interface_longname[-1] == ctx.IDENTIFIER().getText():
-            if self.checkParents(ctx):
-                # this is the exact class we wanted.
-                self.interface_properties = {}
-                self.interface_properties["name"] = self.interface_longname[-1]
-                self.interface_properties["longname"] = ".".join(self.interface_longname)
 
-                if len(self.interface_longname) == 1:
-                    self.interface_properties["parent"] = None
-                else:
-                    self.interface_properties["parent"] = self.interface_longname[-2]
-                self.interface_properties["modifiers"] = ClassPropertiesListener.findClassOrInterfaceModifiers(ctx)
-                self.interface_properties["contents"] = ctx.getText()
+        if self.interface_longname[-1] == ctx.IDENTIFIER().getText() and self.checkParents(ctx):
 
-
-
-
+            # this is the exact class we wanted.
+            self.interface_properties = {
+            "name": self.interface_longname[-1],
+            "longname": ".".join(self.interface_longname),
+            "parent": None if len(self.interface_longname) == 1 else self.interface_longname[-2],
+            "modifiers":  ClassPropertiesListener.findClassOrInterfaceModifiers(ctx),
+            "contents":  ctx.getText()}
