@@ -8,7 +8,7 @@ from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 
 import argparse
 
-class CyclomaticListener(JavaParserLabeledListener):
+class CyclomaticStrictListener(JavaParserLabeledListener):
     def __init__(self):
         self.count=0
         self.methods=0
@@ -140,35 +140,3 @@ class CyclomaticListener(JavaParserLabeledListener):
 
 
 
-def main(args):
-    stream = FileStream(args.file, encoding="utf8")
-    lexer = JavaLexer(stream)
-    token_stream = CommonTokenStream(lexer)
-    parser = JavaParserLabeled(token_stream)
-    parser_tree = parser.compilationUnit()
-
-    my_listener = CyclomaticListener()
-
-    walker = ParseTreeWalker()
-    walker.walk(t=parser_tree,listener=my_listener)
-
-    with open('Results.txt', 'a') as f:
-        f.write(f"Average Cyclomatic Strict:{my_listener.get_dict}")
-        f.write('\n')
-
-
-
-if __name__ == '__main__':
-    path = '/Users/nikinezakati/Desktop/Compiler/OpenUnderstand/benchmark'
-    for dirpath, dirnames, filenames in os.walk('/Users/nikinezakati/Desktop/Compiler/OpenUnderstand/benchmark'):
-        print(f"PATH:{dirpath}")
-        print("----------")
-        for filename in [f for f in filenames if f.endswith(".java")]:
-            if filename.endswith('.java'):
-                argparser = argparse.ArgumentParser()
-                print(f"DIR:{dirnames}, FILENAME:{filename}")
-                argparser.add_argument(
-                    '-n', '--file',
-                    help='Input source', default=os.path.join(dirpath, filename))
-                args = argparser.parse_args()
-                main(args)

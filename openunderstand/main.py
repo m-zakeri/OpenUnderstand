@@ -296,6 +296,10 @@ from openunderstand.couple_coupleby__G12 import CoupleAndCoupleBy
 from analysis_passes.g6_create_createby import CreateAndCreateByListener
 from analysis_passes.g6_declare_declarein import DeclareAndDeclareinListener
 from analysis_passes.g6_class_properties import ClassPropertiesListener, InterfacePropertiesListener
+from metrics.AvgCyclomatic import CyclomaticListener
+from metrics.AvgCyclomaticStrict import CyclomaticStrictListener
+from metrics.AvgCyclomaticModified import CyclomaticModifiedListener
+from metrics.AvgEssential import EssentialListener
 
 class Project():
 
@@ -783,7 +787,10 @@ if __name__ == '__main__':
     extendedlist= []
     classescoupleby = {}
     couple = []
-
+    open('AvgCyclomatic', 'w').close()
+    open('AvgCyclomaticStrict', 'w').close()
+    open('AvgCyclomaticModified', 'w').close()
+    open('AvgEssential', 'w').close()
     for file_address in files:
         try:
             parse_tree = p.Parse(file_address)
@@ -901,6 +908,52 @@ if __name__ == '__main__':
         except Exception as e:
             print("An Error occurred in couple reference in file :" + file_address + "\n" + str(e))
             continue
+
+        try:
+
+            listener = CyclomaticListener()
+            p.Walk(listener, tree)
+            with open('AvgCyclomatic.txt', 'a') as f:
+                f.write(f"AvgCyclomatic:{listener.get_dict}")
+                f.write('\n')
+        except Exception as e:
+            print("An Error occurred for AvgCyclomatic implement in file:" + file_address + "\n" + str(e))
+
+        try:
+
+            listener = CyclomaticStrictListener()
+            p.Walk(listener, tree)
+            with open('AvgCyclomaticStrict.txt', 'a') as f:
+                f.write(f"AvgCyclomaticStrict:{listener.get_dict}")
+                f.write('\n')
+        except Exception as e:
+            print("An Error occurred for AvgCyclomaticStrict implement in file:" + file_address + "\n" + str(e))
+
+        try:
+
+            listener = CyclomaticModifiedListener()
+            p.Walk(listener, tree)
+            with open('AvgCyclomaticModified.txt', 'a') as f:
+                f.write(f"AvgCyclomaticModified:{listener.get_dict}")
+                f.write('\n')
+        except Exception as e:
+            print("An Error occurred for AvgCyclomaticModified implement in file:" + file_address + "\n" + str(e))
+
+        try:
+
+            listener = EssentialListener()
+            p.Walk(listener, tree)
+            with open('AvgEssential.txt', 'a') as f:
+                f.write(f"AvgEssential:{listener.get_dict}")
+                f.write('\n')
+        except Exception as e:
+            print("An Error occurred for AvgEssential implement in file:" + file_address + "\n" + str(e))
+
+
+
+
+
+
 
     try: 
         p.addoverridereference(classesx, extendedlist)
