@@ -16,8 +16,8 @@ This module find all OpenUnderstand call and callby references in a Java project
 __author__ = 'Shaghayegh Mobasher , Setayesh kouloubandi ,Parisa Alaie'
 __version__ = '0.1.0'
 
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 
 
 class DeclareAndDeclareinListener(JavaParserLabeledListener):
