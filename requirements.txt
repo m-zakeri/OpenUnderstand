@@ -1,4 +1,6 @@
 peewee==3.14.4
 antlr4-python3-runtime==4.9.2
-dataclasses
-python-dotenv
+dataclasses==0.8
+python-dotenv==0.20.0
+openpyxl==3.0.10
+pandas==1.1.5

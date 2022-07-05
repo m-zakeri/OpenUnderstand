@@ -12,11 +12,15 @@ from gen.javaLabeled.JavaLexer import JavaLexer
 from oudb.models import KindModel, EntityModel, ReferenceModel
 from oudb.api import open as db_open, create_db
 from oudb.fill import main
+
 from openunderstand.override_overrideby__G12 import overridelistener
 from openunderstand.couple_coupleby__G12 import CoupleAndCoupleBy
 from analysis_passes.modify_modifyby import ModifyListener
 from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
 from analysis_passes.entity_manager_g11 import EntityGenerator, get_created_entity
+from analysis_passes.Throws_ThrowsBy import Throws_TrowsBy
+from analysis_passes.DotRef_DorRefBy import DotRef_DotRefBy
+from metrics.Lineofcode import LineOfCode , stringify
 from analysis_passes.g6_create_createby import CreateAndCreateByListener
 from analysis_passes.g6_declare_declarein import DeclareAndDeclareinListener
 from analysis_passes.g6_class_properties import ClassPropertiesListener
@@ -391,6 +395,7 @@ if __name__ == '__main__':
     extendedlist= []
     classescoupleby = {}
     couple = []
+    a = b = c = d = 0
 
     for file_address in files:
         try:
@@ -460,7 +465,59 @@ if __name__ == '__main__':
         except Exception as e:
             print("An Error occurred in couple reference in file :" + file_address + "\n" + str(e))
             continue
+        try:
+            # Throws
+            listener = Throws_TrowsBy()
+            listener.implement = []
+            p.Walk(listener, tree)
+            p.addThrows_TrowsByRefs(listener.implement, file_ent, file_address, 236, 237, True)
+        except Exception as e:
+            print("An Error occurred in couple reference in file :" + file_address + "\n" + str(e))
+            pass
 
+        try:
+            # dotref
+            listener = DotRef_DotRefBy()
+            listener.declare = []
+            p.Walk(listener, tree)
+            p.addThrows_TrowsByRefs(listener.implement, file_ent, file_address, 198, 199, False)
+        except Exception as e:
+            print("An Error occurred in couple reference in file :" + file_address + "\n" + str(e))
+            pass
+
+        try:
+            # metrics lot
+            listener = LineOfCode(file_address=file_address)
+            p.Walk(listener, tree)
+            CountLineCode = listener.get_countLineCode
+            CountLineComment = listener.get_countLineComment
+            ContLineDecl = listener.get_countLineDecl
+            CountLineExe = listener.get_countLineExec
+            a += CountLineCode['file']
+            b += CountLineComment['file']
+            c += CountLineExe['file']
+            d += ContLineDecl['file']
+            print(f'CuntLineCode={CountLineCode}')
+            print(f'CuntLineComment={CountLineComment}')
+            print(f'CuntLineExe={CountLineExe}')
+            print(f'CuntLineDecl={ContLineDecl}')
+            print(
+                f'CountLIneCode: {CountLineCode["file"]} , CountLIneComment: {CountLineComment["file"]} , CountLINeExec: {CountLineExe["file"]} , CountLINeDecl: {ContLineDecl["file"]} ')
+            print("''''''''''''''''''''''''''''''''''''''''''''''''''''''''''\n")
+            df_clc = pd.DataFrame(data=stringify(listener.get_countLineCode), index=[1])
+            df_clcomment = pd.DataFrame(data=stringify(listener.get_countLineComment), index=[1])
+            df_cld = pd.DataFrame(data=stringify(listener.get_countLineDecl), index=[1])
+            df_cle = pd.DataFrame(data=stringify(listener.get_countLineExec), index=[1])
+            writer = pd.ExcelWriter(
+                r'C:\Users\Lenovo\Desktop\compiler\compiler-project-dev\openunderstand\countlinecode.xlsx')
+            df_clc.to_excel(writer, 'countLineCode', index=False)
+            df_clcomment.to_excel(writer, 'countLineComnnet', index=False)
+            df_cld.to_excel(writer, 'countLineDecl', index=False)
+            df_cle.to_excel(writer, 'countLineExe', index=False)
+            writer.save()
+        except Exception as e:
+            print("An Error occurred in couple reference in file :" + file_address + "\n" + str(e))
+            pass
         try:
             p.addoverridereference(classesx, extendedlist)
         except Exception as e:
@@ -471,3 +528,7 @@ if __name__ == '__main__':
 
         except Exception as e:
             print("An Error occurred in override reference " + str(e))
+    try:
+        print(f'TotalCountLIneCode: {a} , TotalCountLineComment:{b} , TotalCountLineExe:{c} , TotalCOuntLIneDecl:{d} ')
+    except Exception as e:
+        print("An Error occurred in override reference " + str(e))
