@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.1" xml:lang="en-US">
+  <compounddef id="println_8java" kind="file" language="Java">
+    <compoundname>println.java</compoundname>
+    <innerclass refid="classcom_1_1calculator_1_1app_1_1display_1_1println" prot="public">com::calculator::app::display::println</innerclass>
+    <innernamespace refid="namespacecom_1_1calculator_1_1app_1_1display">com::calculator::app::display</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="keyword">package<sp/></highlight><highlight class="normal">com.calculator.app.display;</highlight></codeline>
+<codeline lineno="2"><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="keyword">import</highlight><highlight class="normal"><sp/>com.calculator.app.display.print_success;</highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight><highlight class="keyword">import</highlight><highlight class="normal"><sp/>com.calculator.app.display.print_fail;</highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="keyword">import</highlight><highlight class="normal"><sp/>java.lang.System;</highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight></codeline>
+<codeline lineno="8" refid="classcom_1_1calculator_1_1app_1_1display_1_1println" refkind="compound"><highlight class="normal"></highlight><highlight class="keyword">public</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classcom_1_1calculator_1_1app_1_1display_1_1println" kindref="compound">println</ref><sp/>{</highlight></codeline>
+<codeline lineno="9"><highlight class="normal"></highlight></codeline>
+<codeline lineno="10" refid="classcom_1_1calculator_1_1app_1_1display_1_1println_1aa58e31bae8b6ae8f19ac38fe947729ec" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classcom_1_1calculator_1_1app_1_1display_1_1println_1aa58e31bae8b6ae8f19ac38fe947729ec" kindref="member">print</ref>(String<sp/>text)<sp/>{</highlight></codeline>
+<codeline lineno="11"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>System.out.println(text);</highlight></codeline>
+<codeline lineno="12"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="13"><highlight class="normal"></highlight></codeline>
+<codeline lineno="14" refid="classcom_1_1calculator_1_1app_1_1display_1_1println_1a3345db19155704d888b2fa4611979567" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classcom_1_1calculator_1_1app_1_1display_1_1println_1a3345db19155704d888b2fa4611979567" kindref="member">print</ref>(String<sp/>tag,<sp/>String<sp/>text)<sp/>{</highlight></codeline>
+<codeline lineno="15"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>System.out.println(tag<sp/>+<sp/></highlight><highlight class="stringliteral">&quot;<sp/>:<sp/>&quot;</highlight><highlight class="normal"><sp/>+<sp/>text);</highlight></codeline>
+<codeline lineno="16"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="17"><highlight class="normal"></highlight></codeline>
+<codeline lineno="18"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>inline-class<sp/>refactoring<sp/>should<sp/>successfully<sp/>inline<sp/>2<sp/>print_success<sp/>and<sp/>print_fail<sp/>classes</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="19"><highlight class="normal"></highlight></codeline>
+<codeline lineno="20" refid="classcom_1_1calculator_1_1app_1_1display_1_1println_1a0d34406ad5d7127fd4d376ed66f3e27b" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classcom_1_1calculator_1_1app_1_1display_1_1println_1a0d34406ad5d7127fd4d376ed66f3e27b" kindref="member">print_success</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="21"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>we<sp/>intentionally<sp/>made<sp/>print_success_message<sp/>static</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="22"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classcom_1_1calculator_1_1app_1_1display_1_1print__success" kindref="compound">print_success</ref>.<ref refid="classcom_1_1calculator_1_1app_1_1display_1_1print__success_1a861967d05bb884548daac43558a5b766" kindref="member">print_success_message</ref>();</highlight></codeline>
+<codeline lineno="23"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="24"><highlight class="normal"></highlight></codeline>
+<codeline lineno="25" refid="classcom_1_1calculator_1_1app_1_1display_1_1println_1a793e2184d3289950f1e148a23d1c658a" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classcom_1_1calculator_1_1app_1_1display_1_1println_1a793e2184d3289950f1e148a23d1c658a" kindref="member">print_fail</ref>()<sp/>{</highlight></codeline>
+<codeline lineno="26"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/></highlight><highlight class="comment">//<sp/>we<sp/>intentionally<sp/>made<sp/>print_fail_message<sp/>non-static</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="27"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/><ref refid="classcom_1_1calculator_1_1app_1_1display_1_1print__fail" kindref="compound">print_fail</ref><sp/>pf<sp/>=<sp/></highlight><highlight class="keyword">new</highlight><highlight class="normal"><sp/><ref refid="classcom_1_1calculator_1_1app_1_1display_1_1println_1a793e2184d3289950f1e148a23d1c658a" kindref="member">print_fail</ref>();</highlight></codeline>
+<codeline lineno="28"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>pf.<ref refid="classcom_1_1calculator_1_1app_1_1display_1_1print__fail_1a113eaf64d238627bca278b394ffaa4f4" kindref="member">print_fail_message</ref>();</highlight></codeline>
+<codeline lineno="29"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="30"><highlight class="normal">}</highlight></codeline>
+    </programlisting>
+    <location file="src/com/calculator/app/display/println.java"/>
+  </compounddef>
+</doxygen>

@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<schema lang="chinese">
+	<class name="noun"/>
+	<class name="verb"/>
+	<class name="adjective"/>
+	<class name="adverb"/>
+	<class name="measure_word"/>
+	<class name="prefix"/>
+	<class name="interjection"/>
+	<class name="particle"/>
+	<class name="preposition"/>
+	<class name="pron"/>
+	<class name="auxiliary"/>
+	<class name="aux_verb"/>
+	<class name="conjunction"/>
+	<class name="numeral"/>
+	<class name="suffix"/>
+	<class name="expression"/>
+</schema>
+

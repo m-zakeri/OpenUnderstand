@@ -1,0 +1,107 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.1" xml:lang="en-US">
+  <compounddef id="classcom_1_1calculator_1_1app_1_1display_1_1println" kind="class" language="Java" prot="public">
+    <compoundname>com::calculator::app::display::println</compoundname>
+    <derivedcompoundref refid="classcom_1_1calculator_1_1app_1_1method_1_1printLog" prot="public" virt="non-virtual">printLog</derivedcompoundref>
+      <sectiondef kind="public-func">
+      <memberdef kind="function" id="classcom_1_1calculator_1_1app_1_1display_1_1println_1a3345db19155704d888b2fa4611979567" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void print</definition>
+        <argsstring>(String tag, String text)</argsstring>
+        <name>print</name>
+        <param>
+          <type>String</type>
+          <declname>tag</declname>
+        </param>
+        <param>
+          <type>String</type>
+          <declname>text</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/com/calculator/app/display/println.java" line="14" column="17" bodyfile="src/com/calculator/app/display/println.java" bodystart="14" bodyend="16"/>
+      </memberdef>
+      <memberdef kind="function" id="classcom_1_1calculator_1_1app_1_1display_1_1println_1aa58e31bae8b6ae8f19ac38fe947729ec" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void print</definition>
+        <argsstring>(String text)</argsstring>
+        <name>print</name>
+        <reimplementedby refid="classcom_1_1calculator_1_1app_1_1method_1_1printLog_1aa58e31bae8b6ae8f19ac38fe947729ec">print</reimplementedby>
+        <param>
+          <type>String</type>
+          <declname>text</declname>
+        </param>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/com/calculator/app/display/println.java" line="10" column="17" bodyfile="src/com/calculator/app/display/println.java" bodystart="10" bodyend="12"/>
+        <referencedby refid="classcom_1_1calculator_1_1app_1_1init_1_1Main_1a8b260eecbaabcef8473fd87ada040682" compoundref="Main_8java" startline="10" endline="22">Main.main</referencedby>
+      </memberdef>
+      <memberdef kind="function" id="classcom_1_1calculator_1_1app_1_1display_1_1println_1a793e2184d3289950f1e148a23d1c658a" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void print_fail</definition>
+        <argsstring>()</argsstring>
+        <name>print_fail</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/com/calculator/app/display/println.java" line="25" column="17" bodyfile="src/com/calculator/app/display/println.java" bodystart="25" bodyend="29"/>
+        <references refid="classcom_1_1calculator_1_1app_1_1display_1_1print__fail_1a113eaf64d238627bca278b394ffaa4f4" compoundref="print__fail_8java" startline="9" endline="11">print_fail.print_fail_message</references>
+      </memberdef>
+      <memberdef kind="function" id="classcom_1_1calculator_1_1app_1_1display_1_1println_1a0d34406ad5d7127fd4d376ed66f3e27b" prot="public" static="no" const="no" explicit="no" inline="yes" virt="non-virtual">
+        <type>void</type>
+        <definition>void print_success</definition>
+        <argsstring>()</argsstring>
+        <name>print_success</name>
+        <briefdescription>
+        </briefdescription>
+        <detaileddescription>
+        </detaileddescription>
+        <inbodydescription>
+        </inbodydescription>
+        <location file="src/com/calculator/app/display/println.java" line="20" column="17" bodyfile="src/com/calculator/app/display/println.java" bodystart="20" bodyend="23"/>
+        <references refid="classcom_1_1calculator_1_1app_1_1display_1_1print__success_1a861967d05bb884548daac43558a5b766" compoundref="print__success_8java" startline="9" endline="11">print_success.print_success_message</references>
+        <referencedby refid="classcom_1_1calculator_1_1app_1_1init_1_1Main_1a8b260eecbaabcef8473fd87ada040682" compoundref="Main_8java" startline="10" endline="22">Main.main</referencedby>
+      </memberdef>
+      </sectiondef>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <inheritancegraph>
+      <node id="1">
+        <label>println</label>
+        <link refid="classcom_1_1calculator_1_1app_1_1display_1_1println"/>
+      </node>
+      <node id="2">
+        <label>printLog</label>
+        <link refid="classcom_1_1calculator_1_1app_1_1method_1_1printLog"/>
+        <childnode refid="1" relation="public-inheritance">
+        </childnode>
+      </node>
+    </inheritancegraph>
+    <collaborationgraph>
+      <node id="1">
+        <label>println</label>
+        <link refid="classcom_1_1calculator_1_1app_1_1display_1_1println"/>
+      </node>
+    </collaborationgraph>
+    <location file="src/com/calculator/app/display/println.java" line="8" column="7" bodyfile="src/com/calculator/app/display/println.java" bodystart="8" bodyend="30"/>
+    <listofallmembers>
+      <member refid="classcom_1_1calculator_1_1app_1_1display_1_1println_1aa58e31bae8b6ae8f19ac38fe947729ec" prot="public" virt="non-virtual"><scope>com::calculator::app::display::println</scope><name>print</name></member>
+      <member refid="classcom_1_1calculator_1_1app_1_1display_1_1println_1a3345db19155704d888b2fa4611979567" prot="public" virt="non-virtual"><scope>com::calculator::app::display::println</scope><name>print</name></member>
+      <member refid="classcom_1_1calculator_1_1app_1_1display_1_1println_1a793e2184d3289950f1e148a23d1c658a" prot="public" virt="non-virtual"><scope>com::calculator::app::display::println</scope><name>print_fail</name></member>
+      <member refid="classcom_1_1calculator_1_1app_1_1display_1_1println_1a0d34406ad5d7127fd4d376ed66f3e27b" prot="public" virt="non-virtual"><scope>com::calculator::app::display::println</scope><name>print_success</name></member>
+    </listofallmembers>
+  </compounddef>
+</doxygen>

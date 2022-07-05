@@ -1,0 +1,298 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>jVLT - Slovíčka</title>
+<link href="style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<table>
+<tr>
+<td><img alt="logo jVLT" height="128" src="jvlt.png" width="128"></td><td>
+<h1>jVLT &ndash; nástroj pro učení se slovíček</h1>
+</td>
+</tr>
+<tr>
+<td class="bluebox" valign="top">
+<div style="margin-left:0px">
+<a href="doc.html">Dokumentace</a>
+</div>
+<div style="margin-left:10px">Slovíčka</div>
+<div style="margin-left:10px">
+<a href="doc-examples.html">Příklady</a>
+</div>
+<div style="margin-left:10px">
+<a href="doc-quizzes.html">Kvízy</a>
+</div>
+<div style="margin-left:10px">
+<a href="doc-settings.html">Nastavení</a>
+</div>
+<div style="margin-left:10px">
+<a href="doc-menus.html">Položky nabídky</a>
+</div>
+<div style="margin-left:10px">
+<a href="doc-misc.html">Různé</a>
+</div>
+</td><td class="content">
+
+Dvěma hlavními součástmi záložky slovíček jsou seznam slov a detailní
+náhled.
+
+<h2>
+<a name="word_list">Seznam slov</a>
+</h2>
+V seznamu slov se zpočátku zobrazují všechna slova vašeho slovníčku. Vyhledávat
+hesla je možné prostřednictvím řádky &bdquo;Filtr&ldquo; přímo nad tabulkou se slovy.
+Volbou položky z rozbalovacího seznamu určíte typ vyhledávání. Pak můžete
+do textového pole zadat nějaký výraz a pro uplatnění filtru stisknout tlačítko
+se zatržítkem nebo stisknout klávesu &bdquo;Enter&ldquo;. Stisknutím tlačítka
+s křížkem filtr zrušíte a v důsledku toho se zobrazí všechna slova.<br>
+<br>
+
+<img alt="filtr" src="filter.png"> <br>
+<br>
+Pokud v rozbalovacím seznamu vyberete položku &bdquo;Pokročilý filtr&ldquo;,
+nahradí se tlačítko se zatržítkem tlačítkem s &bdquo;...&ldquo;. Po jeho
+stisknutí se objeví dialog, kde lze definovat sofistikovanější filtr.<br>
+Takovéto filtry se skládají z jednoho nebo mnoha subfiltrů; každý je
+představován řádkou, která obsahuje tři sloupce. V prvním sloupci vybíráte
+pole (Originál, Výslovnost atd.), v druhém sloupci typ porovnávání, např.
+&bdquo;se rovná&ldquo;, &bdquo;je větší než&ldquo; nebo &bdquo;je menší
+než&ldquo;. Do posledního sloupce se zadává hodnota. Tou je textový řetězec,
+číslo, datum nebo seznam textových řetězců, což závisí na vybraném poli
+a typu porovnávání. Subfiltry můžete přidávat a mazat stisknutím tlačítka
+&bdquo;Více&ldquo;, resp. &bdquo;Méně&ldquo; a celý filtr vyčistíte kliknutím
+na tlačítko &bdquo;Reset&ldquo;. Výběrem z možností &bdquo;Vyhovět všem
+následujícím&ldquo; a &bdquo;Vyhovět jednomu z následujících&ldquo; určujete,
+zda se musí vyhovět všem subfiltrům, nebo jen jednomu z nich.<br>
+<br>
+Filtr lze uložit zadáním názvu do textového pole v horní části dialogu a
+následným vybráním tlačítka &bdquo;Nový/Aktualizovat&ldquo;. Uložený
+filtr se nahraje jeho vybráním v rozbalovací nabídce. Pro jeho aktivaci musíte
+kliknout na tlačítko &bdquo;Použít&ldquo;. Chcete-li změnit existující filtr,
+nahrajte a upravte ho a pak stiskněte tlačítko &bdquo;Nový/Aktualizovat&ldquo;.
+Filtry lze mazat použitím tlačítka &bdquo;Smazat&ldquo;.
+<br>
+<br>
+
+<img alt="dialog pokročilého filtru" src="filter-2.png">
+<br>
+<br>
+
+
+<h3>
+<a name="columns">Vybírání sloupců a řazení</a>
+</h3>
+Pokud se klikne pravým tlačítkem na záhlaví jednoho ze sloupců seznamu slov,
+objeví se vyskakovací nabídka, která umožňuje seřadit seznam slov podle
+vybraného sloupce.<br>
+<br>
+
+<img alt="třídění" src="sorting.png"> <br>
+<br>
+Vyskakovací nabídka také obsahuje položku &bdquo;Vybrat sloupce...&ldquo;,
+která uživateli dovoluje vybrat sloupce pro seznam slov. Sloupce lze vybírat
+a odebírat tím, že nejdříve vyberete název sloupce a poté smáčknete tlačítko
+s levou šipkou, resp. tlačítko s pravou šipkou. Pořadí názvů sloupců lze
+měnit tlačítky se šipkou nahoru a se šipkou dolů. Sloupec, jehož název je
+v seznamu nejvíce nahoře, se v seznamu slov zobrazí nejvíce vlevo.<br>
+<br>
+
+<img alt="výběr sloupců" src="select_columns.png">
+<br>
+<br>
+Stisknutím tlačítek &bdquo;Přidat&ldquo;, &bdquo;Upravit&ldquo; nebo
+&bdquo;Smazat&ldquo; vedle seznamu slov můžete
+<a href="#add_word"> vkládat</a>,
+<a href="#edit_word"> měnit</a> resp.
+<a href="#remove_word"> mazat</a> slova.
+
+<h2>
+<a name="detailed_view">Detailní náhled</a>
+</h2>
+V detailním náhledu se zobrazuje slovo, které je právě vybrané v seznamu
+slov, spolu s jeho výslovností, překladem a příklady.
+V <a href="doc-settings.html#appearance-settings">záložce vzhledu</a>
+v dialogu nastavení můžete určit, kolik detailů se bude zobrazovat.
+Je-li vybrán příklad, je význam sdružený s dotyčným příkladem zvýrazněn.
+Kliknutím na odkaz &bdquo;Upravit&ldquo; vedle příkladu se dostanete do
+<a href="doc-examples.html"> záložky příkladů</a>.
+<br>
+<br>
+
+<img alt="detaily" src="details.png"><br>
+<br>
+Chcete-li ke slovu přidat více informací, můžete uvést zvukové nebo
+obrazové soubory, což je popsáno v <a href="#add_word">
+dalším oddíle</a>. V detailním náhledu se soubory zobrazují jako ikony.
+Kliknutí na ikonu zvukového souboru způsobí přehrání příslušného souboru,
+po kliknutí na ikonu obrazového souboru se otevře nové okno, ve kterém
+se obrázek zobrazí.
+<br>
+<br>
+
+<img alt="multimédia" src="multimedia.png"> <br>
+<br>
+
+
+<h2>
+<a name="add_word">Přidávání slov</a> 
+</h2>
+Kliknutím na tlačítko &bdquo;Přidat&ldquo; vedle seznamu slov můžete do
+svého slovníčku přidat slovo. V dialogu, který se otevře, budou
+tři textová pole: &bdquo;Originál&ldquo;, &bdquo;Výslovnost&ldquo;
+a &bdquo;Lekce&ldquo;. Prvně jmenované textové pole je povinné, druhé
+a třetí jsou volitelná. Má-li slovo, které budete vkládat, více možných
+výslovností, stiskněte tlačítko &bdquo;Více...&ldquo;. Existující lekce
+lze zvolit stisknutím tlačítka s šipkou vedle textového pole a
+vybráním dané lekce z rozbalovací nabídky.<br>
+<br>
+<br>
+
+<img alt="přidávání slova" src="add_word.png"> <br>
+<br>
+Slovo musí mít nejméně jeden význam. Významy můžete přidávat stisknutím
+tlačítka &bdquo;Přidat&ldquo; vedle náhledu na jejich seznam a zadáním
+řetězců do textového pole &bdquo;Překlad&ldquo; nebo do textového pole
+&bdquo;Definice&ldquo;. Definice slova je krátká poznámka o jeho typu,
+použití atd. Nemusíte vepisovat text do obou polí, stačí do jednoho.
+Má-li slovo více než jeden význam, můžete jejich pořadí měnit, a to
+pomocí tlačítek s šipkami na levé straně náhledu na seznam.<br>
+<br>
+
+<img alt="přidávání významu" src="add_sense.png"> <br>
+<br>
+Poté, co jste s úpravami slova skončili, stiskněte &bdquo;Použít&ldquo;
+nebo &bdquo;Použít a upravit kopii&ldquo;, a slovo se přidá. Tímto druhým
+tlačítkem se nesmažou aktuální hodnoty, což může být užitečné v případě,
+že chcete zadávat několik podobných slov.
+Dialog se po stisknutí jednoho z tlačítek stiskněte &bdquo;Použít&ldquo;
+nezavře &ndash; i nadále můžete přidávat slova, nebo se stisknutím tlačítka
+&bdquo;Zavřít&ldquo; můžete vrátit do hlavního okna.
+
+
+<h3>
+<a name="advanced_settings">Pokročilá nastavení</a>
+</h3>
+Po stisknutí tlačítka &bdquo;Podrobnosti...&ldquo; můžete upravovat několik
+dodatečných vlastností slova.
+<p>
+<img alt="pokročilá nastavení" src="add_word_details.png"></p>
+
+<h4>
+<a name="advanced_settings_details">Detaily slova</a>
+</h4>
+Zda se v dialogu, který se objeví, zobrazí záložka &bdquo;Detaily&ldquo;, je
+závislé na tom, zda máte pro slovník nastaven jazyk, což se dělá přes
+položku &bdquo;Úpravy-&gt;Vlastnosti&ldquo;. V záložce detailů můžete
+vybrat slovní druh, např. podstatné jméno, sloveso atd. U některých slovních
+druhů může být možné zadávat dodatečné detaily. Například, na obrázku výše
+lze nastavit rod podstatného jména.
+<h4>Kategorie</h4>
+Slovo může být (volitelně) zařazeno do kategorií (např. &bdquo;Rodinní
+příslušníci&ldquo;). Můžete buď vybrat existující kategorie z rozbalovacího
+seznamu, nebo zadat nový název kategorie. Poté stiskněte &bdquo;Přidat&ldquo;.
+<p>
+<img alt="přidávání kategorií slov" src="add_word_categories.png"></p>
+
+<h4>Uživatelská pole</h4>
+Uživatelská (neboli uživatelem definovaná) pole jsou podobná polím v
+<a href="#advanced_settings_details">záložce &bdquo;Detaily&ldquo;</a>.
+Na rozdíl od nich ale mohou mít volitelná jména. Chcete-li přidat nové
+uživatelské pole, musíte nejdříve dvojitě kliknout na prázdné buňce ve
+sloupci &bdquo;Jméno pole&ldquo;, následně zvolit existující jméno
+z rozbalovacího seznamu nebo vložit nové. Potom proveďte dvojklik na
+příslušnou buňku ve sloupci &bdquo;Hodnota pole&ldquo; a zadejte hodnotu.
+Máte-li více uživatelských polí, můžete změnit jejich pořadí, a to zvolením
+řádky v tabulce a následným používáním šipek na klávesnici.
+<p>
+<img alt="Volitelná pole" src="add_word_custom_fields.png"></p>
+
+<h4>Multimediální soubory</h4>
+Ke slovu můžete zadávat i zvukové a obrazové soubory, například soubor WAV,
+v němž bude výslovnost. (Ne)zaškrtnutím políčka &bdquo;Použít relativní
+cestu&ldquo; je možné zvolit, zda se umístění souboru má ukládat s relativní
+cestou (např. &bdquo;images\obrazek.gif&ldquo;), nebo s absolutní cestou
+(např. &bdquo;D:\jvlt\images\obrazek.gif&ldquo;). Zvolíte-li první možnost,
+bude cesta relativní k umístění vašeho souboru se slovíčky. Pokud je
+například vaším souborem se slovíčky &bdquo;D:\jvlt\nemcina.jvlt&ldquo;
+a umístění souboru je &bdquo;images\obrazek.gif&ldquo;, pak bude jVLT hledat
+obrázek "D:\jvlt\images\obrazek.gif".
+<br>
+Neumí-li jVLT přehrát nebo zobrazit soubory určitého typu, můžete v
+<a href="doc-settings.html#multimedia_settings">dialogu nastavení</a>
+zadat externí příkazy.
+<p>
+<img alt="kategorie" src="add_word_multimedia.png"></p>
+
+<h4>
+<a name="advanced_settings_flags">Příznaky</a>
+</h4>
+V této záložce můžete nastavit příznaky, jimiž určíte, zda se dané
+slovo objeví v kvízu. Pamatujte si, že pokud nastavíte, aby se statistiky
+resetovaly (viz <a href="doc-menus.html#menu_tools">nabídka Nástroje</a>),
+tyto příznaky zmizí.
+V současné době jde o následující příznaky.
+<ul>
+ 
+<li>Toto slovo znám &ndash; už se neptat</li>
+
+<li>Ne moc potřebné &ndash; dát stranou</li>
+
+<li>Pokaždé dát do kvízu (bez ohledu na sadu)</li>
+
+</ul>
+
+<p>
+<img alt="příznaky" src="add_word_flags.png"></p>
+
+
+<h2>
+<a name="edit_a_copy">Upravování kopií slov</a>
+</h2>
+Po stisknutí tlačítka s názvem &bdquo;Upravit kopii&ldquo; můžete přidat
+nové slovo, přičemž využijete některé stávající slovo jako šablonu. Protože
+nemůžete vložit dvakrát stejné slovo, musíte nové slovo před přidáním
+upravit.
+
+<h2>
+<a name="edit_word">Upravování slov</a>
+</h2>
+Slovo můžete začít upravovat tím, že ho nejdříve vyberete v
+<a href="doc-vocabulary.html#word_list">seznamu slov</a> a pak stisknete
+tlačítko &bdquo;Upravit&ldquo; vedle seznamu.
+Upravování jednoho slova je v zásadě stejné jako přidávání slova. Je tu však
+jeden rozdíl: Když chcete smazat význam, musíte se ujistit, že se na tento
+význam neodkazuje žádný příklad.
+<br>
+<br>
+Pokud vyberete před stiskem tlačítka &bdquo;Upravit&ldquo; více slov &ndash;
+buď použitím klávesy <i>Ctrl</i> nebo <i>Shift</i> při klikání na slova
+&ndash;, můžete pro všechna vybraná slova najednou změnit lekci a
+<a href="#advanced_settings">pokročilá nastavení</a>. Musíte však být opatrní:
+Nová nastavení vždy přepíší stará. Když například upravujete dvě slova najednou,
+jedno patřící do lekce &bdquo;A&ldquo;, druhé do lekce &bdquo;B&ldquo;, a
+přiřadíte k nim novou lekci &bdquo;C&ldquo;, pak už tato slova nebudou do lekce
+&bdquo;A&ldquo;, resp. &bdquo;B&ldquo; patřit.
+
+<h2>
+<a name="remove_word">Mazání slov</a>
+</h2>
+Chcete-li smazat slova, musíte je nejdříve vybrat v seznamu slov (více slov
+lze vybrat při stisknutí klávesy <i>Ctrl</i> nebo klávesy <i>Shift</i>).
+Po stisknutí tlačítka &bdquo;Smazat&ldquo; vedle seznamu slov se objeví
+dialog, jehož prostřednictvím budete požádáni, abyste své rozhodnutí potvrdili.
+Vezměte na vědomí, že všechny odkazy na mazaná slova budou z příkladů smazány.
+Budou smazány i příklady, ve kterých nezbudou žádné odkazy. V dialogu se
+zobrazí počet příkladů, které budou smazány a které budou upraveny.
+<p>
+<img alt="potvrzení smazání" src="confirm_word_deletion.png"></p>
+
+<br>
+Chcete-li vidět seznam příkladů odkazujících se na konkrétní slovo, můžete se
+podívat na jeho <a href="#detailed_view">detailní náhled</a>.
+
+</td>
+</tr>
+</table>
+</body>
+</html>

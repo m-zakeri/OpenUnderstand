@@ -1,0 +1,242 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>jVLT - Settings</title>
+<link href="style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<table>
+<tr>
+<td><img alt="jVLT logo" height="128" src="jvlt.png" width="128"></td><td>
+<h1>jVLT - a vocabulary learning tool</h1>
+</td>
+</tr>
+<tr>
+<td class="bluebox" valign="top">
+<div style="margin-left:0px">
+<a href="doc.html">Documentation</a>
+</div>
+<div style="margin-left:10px">
+<a href="doc-vocabulary.html">Vocabulary</a>
+</div>
+<div style="margin-left:10px">
+<a href="doc-examples.html">Examples</a>
+</div>
+<div style="margin-left:10px">
+<a href="doc-quizzes.html">Quizzes</a>
+</div>
+<div style="margin-left:10px">Settings</div>
+<div style="margin-left:10px">
+<a href="doc-menus.html">Menu Entries</a>
+</div>
+<div style="margin-left:10px">
+<a href="doc-misc.html">Miscellaneous</a>
+</div>
+</td><td class="content">
+
+Selecting the "Preferences..." item from the "Edit" menu opens a dialog
+where you can change several settings of jVLT.
+
+<h2>
+<a name="appearance_settings">Appearance Settings</a>
+</h2>
+In the "Appearance" tab the look and feel, fonts, the locale, and the fields
+shown in the HTML area can be selected. When selecting a font, either the
+default one can be used or a custom one can be chosen by selecting
+"Choose font..." from the drop-down menu.
+<ul>
+
+<li>
+<b>Look and feel:</b>
+The look and feel determines the general appearance of the application.
+How many look and feels are available depends on the operating system.
+</li>
+
+<li>
+<b>User interface font:</b>
+The user interface font is used for all components except for the
+detailed view of words and examples and the components for which the
+font is set via the two following settings.
+Note that adjusting this font is only possible if the "Metal"
+look and feel is used.
+</li>
+
+<li>
+<b>User interface font for "Original":</b>
+This font is used for words and examples in the original language.
+</li>
+
+<li>
+<b>User interface font for "Pronunciation":</b>
+For the pronunciation a custom font can be defined, too.
+</li>
+
+<li>
+<b>HTML font:</b>
+This font is used for the HTML areas in the Vocabulary, Examples, and
+Quiz tab.
+</li>
+
+<li>
+<b>HTML font for the "Original" field: </b>
+This setting determines the font of
+the "Original" field in the
+<a href="doc-vocabulary.html#detailed_view">detailed view</a>.
+</li>
+
+<li>
+<b>HTML font for the "Pronunciation" field: </b>
+You can also select the font for displaying the pronunciation
+in the detailed view.
+</li>
+
+<li>
+<b>Locale:</b>
+This setting determines the language of the application's strings.
+</li>
+
+<li>
+<b>Fields shown in the HTML area:</b>
+Here you can select which fields are shown in the
+<a href="doc-vocabulary.html#detailed_view">detailed view</a>
+of the vocabulary tab.
+</li>
+
+</ul>
+Note that changing any of the above settings requires to restart the
+application.
+<br>
+<br>
+
+<img alt="Appearance settings" src="settings_appearance.png">
+<br>
+<br>
+
+
+<h2>
+<a name="general_settings">General Settings </a>
+</h2>
+In the "General" tab you can currently make the following settings:
+<ul>
+
+<li>
+<b> Restore previously open file on startup: </b>
+If you select this checkbox, jVLT remembers which file you worked on
+during your last session and loads it on the next startup.
+</li>
+
+<li>
+<b>Print font:</b>
+You can either use the default font for
+<a href="doc-misc.html#printing">printing</a>
+or select a custom one by selecting the "Select font..." item
+from the drop-down menu.
+</li>
+
+</ul>
+
+<br>
+<br>
+
+<img alt="General settings" src="settings_general.png">
+<br>
+<br>
+
+
+<h3>Expiration time</h3>
+The expiration time determines when a word becomes active again after a
+quiz (see <a href="doc-quizzes.html">the quiz section</a>). There are three
+settings to modify the expiration time:
+<ul>
+
+<li>
+<b>Number of batches:</b>
+The maximum batch number assigned to a word. If a word which already
+has the maximum batch number is known during a quiz, its batch
+number does not change (normally it increases by one).
+</li>
+
+<li>
+<b>Expiration factor:</b>
+Determines the time after which a word becomes active again. If <i>X</i>
+is the expiration factor a word assigned to batch No. <i>i</i> becomes
+active after <i>X</i><i style="vertical-align:super">i-1</i> time units.
+I.e. a word on batch No. <i>1</i> becomes
+active after one time unit, a word on batch No. <i>2</i> after <i>X</i>
+time units, a word on batch No. <i>3</i> after
+<i>X</i><i style="vertical-align:super">2</i> time units etc.
+</li>
+
+<li>
+<b>Unit:</b>
+The time unit can either be days or hours.
+</li>
+
+</ul>
+
+
+<h2>
+<a name="multimedia_settings">Multimedia Settings</a>
+</h2>
+In this tab, you can adjust how multimedia files specified in the
+<a href="doc-vocabulary.html#add_word">word dialog</a> are handled by jVLT.
+<br>
+<br>
+
+<img alt="File types" src="settings_file_types.png">
+<ul>
+
+<li>
+<b>Play audio files immediately after the word has been selected:</b>
+By toggling this check box, jVLT  automatically plays audio files if
+you select a word in the <a href="doc-vocabulary.html#word list">word list</a>.
+</li>
+
+</ul>
+
+<h3>File types</h3>
+In the "File types" area external commands to play/show multimedia files
+can be defined. Pressing "Edit" or "Add" opens a new dialog which
+lets you edit a certain file type. The meaning of the dialog's
+components is described below:
+<ul>
+
+<li>
+<b>File extension:</b>
+The file extension, e.g. "mp3". For the default file types, this value
+cannot be changed.
+</li>
+
+<li>
+<b>Type:</b>
+The file type. This setting is optional, it only determines
+which icon is used in the
+<a href="doc-vocabulary.html#detailed_view">detailed word view
+</a>.
+</li>
+
+<li>
+<b>Use jVLT to play/show:</b>
+You can only select this checkbox for the default file types. If it
+is selected, jVLT will try to play a file itself instead of using an
+external command.
+</li>
+
+<li>
+<b>Command:</b>
+The command to use for playing/showing a file with the current extension.
+You have to add %f as a placeholder for the file name.
+</li>
+
+</ul>
+
+<img alt="Edit file type" src="settings_edit_file_type.png">
+<br>
+<br>
+
+
+</td>
+</tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<doxygen xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="compound.xsd" version="1.9.1" xml:lang="en-US">
+  <compounddef id="printLog_8java" kind="file" language="Java">
+    <compoundname>printLog.java</compoundname>
+    <innerclass refid="classcom_1_1calculator_1_1app_1_1method_1_1printLog" prot="public">com::calculator::app::method::printLog</innerclass>
+    <innernamespace refid="namespacecom_1_1calculator_1_1app_1_1method">com::calculator::app::method</innernamespace>
+    <briefdescription>
+    </briefdescription>
+    <detaileddescription>
+    </detaileddescription>
+    <programlisting>
+<codeline lineno="1"><highlight class="keyword">package<sp/></highlight><highlight class="normal">com.calculator.app.method;</highlight></codeline>
+<codeline lineno="2"><highlight class="normal"></highlight></codeline>
+<codeline lineno="3"><highlight class="normal"></highlight><highlight class="keyword">import</highlight><highlight class="normal"><sp/>com.calculator.app.display.println;</highlight></codeline>
+<codeline lineno="4"><highlight class="normal"></highlight></codeline>
+<codeline lineno="5"><highlight class="normal"></highlight><highlight class="comment">//<sp/>this<sp/>class<sp/>is<sp/>semantically<sp/>shouldn&apos;t<sp/>be<sp/>here<sp/>,</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="6"><highlight class="normal"></highlight><highlight class="comment">//<sp/>and<sp/>should<sp/>be<sp/>move<sp/>to<sp/>display<sp/>package<sp/>that<sp/>is<sp/>semantically<sp/>close<sp/>to<sp/>this<sp/>class</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="7"><highlight class="normal"></highlight><highlight class="comment">//<sp/>so<sp/>this<sp/>class<sp/>is<sp/>a<sp/>good<sp/>candidate<sp/>for<sp/>moving<sp/>class<sp/>refactoring</highlight><highlight class="normal"></highlight></codeline>
+<codeline lineno="8" refid="classcom_1_1calculator_1_1app_1_1method_1_1printLog" refkind="compound"><highlight class="normal"></highlight><highlight class="keyword">public</highlight><highlight class="normal"><sp/></highlight><highlight class="keyword">class<sp/></highlight><highlight class="normal"><ref refid="classcom_1_1calculator_1_1app_1_1method_1_1printLog" kindref="compound">printLog</ref><sp/></highlight><highlight class="keyword">extends</highlight><highlight class="normal"><sp/><ref refid="classcom_1_1calculator_1_1app_1_1display_1_1println" kindref="compound">println</ref><sp/>{</highlight></codeline>
+<codeline lineno="9"><highlight class="normal"><sp/><sp/><sp/><sp/>@Override</highlight></codeline>
+<codeline lineno="10" refid="classcom_1_1calculator_1_1app_1_1method_1_1printLog_1aa58e31bae8b6ae8f19ac38fe947729ec" refkind="member"><highlight class="normal"><sp/><sp/><sp/><sp/></highlight><highlight class="keyword">public</highlight><highlight class="normal"><sp/></highlight><highlight class="keywordtype">void</highlight><highlight class="normal"><sp/><ref refid="classcom_1_1calculator_1_1app_1_1method_1_1printLog_1aa58e31bae8b6ae8f19ac38fe947729ec" kindref="member">print</ref>(String<sp/>text)<sp/>{</highlight></codeline>
+<codeline lineno="11"><highlight class="normal"><sp/><sp/><sp/><sp/><sp/><sp/><sp/><sp/>super.print(text);</highlight></codeline>
+<codeline lineno="12"><highlight class="normal"><sp/><sp/><sp/><sp/>}</highlight></codeline>
+<codeline lineno="13"><highlight class="normal">}</highlight></codeline>
+    </programlisting>
+    <location file="src/com/calculator/app/method/printLog.java"/>
+  </compounddef>
+</doxygen>

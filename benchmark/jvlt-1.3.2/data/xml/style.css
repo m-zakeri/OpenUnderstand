@@ -1,0 +1,42 @@
+body {
+	background-color:#ffffff;
+}
+
+table.box {
+	background-color:#fdefbe;
+}
+
+div.hbar {
+	font-size:0;
+	margin:0;
+	padding:3;
+	background-color:#fde07f;
+}
+
+td.vbar {
+	background-color:#fde07f;
+	margin-left:10;
+	margin-right:10;
+	width:23;
+}
+
+a.link {
+	text-decoration:none;
+	color:#1740e6;
+}
+
+a.selflink {
+	text-decoration:none;
+	color:#e61717;
+}
+
+span#definition {
+	color:#585858;
+}
+
+span#custom-field {
+	color:#326731;
+	font-style:italic;
+	font-weight:bold
+}
+

@@ -1,0 +1,213 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html><head>
+
+  
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><title>jVLT - Quizzes</title>
+  
+
+  
+  
+  <link href="style.css" rel="stylesheet" type="text/css"></head><body>
+<table>
+
+  <tbody>
+    <tr>
+      <td><img alt="jVLT logo" src="jvlt.png" height="128" width="128"></td>
+      <td>
+      <h1>jVLT - outil d’apprentissage du vocabulaire</h1>
+      </td>
+    </tr>
+    <tr>
+      <td class="bluebox" valign="top">
+      <div style="margin-left: 0px;"><a href="doc.html">Documentation</a>
+      </div>
+      <div style="margin-left: 10px;">
+      <a href="doc-vocabulary.html">Vocabulaire</a>
+      </div>
+      <div style="margin-left: 10px;">
+      <a href="doc-examples.html">Exemples</a>
+      </div>
+      <div style="margin-left: 10px;">Quiz</div>
+      <div style="margin-left: 10px;">
+      <a href="doc-settings.html">Préférences</a>
+      </div>
+      <div style="margin-left: 10px;">
+      <a href="doc-menus.html">Menus</a>
+      </div>
+      <div style="margin-left: 10px;">
+      <a href="doc-misc.html">Divers</a>
+      </div>
+      </td>
+      <td class="content">jVLT offre la possibilité de faire des quiz
+sur votre vocabulaire. Les mots sont attribués à différents lots selon
+que vous vous en souveniez ou pas pendant le quiz. Le numéro de lot des
+mots sus augmente
+(par exemple, un mot du lot n° 1 est attribué au lot n° 2 après le
+quiz), les mots non sus sont attribués au lot n° 0.
+Après le quiz, un mot devient inactif pendant un certain temps qui
+dépend du lot auquel il appartient. “Inactif” signifie que le mot
+n’apparaîtra pas dans un quiz. La date à laquelle un mot redevient
+actif s’appelle la “date d’expiration”. La durée écoulée avant
+l’expiration peut être ajustée dans les <a href="doc-settings.html#general_settings">Préférences</a>. En voici
+les valeurs par
+défaut :
+      <ul>
+        <li>Lot n° 0: 0 jours</li>
+        <li>Lot n° 1: 1 jours</li>
+        <li>Lot n° 2: 3 jours</li>
+        <li>Lot n° 3: 9 jours</li>
+        <li>Lot n° 4: 27 jours</li>
+        <li>Lot n° 5: 81 jours</li>
+        <li>Lot n° 6: 283 jours</li>
+        <li>Lot n° 7: 849 jours</li>
+      </ul>
+Pour démarrer un quiz, cliquez sur “Commencer” dans l’onglet Quiz.<br>
+      <br>
+      <img alt="Quiz tab" src="quiz.png"> <br>
+      <br>
+      <h2>
+      <a name="before_the_quiz">Avant le quiz</a>
+      </h2>
+Avant de commencer un quiz, vous pouvez sélectionner un type de quiz,
+spécifier certaines options, et restreindre le nombre de mots à tester
+pendant le quiz.<br>
+      <h3>Sélection des mots</h3>
+Cliquer sur le bouton “Sélectionner les mots…” ouvre une boîte de
+dialogue du même nom. Dans cette fenêtre, on
+vous propose quatre méthodes de sélection des mots :
+      <ul>
+        <li>
+          <b>Tous les mots :</b> vous serez interrogés sur tous les
+mots.
+        </li>
+        <li>
+          <b>Les mots correspondant au filtre spécifié uniquement :</b>
+Seuls les
+mots correspondant à un certain filtre vous seront demandés. Si cette
+option est choisie, il vous faudra spécifier un filtre en cliquant sur
+le bouton “Filtre”. La boîte de dialogue qui s’ouvre alors est décrite <a href="doc-vocabulary.html#word_list">ici</a>.
+        </li>
+        <li>
+          <b>Appliquer successivement plusieurs filtres :</b>
+Vous pouvez aussi sélectionner plusieurs filtres qui seront appliqués
+successivement. Par
+exemple, vous pouvez spécifier que vous serez d’abord interrogé sur
+tous les mots qui n’ont pas été testés, puis sur les mots d’une
+certaine leçon. Vous pouvez ajouter de nouveaux filtres en cliquant sur
+le bouton “Gérer les filtres…”.
+        </li>
+        <li>
+          <b>Uniquement les mots remplissant les critères de catégorie
+suivants :</b>
+Choisissez cette option si vous voulez sélectionner rapidement les
+catégories sur lesquelles vous (ne) souhaitez (pas) être interrogé.
+        </li>
+      </ul>
+      <br>
+      <br>
+      <img alt="Select words" src="select_words.png">
+      <br>
+      <br>
+      <br>
+      <h3>Sélectionner le type de quiz</h3>
+      <br>
+jVLT interroge sur le champ “Original” par défaut. Vous pouvez
+concevoir d’autres types de quiz en paramétrant la fenêtre de dialogue
+qui apparaît après avoir cliqué sur “Gérer les types de quiz”.
+      <br>
+      <br>
+      <img alt="Manage quiz types" src="quiz_type_dialog.png">
+      <br>
+      <br>
+Dans cette fenêtre, vous choisissez les champs sur lesquels vous serez
+interrogé, et les champs qui seront affichés lors des questions. Vous
+devez aussi donner un nom au type de quiz nouvellement créé en
+saisissant un nom dans le champ de texte en haut de la fenêtre, puis en
+cliquant sur “Nouveau/mettre à jour”. Vous pouvez aussi modifier les
+types de quiz déjà existants en les choisissant dans le menu déroulant
+à droite du champ de texte, puis en cliquant sur “Nouveau/mettre à
+jour” une fois les modifications saisies.<br>
+      <br>
+Après avoir ajouté un nouveau type de quiz et fermé la fenêtre de
+dialogue en cliquant sur “OK”, vous pouvez sélectionner le nouveau type
+de quiz dans le menu déroulant “Choisir le type de quiz”.<br>
+      <br>
+      <br>
+      <h3>Options de quiz</h3>
+Dans la fenêtre des options de quiz, vous pouvez choisir plusieurs
+options qui modifient la façon dont le quiz se déroule.<br>
+      <br><p>
+<img alt="Quiz options" src="quiz_options.png"></p>
+      
+      <ul>
+        <li><b>Entrer une réponse :</b> En cochant cette case, vous
+choisissez si vous voulez saisir une solution lors d’un quiz.
+        </li>
+        <li><b>Ignore majuscules/minuscules dans la réponse saisie :</b> Cela détermine
+s’il y aura vérification des majuscules/minuscules lors de la saisie
+d’une réponse d’un quiz. Si cette case est cochée, la réponse “espagne”
+sera considérée correcte pour le mot “Espagne”.<br>
+        </li>
+        <li><b>Déterminer la réponse par défaut :</b> Si cette case est
+cochée, vous pouvez choisir une réponse par défaut (“Oui” ou “Non”)
+pour chaque mot d’un quiz.</li>
+        <li>Ignorer la date d’expiration : Si vous choisissez cette
+option, la date d’expiration des mots ne sera pas prise en compte
+pendant un quiz. Ainsi vous pourrez immédiatement vous tester de
+nouveau sur des mots qui viennent d’être demandés alors que leur délai
+d’expiration avant de faire partie d’un nouveau quiz n’est pas écoulé.</li>
+        <li><span style="font-weight: bold;">...mais actualiser les lots après le quiz</span>
+: Si vous avez coché cette case, les lots de mots sont mis à jour après
+un quiz même si la date d’expiration est ignorée pendant un quiz.</li>
+
+      </ul>
+      
+      <h2>
+      <a name="during_the_quiz">Pendant le quiz</a>
+      </h2>
+En fonction des configurations des options de quiz,
+un quiz peut être effectué de deux façons différentes. Une première
+possibilité : vous tapez la solution comme dans l’image ci-dessous.
+      <br>
+      <br>
+      <img alt="Input Answer" src="quiz_input_answer.png">
+      <br>
+      <br>
+Après avoir cliqué sur “Suivant”, la solution s’affiche et un
+message vous indiquant si votre réponse est juste ou fausse apparaît.
+      <br>
+      <br>
+      <img alt="Show Answer" src="quiz_show_answer.png">
+      <br>
+      <br>
+Une seconde possibilité : vous ne tapez pas la solution (vous
+pouvez l’écrire sur une feuille si vous préférez), et (après avoir
+cliqué sur “Suivant”) jVLT vous demande si vous connaissiez la bonne
+réponse.
+      <br>
+      <br>
+      <img alt="Show Answer" src="quiz-2.png">
+      <br>
+      <br>Il vous est également possible de placer les drapeaux décrits dans la <a href="doc-vocabulary.html#advanced_settings_flag">boîte de dialogue “Avancé…”</a> pendant un quiz. Dès que vous avez placé un drapeau, le mot est exclu des quiz suivants.<br>
+      <br>
+Vous pouvez annuler un quiz à n’importe quel moment en cliquant sur
+“Arrêter”. La section suivante décrit ce qui se passe ensuite.
+      <h2><a name="after_the_quiz">Après le quiz</a>
+      </h2>
+Si vous avez décidé de finir le quiz, jVLT vous demande si vous
+voulez revoir les mots que vous ne connaissiez pas. Ensuite, deux
+listes s’affichent : elles montrent respectivement les mots sus et ceux
+non sus. Si vous avez classé des mots sus dans la catégorie des non sus
+et vice-versa, vous pouvez alors corriger vos erreurs en choisissant
+les mots concernés et en cliquant sur les flèches. Enfin vous pouvez
+décider d’enregistrer les résultats de ce quiz afin d’en tenir compte
+lors des prochains quiz.<br>
+      <br>
+      <img alt="Quiz results" src="quiz-3.png"><br>
+      <br>
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+</body></html>

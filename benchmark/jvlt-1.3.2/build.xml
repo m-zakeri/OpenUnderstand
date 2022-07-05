@@ -1,0 +1,164 @@
+<project name="jVLT" default="dist" basedir=".">
+	
+	<!-- load global properties for this build -->
+	<property file="build.properties"/>
+
+	<path id="project.classpath">
+		<pathelement path="${classpath}"/>
+		<fileset dir="${lib}" includes="${lib_files}"/>
+	</path>
+
+	<target name="init">
+		<!-- Create the build directory structure used by compile -->
+		<mkdir dir="${lib}"/>
+		<mkdir dir="${build}"/>
+		<copy todir="${build}">
+			<fileset dir="${data}" includes="${image_files}"/>
+			<fileset dir="." includes="doc/**/*"/>
+			<fileset dir="${data}" includes="${xml_files}"/>
+			<fileset dir="${data}" includes="log4j.properties"/>
+		</copy>
+
+		<replace file="${build}/xml/info.xml"
+						 token="@VERSION@"
+ 						 value="${version}"/>
+	</target>
+
+	<target name="i18n" depends="init">
+		<native2ascii encoding="UTF8" src="${data}" includes="${i18n}/*.properties"
+			dest="${build}"/>
+	</target>
+
+	<target name="compile" depends="init" description="compile the source">
+		<echo>Compiling base application...</echo>
+		<javac srcdir="${src}" destdir="${build}" debug="${debug}"
+					 source="1.5" target="1.5"
+					 excludes="**/MacOSController.java">
+			<classpath refid="project.classpath"/>
+			<compilerarg value="-Xlint:unchecked"/>
+		</javac>
+	</target>
+
+	<target name="compile-lib" depends="init"
+		description="compile the source for the library version">
+		<!--
+			unset sourcepath attribute in order to be able to specify the
+			source files explicitely
+		-->
+		<javac sourcepath="" srcdir="${src}" destdir="${build}" debug="${debug}"
+					source="1.5" target="1.5">
+			<classpath refid="project.classpath"/>
+			<compilerarg value="-Xlint:unchecked"/>
+			<include name="net/sourceforge/jvlt/JVLT.java"/>
+			<include name="net/sourceforge/jvlt/core/*.java"/>
+			<include name="net/sourceforge/jvlt/io/*.java"/>
+			<include name="net/sourceforge/jvlt/metadata/*.java"/>
+			<include name="net/sourceforge/jvlt/utils/*.java"/>
+		</javac>
+	</target>
+
+	<target name="run" depends="compile,i18n"
+		description="execute the program">
+		<java
+			classname="net.sourceforge.jvlt.ui.JVLTUI"
+			classpathref="project.classpath"
+			classpath="${build}"
+			fork="true"/>
+	</target>
+
+	<target name="dist" depends="dist-init,dist-src">
+		<antcall target="dist-jar">
+			<param name="jar-prefix" value="jVLT"/>
+			<param name="compile-target" value="compile"/>
+		</antcall>
+	</target>
+
+	<target name="dist-init">
+		<antcall target="clean" />
+		
+		<!-- Create the distribution directory -->
+		<mkdir dir="${dist}"/>
+		<mkdir dir="${build}"/>
+	</target>
+	
+	<target name="dist-src" description="generate the source distribution">
+		<tstamp/>
+
+		<tar destfile="${dist}/jVLT-src-${DSTAMP}.tar.bz2"
+			compression="bzip2">
+			<tarfileset dir="." prefix="jvlt-${DSTAMP}/">
+				<include name="${src}/**/*.java"/>
+				<include name="${src}/**/*.xml"/>
+				<include name="${data}/${images}/*.png"/>
+				<include name="${data}/${i18n}/*.properties"/>
+				<include name="${data}/${xml}/*.xsl"/>
+				<include name="${data}/${xml}/*.xml"/>
+				<include name="${data}/${xml}/*.xsd"/>
+				<include name="${data}/${xml}/*.css"/>
+				<include name="${data}/*.properties"/>
+				<include name="${doc}/**/*"/>
+				<include name="build.xml"/>
+				<include name="build-mac.xml"/>
+				<include name="build.properties"/>
+				<include name="README"/>
+				<include name="COPYING"/>
+				<include name="AUTHORS"/>
+				<include name="INSTALL"/>
+				<include name="LICENSE"/>
+			</tarfileset>
+		</tar>
+	</target>
+	
+	<target name="dist-jar">
+		<antcall target="i18n" />
+		<antcall target="${compile-target}">
+			<param name="debug" value="false"/>
+		</antcall>
+
+		<tstamp/>
+
+		<jar jarfile="${dist}/${jar-prefix}-${DSTAMP}.jar">
+			<fileset dir="${build}" includes="**/*"/>
+			<zipgroupfileset dir="${lib}" includes="${lib_files}"/>
+			<manifest>
+				<attribute name="Main-Class"
+					value="net.sourceforge.jvlt.ui.JVLTUI"/>
+			</manifest>
+		</jar>
+
+		<copy file="${dist}/${jar-prefix}-${DSTAMP}.jar"
+			tofile="${dist}/${jar-prefix}.jar"/>
+	</target>
+
+	<target name="dist-lib" depends="dist-init">
+		<antcall target="i18n"/>
+		<antcall target="compile-lib">
+			<param name="debug" value="false"/>
+		</antcall>
+
+		<tstamp/>
+
+		<jar jarfile="${dist}/jVLT-lib-${DSTAMP}.jar">
+			<fileset dir="${build}">
+				<include name="**/*.class"/>
+				<include name="i18n/*.properties"/>
+				<include name="xml/*"/>
+				<include name="log4j.properties"/>
+			</fileset>
+		</jar>
+	</target>
+
+	<target name="clean" description="clean up" >
+		<!-- Delete the ${build} directory tree -->
+		<delete dir="${build}"/>
+		<delete dir="${javadoc}"/>
+	</target>
+
+	<target name="javadoc">
+		<mkdir dir="${javadoc}"/>
+		<javadoc sourcepath="${src}" destdir="${javadoc}" package="yes">
+			<fileset dir="${src}" includes="*.java"/>
+		</javadoc>
+	</target>
+</project>
+

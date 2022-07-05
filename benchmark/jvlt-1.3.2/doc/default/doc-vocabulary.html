@@ -1,0 +1,298 @@
+<html>
+<head>
+<META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>jVLT - Vocabulary</title>
+<link href="style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+<table>
+<tr>
+<td><img alt="jVLT logo" height="128" src="jvlt.png" width="128"></td><td>
+<h1>jVLT - a vocabulary learning tool</h1>
+</td>
+</tr>
+<tr>
+<td class="bluebox" valign="top">
+<div style="margin-left:0px">
+<a href="doc.html">Documentation</a>
+</div>
+<div style="margin-left:10px">Vocabulary</div>
+<div style="margin-left:10px">
+<a href="doc-examples.html">Examples</a>
+</div>
+<div style="margin-left:10px">
+<a href="doc-quizzes.html">Quizzes</a>
+</div>
+<div style="margin-left:10px">
+<a href="doc-settings.html">Settings</a>
+</div>
+<div style="margin-left:10px">
+<a href="doc-menus.html">Menu Entries</a>
+</div>
+<div style="margin-left:10px">
+<a href="doc-misc.html">Miscellaneous</a>
+</div>
+</td><td class="content">
+
+The two main components of the vocabulary tab are the word list and the
+detailed view.
+
+<h2>
+<a name="word_list">Word list</a>
+</h2>
+Initially the word list shows all words of your vocabulary. You can search for
+certain entries by using the "Filter" row right above the word table. By
+selecting an entry from the drop-down list you determine the type of the search.
+After that you can enter an expression in the text field and press the button
+with the check mark or press the "Enter" key to apply the filter. By pressing
+the button with the cross, you reset the filter, which results in all
+words being shown.<br>
+<br>
+
+<img alt="Filter" src="filter.png"> <br>
+<br>
+If you select the "Advanced Filter" entry in the drop-down list, the check mark
+button is replaced by a "..." button. After pressing this button, a dialog
+appears that allows you to define a more sophisticated filter.<br>
+Such filters are composed of one or many subfilters, each represented by a row
+which contains three columns. In the first column, you select the field
+(Original, Pronunciation etc.), in the second column the comparison type,
+e.g., "equals", "greater than", "less than". In the last column the value
+is entered. Dependent on the field and the comparison type, the value
+is a string, a number, a date or a list of strings. You can add and remove
+subfilters by pressing the "More" and the "Less" button, respectively, and
+reset the filter by clicking on "Reset". By selecting "Match all
+of the following" or "Match one of the following" you determine whether all
+subfilters have to match or only one.<br>
+<br>
+A filter can be saved by entering a name in the field at the top of the
+dialog and selecting "New/Update" after that. A saved filter is loaded 
+by selecting it from the drop-down menu. You have to click "Apply" to
+activate it. If you want to change an existing filter, load and modify
+it and then press the "New/Update" button. Filters can be deleted by selecting
+"Remove".
+<br>
+<br>
+
+<img alt="Advanced filter dialog" src="filter-2.png">
+<br>
+<br>
+
+
+<h3>
+<a name="columns">Selecting columns and sorting</a>
+</h3>
+If one right-clicks on one of the word list's column headers, a popup menu
+appears which allows to sort the word list
+according to the selected column.<br>
+<br>
+
+<img alt="Sorting" src="sorting.png"> <br>
+<br>
+The popup menu also contains the item "Select columns..." which lets the
+user choose the columns for the word list. Columns can be selected and
+deselected by first selecting the column name and then pressing the
+left-arrow button or the right-arrow button, respectively. The order of the
+column names can be changed using the up-arrow button and the down-arrow
+button. The column that belongs to the uppermost column name will be shown
+at the leftmost position of the word list.<br>
+<br>
+
+<img alt="Select columns" src="select_columns.png">
+<br>
+<br>
+By pressing the "Add", "Edit" and "Remove" buttons next to the word list
+you can
+<a href="#add_word"> insert</a>,
+<a href="#edit_word"> change</a> or
+<a href="#remove_word"> delete</a> words, respectively.
+
+<h2>
+<a name="detailed_view">Detailed view</a>
+</h2>
+The detailed view shows spelling, pronunciation, translation
+and examples of the word which is currently selected in the word list.
+In the <a href="doc-settings.html#appearance-settings">Appearance tab</a>
+of the settings dialog you can determine how many details are shown.
+If an example is selected, the meaning associated with the respective example
+is highlighted. By clicking the "Edit" link next to an example, you get to the
+<a href="doc-examples.html"> examples tab</a>.
+<br>
+<br>
+
+<img alt="Details" src="details.png"><br>
+<br>
+In order to add more information to a word, you can specify audio or
+image files, which is described in <a href="#add_word">
+the next section</a>. The files appear on the detailed view as icons.
+Clicking on an audio file icon results in playing the respective file,
+clicking on an image file icon opens a new window which shows the image.
+<br>
+<br>
+
+<img alt="Multimedia" src="multimedia.png"> <br>
+<br>
+
+
+<h2>
+<a name="add_word">Adding words </a> 
+</h2>
+By clicking on the "Add" button next to the word list, you can add words
+to your vocabulary.	In the dialog, you can see the three text fields
+"Original", "Pronunciation" and "Lesson". The first text field is mandatory, the
+second and the third ones are optional. If the word you are going to enter has
+multiple possible pronunciations, press the "More..." button. Existing lessons
+can be selected by pressing the arrow button next to the text field and
+choosing the lesson from the drop-down menu.<br>
+<br>
+
+<img alt="Add word" src="add_word.png"> <br>
+<br>
+A word must have at least one meaning. You can add meanings by pressing the
+"Add" button next to the list view and enter text in the "Translation"
+field and in the "Definition" field. The definition of a word is a short note
+about its type, usage, etc. You do not need to provide strings for both fields,
+one is enough. If a word has more than one meaning, you can change the order of
+the meanings by using the arrow buttons on the left side of the list
+view.<br>
+<br>
+
+<img alt="Add meaning" src="add_sense.png"> <br>
+<br>
+After you finished editing the word, press "Apply" or "Apply and edit
+copy" and the word will be added. The latter button won't reset the
+current values, a fact that can be useful when you want to enter multiple
+similar words.
+The dialog won't close after pressing one of the Apply buttons
+- you can continue to add words or
+press "Close" to return to the main window.
+
+<h3>
+<a name="advanced_settings">Advanced settings</a>
+</h3>
+By pressing the "Advanced..." button, you can edit some additional properties
+of a word.
+<p>
+<img alt="Advanced settings" src="add_word_details.png"></p>
+
+<h4>
+<a name="advanced_settings_details">Word details</a>
+</h4>
+Whether you can see the Details tab of the dialog depends on
+whether you have set a language for the dictionary via the 
+"Edit-&gt;Properties" menu entry. In the Details tab, you can
+select a word class, e.g. noun, verb etc. For some of the word classes
+it may be possible to specify additional details. For example, in the image
+shown above it is possible to set the gender of a noun.
+<h4>Categories</h4>
+A word can (optionally) be assigned to categories (e.g., "Family members").
+You can
+choose existing categories from the drop-down list or enter a new
+category name. After that, press "Add".
+<p>
+<img alt="Multimedia" src="add_word_categories.png"></p>
+
+<h4>Custom Fields</h4>
+Custom (or user-defined) fields are similar to the fields in the
+<a href="#advanced_settings_details">Details tab</a>. Unlike the latter, they
+can have arbitrary names. In order to add a new custom field, you first have
+to double-click on an empty cell in the "Field name" column, then select an
+existing name from the drop-down list or enter a new one. After that, you
+double-click on the corresponding cell in the "Field value" column and enter
+a value. If there multiple custom fields, you can rearrange them by first
+selecting a table row and then press the arrow buttons.
+<p>
+<img alt="Custom fields" src="add_word_custom_fields.png"></p>
+
+<h4>Multimedia Files</h4>
+You can also specify audio and image files for a word, for example a WAV
+file which contains the pronunciation. It is possible to choose
+whether the location of the file should be saved as a relative
+(e.g. "images\image.gif") or absolute path
+(e.g. "D:\jvlt\images\image.gif") by
+(de)selecting the "Use relative path" checkbox. If you choose the former
+option, the path will be relative to the location of your dictionary file.
+For example, if your dictionary file is "D:\jvlt\dict.jvlt" and the
+image location is "images\image.gif", then jVLT will look for the image
+at "D:\jvlt\images\image.gif".
+<br>
+If jVLT cannot play or show files of a certain type, you can specify
+external commands in the
+<a href="doc-settings.html#multimedia_settings">
+settings dialog</a>.
+<p>
+<img alt="Categories" src="add_word_multimedia.png"></p>
+
+<h4>
+<a name="advanced_settings_flags">Flags</a>
+</h4>
+In this tab, you can set flags that determine whether the word
+will appear in a quiz. Note that these flags will disappear
+if you choose to reset the
+stats (see the <a href="doc-menus.html#menu_tools">Tools menu</a>).
+Currently, there are the following flags.
+<ul>
+
+<li>I know this word - don't ask again</li>
+
+<li>Not so useful - put it aside</li>
+
+<li>Always quiz this word (regardless of its batch)</li>
+
+</ul>
+
+<p>
+<img alt="Flags" src="add_word_flags.png"></p>
+
+
+<h2>
+<a name="edit_a_copy">Editing copies of words</a>
+</h2>
+By pressing the button labelled "Edit a copy" you can add a new word
+that uses an existing one as a template. As you cannot enter the same
+word twice, you have to modify the new word before you add it.
+
+<h2>
+<a name="edit_word">Editing words</a>
+</h2>
+You can edit a word by first selecting it in the
+<a href="doc-vocabulary.html#word_list">word list</a> and then
+pressing the "Edit" button next to the list.
+Editing a single word is basically the same as adding a word. There is one
+difference, though: If you want to remove a meaning, you have to make sure that
+there is no example linked to it.
+<br>
+<br>
+If you select multiple words before you press "Edit" - either by using
+the Ctrl key or the Shift key while clicking on the words - you can
+alter the lesson and <a href="#advanced_settings">advanced settings</a>
+for all selected
+words at once. However, you have to be careful: The new settings always
+overwrite the old ones. For example, if you edit two words at once, one
+belonging to lesson "A", the other one belonging to lesson "B", and assign a
+new lesson "C" to both of them, then they will not belong to lesson "A" and "B"
+any more.
+
+<h2>
+<a name="remove_word">Removing words</a>
+</h2>
+In order to remove words, you first have to select them in the word list
+(Multiple words can be selected by using the <i>Ctrl</i> or the <i>Shift</i>
+button). After pressing the "Remove" button next to the word list, a dialog
+will appear that asks you to confirm your decision. Note that all links from
+examples to the deleted words will be removed. If an example loses all links,
+then it will be removed, too. The number of examples to be removed and
+to be modified will also be shown in the dialog.
+<p>
+<img alt="Confirm deletion" src="confirm_word_deletion.png"></p>
+
+<br>
+To get the list of linked
+examples to a specific word, you can look at the
+<a href="#detailed_view">detailed view</a>.
+
+</td>
+</tr>
+</table>
+</body>
+</html>
