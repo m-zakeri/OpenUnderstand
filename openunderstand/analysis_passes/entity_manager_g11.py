@@ -17,8 +17,6 @@ __version__ = "1.0.0"
 
 from oudb.models import EntityModel, KindModel
 from antlr4 import *
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaLexer import JavaLexer
 # Listeners
 from analysis_passes.package_entity_listener_g11 import PackageListener
 from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
@@ -31,10 +29,22 @@ def get_created_entity(name):
     entity = EntityModel.get_or_none(_name=name)
     return entity
 
+
 def get_created_entity_longname(longname):
     entity = EntityModel.get_or_none(_longname=longname)
     return entity
 
+
+
+def get_created_entity_id(parent_id):
+    entity = EntityModel.get_or_none(_id=parent_id)
+    return entity
+
+def get_all_files():
+    methods = []
+    for ent in EntityModel.select().where(EntityModel._kind_id == 1):
+        methods.append(ent._contents)
+    return methods
 
 def checkModifiersInKind(modifiers, kind):
     """check if modifier is in kind and return it"""
@@ -42,8 +52,8 @@ def checkModifiersInKind(modifiers, kind):
         if modifier.lower() not in kind._name.lower():
             return False
     return True
-
-
+    
+    
 class EntityGenerator:
     def __init__(self, path, tree):
         """Automatically generates all entities are required for create and createBy reference."""
@@ -51,10 +61,17 @@ class EntityGenerator:
         # Making entities
         self.path = path
         self.tree = tree
-        self.file_ent = file_manager.get_or_creat_file_entity()
+        self.file_ent = file_manager.get_or_create_file_entity()
         self.package_ent = PackageEntityManager(path, self.file_ent, tree)
         self.package_entities_list = self.package_ent.get_or_create_package_entity()
         self.package_string = self.package_ent.package_string
+
+    @staticmethod
+    def extract_original_text(ctx):
+        token_source = ctx.start.getTokenSource()
+        input_stream = token_source.inputStream
+        start, stop = ctx.start.start, ctx.stop.stop
+        return input_stream.getText(start, stop)
 
     def get_or_create_variable_entity(self, res_dict):
         _name = res_dict['name']
@@ -88,6 +105,7 @@ class EntityGenerator:
                 parents.append(current)
             current = current.parentCtx
         parents_entities = list(reversed(parents))
+        parent_entity_parent = None
         for i in range(len(parents_entities) - 1):
             entity = parents_entities[i]
             if i == 0:
@@ -101,7 +119,7 @@ class EntityGenerator:
                 parent_entity_name = entity.IDENTIFIER().getText()
                 parent_entity_longname = self.package_string + "." + entity.IDENTIFIER().getText()
                 self.package_string = self.package_string + "." + entity.IDENTIFIER().getText()
-                parent_entity_contents = entity.getText()
+                parent_entity_contents = EntityGenerator.extract_original_text(entity)
                 parent_entity_type = entity.typeTypeOrVoid().getText()
                 method_modifiers = self.get_method_accessor(entity)
                 # print(method_modifiers)
@@ -118,7 +136,7 @@ class EntityGenerator:
                 parent_entity_name = entity.IDENTIFIER().getText()
                 parent_entity_longname = self.package_string + "." + entity.IDENTIFIER().getText()
                 self.package_string = self.package_string + "." + entity.IDENTIFIER().getText()
-                parent_entity_contents = entity.getText()
+                parent_entity_contents = EntityGenerator.extract_original_text(entity)
                 props = self.getClassProperties(parent_entity_longname)
                 parent_entity_kind = self.findKindWithKeywords("Class", props["modifiers"])
                 class_ent = EntityModel.get_or_create(
@@ -132,16 +150,16 @@ class EntityGenerator:
                 parent_entity_name = entity.IDENTIFIER().getText()
                 parent_entity_longname = self.package_string + "." + entity.IDENTIFIER().getText()
                 self.package_string = self.package_string + "." + entity.IDENTIFIER().getText()
-                parent_entity_contents = entity.getText()
+                parent_entity_contents = EntityGenerator.extract_original_text(entity)
                 props = self.getInterfaceProperties(parent_entity_longname)
                 parent_entity_kind = self.findKindWithKeywords("Interface", props["modifiers"])
-                Interface_ent = EntityModel.get_or_create(
+                interface_ent = EntityModel.get_or_create(
                     _kind=parent_entity_kind,
                     _parent=parent_entity_parent,
                     _name=parent_entity_name,
                     _longname=parent_entity_longname,
                     _contents=parent_entity_contents)
-                result_entities.append((parent_entity_kind, Interface_ent))
+                result_entities.append((parent_entity_kind, interface_ent))
         return result_entities
 
     @staticmethod
@@ -161,11 +179,12 @@ class EntityGenerator:
         return modifiers
 
     def get_variable_kind(self, modifiers):
-        if 'public' not in modifiers and 'private' not in modifiers and 'protected' not in modifiers and 'local' not in modifiers:
+        if 'public' not in modifiers and 'private' not in modifiers and \
+                'protected' not in modifiers and 'local' not in modifiers:
             modifiers.append("default")
         kind_selected = None
         for kind in KindModel.select().where(KindModel._name.contains("Variable")):
-            if checkModifiersInKind(modifiers, kind):
+            if self.checkModifiersInKind(modifiers, kind):
                 if not kind_selected or len(kind_selected._name) > len(kind._name):
                     kind_selected = kind
         # print(kind_selected)
@@ -188,10 +207,10 @@ class EntityGenerator:
                     kind_selected = kind
         return kind_selected
 
-    def getClassProperties(self, class_longname):
+    def getClassProperties(self, class_longname) -> dict:
         listener = ClassPropertiesListener()
         listener.class_longname = class_longname.split(".")
-        listener.class_properties = None
+        listener.class_properties = {}
         walker = ParseTreeWalker()
         walker.walk(listener=listener, t=self.tree)
         return listener.class_properties
@@ -246,15 +265,16 @@ class EntityGenerator:
     def findKindWithKeywords(self, entity_type, modifiers):
         if len(modifiers) == 0:
             modifiers.append("default")
-        leastspecific_kind_selected = None
+        least_specific_kind_selected = None
         for kind in KindModel.select().where(KindModel._name.contains(entity_type)):
             if self.checkModifiersInKind(modifiers, kind):
-                if not leastspecific_kind_selected \
-                        or len(leastspecific_kind_selected._name) > len(kind._name):
-                    leastspecific_kind_selected = kind
-        return leastspecific_kind_selected
+                if not least_specific_kind_selected \
+                        or len(least_specific_kind_selected._name) > len(kind._name):
+                    least_specific_kind_selected = kind
+        return least_specific_kind_selected
 
-    def checkModifiersInKind(self, modifiers, kind):
+    @staticmethod
+    def checkModifiersInKind(modifiers, kind):
         """check if modifier is in kind and return it"""
         for modifier in modifiers:
             if modifier.lower() not in kind._name.lower():
@@ -274,7 +294,7 @@ class FileEntityManager:
         self.contents = file_reader.read()
         file_reader.close()
 
-    def get_or_creat_file_entity(self):
+    def get_or_create_file_entity(self):
         """Create or get if it exists a file entity and return it according to object fields."""
         file_ent, success = EntityModel.get_or_create(
             _kind=FILE_KIND_ID,
