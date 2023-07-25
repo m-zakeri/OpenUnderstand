@@ -1,17 +1,11 @@
-from pprint import pprint
-import os
 from antlr4 import *
-from oudb.fill import main as db_fill
-from gen.javaLabeled.JavaLexer import JavaLexer
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from oudb.models import *
-from oudb.api import open as db_open, create_db, Kind
-from oudb.models import KindModel, EntityModel, ReferenceModel
+from oudb.api import open as db_open, create_db
+from oudb.models import EntityModel, ReferenceModel
 
 
 try:
-    import understand as und
+    from openunderstand import understand as und
 except ImportError:
     print("Can not import understand")
 # E:\2\OpenUnderstand\benchmark\calculator_app\calculator_app.und

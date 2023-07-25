@@ -44,7 +44,7 @@ def append_java_ref_kinds():
 
 def append_entities_with_understand(udb_path: str):
     try:
-        import understand as und
+        from openunderstand import understand as und
     except ImportError:
         print("Understand Python API is not installed correctly.")
 
@@ -88,7 +88,7 @@ def append_entities_with_understand(udb_path: str):
 def append_references_with_understand(udb_path: str):
     # TODO: Implement this method!
     try:
-        import understand as und
+        from openunderstand import understand as und
     except ImportError:
         print("Understand Python API is not installed correctly.")
 

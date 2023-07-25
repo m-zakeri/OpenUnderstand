@@ -1,4 +1,4 @@
-import understand as und
+from openunderstand import understand as und
 from utils_g10 import get_project_info, report_metric
 
 

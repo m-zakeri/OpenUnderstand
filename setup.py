@@ -17,7 +17,7 @@ with open("README.md", "r", encoding="utf-8") as fh:
 setuptools.setup(
     name="openunderstand",
     version="0.1.0",
-    author="Morteza Zakeri, Ali Ayati",
+    author="Morteza Zakeri, Amin HassanZarei, Ali Ayati",
     author_email="m-zakeri@live.com",
     license='MIT',
     description="A free implementation of Sci-tools Understand API",

@@ -1,11 +1,5 @@
-from pprint import pprint
-from oudb.models import KindModel, EntityModel, ReferenceModel
-from oudb.api import open as db_open, create_db
-from oudb.fill import main
-
-
 try:
-    import understand as und
+    from openunderstand import understand as und
 except ImportError:
     print("Can not import understand")
 

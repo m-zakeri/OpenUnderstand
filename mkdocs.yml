@@ -2,7 +2,7 @@ site_name: OpenUnderstand Docs (v0.1.1dev)
 site_url: https://m-zakeri.github.io/OpenUnderstand
 repo_url: https://github.com/m-zakeri/OpenUnderstand
 site_description: An open-source implementation of Understand Python API for Java language
-site_author: Morteza Zakeri, Saeed Parsa
+site_author: Morteza Zakeri
 copyright: © 2021-2022 OpenUnderstand project - IUST Reverse Engineering Research Laboratory
 
 theme:

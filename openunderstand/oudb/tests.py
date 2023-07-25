@@ -64,7 +64,7 @@ PROJECT_PATH = os.path.join(PROJECT_ROOT_DIR, BENCHMARKS['PROJ'][BENCHMARK_INDEX
 UDB_PATH = os.path.join(UDB_ROOT_DIR, BENCHMARKS['UDB'][BENCHMARK_INDEX]).replace('/', '\\')
 
 try:
-    import understand as und
+    from openunderstand import understand as und
 except ImportError:
     print("Can not import understand")
 
