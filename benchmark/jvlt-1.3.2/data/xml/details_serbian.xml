@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+<schema lang="serbian">
+	<class name="noun"/>
+	<class name="verb"/>
+	<class name="pron"/>
+	<class name="adjective"/>
+	<class name="adverb"/>
+	<class name="numeral"/>
+	<class name="conjunction"/>
+	<class name="preposition"/>
+	<class name="interjection"/>
+	<class name="phrase"/>
+
+	<attribute name="nominative" classes="noun"/>
+	<attribute name="genitive" classes="noun"/>
+	<attribute name="dative" classes="noun"/>
+	<attribute name="accusative" classes="noun"/>
+	<attribute name="vocative" classes="noun"/>
+	<attribute name="instrumental" classes="noun"/>
+	<attribute name="locative" classes="noun"/>
+
+	<attribute name="gender" classes="noun">
+		<choice name="feminine"/>
+		<choice name="masculine"/>
+		<choice name="neuter"/>
+	</attribute>
+	
+	<attribute name="comparative" classes="adjective;adverb" group="comparison"/>
+	<attribute name="superlative" classes="adjective;adverb" group="comparison"/>
+
+	<attribute name="aspect_def" classes="adjective;adverb" group="aspect"/>
+	<attribute name="aspect_inf" classes="adjective;adverb" group="aspect"/>
+
+	<attribute name="pres_sg_1st" classes="verb" group="prest"/>
+	<attribute name="pres_sg_2nd" classes="verb" group="prest"/>
+	<attribute name="pres_sg_3rd" classes="verb" group="prest"/>
+	<attribute name="pres_pl_1st" classes="verb" group="prest"/>
+	<attribute name="pres_pl_2nd" classes="verb" group="prest"/>
+	<attribute name="pres_pl_3rd" classes="verb" group="prest"/>
+
+	<attribute name="past_sg_1st" classes="verb" group="pastt"/>
+	<attribute name="past_sg_2nd" classes="verb" group="pastt"/>
+	<attribute name="past_sg_3rd" classes="verb" group="pastt"/>
+	<attribute name="past_pl_1st" classes="verb" group="pastt"/>
+	<attribute name="past_pl_2nd" classes="verb" group="pastt"/>
+	<attribute name="past_pl_3rd" classes="verb" group="pastt"/>
+
+	<attribute name="imp_sg_1st" classes="verb" group="imperfect"/>
+	<attribute name="imp_sg_2nd" classes="verb" group="imperfect"/>
+	<attribute name="imp_sg_3rd" classes="verb" group="imperfect"/>
+	<attribute name="imp_pl_1st" classes="verb" group="imperfect"/>
+	<attribute name="imp_pl_2nd" classes="verb" group="imperfect"/>
+	<attribute name="imp_pl_3rd" classes="verb" group="imperfect"/>
+
+	<attribute name="aor_sg_1st" classes="verb" group="aoristt"/>
+	<attribute name="aor_sg_2nd" classes="verb" group="aoristt"/>
+	<attribute name="aor_sg_3rd" classes="verb" group="aoristt"/>
+	<attribute name="aor_pl_1st" classes="verb" group="aoristt"/>
+	<attribute name="aor_pl_2nd" classes="verb" group="aoristt"/>
+	<attribute name="aor_pl_3rd" classes="verb" group="aoristt"/>
+
+	<attribute name="fut_sg_1st" classes="verb" group="futur"/>
+	<attribute name="fut_sg_2nd" classes="verb" group="futur"/>
+	<attribute name="fut_sg_3rd" classes="verb" group="futur"/>
+	<attribute name="fut_pl_1st" classes="verb" group="futur"/>
+	<attribute name="fut_pl_2nd" classes="verb" group="futur"/>
+	<attribute name="fut_pl_3rd" classes="verb" group="futur"/>
+
+	<attribute name="futppl" classes="verb" group="futppl"/>
+
+	<attribute name="imperativ_sg_2nd" classes="verb" group="imperative"/>
+	<attribute name="imperativ_pl_1st" classes="verb" group="imperative"/>
+	<attribute name="imperativ_pl_2nd" classes="verb" group="imperative"/>
+
+</schema>

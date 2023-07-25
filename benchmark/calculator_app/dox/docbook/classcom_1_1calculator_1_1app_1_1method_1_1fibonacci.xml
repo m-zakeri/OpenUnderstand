@@ -1,0 +1,58 @@
+<?xml version='1.0' encoding='UTF-8' standalone='no'?>
+<section xmlns="http://docbook.org/ns/docbook" version="5.0" xmlns:xlink="http://www.w3.org/1999/xlink" xml:id="_classcom_1_1calculator_1_1app_1_1method_1_1fibonacci" xml:lang="en-US">
+<title>fibonacci</title>
+<indexterm><primary>fibonacci</primary></indexterm>
+Inheritance diagram for fibonacci:<para>
+    <informalfigure>
+        <mediaobject>
+            <imageobject>
+                <imagedata width="50%" align="center" valign="middle" scalefit="0" fileref="classcom_1_1calculator_1_1app_1_1method_1_1fibonacci__inherit__graph.png"></imagedata>
+            </imageobject>
+        </mediaobject>
+    </informalfigure>
+</para>
+Collaboration diagram for fibonacci:<para>
+    <informalfigure>
+        <mediaobject>
+            <imageobject>
+                <imagedata width="50%" align="center" valign="middle" scalefit="0" fileref="classcom_1_1calculator_1_1app_1_1method_1_1fibonacci__coll__graph.png"></imagedata>
+            </imageobject>
+        </mediaobject>
+    </informalfigure>
+</para>
+<simplesect>
+    <title>Static Public Member Functions    </title>
+        <itemizedlist>
+            <listitem><para>static double <link linkend="_classcom_1_1calculator_1_1app_1_1method_1_1fibonacci_1a7900254e2012fb179219f2801a528dc2">calculate_to_n</link> (double x0, double x1, int n)</para>
+</listitem>
+        </itemizedlist>
+</simplesect>
+<section>
+<title>Member Function Documentation</title>
+<anchor xml:id="_classcom_1_1calculator_1_1app_1_1method_1_1fibonacci_1a7900254e2012fb179219f2801a528dc2"/>    <section>
+    <title>calculate_to_n()</title>
+<indexterm><primary>calculate_to_n</primary><secondary>fibonacci</secondary></indexterm>
+<indexterm><primary>fibonacci</primary><secondary>calculate_to_n</secondary></indexterm>
+<para><computeroutput>static double calculate_to_n (double x0, double x1, int n)<computeroutput>[static]</computeroutput></computeroutput></para>Here is the call graph for this function:<para>
+    <informalfigure>
+        <mediaobject>
+            <imageobject>
+                <imagedata width="50%" align="center" valign="middle" scalefit="0" fileref="classcom_1_1calculator_1_1app_1_1method_1_1fibonacci_a7900254e2012fb179219f2801a528dc2_cgraph.png"></imagedata>
+            </imageobject>
+        </mediaobject>
+    </informalfigure>
+</para>
+Here is the caller graph for this function:<para>
+    <informalfigure>
+        <mediaobject>
+            <imageobject>
+                <imagedata width="50%" align="center" valign="middle" scalefit="0" fileref="classcom_1_1calculator_1_1app_1_1method_1_1fibonacci_a7900254e2012fb179219f2801a528dc2_icgraph.png"></imagedata>
+            </imageobject>
+        </mediaobject>
+    </informalfigure>
+</para>
+</section>
+<para>
+The documentation for this class was generated from the following file:</para>
+src/com/calculator/app/method/<link linkend="_fibonacci_8java">fibonacci.java</link></section>
+</section>

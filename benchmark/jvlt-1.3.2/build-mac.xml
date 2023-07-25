@@ -1,0 +1,90 @@
+<project name="jVLT - mac" default="dist-mac" basedir=".">
+	<import file="./build.xml"/>
+
+	<property name="lib-mac" value="lib-mac"/>
+
+	<path id="project.classpath">
+		<pathelement path="${classpath}"/>
+		<fileset dir="${lib}"><include name="*.jar"/></fileset>
+		<fileset dir="${lib-mac}"><include name="*.jar"/></fileset>
+	</path>
+
+	<target name="init-mac" depends="init">
+		<mkdir dir="${lib-mac}"/>
+	</target>
+
+	<target name="compile-mac" depends="init-mac,compile"
+					description="Compiles MacOSX specific code">
+		<echo>Compile Mac OS X specific code...</echo>
+		<javac srcdir="${src}" destdir="${build}" debug="${debug}"
+					 source="1.5" target="1.5"
+					 includes="**/MacOSController.java">
+			<classpath refid="project.classpath"/>
+			<compilerarg value="-Xlint:unchecked"/>
+		</javac>
+	</target>
+
+	<target name="dist-mac" depends="dist-init">
+		<antcall target="dist-jar">
+			<param name="jar-prefix" value="jVLT-MacOSX"/>
+			<param name="compile-target" value="compile-mac"/>
+		</antcall>
+	</target>
+
+	<!--
+	Create a Mac OS X application bundle (doesn't require compilation, but
+	the application jar file has to exist)
+	-->
+	<target name="dist-bundle">
+		<delete dir="${dist}/jVLT.app"/>
+		
+		<tstamp/>
+		
+		<mkdir dir="${dist}"/>
+		<mkdir dir="${dist}/jVLT.app"/>
+		<mkdir dir="${dist}/jVLT.app/Contents"/>
+		<mkdir dir="${dist}/jVLT.app/Contents/MacOS"/>
+		<mkdir dir="${dist}/jVLT.app/Contents/Resources"/>
+		<mkdir dir="${dist}/jVLT.app/Contents/Resources/Java"/>
+		
+		<copy todir="${dist}/jVLT.app/Contents/">
+			<fileset dir="${data}/mac" includes="PkgInfo,*.plist"/>
+		</copy>
+
+		<replace file="${dist}/jVLT.app/Contents/Info.plist"
+						 token="@VERSION@"
+ 						 value="${version}"/>
+
+		<copy todir="${dist}/jVLT.app/Contents/Resources">
+			<fileset dir="${data}/mac" includes="*.icns"/>
+		</copy>
+		
+		<copy file="/System/Library/Frameworks/JavaVM.framework/Versions/Current/Resources/MacOS/JavaApplicationStub"
+					todir="${dist}/jVLT.app/Contents/MacOS"/>
+		<chmod file="${dist}/jVLT.app/Contents/MacOS/JavaApplicationStub" 
+					 perm="ugo+rx"/>
+		
+		<copy file="${dist}/jVLT-MacOSX-${DSTAMP}.jar"
+					tofile="${dist}/jVLT.app/Contents/Resources/Java/jVLT.jar"/>
+		
+		<exec executable="/Developer/Tools/SetFile">
+			<arg value="-a"/>
+			<arg value="B"/>
+			<arg value="${dist}/jVLT.app"/>
+		</exec>
+	</target>
+
+	<!--
+	Create a Mac OS X disk image containing the application bundle
+	-->
+	<target name="dist-dmg" depends="dist-bundle">
+		<exec executable="hdiutil">
+			<arg value="create"/>
+			<arg value="-ov"/>
+			<arg value="-srcfolder"/>
+			<arg value="${dist}/jVLT.app"/>
+			<arg value="${dist}/jVLT.dmg"/>
+		</exec>
+	</target>
+</project>
+
