@@ -15,6 +15,9 @@ from oudb.fill import main
 
 from openunderstand.override_overrideby__G12 import overridelistener
 from openunderstand.couple_coupleby__G12 import CoupleAndCoupleBy
+from analysis_passes.couple_coupleby import CoupleAndCoupleBy
+from analysis_passes.create_createby_g11 import CreateAndCreateBy
+from analysis_passes.declare_declarein import DeclareAndDeclareinListener
 from analysis_passes.modify_modifyby import ModifyListener
 from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
 from analysis_passes.entity_manager_g11 import EntityGenerator, get_created_entity
@@ -24,6 +27,7 @@ from metrics.Lineofcode import LineOfCode , stringify
 from analysis_passes.g6_create_createby import CreateAndCreateByListener
 from analysis_passes.g6_declare_declarein import DeclareAndDeclareinListener
 from analysis_passes.g6_class_properties import ClassPropertiesListener
+from analysis_passes.define_definein import  DefineListener
 
 class Project:
     tree = None
@@ -73,7 +77,23 @@ class Project:
         print("processing file:", file_ent)
         return file_ent
 
+    def addDefineRefs(self, ref_dicts, file_ent):
+        for ref_dict in ref_dicts:
+            if ref_dict["scope"] is None:  # the scope is the file
+                scope = file_ent
+            else:  # a normal package
+                scope = self.getPackageEntity(file_ent, ref_dict["scope"], ref_dict["scope_longname"])
 
+            ent = self.getPackageEntity(file_ent, ref_dict["ent"], ref_dict["ent_longname"])
+
+            # Define: kind id 194
+            define_ref = ReferenceModel.get_or_create(_kind=194, _file=file_ent, _line=ref_dict["line"],
+                                                       _column=ref_dict["col"], _ent=ent, _scope=scope)
+
+            # Definein: kind id 195
+            definein_ref = ReferenceModel.get_or_create(_kind=195, _file=file_ent, _line=ref_dict["line"],
+                                                         _column=ref_dict["col"], _scope=ent, _ent=scope)
+                                                         
     def addThrows_TrowsByRefs(self, ref_dicts, file_ent, file_address,id1,id2,Throw):
         for ref_dict in ref_dicts:
 
@@ -386,8 +406,8 @@ if __name__ == '__main__':
     # get file name
     rawPath = str(os.path.dirname(__file__).replace("\\", "/"))
     pathArray = rawPath.split('/')
-    path = Project.listToString(pathArray) + "benchmark"
-    # path = r"C:\Users\ASUS\Desktop\term_4002\Compiler\project\phase2\OpenUnderstand\benchmark\calculator_app"
+    # path = Project.listToString(pathArray) + "benchmark"
+    path = r"C:\Users\ASUS\Desktop\term_4002\Compiler\project\phase2\OpenUnderstand\benchmark\SalaryCalculator-master"
     files = p.getListOfFiles(path)
     # Lists
     modify_modifyby_list = []
@@ -415,6 +435,14 @@ if __name__ == '__main__':
             p.addCreateRefs(listener.get_create(), file_ent, file_address)
         except Exception as e:
             print("An Error occurred for reference implement in file:" + file_address + "\n" + str(e))
+
+        try:
+            # define
+            listener = DefineListener()
+            p.Walk(listener, tree)
+            p.addDefineRefs(listener.defines, file_ent)
+        except Exception as e:
+            print("An Error occurred for reference define in file:" +file_address + "\n" + str(e))
 
         try:
             # declare
