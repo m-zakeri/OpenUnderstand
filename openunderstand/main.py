@@ -12,14 +12,59 @@ from gen.javaLabeled.JavaLexer import JavaLexer
 from oudb.models import KindModel, EntityModel, ReferenceModel
 from oudb.api import open as db_open, create_db
 from oudb.fill import main
+
 from openunderstand.override_overrideby__G12 import overridelistener
 from openunderstand.couple_coupleby__G12 import CoupleAndCoupleBy
-from analysis_passes.modify_modifyby import ModifyListener
-from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
-from analysis_passes.entity_manager_g11 import EntityGenerator, get_created_entity
-from analysis_passes.g6_create_createby import CreateAndCreateByListener
-from analysis_passes.g6_declare_declarein import DeclareAndDeclareinListener
-from analysis_passes.g6_class_properties import ClassPropertiesListener
+from openunderstand.analysis_passes.couple_coupleby import CoupleAndCoupleBy
+from openunderstand.analysis_passes.create_createby_g11 import CreateAndCreateBy
+from openunderstand.analysis_passes.declare_declarein import DeclareAndDeclareinListener
+from openunderstand.analysis_passes.modify_modifyby import ModifyListener
+from openunderstand.analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
+from openunderstand.analysis_passes.entity_manager_g11 import EntityGenerator, get_created_entity
+from openunderstand.analysis_passes.Throws_ThrowsBy import Throws_TrowsBy
+from openunderstand.analysis_passes.DotRef_DorRefBy import DotRef_DotRefBy
+from openunderstand.metrics.Lineofcode import LineOfCode , stringify
+from openunderstand.analysis_passes.g6_create_createby import CreateAndCreateByListener
+from openunderstand.analysis_passes.g6_declare_declarein import DeclareAndDeclareinListener
+from openunderstand.analysis_passes.g6_class_properties import ClassPropertiesListener
+from openunderstand.analysis_passes.define_definein import  DefineListener
+
+from openunderstand.analysis_passes.callNonDynamic_callNonDynamicby import CallNonDynamicAndCallNonDynamicBy
+from openunderstand.analysis_passes.call_callby import CallAndCallBy
+
+from openunderstand.analysis_passes.variable_listener_g11 import VariableListener
+
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
+
+from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel
+from openunderstand.oudb.api import open as db_open, create_db
+from openunderstand.oudb.fill import main
+
+from openunderstand.analysis_passes.couple_coupleby import ImplementCoupleAndImplementByCoupleBy
+from openunderstand.analysis_passes.create_createby_g11 import CreateAndCreateBy
+from openunderstand.analysis_passes.declare_declarein import DeclareAndDeclareinListener
+from openunderstand.analysis_passes.define_definein import  DefineListener
+from openunderstand.analysis_passes.modify_modifyby import ModifyListener
+from openunderstand.analysis_passes.usemodule_usemoduleby_g11 import UseModuleUseModuleByListener
+from openunderstand.analysis_passes.g6_class_properties import ClassPropertiesListener, InterfacePropertiesListener
+
+from openunderstand.analysis_passes.entity_manager_g11 import EntityGenerator, FileEntityManager, get_created_entity
+from openunderstand.analysis_passes.type_typedby import TypedAndTypedByListener
+from openunderstand.analysis_passes.use_useby import UseAndUseByListener
+from openunderstand.analysis_passes.set_setby import SetAndSetByListener
+from openunderstand.analysis_passes.setinit_setinitby import SetInitAndSetInitByListener
+from openunderstand.override_overrideby__G12 import overridelistener
+from openunderstand.couple_coupleby__G12 import CoupleAndCoupleBy
+from openunderstand.analysis_passes.g6_create_createby import CreateAndCreateByListener
+from openunderstand.analysis_passes.g6_declare_declarein import DeclareAndDeclareinListener
+from openunderstand.analysis_passes.g6_class_properties import ClassPropertiesListener, InterfacePropertiesListener
+from openunderstand.metrics.AvgCyclomatic import CyclomaticListener
+from openunderstand.metrics.AvgCyclomaticStrict import CyclomaticStrictListener
+from openunderstand.metrics.AvgCyclomaticModified import CyclomaticModifiedListener
+from openunderstand.metrics.AvgEssential import EssentialListener
+
+
 
 class Project:
     tree = None
@@ -69,7 +114,23 @@ class Project:
         print("processing file:", file_ent)
         return file_ent
 
+    def addDefineRefs(self, ref_dicts, file_ent):
+        for ref_dict in ref_dicts:
+            if ref_dict["scope"] is None:  # the scope is the file
+                scope = file_ent
+            else:  # a normal package
+                scope = self.getPackageEntity(file_ent, ref_dict["scope"], ref_dict["scope_longname"])
 
+            ent = self.getPackageEntity(file_ent, ref_dict["ent"], ref_dict["ent_longname"])
+
+            # Define: kind id 194
+            define_ref = ReferenceModel.get_or_create(_kind=194, _file=file_ent, _line=ref_dict["line"],
+                                                       _column=ref_dict["col"], _ent=ent, _scope=scope)
+
+            # Definein: kind id 195
+            definein_ref = ReferenceModel.get_or_create(_kind=195, _file=file_ent, _line=ref_dict["line"],
+                                                         _column=ref_dict["col"], _scope=ent, _ent=scope)
+                                                         
     def addThrows_TrowsByRefs(self, ref_dicts, file_ent, file_address,id1,id2,Throw):
         for ref_dict in ref_dicts:
 
@@ -335,56 +396,6 @@ if __name__ == '__main__':
             p.addDeclareRefs(listener.get_declare_dicts, file_ent)
         except Exception as e:
             print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
-"""This module is the main part for creating all entities and references in database. our task was the javaModify and
-javaCreate and their reverse references. """
-
-__author__ = "Navid Mousavizadeh, Amir Mohammad Sohrabi, Sara Younesi, Deniz Ahmadi"
-__copyright__ = "Copyright 2022, The OpenUnderstand Project, Iran University of Science and technology"
-__credits__ = ["Dr.Parsa", "Dr.Zakeri", "Mehdi Razavi", "Navid Mousavizadeh", "Amir Mohammad Sohrabi", "Sara Younesi",
-               "Deniz Ahmadi"]
-__license__ = "GPL"
-__version__ = "1.0.0"
-
-import os
-from fnmatch import fnmatch
-
-from antlr4 import *
-
-
-from analysis_passes.callNonDynamic_callNonDynamicby import CallNonDynamicAndCallNonDynamicBy
-from analysis_passes.call_callby import CallAndCallBy
-
-from analysis_passes.variable_listener_g11 import VariableListener
-
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaLexer import JavaLexer
-
-from oudb.models import KindModel, EntityModel, ReferenceModel
-from oudb.api import open as db_open, create_db
-from oudb.fill import main
-
-from analysis_passes.couple_coupleby import ImplementCoupleAndImplementByCoupleBy
-from analysis_passes.create_createby_g11 import CreateAndCreateBy
-from analysis_passes.declare_declarein import DeclareAndDeclareinListener
-from analysis_passes.define_definein import  DefineListener
-from analysis_passes.modify_modifyby import ModifyListener
-from analysis_passes.usemodule_usemoduleby_g11 import UseModuleUseModuleByListener
-from analysis_passes.g6_class_properties import ClassPropertiesListener, InterfacePropertiesListener
-
-from analysis_passes.entity_manager_g11 import EntityGenerator, FileEntityManager, get_created_entity
-from analysis_passes.type_typedby import TypedAndTypedByListener
-from analysis_passes.use_useby import UseAndUseByListener
-from analysis_passes.set_setby import SetAndSetByListener
-from analysis_passes.setinit_setinitby import SetInitAndSetInitByListener
-from openunderstand.override_overrideby__G12 import overridelistener
-from openunderstand.couple_coupleby__G12 import CoupleAndCoupleBy
-from analysis_passes.g6_create_createby import CreateAndCreateByListener
-from analysis_passes.g6_declare_declarein import DeclareAndDeclareinListener
-from analysis_passes.g6_class_properties import ClassPropertiesListener, InterfacePropertiesListener
-from metrics.AvgCyclomatic import CyclomaticListener
-from metrics.AvgCyclomaticStrict import CyclomaticStrictListener
-from metrics.AvgCyclomaticModified import CyclomaticModifiedListener
-from metrics.AvgEssential import EssentialListener
 
 class Project():
 
@@ -812,8 +823,8 @@ if __name__ == '__main__':
     # get file name
     rawPath = str(os.path.dirname(__file__).replace("\\", "/"))
     pathArray = rawPath.split('/')
-    path = Project.listToString(pathArray) + "benchmark"
-    # path = r"C:\Users\ASUS\Desktop\term_4002\Compiler\project\phase2\OpenUnderstand\benchmark\calculator_app"
+    # path = Project.listToString(pathArray) + "benchmark"
+    path = r"C:\Users\ASUS\Desktop\term_4002\Compiler\project\phase2\OpenUnderstand\benchmark\SalaryCalculator-master"
     files = p.getListOfFiles(path)
     # Lists
     modify_modifyby_list = []
@@ -825,6 +836,8 @@ if __name__ == '__main__':
     open('AvgCyclomaticStrict', 'w').close()
     open('AvgCyclomaticModified', 'w').close()
     open('AvgEssential', 'w').close()
+    a = b = c = d = 0
+
     for file_address in files:
         try:
             parse_tree = p.Parse(file_address)
@@ -843,6 +856,14 @@ if __name__ == '__main__':
             p.addCreateRefs(listener.get_create(), file_ent, file_address)
         except Exception as e:
             print("An Error occurred for reference implement in file:" + file_address + "\n" + str(e))
+
+        try:
+            # define
+            listener = DefineListener()
+            p.Walk(listener, tree)
+            p.addDefineRefs(listener.defines, file_ent)
+        except Exception as e:
+            print("An Error occurred for reference define in file:" +file_address + "\n" + str(e))
 
         try:
             # declare
@@ -893,6 +914,25 @@ if __name__ == '__main__':
         except Exception as e:
             print("An Error occurred in couple reference in file :" + file_address + "\n" + str(e))
             continue
+        try:
+            # Throws
+            listener = Throws_TrowsBy()
+            listener.implement = []
+            p.Walk(listener, tree)
+            p.addThrows_TrowsByRefs(listener.implement, file_ent, file_address, 236, 237, True)
+        except Exception as e:
+            print("An Error occurred in couple reference in file :" + file_address + "\n" + str(e))
+            pass
+
+        try:
+            # dotref
+            listener = DotRef_DotRefBy()
+            listener.declare = []
+            p.Walk(listener, tree)
+            p.addThrows_TrowsByRefs(listener.implement, file_ent, file_address, 198, 199, False)
+        except Exception as e:
+            print("An Error occurred in couple reference in file :" + file_address + "\n" + str(e))
+            pass
 
         try:
 
@@ -955,6 +995,39 @@ if __name__ == '__main__':
     # Project.add_create_and_createby_reference(create_createby_list)
     # Project.add_modify_and_modifyby_reference(modify_modifyby_list)
     
+            # metrics lot
+            listener = LineOfCode(file_address=file_address)
+            p.Walk(listener, tree)
+            CountLineCode = listener.get_countLineCode
+            CountLineComment = listener.get_countLineComment
+            ContLineDecl = listener.get_countLineDecl
+            CountLineExe = listener.get_countLineExec
+            a += CountLineCode['file']
+            b += CountLineComment['file']
+            c += CountLineExe['file']
+            d += ContLineDecl['file']
+            print(f'CuntLineCode={CountLineCode}')
+            print(f'CuntLineComment={CountLineComment}')
+            print(f'CuntLineExe={CountLineExe}')
+            print(f'CuntLineDecl={ContLineDecl}')
+            print(
+                f'CountLIneCode: {CountLineCode["file"]} , CountLIneComment: {CountLineComment["file"]} , CountLINeExec: {CountLineExe["file"]} , CountLINeDecl: {ContLineDecl["file"]} ')
+            print("''''''''''''''''''''''''''''''''''''''''''''''''''''''''''\n")
+            df_clc = pd.DataFrame(data=stringify(listener.get_countLineCode), index=[1])
+            df_clcomment = pd.DataFrame(data=stringify(listener.get_countLineComment), index=[1])
+            df_cld = pd.DataFrame(data=stringify(listener.get_countLineDecl), index=[1])
+            df_cle = pd.DataFrame(data=stringify(listener.get_countLineExec), index=[1])
+            writer = pd.ExcelWriter(
+                r'C:\Users\Lenovo\Desktop\compiler\compiler-project-dev\openunderstand\countlinecode.xlsx')
+            df_clc.to_excel(writer, 'countLineCode', index=False)
+            df_clcomment.to_excel(writer, 'countLineComnnet', index=False)
+            df_cld.to_excel(writer, 'countLineDecl', index=False)
+            df_cle.to_excel(writer, 'countLineExe', index=False)
+            writer.save()
+        except Exception as e:
+            print("An Error occurred in couple reference in file :" + file_address + "\n" + str(e))
+            pass
+        try:
             p.addoverridereference(classesx, extendedlist)
         except Exception as e:
             print("An Error occurred in couple reference " + str(e))
@@ -964,3 +1037,7 @@ if __name__ == '__main__':
 
         except Exception as e:
             print("An Error occurred in override reference " + str(e))
+    try:
+        print(f'TotalCountLIneCode: {a} , TotalCountLineComment:{b} , TotalCountLineExe:{c} , TotalCOuntLIneDecl:{d} ')
+    except Exception as e:
+        print("An Error occurred in override reference " + str(e))
