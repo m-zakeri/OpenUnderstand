@@ -1,5 +1,5 @@
-from  gen.JavaParserLabeled import  JavaParserLabeled
-from  gen.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 
 
 class DSCmetric(JavaParserLabeledListener):
