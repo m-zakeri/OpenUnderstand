@@ -14,9 +14,9 @@ This module find all OpenUnderstand call and callby references in a Java project
 __author__ = 'Amirhossein Derakhshan'
 __version__ = '0.1.0'
 
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-import analysis_passes.class_properties as class_properties
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+import openunderstand.analysis_passes.class_properties as class_properties
 
 
 class Set_Setby(JavaParserLabeledListener):
