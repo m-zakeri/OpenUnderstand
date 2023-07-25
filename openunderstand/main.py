@@ -7,19 +7,19 @@ from fnmatch import fnmatch
 
 from antlr4 import *
 
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaLexer import JavaLexer
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
 
-from oudb.models import KindModel, EntityModel, ReferenceModel
-from oudb.api import open as db_open, create_db
-from oudb.fill import main
+from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel
+from openunderstand.oudb.api import open as db_open, create_db
+from openunderstand.oudb.fill import main
 
-from analysis_passes.couple_coupleby import ImplementCoupleAndImplementByCoupleBy
-from analysis_passes.create_createby import CreateAndCreateBy
-from analysis_passes.declare_declarein import DeclareAndDeclareinListener
-from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
-from  analysis_passes.set_setby import *
-from analysis_passes.setPartial_setPartialBy import *
+from openunderstand.analysis_passes.couple_coupleby import ImplementCoupleAndImplementByCoupleBy
+from openunderstand.analysis_passes.create_createby import CreateAndCreateBy
+from openunderstand.analysis_passes.declare_declarein import DeclareAndDeclareinListener
+from openunderstand.analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
+from openunderstand.analysis_passes.set_setby import *
+from openunderstand.analysis_passes.setPartial_setPartialBy import *
 import argparse
 
 class Project():
