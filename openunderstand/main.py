@@ -5,13 +5,13 @@ from fnmatch import fnmatch
 
 from antlr4 import *
 
-from analysis_passes.variable_listener_g11 import VariableListener
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaLexer import JavaLexer
+from openunderstand.analysis_passes.variable_listener_g11 import VariableListener
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
 
-from oudb.models import KindModel, EntityModel, ReferenceModel
-from oudb.api import open as db_open, create_db
-from oudb.fill import main
+from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel
+from openunderstand.oudb.api import open as db_open, create_db
+from openunderstand.oudb.fill import main
 
 from openunderstand.override_overrideby__G12 import overridelistener
 from openunderstand.couple_coupleby__G12 import CoupleAndCoupleBy
@@ -41,7 +41,8 @@ from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel
 from openunderstand.oudb.api import open as db_open, create_db
 from openunderstand.oudb.fill import main
 
-from openunderstand.analysis_passes.couple_coupleby import ImplementCoupleAndImplementByCoupleBy
+# from openunderstand.analysis_passes.couple_coupleby import ImplementCoupleAndImplementByCoupleBy
+from openunderstand.analysis_passes.couple_coupleby import CoupleAndCoupleBy
 from openunderstand.analysis_passes.create_createby_g11 import CreateAndCreateBy
 from openunderstand.analysis_passes.declare_declarein import DeclareAndDeclareinListener
 from openunderstand.analysis_passes.define_definein import  DefineListener
@@ -104,12 +105,10 @@ class Project:
 
         return allFiles
 
-    def getFileEntity(self, path):
+    def getFileEntity(self, mpath:str = "", name: str =""):
         # kind id: 1
-        path = path.replace("/", "\\")
-        name = path.split("\\")[-1]
-        file = open(path, mode='r')
-        file_ent = EntityModel.get_or_create(_kind=1, _name=name, _longname=path, _contents=file.read())[0]
+        file = open(mpath, mode='r')
+        file_ent = EntityModel.get_or_create(_kind=1, _name=name, _longname=mpath, _contents=file.read())[0]
         file.close()
         print("processing file:", file_ent)
         return file_ent
@@ -271,14 +270,15 @@ class Project:
         return ent[0]
 
     def getClassProperties(self, class_longname, file_address2):
+
         listener = ClassPropertiesListener()
         listener.class_longname = class_longname.split(".")
         listener.class_properties = None
-        tree2 = p.Parse(file_address2)
+        tree2 = self.Parse(file_address2)
         try:
-            tree2 = p.Parse(file_address2)
+            tree2 = self.Parse(file_address2)
         except Exception as e:
-            print("An Error occurred in file:" + file_address2 + "\n" + str(e))
+            print("An Error occurred in file 1 :" + file_address2 + "\n" + str(e))
         self.Walk(listener, tree2)
         return listener.class_properties
 
@@ -332,8 +332,7 @@ class Project:
         leastspecific_kind_selected = None
         for kind in KindModel.select().where(KindModel._name.contains(type)):
             if self.checkModifiersInKind(modifiers, kind):
-                if not leastspecific_kind_selected \
-                        or len(leastspecific_kind_selected._name)  len(kind._name):
+                if not leastspecific_kind_selected or len(leastspecific_kind_selected._name)  and len(kind._name):
                     leastspecific_kind_selected = kind
         return leastspecific_kind_selected
 
@@ -344,58 +343,58 @@ class Project:
         return True
 
 
-if __name__ == '__main__':
-    p = Project()
-    create_db("../benchmark2_database.oudb",
-              project_dir="..\benchmark")
-    main()
-    db = db_open("../benchmark2_database.oudb")
-    # get file name
-    rawPath = str(os.path.dirname(__file__).replace("\\", "/"))
-    pathArray = rawPath.split('/')
-    path = Project.listToString(pathArray) + "benchmark"
-    files = p.getListOfFiles(path)
-
-
-    for file_address in files:
-        try:
-            file_ent = p.getFileEntity(file_address)
-            tree = p.Parse(file_address)
-        except Exception as e:
-            print("An Error occurred in file:" + file_address + "\n" + str(e))
-            continue
-        try:
-            listener = CreateAndCreateByListener()
-            p.Walk(listener, tree)
-            listener.get_refers()
-            p.addCreateRefs(listener.get_create(), file_ent, file_address)
-        except Exception as e:
-            print("An Error occurred for reference implement in file:" + file_address + "\n" + str(e))
-
-
-        try:
-            # implement
-            listener = ImplementCoupleAndImplementByCoupleBy()
-            listener.implement = []
-            p.Walk(listener, tree)
-            p.addImplementOrImplementByRefs(listener.implement, file_ent, file_address)
-        except Exception as e:
-            print("An Error occurred for reference implement in file:" + file_address + "\n" + str(e))
-
-        try:
-            # import
-            listener = ImportListener()
-            p.Walk(listener, tree)
-        except Exception as e:
-            print("An Error occurred for reference import in file:" + file_address + "\n" + str(e))
-
-        try:
-            # declare
-            listener = DeclareAndDeclareinListener()
-            p.Walk(listener, tree)
-            p.addDeclareRefs(listener.get_declare_dicts, file_ent)
-        except Exception as e:
-            print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
+# if __name__ == '__main__':
+#     p = Project()
+#     create_db("../benchmark2_database.oudb",
+#               project_dir="..\benchmark")
+#     main()
+#     db = db_open("../benchmark2_database.oudb")
+#     # get file name
+#     rawPath = str(os.path.dirname(__file__).replace("\\", "/"))
+#     pathArray = rawPath.split('/')
+#     path = Project.listToString(pathArray) + "benchmark"
+#     files = p.getListOfFiles(path)
+#
+#
+#     for file_address in files:
+#         try:
+#             file_ent = p.getFileEntity(file_address)
+#             tree = p.Parse(file_address)
+#         except Exception as e:
+#             print("An Error occurred in file:" + file_address + "\n" + str(e))
+#             continue
+#         try:
+#             listener = CreateAndCreateByListener()
+#             p.Walk(listener, tree)
+#             listener.get_refers()
+#             p.addCreateRefs(listener.get_create(), file_ent, file_address)
+#         except Exception as e:
+#             print("An Error occurred for reference implement in file:" + file_address + "\n" + str(e))
+#
+#
+#         try:
+#             # implement
+#             listener = CallAndCallBy()
+#             listener.implement = []
+#             p.Walk(listener, tree)
+#             p.addImplementOrImplementByRefs(listener.implement, file_ent, file_address)
+#         except Exception as e:
+#             print("An Error occurred for reference implement in file:" + file_address + "\n" + str(e))
+#
+#         try:
+#             # import
+#             listener = ImportListener()
+#             p.Walk(listener, tree)
+#         except Exception as e:
+#             print("An Error occurred for reference import in file:" + file_address + "\n" + str(e))
+#
+#         try:
+#             # declare
+#             listener = DeclareAndDeclareinListener()
+#             p.Walk(listener, tree)
+#             p.addDeclareRefs(listener.get_declare_dicts, file_ent)
+#         except Exception as e:
+#             print("An Error occurred for reference declare in file:" + file_address + "\n" + str(e))
 
 class Project():
 
@@ -436,10 +435,8 @@ class Project():
 
         return allFiles
 
-    def getFileEntity(self, path):
+    def getFileEntity(self, path:str= "", name:str = ""):
         # kind id: 1
-        path = path.replace("/", "\\")
-        name = path.split("\\")[-1]
         file = open(path, mode='r')
         file_ent = EntityModel.get_or_create(_kind=1, _name=name, _longname=path, _contents=file.read())[0]
         file.close()
@@ -814,20 +811,9 @@ class Project():
                         Couple_ref = ReferenceModel.get_or_create(_kind=179, _file=file_ent, _line=c["line"],
                                                                   _column=c["col"], _ent=ent[0], _scope=scope[0])
 
-if __name__ == '__main__':
+def runner(path_project:str = ""):
     p = Project()
-    create_db("../benchmark2_database.oudb",
-              project_dir="..\benchmark")
-
-    main()
-    db = db_open("../benchmark2_database.oudb")
-    # get file name
-    rawPath = str(os.path.dirname(__file__).replace("\\", "/"))
-    pathArray = rawPath.split('/')
-    # path = Project.listToString(pathArray) + "benchmark"
-    path = r"C:\Users\ASUS\Desktop\term_4002\Compiler\project\phase2\OpenUnderstand\benchmark\SalaryCalculator-master"
-    files = p.getListOfFiles(path)
-    # Lists
+    files = p.getListOfFiles(path_project)
     modify_modifyby_list = []
     classesx= {}
     extendedlist= []
@@ -838,11 +824,12 @@ if __name__ == '__main__':
     open('AvgCyclomaticModified', 'w').close()
     open('AvgEssential', 'w').close()
     a = b = c = d = 0
-
     for file_address in files:
         try:
+            print(" fileaddress : ", file_address)
             parse_tree = p.Parse(file_address)
-            file_ent = p.getFileEntity(file_address)
+            print(os.path.basename(file_address))
+            file_ent = p.getFileEntity(path=file_address, name=os.path.basename(file_address))
             tree = p.Parse(file_address)
         except Exception as e:
             print("An Error occurred in file:" + file_address + "\n" + str(e))
@@ -935,110 +922,105 @@ if __name__ == '__main__':
             print("An Error occurred in couple reference in file :" + file_address + "\n" + str(e))
             pass
 
-        try:
-
-            listener = CyclomaticListener()
-            p.Walk(listener, tree)
-            with open('AvgCyclomatic.txt', 'a') as f:
-                f.write(f"AvgCyclomatic:{listener.get_dict}")
-                f.write('\n')
-        except Exception as e:
-            print("An Error occurred for AvgCyclomatic implement in file:" + file_address + "\n" + str(e))
-
-        try:
-
-            listener = CyclomaticStrictListener()
-            p.Walk(listener, tree)
-            with open('AvgCyclomaticStrict.txt', 'a') as f:
-                f.write(f"AvgCyclomaticStrict:{listener.get_dict}")
-                f.write('\n')
-        except Exception as e:
-            print("An Error occurred for AvgCyclomaticStrict implement in file:" + file_address + "\n" + str(e))
-
-        try:
-
-            listener = CyclomaticModifiedListener()
-            p.Walk(listener, tree)
-            with open('AvgCyclomaticModified.txt', 'a') as f:
-                f.write(f"AvgCyclomaticModified:{listener.get_dict}")
-                f.write('\n')
-        except Exception as e:
-            print("An Error occurred for AvgCyclomaticModified implement in file:" + file_address + "\n" + str(e))
-
-        try:
-
-            listener = EssentialListener()
-            p.Walk(listener, tree)
-            with open('AvgEssential.txt', 'a') as f:
-                f.write(f"AvgEssential:{listener.get_dict}")
-                f.write('\n')
-        except Exception as e:
-            print("An Error occurred for AvgEssential implement in file:" + file_address + "\n" + str(e))
-
-
-
-
-
-
-
-    try: 
-        p.addoverridereference(classesx, extendedlist)
-    except Exception as e:
-        print("An Error occurred in couple reference " + str(e))
-   
-    try: 
-        p.addcouplereference(classescoupleby , couple)
-       
-    except Exception as e:
-        print("An Error occurred in override reference " + str(e))
-    
-
-    # Project.add_create_and_createby_reference(create_createby_list)
-    # Project.add_modify_and_modifyby_reference(modify_modifyby_list)
-    
-            # metrics lot
-            listener = LineOfCode(file_address=file_address)
-            p.Walk(listener, tree)
-            CountLineCode = listener.get_countLineCode
-            CountLineComment = listener.get_countLineComment
-            ContLineDecl = listener.get_countLineDecl
-            CountLineExe = listener.get_countLineExec
-            a += CountLineCode['file']
-            b += CountLineComment['file']
-            c += CountLineExe['file']
-            d += ContLineDecl['file']
-            print(f'CuntLineCode={CountLineCode}')
-            print(f'CuntLineComment={CountLineComment}')
-            print(f'CuntLineExe={CountLineExe}')
-            print(f'CuntLineDecl={ContLineDecl}')
-            print(
-                f'CountLIneCode: {CountLineCode["file"]} , CountLIneComment: {CountLineComment["file"]} , CountLINeExec: {CountLineExe["file"]} , CountLINeDecl: {ContLineDecl["file"]} ')
-            print("''''''''''''''''''''''''''''''''''''''''''''''''''''''''''\n")
-            df_clc = pd.DataFrame(data=stringify(listener.get_countLineCode), index=[1])
-            df_clcomment = pd.DataFrame(data=stringify(listener.get_countLineComment), index=[1])
-            df_cld = pd.DataFrame(data=stringify(listener.get_countLineDecl), index=[1])
-            df_cle = pd.DataFrame(data=stringify(listener.get_countLineExec), index=[1])
-            writer = pd.ExcelWriter(
-                r'C:\Users\Lenovo\Desktop\compiler\compiler-project-dev\openunderstand\countlinecode.xlsx')
-            df_clc.to_excel(writer, 'countLineCode', index=False)
-            df_clcomment.to_excel(writer, 'countLineComnnet', index=False)
-            df_cld.to_excel(writer, 'countLineDecl', index=False)
-            df_cle.to_excel(writer, 'countLineExe', index=False)
-            writer.save()
-        except Exception as e:
-            print("An Error occurred in couple reference in file :" + file_address + "\n" + str(e))
-            pass
-        try:
-            p.addoverridereference(classesx, extendedlist)
-        except Exception as e:
-            print("An Error occurred in couple reference " + str(e))
-
-        try:
-            p.addcouplereference(classescoupleby, couple)
-
-        except Exception as e:
-            print("An Error occurred in override reference " + str(e))
-    try:
-        print(f'TotalCountLIneCode: {a} , TotalCountLineComment:{b} , TotalCountLineExe:{c} , TotalCOuntLIneDecl:{d} ')
-    except Exception as e:
-        print("An Error occurred in override reference " + str(e))
+    #     try:
+    #
+    #         listener = CyclomaticListener()
+    #         p.Walk(listener, tree)
+    #         with open('AvgCyclomatic.txt', 'a') as f:
+    #             f.write(f"AvgCyclomatic:{listener.get_dict}")
+    #             f.write('\n')
+    #     except Exception as e:
+    #         print("An Error occurred for AvgCyclomatic implement in file:" + file_address + "\n" + str(e))
+    #
+    #     try:
+    #
+    #         listener = CyclomaticStrictListener()
+    #         p.Walk(listener, tree)
+    #         with open('AvgCyclomaticStrict.txt', 'a') as f:
+    #             f.write(f"AvgCyclomaticStrict:{listener.get_dict}")
+    #             f.write('\n')
+    #     except Exception as e:
+    #         print("An Error occurred for AvgCyclomaticStrict implement in file:" + file_address + "\n" + str(e))
+    #
+    #     try:
+    #
+    #         listener = CyclomaticModifiedListener()
+    #         p.Walk(listener, tree)
+    #         with open('AvgCyclomaticModified.txt', 'a') as f:
+    #             f.write(f"AvgCyclomaticModified:{listener.get_dict}")
+    #             f.write('\n')
+    #     except Exception as e:
+    #         print("An Error occurred for AvgCyclomaticModified implement in file:" + file_address + "\n" + str(e))
+    #
+    #     try:
+    #
+    #         listener = EssentialListener()
+    #         p.Walk(listener, tree)
+    #         with open('AvgEssential.txt', 'a') as f:
+    #             f.write(f"AvgEssential:{listener.get_dict}")
+    #             f.write('\n')
+    #     except Exception as e:
+    #         print("An Error occurred for AvgEssential implement in file:" + file_address + "\n" + str(e))
+    #
+    #
+    # try:
+    #     p.addoverridereference(classesx, extendedlist)
+    # except Exception as e:
+    #     print("An Error occurred in couple reference " + str(e))
+    #
+    # try:
+    #     p.addcouplereference(classescoupleby , couple)
+    #
+    # except Exception as e:
+    #     print("An Error occurred in override reference " + str(e))
+    #
+    #
+    # # Project.add_create_and_createby_reference(create_createby_list)
+    # # Project.add_modify_and_modifyby_reference(modify_modifyby_list)
+    # try:
+    #     # metrics lot
+    #     listener = LineOfCode(file_address=file_address)
+    #     p.Walk(listener, tree)
+    #     CountLineCode = listener.get_countLineCode
+    #     CountLineComment = listener.get_countLineComment
+    #     ContLineDecl = listener.get_countLineDecl
+    #     CountLineExe = listener.get_countLineExec
+    #     a += CountLineCode['file']
+    #     b += CountLineComment['file']
+    #     c += CountLineExe['file']
+    #     d += ContLineDecl['file']
+    #     print(f'CuntLineCode={CountLineCode}')
+    #     print(f'CuntLineComment={CountLineComment}')
+    #     print(f'CuntLineExe={CountLineExe}')
+    #     print(f'CuntLineDecl={ContLineDecl}')
+    #     # print(
+    #     #     f'CountLIneCode: {CountLineCode["file"]} , CountLIneComment: {CountLineComment["file"]} , CountLINeExec: {CountLineExe["file"]} , CountLINeDecl: {ContLineDecl["file"]} ')
+    #     # print("''''''''''''''''''''''''''''''''''''''''''''''''''''''''''\n")
+    #     # df_clc = pd.DataFrame(data=stringify(listener.get_countLineCode), index=[1])
+    #     # df_clcomment = pd.DataFrame(data=stringify(listener.get_countLineComment), index=[1])
+    #     # df_cld = pd.DataFrame(data=stringify(listener.get_countLineDecl), index=[1])
+    #     # df_cle = pd.DataFrame(data=stringify(listener.get_countLineExec), index=[1])
+    #     # writer = pd.ExcelWriter(
+    #     #     r'C:\Users\Lenovo\Desktop\compiler\compiler-project-dev\openunderstand\countlinecode.xlsx')
+    #     # df_clc.to_excel(writer, 'countLineCode', index=False)
+    #     # df_clcomment.to_excel(writer, 'countLineComnnet', index=False)
+    #     # df_cld.to_excel(writer, 'countLineDecl', index=False)
+    #     # df_cle.to_excel(writer, 'countLineExe', index=False)
+    #     # writer.save()
+    # except Exception as e:
+    #     print("An Error occurred in couple reference in file :" + file_address + "\n" + str(e))
+    #     pass
+    # try:
+    #     p.addoverridereference(classesx, extendedlist)
+    # except Exception as e:
+    #     print("An Error occurred in couple reference " + str(e))
+    #
+    # try:
+    #     p.addcouplereference(classescoupleby, couple)
+    #
+    # except Exception as e:
+    #     print("An Error occurred in override reference " + str(e))
+    # try:
+    #     print(f'TotalCountLIneCode: {a} , TotalCountLineComment:{b} , TotalCountLineExe:{c} , TotalCOuntLIneDecl:{d} ')
+    # except Exception as e:
+    #     print("An Error occurred in override reference " + str(e))

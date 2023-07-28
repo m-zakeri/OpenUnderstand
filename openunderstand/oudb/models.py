@@ -58,7 +58,6 @@ class ProjectModel(Model):
     name = CharField(max_length=128)
     language = CharField(max_length=128, default="Java")
     root = CharField(max_length=1024)
-
     db_path = CharField(max_length=1024, unique=True)
 
     def __str__(self):

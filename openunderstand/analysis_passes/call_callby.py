@@ -10,9 +10,12 @@ This module find all OpenUnderstand call and callby references in a Java project
 
 
 
-from OpenUnderstand.openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from OpenUnderstand.openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-import OpenUnderstand.openunderstand.analysis_passes.class_properties as class_properties
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+import openunderstand.analysis_passes.class_properties as class_properties
+from openunderstand.analysis_passes.general_scope_listener import GeneralScopeListener
+
+implement = []
 
 class CallAndCallBy(GeneralScopeListener):
     """
@@ -34,7 +37,7 @@ class CallAndCallBy(GeneralScopeListener):
         self.is_var_non_primitive_type = False
         self.non_primitive_var_type = None
         self.local_method_variables = {}
-   implement = []
+
 
 
 

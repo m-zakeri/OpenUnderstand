@@ -11,8 +11,8 @@ This module find all OpenUnderstand call and callby references in a Java project
 __author__ = ''
 __version__ = '0.1.0'
 
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 
 
 class CoupleAndCoupleBy(JavaParserLabeledListener):

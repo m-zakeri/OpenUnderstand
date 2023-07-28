@@ -3,12 +3,12 @@ import os
 import sys
 import unittest
 
-from oudb.models import KindModel, EntityModel, ReferenceModel
-from oudb.utils import get_entity_object_from_understand
+from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel
+from openunderstand.oudb.utils import get_entity_object_from_understand
 
 
-def append_java_ent_kinds():
-    with open(os.path.join(sys.path[0], "oudb/java_ent_kinds.txt"), "r") as f:
+def append_java_ent_kinds(path_dir:str = os.path.join(sys.path[0], "openunderstand","oudb","java_ent_kinds.txt")):
+    with open(path_dir, "r") as f:
         for line in f.readlines():
             if line.startswith("Java"):
                 query = line.strip()
@@ -24,9 +24,9 @@ def append_java_ref_kind(kind: str, inverse: str, ref: str) -> int:
     return ref_kind.save()
 
 
-def append_java_ref_kinds():
+def append_java_ref_kinds(path_dir:str = os.path.join(sys.path[0], "openunderstand","oudb","java_ref_kinds.txt")):
     kind, inv_kind = "", ""
-    with open(os.path.join(sys.path[0], "oudb/java_ref_kinds.txt"), "r") as f:
+    with open(path_dir, "r") as f:
         for line in f.readlines():
             line = line.strip()
             if line.startswith("Java"):
@@ -46,7 +46,7 @@ def append_java_ref_kinds():
 
 def append_entities_with_understand(udb_path: str):
     try:
-        from openunderstand import understand as und
+        from openunderstand.oudb import api as und
     except ImportError:
         print("Understand Python API is not installed correctly.")
 
@@ -133,7 +133,8 @@ class TestFill(unittest.TestCase):
         self.assertRaises(peewee.OperationalError, lambda: self.ent_kind.inv())
 
 
-def main():
+def main(udb_path:str = ""):
+
     # udb_path = "D:\Dev\JavaSample\JavaSample1.udb"
     append_java_ent_kinds()
     append_java_ref_kinds()

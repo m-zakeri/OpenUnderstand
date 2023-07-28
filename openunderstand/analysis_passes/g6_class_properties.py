@@ -7,8 +7,8 @@ __author__ = 'Parmida Majmasanaye , Zahra Momeninezhad , Bayan Divaani-Azar , Ba
 __version__ = '0.1.0'
 
 
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from antlr4 import *
 
 

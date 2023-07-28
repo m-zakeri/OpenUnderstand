@@ -15,11 +15,13 @@ __credits__ = ["Dr.Parsa", "Dr.Zakeri", "Mehdi Razavi", "Navid Mousavizadeh", "A
 __license__ = "GPL"
 __version__ = "1.0.0"
 
-from oudb.models import EntityModel, KindModel
+import os.path
+
+from openunderstand.oudb.models import EntityModel, KindModel
 from antlr4 import *
 # Listeners
-from analysis_passes.package_entity_listener_g11 import PackageListener
-from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
+from openunderstand.analysis_passes.package_entity_listener_g11 import PackageListener
+from openunderstand.analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
 
 # Constants
 FILE_KIND_ID = 1
@@ -287,10 +289,10 @@ class FileEntityManager:
 
     def __init__(self, path):
         """Define Name, long Name as address of file and content of it by simply passing path in __init__ method."""
-        file_reader = open(path.replace("/", "\\"), mode='r')
+        file_reader = open(path, mode='r')
         self.path = path
-        self.name = path.split("\\")[-1]
-        self.longname = path.replace("/", "\\")
+        self.name = os.path.basename(path)
+        self.longname = path
         self.contents = file_reader.read()
         file_reader.close()
 
@@ -319,7 +321,7 @@ class PackageEntityManager:
 
     def __init__(self, path, file_ent, tree):
         """Define the path to the file for finding package entity."""
-        file_reader = open(path.replace("/", "\\"), mode='r')
+        file_reader = open(path, mode='r')
         self.path = path
         self.contents = file_reader.read()
         self.package_string = None

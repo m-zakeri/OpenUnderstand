@@ -4,7 +4,7 @@ import os
 # from D:\program files\SciTools\bin\pc-win64\Python\understand.pyd
 # by generator 1.147
 
-from oudb.models import *
+from openunderstand.oudb.models import *
 
 from dataclasses import dataclass
 
@@ -230,6 +230,8 @@ WHITESPACE = 'Whitespace'
 
 
 def create_db(dbname, project_dir: str, project_name=None):
+
+
     db = SqliteDatabase(dbname, pragmas={
         'journal_mode': 'wal',
         'cache_size': -1 * 64000,  # 64MB
@@ -266,6 +268,7 @@ def open(dbname):  # real signature unknown; restored from __doc__
       DBUnableOpen         - database is unreadable or does not exist
       NoApiLicense         - Understand license required
     """
+    print(dbname)
     if not os.path.isfile(dbname):
         raise UnderstandError()
 
@@ -274,6 +277,7 @@ def open(dbname):  # real signature unknown; restored from __doc__
         'cache_size': -1 * 64000,  # 64MB
         'ignore_check_constraints': 0,
         'synchronous': 0})
+
     db.bind(
         [KindModel, EntityModel, ReferenceModel, ProjectModel]
     )
@@ -281,7 +285,6 @@ def open(dbname):  # real signature unknown; restored from __doc__
     obj = ProjectModel.get_or_none(
         db_path=dbname
     )
-
     return Db(db_obj=obj)
 
 

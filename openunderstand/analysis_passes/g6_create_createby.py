@@ -14,9 +14,9 @@ This module find all OpenUnderstand create and createby references in a Java pro
 __author__ = 'Parmida Majmasanaye , Zahra Momeninezhad , Bayan Divaani-Azar , Bavan Divaani-Azar'
 __version__ = '0.1.0'
 
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-import analysis_passes.g6_class_properties as class_properties
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+import openunderstand.analysis_passes.g6_class_properties as class_properties
 
 
 class CreateAndCreateByListener(JavaParserLabeledListener):
@@ -28,7 +28,7 @@ class CreateAndCreateByListener(JavaParserLabeledListener):
         self.refers = {}
         self.create = []
 
-    def get_method_content(self, ctx) -> tuple(str, str):
+    def get_method_content(self, ctx) -> tuple[str, str]:
         # TODO Parents is always equal to ""
         parents = ""
         content = ""
