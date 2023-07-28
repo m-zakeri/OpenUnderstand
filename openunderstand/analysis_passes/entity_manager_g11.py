@@ -17,11 +17,11 @@ __version__ = "1.0.0"
 
 import os.path
 
-from openunderstand.oudb.models import EntityModel, KindModel
+from oudb.models import EntityModel, KindModel
 from antlr4 import *
 # Listeners
-from openunderstand.analysis_passes.package_entity_listener_g11 import PackageListener
-from openunderstand.analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
+from analysis_passes.package_entity_listener_g11 import PackageListener
+from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
 
 # Constants
 FILE_KIND_ID = 1

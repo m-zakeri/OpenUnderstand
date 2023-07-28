@@ -1,8 +1,8 @@
 __author__ = 'Parmida Majmasanaye , Zahra Momeninezhad , Bayan divaaniazar , Bavan Divaaniazar'
 __version__ = '0.2.0'
 
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 
 
 class DeclareAndDeclareinListener(JavaParserLabeledListener):

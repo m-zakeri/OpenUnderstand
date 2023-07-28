@@ -7,8 +7,8 @@ __credits__ = ["Dr.Parsa", "Dr.Zakeri", "Mehdi Razavi", "Navid Mousavizadeh", "A
 __license__ = "GPL"
 __version__ = "1.0.0"
 
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 
 
 class PackageListener(JavaParserLabeledListener):

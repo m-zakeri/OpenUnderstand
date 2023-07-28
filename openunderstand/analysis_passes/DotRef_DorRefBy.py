@@ -1,8 +1,8 @@
 
 
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-import openunderstand.analysis_passes.class_properties as class_properties
+from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+import analysis_passes.class_properties as class_properties
 
 
 class DotRef_DotRefBy(JavaParserLabeledListener):

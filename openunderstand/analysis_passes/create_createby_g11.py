@@ -17,8 +17,8 @@ __license__ = "GPL"
 __version__ = "1.0.0"
 
 import re
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 
 
 class CreateAndCreateBy(JavaParserLabeledListener):

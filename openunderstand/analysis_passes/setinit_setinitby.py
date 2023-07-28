@@ -1,6 +1,6 @@
 #Group 13
-from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 
 
 class SetInitAndSetInitByListener(JavaParserLabeledListener):

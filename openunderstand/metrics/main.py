@@ -1,6 +1,6 @@
 from antlr4 import *
-from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
-from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from gen.javaLabeled.JavaLexer import JavaLexer
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from metric import DSCmetric, DSCmetric2
 from pathlib import Path
 import argparse

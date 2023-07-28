@@ -1,1 +1,1 @@
-from openunderstand.oudb import api
+from oudb import api

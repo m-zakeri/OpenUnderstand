@@ -10,10 +10,10 @@ This module find all OpenUnderstand call and callby references in a Java project
 
 
 
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-import openunderstand.analysis_passes.class_properties as class_properties
-from openunderstand.analysis_passes.general_scope_listener import GeneralScopeListener
+from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+import analysis_passes.class_properties as class_properties
+from analysis_passes.general_scope_listener import GeneralScopeListener
 
 implement = []
 

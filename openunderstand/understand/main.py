@@ -5,65 +5,65 @@ from fnmatch import fnmatch
 
 from antlr4 import *
 
-from openunderstand.analysis_passes.variable_listener_g11 import VariableListener
-from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
+from analysis_passes.variable_listener_g11 import VariableListener
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from gen.javaLabeled.JavaLexer import JavaLexer
 
-from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel
-from openunderstand.oudb.api import open as db_open, create_db
-from openunderstand.oudb.fill import main
+from oudb.models import KindModel, EntityModel, ReferenceModel
+from oudb.api import open as db_open, create_db
+from oudb.fill import fill
 
-from openunderstand.override_overrideby__G12 import overridelistener
-from openunderstand.couple_coupleby__G12 import CoupleAndCoupleBy
-from openunderstand.analysis_passes.couple_coupleby import CoupleAndCoupleBy
-from openunderstand.analysis_passes.create_createby_g11 import CreateAndCreateBy
-from openunderstand.analysis_passes.declare_declarein import DeclareAndDeclareinListener
-from openunderstand.analysis_passes.modify_modifyby import ModifyListener
-from openunderstand.analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
-from openunderstand.analysis_passes.entity_manager_g11 import EntityGenerator, get_created_entity
-from openunderstand.analysis_passes.Throws_ThrowsBy import Throws_TrowsBy
-from openunderstand.analysis_passes.DotRef_DorRefBy import DotRef_DotRefBy
-from openunderstand.metrics.Lineofcode import LineOfCode , stringify
-from openunderstand.analysis_passes.g6_create_createby import CreateAndCreateByListener
-from openunderstand.analysis_passes.g6_declare_declarein import DeclareAndDeclareinListener
-from openunderstand.analysis_passes.g6_class_properties import ClassPropertiesListener
-from openunderstand.analysis_passes.define_definein import  DefineListener
+from understand.override_overrideby__G12 import overridelistener
+from understand.couple_coupleby__G12 import CoupleAndCoupleBy
+from analysis_passes.couple_coupleby import CoupleAndCoupleBy
+from analysis_passes.create_createby_g11 import CreateAndCreateBy
+from analysis_passes.declare_declarein import DeclareAndDeclareinListener
+from analysis_passes.modify_modifyby import ModifyListener
+from analysis_passes.class_properties import ClassPropertiesListener, InterfacePropertiesListener
+from analysis_passes.entity_manager_g11 import EntityGenerator, get_created_entity
+from analysis_passes.Throws_ThrowsBy import Throws_TrowsBy
+from analysis_passes.DotRef_DorRefBy import DotRef_DotRefBy
+from metrics.Lineofcode import LineOfCode , stringify
+from analysis_passes.g6_create_createby import CreateAndCreateByListener
+from analysis_passes.g6_declare_declarein import DeclareAndDeclareinListener
+from analysis_passes.g6_class_properties import ClassPropertiesListener
+from analysis_passes.define_definein import  DefineListener
 
-from openunderstand.analysis_passes.callNonDynamic_callNonDynamicby import CallNonDynamicAndCallNonDynamicBy
-from openunderstand.analysis_passes.call_callby import CallAndCallBy
+from analysis_passes.callNonDynamic_callNonDynamicby import CallNonDynamicAndCallNonDynamicBy
+from analysis_passes.call_callby import CallAndCallBy
 
-from openunderstand.analysis_passes.variable_listener_g11 import VariableListener
+from analysis_passes.variable_listener_g11 import VariableListener
 
-from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from gen.javaLabeled.JavaLexer import JavaLexer
 
-from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel
-from openunderstand.oudb.api import open as db_open, create_db
-from openunderstand.oudb.fill import main
+from oudb.models import KindModel, EntityModel, ReferenceModel
+from oudb.api import open as db_open, create_db
+from oudb.fill import fill
 
 # from openunderstand.analysis_passes.couple_coupleby import ImplementCoupleAndImplementByCoupleBy
-from openunderstand.analysis_passes.couple_coupleby import CoupleAndCoupleBy
-from openunderstand.analysis_passes.create_createby_g11 import CreateAndCreateBy
-from openunderstand.analysis_passes.declare_declarein import DeclareAndDeclareinListener
-from openunderstand.analysis_passes.define_definein import  DefineListener
-from openunderstand.analysis_passes.modify_modifyby import ModifyListener
-from openunderstand.analysis_passes.usemodule_usemoduleby_g11 import UseModuleUseModuleByListener
-from openunderstand.analysis_passes.g6_class_properties import ClassPropertiesListener, InterfacePropertiesListener
+from analysis_passes.couple_coupleby import CoupleAndCoupleBy
+from analysis_passes.create_createby_g11 import CreateAndCreateBy
+from analysis_passes.declare_declarein import DeclareAndDeclareinListener
+from analysis_passes.define_definein import  DefineListener
+from analysis_passes.modify_modifyby import ModifyListener
+from analysis_passes.usemodule_usemoduleby_g11 import UseModuleUseModuleByListener
+from analysis_passes.g6_class_properties import ClassPropertiesListener, InterfacePropertiesListener
 
-from openunderstand.analysis_passes.entity_manager_g11 import EntityGenerator, FileEntityManager, get_created_entity
-from openunderstand.analysis_passes.type_typedby import TypedAndTypedByListener
-from openunderstand.analysis_passes.use_useby import UseAndUseByListener
-from openunderstand.analysis_passes.set_setby import SetAndSetByListener
-from openunderstand.analysis_passes.setinit_setinitby import SetInitAndSetInitByListener
-from openunderstand.override_overrideby__G12 import overridelistener
-from openunderstand.couple_coupleby__G12 import CoupleAndCoupleBy
-from openunderstand.analysis_passes.g6_create_createby import CreateAndCreateByListener
-from openunderstand.analysis_passes.g6_declare_declarein import DeclareAndDeclareinListener
-from openunderstand.analysis_passes.g6_class_properties import ClassPropertiesListener, InterfacePropertiesListener
-from openunderstand.metrics.AvgCyclomatic import CyclomaticListener
-from openunderstand.metrics.AvgCyclomaticStrict import CyclomaticStrictListener
-from openunderstand.metrics.AvgCyclomaticModified import CyclomaticModifiedListener
-from openunderstand.metrics.AvgEssential import EssentialListener
+from analysis_passes.entity_manager_g11 import EntityGenerator, FileEntityManager, get_created_entity
+from analysis_passes.type_typedby import TypedAndTypedByListener
+from analysis_passes.use_useby import UseAndUseByListener
+from analysis_passes.set_setby import SetAndSetByListener
+from analysis_passes.setinit_setinitby import SetInitAndSetInitByListener
+from understand.override_overrideby__G12 import overridelistener
+from understand.couple_coupleby__G12 import CoupleAndCoupleBy
+from analysis_passes.g6_create_createby import CreateAndCreateByListener
+from analysis_passes.g6_declare_declarein import DeclareAndDeclareinListener
+from analysis_passes.g6_class_properties import ClassPropertiesListener, InterfacePropertiesListener
+from metrics.AvgCyclomatic import CyclomaticListener
+from metrics.AvgCyclomaticStrict import CyclomaticStrictListener
+from metrics.AvgCyclomaticModified import CyclomaticModifiedListener
+from metrics.AvgEssential import EssentialListener
 
 
 

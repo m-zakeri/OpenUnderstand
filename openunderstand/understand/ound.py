@@ -7,7 +7,7 @@ It is the same Understand und command line tool
 from pprint import pprint
 
 from oudb.api import open as db_open, create_db, Kind
-from oudb.fill import main
+from oudb.fill import fill
 
 
 class Project():

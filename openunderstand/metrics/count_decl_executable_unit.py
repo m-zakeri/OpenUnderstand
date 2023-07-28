@@ -1,4 +1,4 @@
-from openunderstand.define_and_definein import *
+from define_and_definein import *
 
 
 def reach_file(ent_model):

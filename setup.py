@@ -37,7 +37,7 @@ setuptools.setup(
     packages=setuptools.find_packages(where="openunderstand",
                                       ),
     include_package_data=True,
-    package_data={"": ["*.csv", "*.xlsx"]},
+    package_data={"": ["*.csv", "*.xlsx", ], "openunderstand": ["oudb/java_ent_kinds.txt", "oudb/java_ref_kinds.txt"]},
     exclude_package_data={"": ["README.md"]},
     python_requires=">=3.8",
     install_requires=[

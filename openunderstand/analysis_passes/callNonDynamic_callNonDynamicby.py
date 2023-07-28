@@ -12,9 +12,9 @@ This module find all OpenUnderstand call and callby references in a Java project
 # from OpenUnderstand.openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 # from OpenUnderstand.openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 # import OpenUnderstand.openunderstand.analysis_passes.class_properties as class_properties
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-import openunderstand.analysis_passes.class_properties as class_properties
+from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+import analysis_passes.class_properties as class_properties
 
 class CallNonDynamicAndCallNonDynamicBy(JavaParserLabeledListener):
     """

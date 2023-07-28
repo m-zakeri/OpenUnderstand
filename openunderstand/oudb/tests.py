@@ -6,7 +6,7 @@ The script is used to test the definition of Understand and Open-understand refe
 import os
 from dotenv import load_dotenv
 
-import openunderstand.oudb.api
+import oudb.api
 
 load_dotenv()
 
@@ -70,7 +70,7 @@ except ImportError:
 
 
 def test_open_understand():
-    ent = openunderstand.oudb.api.lookup("Admin", "method")[0]
+    ent = oudb.api.lookup("Admin", "method")[0]
     print(ent, ent.simplename())
     for ref in ent.refs(entkindstring="method", unique=True):
         print(ref, ref.kind().longname())
