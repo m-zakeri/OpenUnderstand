@@ -6,65 +6,74 @@ from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 
 
-
 class Cyclomatics(JavaParserLabeledListener):
     def __init__(self):
-        self.switches=0
-        self.cases=0
-        self.ands=0
-        self.ors=0
-        self.wtfs=0
-        self.catches=0
-        self.dos=0
+        self.switches = 0
+        self.cases = 0
+        self.ands = 0
+        self.ors = 0
+        self.wtfs = 0
+        self.catches = 0
+        self.dos = 0
         self.whiles = 0
-        self.fors=0
-        self.ifs=0
-
+        self.fors = 0
+        self.ifs = 0
 
     def get_sum_cyclomatics(self):
-        return self.switches+self.cases+self.ands+self.ors+self.wtfs+self.catches+self.dos+self.whiles+self.fors+self.ifs
+        return (
+            self.switches
+            + self.cases
+            + self.ands
+            + self.ors
+            + self.wtfs
+            + self.catches
+            + self.dos
+            + self.whiles
+            + self.fors
+            + self.ifs
+        )
 
+    # switch statement
+    def enterStatement8(self, ctx: JavaParserLabeled.Statement8Context):
+        self.switches += 1
 
-    #switch statement
-    def enterStatement8(self, ctx:JavaParserLabeled.Statement8Context):
-        self.switches+=1
+    # case
+    def enterSwitchBlockStatementGroup(
+        self, ctx: JavaParserLabeled.SwitchBlockStatementGroupContext
+    ):
+        self.cases += 1
 
-    #case
-    def enterSwitchBlockStatementGroup(self, ctx:JavaParserLabeled.SwitchBlockStatementGroupContext):
-        self.cases+=1
+    # ?
+    def enterExpression20(self, ctx: JavaParserLabeled.Expression20Context):
+        self.wtfs += 1
 
-    #?
-    def enterExpression20(self, ctx:JavaParserLabeled.Expression20Context):
-        self.wtfs+=1
+    # and
+    def enterExpression18(self, ctx: JavaParserLabeled.Expression18Context):
+        self.ands += 1
 
-    #and
-    def enterExpression18(self, ctx:JavaParserLabeled.Expression18Context):
-        self.ands+=1
+    # or
+    def enterExpression19(self, ctx: JavaParserLabeled.Expression19Context):
+        self.ors += 1
 
-    #or
-    def enterExpression19(self, ctx:JavaParserLabeled.Expression19Context):
-        self.ors+=1
+    # catch
+    def enterStatement6(self, ctx: JavaParserLabeled.Statement6Context):
+        self.catches += 1
 
-    #catch
-    def enterStatement6(self, ctx:JavaParserLabeled.Statement6Context):
-        self.catches+=1
+    # do
+    def enterStatement5(self, ctx: JavaParserLabeled.Statement5Context):
+        self.dos += 1
 
-    #do
-    def enterStatement5(self, ctx:JavaParserLabeled.Statement5Context):
-        self.dos+=1
+    # whiles
+    def enterStatement4(self, ctx: JavaParserLabeled.Statement4Context):
+        self.whiles += 1
 
+    # for
+    def enterStatement3(self, ctx: JavaParserLabeled.Statement3Context):
+        self.fors += 1
 
-    #whiles
-    def enterStatement4(self, ctx:JavaParserLabeled.Statement4Context):
-        self.whiles+=1
-
-    #for
-    def enterStatement3(self, ctx:JavaParserLabeled.Statement3Context):
-        self.fors+=1
-
-    #if
-    def enterStatement2(self, ctx:JavaParserLabeled.Statement2Context):
-        self.ifs+=1
+    # if
+    def enterStatement2(self, ctx: JavaParserLabeled.Statement2Context):
+        self.ifs += 1
 
 
 def getListOfFiles(dirName):
@@ -80,15 +89,16 @@ def getListOfFiles(dirName):
 
     return allFiles
 
-if __name__ == '__main__':
-    classes={}
+
+if __name__ == "__main__":
+    classes = {}
     class_names = []
     path = "H:/OpenUnderstand/benchmark/jvlt-1.3.2"
 
     files = getListOfFiles(path)
     for file_address in files:
         # at first we should Stream text from input file
-        inputfile = FileStream(file_address, encoding='utf8')
+        inputfile = FileStream(file_address, encoding="utf8")
         # then we must use lexer
         lex = JavaLexer(inputfile)
         # then we should tokenize that
@@ -100,5 +110,4 @@ if __name__ == '__main__':
         listener = Cyclomatics()
         treewalker = ParseTreeWalker()
         treewalker.walk(t=ptree, listener=listener)
-        print("Cyclomatics of ",file_address,": ",listener.get_sum_cyclomatics())
-
+        print("Cyclomatics of ", file_address, ": ", listener.get_sum_cyclomatics())

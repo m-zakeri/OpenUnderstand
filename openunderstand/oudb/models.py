@@ -5,8 +5,9 @@ class KindModel(Model):
     """
     This table will fill automatically.
     """
+
     _id = AutoField()
-    _inv = ForeignKeyField('self', null=True)
+    _inv = ForeignKeyField("self", null=True)
     _name = CharField(max_length=256, unique=True)
 
     is_ent_kind = BooleanField(default=True)
@@ -24,8 +25,8 @@ class KindModel(Model):
 
 class EntityModel(Model):
     _id = AutoField()
-    _kind = ForeignKeyField(KindModel, backref='entities')
-    _parent = ForeignKeyField('self', backref='children', null=True)
+    _kind = ForeignKeyField(KindModel, backref="entities")
+    _parent = ForeignKeyField("self", backref="children", null=True)
     _name = CharField(max_length=512)
     _longname = CharField(max_length=512)
     _value = CharField(max_length=512, null=True)
@@ -43,12 +44,12 @@ class EntityModel(Model):
 
 class ReferenceModel(Model):
     _id = AutoField()
-    _kind = ForeignKeyField(KindModel, backref='references')
+    _kind = ForeignKeyField(KindModel, backref="references")
     _file = ForeignKeyField(EntityModel)
     _line = IntegerField()
     _column = IntegerField()
-    _ent = ForeignKeyField(EntityModel, backref='refs')
-    _scope = ForeignKeyField(EntityModel, backref='inv_refs')
+    _ent = ForeignKeyField(EntityModel, backref="refs")
+    _scope = ForeignKeyField(EntityModel, backref="inv_refs")
 
     def __str__(self):
         return f"{self._kind} {self._ent} {self._file}({self._line}, {self._column})"

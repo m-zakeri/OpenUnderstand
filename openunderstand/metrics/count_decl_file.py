@@ -12,5 +12,3 @@ def declare_file():
             else:
                 packages[ent_model._longname] += 1
     return packages
-
-

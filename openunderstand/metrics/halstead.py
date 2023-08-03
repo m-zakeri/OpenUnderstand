@@ -5,48 +5,38 @@ from javalang import tokenizer
 from tabulate import tabulate
 import math
 
-operand_list=\
-[
-  "Literal",
-  "Integer",
-  "DecimalInteger",
-  "OctalInteger",
-  "BinaryInteger",
-  "HexInteger",
-  "FloatingPoint",
-  "DecimalFloatingPoint",
-  "HexFloatingPoint",
-  "Boolean",
-  "Character",
-  "String",
-  "Null",
-  "Annotation",
-  "Identifier"
+operand_list = [
+    "Literal",
+    "Integer",
+    "DecimalInteger",
+    "OctalInteger",
+    "BinaryInteger",
+    "HexInteger",
+    "FloatingPoint",
+    "DecimalFloatingPoint",
+    "HexFloatingPoint",
+    "Boolean",
+    "Character",
+    "String",
+    "Null",
+    "Annotation",
+    "Identifier",
 ]
-br_operands=["for", "while", "if", "case"]
+br_operands = ["for", "while", "if", "case"]
 
 OPERANDS = set(operand_list)
 branchOperators = set(br_operands)
 
 
 def calculate_cyclomatic(operators):
-    return sum([operators[cyc_operator]
-                for cyc_operator in branchOperators if cyc_operator in operators], start=1)
-
-def get_operators_operands_count(tokens):
-    operands = {}
-    operators = {}
-
-    for token in tokens:
-        value = token.value
-
-        if token.__class__.__name__ in OPERANDS:
-            operands[value] = operands.get(value, 0) + 1
-        else:
-            operators[value] = operators.get(value, 0) + 1
-
-    return operators, operands
-
+    return sum(
+        [
+            operators[cyc_operator]
+            for cyc_operator in branchOperators
+            if cyc_operator in operators
+        ],
+        start=1,
+    )
 
 
 def get_operators_operands_count(tokens):
@@ -62,6 +52,22 @@ def get_operators_operands_count(tokens):
             operators[value] = operators.get(value, 0) + 1
 
     return operators, operands
+
+
+def get_operators_operands_count(tokens):
+    operands = {}
+    operators = {}
+
+    for token in tokens:
+        value = token.value
+
+        if token.__class__.__name__ in OPERANDS:
+            operands[value] = operands.get(value, 0) + 1
+        else:
+            operators[value] = operators.get(value, 0) + 1
+
+    return operators, operands
+
 
 def calculate_halstead(n1, N1, n2, N2):
     n = n1 + n2
@@ -84,10 +90,12 @@ def calculate_halstead(n1, N1, n2, N2):
         "Program length (HPL)": N,
     }
 
+
 def print_table(data, headers=[], title=None):
     if title:
         print("\n", title, "\n")
-    print(tabulate(data.items(), headers=headers, tablefmt='fancy_grid'))
+    print(tabulate(data.items(), headers=headers, tablefmt="fancy_grid"))
+
 
 def main_(args):
 
@@ -102,15 +110,18 @@ def main_(args):
         N1 = sum(operators.values())
         N2 = sum(operands.values())
 
-        print_table({"Number of Distinct Operators (n1)": n1,
-                     "Number of Distinct Operands (n2)": n2,
-                     "Number of Operators (N1)": N1,
-                     "Number of Operands (N2)": N2,
-                     **calculate_halstead(
-                         n1, N1, n2, N2)}, ['Metric', 'Value'], 'Halstead Metrics:')
+        print_table(
+            {
+                "Number of Distinct Operators (n1)": n1,
+                "Number of Distinct Operands (n2)": n2,
+                "Number of Operators (N1)": N1,
+                "Number of Operands (N2)": N2,
+                **calculate_halstead(n1, N1, n2, N2),
+            },
+            ["Metric", "Value"],
+            "Halstead Metrics:",
+        )
 
         # print_table(operators, ['Operator', 'Count'], 'Operators:')
         #
         # print_table(operands, ['Operand', 'Count'], 'Operands:')
-
-

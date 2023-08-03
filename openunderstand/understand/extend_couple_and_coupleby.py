@@ -53,10 +53,13 @@ def extract_all_kind(prefixes, type_entity, is_constructor) -> str:
     elif "protected" in prefixes:
         pattern_visibility = " Protected"
 
-    result_str = "Java{0}{1}{2} {3}{4} Member".format(pattern_static, pattern_abstract, pattern_generic,
-                                                      config_entity_type(
-                                                          type_entity),
-                                                      pattern_visibility)
+    result_str = "Java{0}{1}{2} {3}{4} Member".format(
+        pattern_static,
+        pattern_abstract,
+        pattern_generic,
+        config_entity_type(type_entity),
+        pattern_visibility,
+    )
     if type_entity == "interface":
         result_str = result_str.replace("Member", "").strip()
     return result_str
@@ -83,7 +86,7 @@ class Project:
     def get_java_files(self):
         for dir_path, _, file_names in os.walk(self.project_dir):
             for file in file_names:
-                if '.java' in str(file):
+                if ".java" in str(file):
                     path = os.path.join(dir_path, file)
                     path = path.replace("/", "\\")
                     path = os.path.abspath(path)
@@ -106,7 +109,10 @@ def get_parent_entity(file_path):
 
 def add_classes_to_entity(ref_dict, file_path):
     kind_name = extract_all_kind(
-        prefixes=ref_dict["prefixes"], type_entity=ref_dict["mode"], is_constructor=False)
+        prefixes=ref_dict["prefixes"],
+        type_entity=ref_dict["mode"],
+        is_constructor=False,
+    )
     parent_entity = get_parent_entity(file_path)
     # creating child entity
     child_entity, _ = EntityModel.get_or_create(
@@ -115,7 +121,7 @@ def add_classes_to_entity(ref_dict, file_path):
         _name=ref_dict["child_class"].split(".")[-1],
         _longname=ref_dict["child_class"],
         _type=ref_dict["type"],
-        _contents=ref_dict["content"]
+        _contents=ref_dict["content"],
     )
     # creating parent entity
     extended_entity, _ = EntityModel.get_or_create(
@@ -123,7 +129,7 @@ def add_classes_to_entity(ref_dict, file_path):
         _parent=None,
         _name=ref_dict["parent_class"].split(".")[-1],
         _longname=ref_dict["parent_class"],
-        _contents=""
+        _contents="",
     )
 
     return child_entity, extended_entity
@@ -148,7 +154,7 @@ def add_reference_files(child_entity, parent_entity, ref_dict, file_path):
         _line=ref_dict["line"],
         _column=ref_dict["column"],
         _ent_id=child_entity._id,
-        _scope_id=parent_entity._id
+        _scope_id=parent_entity._id,
     )
     ReferenceModel.get_or_create(
         _kind_id=183,
@@ -156,7 +162,7 @@ def add_reference_files(child_entity, parent_entity, ref_dict, file_path):
         _line=ref_dict["line"],
         _column=ref_dict["column"],
         _ent_id=parent_entity._id,
-        _scope_id=child_entity._id
+        _scope_id=child_entity._id,
     )
 
 
@@ -187,7 +193,9 @@ class ExtendCoupleListener(JavaParserLabeledListener):
         self.package_name = package_name
         self.import_list = import_list
 
-    def enterInterfaceDeclaration(self, ctx: JavaParserLabeled.InterfaceDeclarationContext):
+    def enterInterfaceDeclaration(
+        self, ctx: JavaParserLabeled.InterfaceDeclarationContext
+    ):
         if not ctx.EXTENDS():
             return
         child_types = list(map(lambda x: type(x), ctx.children))
@@ -203,7 +211,7 @@ class ExtendCoupleListener(JavaParserLabeledListener):
         line = ctx.start.line
         children_string = [i.getText() for i in ctx.children]
         start_index = children_string.index("extends")
-        class_type = ' '.join(children_string[start_index:-1])
+        class_type = " ".join(children_string[start_index:-1])
         prefix_of_class = ctx.parentCtx.children
         connect_prefix_class = ""
         for branch in prefix_of_class:
@@ -212,24 +220,29 @@ class ExtendCoupleListener(JavaParserLabeledListener):
             connect_prefix_class += branch.getText() + " "
         if is_generic:
             connect_prefix_class += "generic"
-        first_condition = "java." in inherited_class_str or "javax." in inherited_class_str
-        second_condition = check_is_java_library(
-            inherited_class_str, self.import_list)
+        first_condition = (
+            "java." in inherited_class_str or "javax." in inherited_class_str
+        )
+        second_condition = check_is_java_library(inherited_class_str, self.import_list)
         # for column
         if first_condition:
             last_part = inherited_class_str.split(".")[-1]
             column += inherited_class_str.index(last_part)
         if first_condition or second_condition:
-            self.inherited_classes.append({
-                "child_class": self.package_name + "." + child_class,
-                "parent_class": inherited_class_str if first_condition else second_condition,
-                "line": line,
-                "column": column,
-                "prefixes": connect_prefix_class.strip(),
-                "content": ctx.getText(),
-                "type": class_type,
-                "mode": "interface"
-            })
+            self.inherited_classes.append(
+                {
+                    "child_class": self.package_name + "." + child_class,
+                    "parent_class": inherited_class_str
+                    if first_condition
+                    else second_condition,
+                    "line": line,
+                    "column": column,
+                    "prefixes": connect_prefix_class.strip(),
+                    "content": ctx.getText(),
+                    "type": class_type,
+                    "mode": "interface",
+                }
+            )
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         if not ctx.EXTENDS():
@@ -245,43 +258,51 @@ class ExtendCoupleListener(JavaParserLabeledListener):
             is_generic = True
             column = ctx.children[4].start.column
 
-        inherited_class_str = ''.join(
-            list(map(lambda x: str(x), inherited_class)))
+        inherited_class_str = "".join(list(map(lambda x: str(x), inherited_class)))
         line = ctx.start.line
         children_string = [i.getText() for i in ctx.children]
         start_index = children_string.index("extends")
-        class_type = ' '.join(children_string[start_index:-1])
+        class_type = " ".join(children_string[start_index:-1])
         temp_ctx = ctx
-        while type(temp_ctx) != JavaParserLabeled.ClassBodyDeclaration2Context and type(
-                temp_ctx) != JavaParserLabeled.TypeDeclarationContext:
+        while (
+            type(temp_ctx) != JavaParserLabeled.ClassBodyDeclaration2Context
+            and type(temp_ctx) != JavaParserLabeled.TypeDeclarationContext
+        ):
             temp_ctx = temp_ctx.parentCtx
         prefix_of_class = temp_ctx.children
         connect_prefix_class = ""
         for branch in prefix_of_class:
-            if type(branch) == JavaParserLabeled.ClassDeclarationContext or type(
-                    branch) == JavaParserLabeled.MemberDeclaration7Context:
+            if (
+                type(branch) == JavaParserLabeled.ClassDeclarationContext
+                or type(branch) == JavaParserLabeled.MemberDeclaration7Context
+            ):
                 break
             connect_prefix_class += branch.getText() + " "
         if is_generic:
             connect_prefix_class += "generic"
-        first_condition = "java." in inherited_class_str or "javax." in inherited_class_str
-        second_condition = check_is_java_library(
-            inherited_class_str, self.import_list)
+        first_condition = (
+            "java." in inherited_class_str or "javax." in inherited_class_str
+        )
+        second_condition = check_is_java_library(inherited_class_str, self.import_list)
         # for column
         if first_condition:
             last_part = inherited_class_str.split(".")[-1]
             column += inherited_class_str.index(last_part)
         if first_condition or second_condition:
-            self.inherited_classes.append({
-                "child_class": self.package_name + "." + child_class,
-                "parent_class": inherited_class_str if first_condition else second_condition,
-                "line": line,
-                "column": column,
-                "prefixes": connect_prefix_class.strip(),
-                "content": ctx.getText(),
-                "type": class_type,
-                "mode": "class"
-            })
+            self.inherited_classes.append(
+                {
+                    "child_class": self.package_name + "." + child_class,
+                    "parent_class": inherited_class_str
+                    if first_condition
+                    else second_condition,
+                    "line": line,
+                    "column": column,
+                    "prefixes": connect_prefix_class.strip(),
+                    "content": ctx.getText(),
+                    "type": class_type,
+                    "mode": "class",
+                }
+            )
 
 
 def main():
@@ -295,18 +316,20 @@ def main():
             walker = ParseTreeWalker()
             package_import_listener = PackageImportListener()
             walker.walk(package_import_listener, tree)
-            extend_listener = ExtendCoupleListener(package_import_listener.package_name,
-                                                   package_import_listener.imported_libraries)
+            extend_listener = ExtendCoupleListener(
+                package_import_listener.package_name,
+                package_import_listener.imported_libraries,
+            )
             walker.walk(extend_listener, tree)
             for entity_dict in extend_listener.inherited_classes:
                 child_entity, parent_entity = add_classes_to_entity(
-                    entity_dict, file_path)
-                add_reference_files(
-                    child_entity, parent_entity, entity_dict, file_path)
+                    entity_dict, file_path
+                )
+                add_reference_files(child_entity, parent_entity, entity_dict, file_path)
         except:
             print("some exception happened")
             continue
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

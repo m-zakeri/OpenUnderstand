@@ -22,24 +22,33 @@ class UseAndUseByListener(JavaParserLabeledListener):
         self.constructor_name = ""
         self.inGetterOrSetter = False
 
-    #find members
+    # find members
     def enterMemberDeclaration2(self, ctx: JavaParserLabeled.MemberDeclaration2Context):
-        self.class_members.append(ctx.getChild(0).getChild(1).getChild(0).getChild(0).getChild(0).getText())
+        self.class_members.append(
+            ctx.getChild(0).getChild(1).getChild(0).getChild(0).getChild(0).getText()
+        )
 
-    #find consteructors
-    def enterConstructorDeclaration(self, ctx: JavaParserLabeled.ConstructorDeclarationContext):
+    # find consteructors
+    def enterConstructorDeclaration(
+        self, ctx: JavaParserLabeled.ConstructorDeclarationContext
+    ):
         self.constructor_name = ctx.getText().split("(")[0]
 
     @property
     def get_use(self):
         d = {}
-        d['useBy'] = self.useBy
+        d["useBy"] = self.useBy
         return d
 
-    #find Methods
+    # find Methods
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
-        if not ((str(ctx.IDENTIFIER()).startswith('get') or str(ctx.IDENTIFIER()).startswith('set'))
-                and str(ctx.IDENTIFIER())[3:].lower() in toLower(self.class_members)):
+        if not (
+            (
+                str(ctx.IDENTIFIER()).startswith("get")
+                or str(ctx.IDENTIFIER()).startswith("set")
+            )
+            and str(ctx.IDENTIFIER())[3:].lower() in toLower(self.class_members)
+        ):
             # not in setter or getter
             self.method_count += 1
         else:
@@ -49,7 +58,7 @@ class UseAndUseByListener(JavaParserLabeledListener):
     def exitMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         self.inGetterOrSetter = False
 
-    #find Packages
+    # find Packages
     def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
         self.package_name = ctx.getText().replace("package", "").replace(";", "")
 
@@ -60,27 +69,38 @@ class UseAndUseByListener(JavaParserLabeledListener):
         is_None = False
         VI = ctx
 
-        while (type(ctx) != JavaParserLabeled.ClassDeclarationContext and
-               type(ctx) != JavaParserLabeled.MethodDeclarationContext):
-            if (ctx.parentCtx):
+        while (
+            type(ctx) != JavaParserLabeled.ClassDeclarationContext
+            and type(ctx) != JavaParserLabeled.MethodDeclarationContext
+        ):
+            if ctx.parentCtx:
                 ctx = ctx.parentCtx
             else:
                 is_None = True
                 break
 
-        if (not is_None):
+        if not is_None:
             for classmember in self.class_members:
                 if classmember == VI.getText():
                     line1 = VI.IDENTIFIER().symbol.line
                     column1 = VI.IDENTIFIER().symbol.column
                     line2 = ctx.IDENTIFIER().symbol.line
                     column2 = ctx.IDENTIFIER().symbol.column
-                    self.useBy.append((VI.getText(), ctx.IDENTIFIER().getText(),
-                                       line1, column1, line2, column2, self.package_name))
+                    self.useBy.append(
+                        (
+                            VI.getText(),
+                            ctx.IDENTIFIER().getText(),
+                            line1,
+                            column1,
+                            line2,
+                            column2,
+                            self.package_name,
+                        )
+                    )
 
 
 def main(file):
-    stream = FileStream(file, encoding='utf8')
+    stream = FileStream(file, encoding="utf8")
     lexer = JavaLexer(stream)
     token_string = CommonTokenStream(lexer)
     parser = JavaParserLabeled(token_string)
@@ -88,7 +108,7 @@ def main(file):
     my_listener = UseAndUseByListener(file)
     walker = ParseTreeWalker()
     walker.walk(t=pars_tree, listener=my_listener)
-    #this table stores items
+    # this table stores items
     table = dict()
     for member in my_listener.class_members:
         table[member] = []
@@ -105,9 +125,9 @@ def main(file):
         avg = sum(alluse) / len(alluse)
     except:
         avg = 0
-    return ((1 - avg) * 100)
+    return (1 - avg) * 100
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass
-    #print(main('javapackage//c.java'))
+    # print(main('javapackage//c.java'))

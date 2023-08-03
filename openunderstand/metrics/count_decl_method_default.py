@@ -8,7 +8,7 @@ def count_decl_method_default(db_path):
 
     for ent_model in EntityModel.select():
         if "Class" in ent_model._kind._name:
-            class_methods[ent_model._name]=0
+            class_methods[ent_model._name] = 0
 
     for ent_model in EntityModel.select():
         if "Default" in ent_model._kind._name and "Method" in ent_model._kind._name:
@@ -20,5 +20,5 @@ def count_decl_method_default(db_path):
     return class_methods
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(count_decl_method_default("../../benchmark2_database.oudb"))

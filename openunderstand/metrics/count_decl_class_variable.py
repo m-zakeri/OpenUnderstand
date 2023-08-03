@@ -12,5 +12,3 @@ def declare_class_variables():
             else:
                 class_variables[ent_model._parent._longname] += 1
     return class_variables
-
-

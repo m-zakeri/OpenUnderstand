@@ -7,7 +7,9 @@ from oudb.models import KindModel, EntityModel, ReferenceModel
 from oudb.utils import get_entity_object_from_understand
 
 
-def append_java_ent_kinds(path_dir:str = os.path.join(sys.path[0], "oudb","java_ent_kinds.txt")):
+def append_java_ent_kinds(
+    path_dir: str = os.path.join(sys.path[0], "oudb", "java_ent_kinds.txt")
+):
     with open(path_dir, "r") as f:
         for line in f.readlines():
             if line.startswith("Java"):
@@ -24,7 +26,9 @@ def append_java_ref_kind(kind: str, inverse: str, ref: str) -> int:
     return ref_kind.save()
 
 
-def append_java_ref_kinds(path_dir:str = os.path.join(sys.path[0], "oudb","java_ref_kinds.txt")):
+def append_java_ref_kinds(
+    path_dir: str = os.path.join(sys.path[0], "oudb", "java_ref_kinds.txt")
+):
     kind, inv_kind = "", ""
     with open(path_dir, "r") as f:
         for line in f.readlines():
@@ -35,7 +39,9 @@ def append_java_ref_kinds(path_dir:str = os.path.join(sys.path[0], "oudb","java_
                         print(f"Created: {line}")
                         continue
                     else:
-                        raise ConnectionError("Database disconnected, please try again!")
+                        raise ConnectionError(
+                            "Database disconnected, please try again!"
+                        )
                 except peewee.IntegrityError:
                     print(f"KindModel exists: {line}")
             else:
@@ -70,7 +76,7 @@ def append_entities_with_understand(udb_path: str):
                     _longname=parent.longname(),
                     _value=parent.value(),
                     _type=parent.type(),
-                    _contents=parent.contents()
+                    _contents=parent.contents(),
                 )
 
             # Create entity it-self!
@@ -82,7 +88,7 @@ def append_entities_with_understand(udb_path: str):
                 _longname=ent.longname(),
                 _value=ent.value(),
                 _type=ent.type(),
-                _contents=ent.contents()
+                _contents=ent.contents(),
             )
             print(ent)
 
@@ -110,7 +116,7 @@ def append_references_with_understand(udb_path: str):
                 _line=ref.line(),
                 _column=ref.column(),
                 _ent=ent,
-                _scope=scope
+                _scope=scope,
             )
             print(f"Reference created [{has_created}]: {ref}")
         print("===============")
@@ -133,7 +139,7 @@ class TestFill(unittest.TestCase):
         self.assertRaises(peewee.OperationalError, lambda: self.ent_kind.inv())
 
 
-def fill(udb_path:str = ""):
+def fill(udb_path: str = ""):
 
     # udb_path = "D:\Dev\JavaSample\JavaSample1.udb"
     append_java_ent_kinds()
@@ -141,6 +147,3 @@ def fill(udb_path:str = ""):
     # print("=" * 50)
     # append_entities_with_understand(udb_path)
     # append_references_with_understand(udb_path)
-
-
-

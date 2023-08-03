@@ -9,23 +9,23 @@ try:
 except ImportError:
     print("Can not import understand")
 # E:\2\OpenUnderstand\benchmark\calculator_app\calculator_app.und
-db = und.open(r"E:/comppppppp/OpenUnderstand/benchmark/calculator_app/calculator_app/calculator_app.und")
+db = und.open(
+    r"E:/comppppppp/OpenUnderstand/benchmark/calculator_app/calculator_app/calculator_app.und"
+)
 
-#ent = db.lookup("Admin", "method")[0]
+# ent = db.lookup("Admin", "method")[0]
 for ent in db.ents():
     for ref in ent.refs(refkindstring="import demand"):
 
+        create_db("../myOpenunder.db", project_dir="..\benchmark")
 
-        create_db("../myOpenunder.db",
-                  project_dir="..\benchmark")
-
-        ent, _ = EntityModel.get_or_create(_kind=1,
-                                       _parent='None',
-                                       _name=ref.scope().longname(),
-                                       _longname=ref.ent().longname(),
-                                       _contents=FileStream(ref.scope().longname(), encoding="utf-8")
-
-                                       )
+        ent, _ = EntityModel.get_or_create(
+            _kind=1,
+            _parent="None",
+            _name=ref.scope().longname(),
+            _longname=ref.ent().longname(),
+            _contents=FileStream(ref.scope().longname(), encoding="utf-8"),
+        )
 
         ReferenceModel.get_or_create(
             _kind=204,
@@ -33,12 +33,10 @@ for ent in db.ents():
             _line=ref.line(),
             _column=ref.column(),
             _ent=ent.get_id(),
-            _scope=ref.scope().longname()
-            )
+            _scope=ref.scope().longname(),
+        )
 
         db = db_open("../myOpenunder.db")
-
-
 
         # print(f'ref.scope (entity performing reference       ===========>)\n:'
         #       f' "{ref.scope().longname()}", kind: "{ref.scope().kind()}"')

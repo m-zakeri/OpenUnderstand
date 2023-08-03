@@ -43,7 +43,7 @@ class CyclomaticModifiedListener(JavaParserLabeledListener):
         self.sum += 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     create_db("../../benchmark2_database.oudb", project_dir="..\..\benchmark")
     db = db_open("../../benchmark2_database.oudb")
 

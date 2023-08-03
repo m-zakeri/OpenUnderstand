@@ -11,52 +11,50 @@ import argparse
 
 class CyclomaticModifiedListener(JavaParserLabeledListener):
     def __init__(self):
-        self.count=0
-        self.methods=0
-        self.avg=0
-        self.dict={}
-        self.name=""
+        self.count = 0
+        self.methods = 0
+        self.avg = 0
+        self.dict = {}
+        self.name = ""
 
     @property
     def get_dict(self):
         return self.dict
 
-    def enterClassDeclaration(self, ctx:JavaParserLabeled.ClassDeclarationContext):
+    def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         try:
             self.name = ctx.IDENTIFIER().getText()
             self.dict[self.name] = 0
-            self.count=1
-            self.methods=0
+            self.count = 1
+            self.methods = 0
             self.avg = 0
         except:
             pass
 
     def enterCatchClause(self, ctx: JavaParserLabeled.CatchClauseContext):
         try:
-            self.cnt(ctx,0)
+            self.cnt(ctx, 0)
         except:
             pass
 
-
-    def enterMethodDeclaration(self, ctx:JavaParserLabeled.MethodDeclarationContext):
+    def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         try:
             self.methods = self.methods + 1
         except:
             pass
 
-    #?
-    def enterExpression20(self, ctx:JavaParserLabeled.Expression20Context):
+    # ?
+    def enterExpression20(self, ctx: JavaParserLabeled.Expression20Context):
         try:
-            self.cnt(ctx,0)
+            self.cnt(ctx, 0)
         except:
             pass
-
 
     # switch
     def enterStatement8(self, ctx: JavaParserLabeled.Statement10Context):
         try:
             found = False
-            if (ctx.children[0].getText() == 'switch'):
+            if ctx.children[0].getText() == "switch":
                 found = True
             if found == True:
                 self.count += 1
@@ -64,42 +62,43 @@ class CyclomaticModifiedListener(JavaParserLabeledListener):
         except:
             pass
 
-    #if
+    # if
     def enterStatement2(self, ctx: JavaParserLabeled.Statement3Context):
         try:
-            if len(ctx.children) ==3:
-                self.cnt(ctx,0)
-            if len(ctx.children)==5:
+            if len(ctx.children) == 3:
+                self.cnt(ctx, 0)
+            if len(ctx.children) == 5:
                 self.cnt(ctx, 1)
         except:
             pass
-    #while
+
+    # while
     def enterStatement4(self, ctx: JavaParserLabeled.Statement3Context):
         try:
-            self.cnt(ctx,0)
+            self.cnt(ctx, 0)
         except:
             pass
 
     # for
     def enterStatement3(self, ctx: JavaParserLabeled.Statement3Context):
         try:
-            self.cnt(ctx,0)
+            self.cnt(ctx, 0)
         except:
             pass
 
-    #do-While
+    # do-While
     def enterStatement5(self, ctx: JavaParserLabeled.Statement0Context):
         try:
             self.cnt(ctx, 2)
         except:
             pass
 
-    def cnt(self,ctx,num):
+    def cnt(self, ctx, num):
         if ctx.children[0].getText() == "for":
-            self.count=self.count+1
+            self.count = self.count + 1
 
         if ctx.children[0].getText() == "while":
-            self.count=self.count+1
+            self.count = self.count + 1
 
         if ctx.children[0].getText() == "if":
             self.count = self.count + 1
@@ -107,23 +106,22 @@ class CyclomaticModifiedListener(JavaParserLabeledListener):
         if ctx.children[0].getText() == "catch":
             self.count = self.count + 1
 
-        if num==0 and ctx.children[0].getText() == "else":
+        if num == 0 and ctx.children[0].getText() == "else":
             self.count = self.count + 1
 
         if ctx.children[1].getText() == "?":
             self.count = self.count + 1
 
-        if num == 2 and ctx.children[0].getText() == "do" and ctx.children[2].getText() == "while":
+        if (
+            num == 2
+            and ctx.children[0].getText() == "do"
+            and ctx.children[2].getText() == "while"
+        ):
             self.count = self.count + 1
 
-
-    def exitClassDeclaration(self, ctx:JavaParserLabeled.ClassDeclarationContext):
+    def exitClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         try:
-            self.avg=self.count/self.methods
+            self.avg = self.count / self.methods
             self.dict[self.name] = self.avg
         except:
             pass
-
-
-
-

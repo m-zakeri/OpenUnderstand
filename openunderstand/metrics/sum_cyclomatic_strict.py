@@ -6,6 +6,7 @@ from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from oudb.api import open as db_open, create_db
 
+
 class CyclomaticStrictListener(JavaParserLabeledListener):
     def __init__(self):
         self.sum = 0
@@ -51,8 +52,7 @@ class CyclomaticStrictListener(JavaParserLabeledListener):
         self.sum += 1
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     create_db("../../benchmark2_database.oudb", project_dir="..\..\benchmark")
     db = db_open("../../benchmark2_database.oudb")
 

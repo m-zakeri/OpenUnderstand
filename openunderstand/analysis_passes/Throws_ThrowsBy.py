@@ -1,42 +1,35 @@
-
-
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 import analysis_passes.class_properties as class_properties
 
 
 class Throws_TrowsBy(JavaParserLabeledListener):
-
-
     def findmethodreturntype(self, c):
         parents = ""
         context = ""
         current = c
         while current is not None:
             if type(current.parentCtx).__name__ == "MethodDeclarationContext":
-                parents=(current.parentCtx.typeTypeOrVoid().getText())
-                context=current.parentCtx.getText()
+                parents = current.parentCtx.typeTypeOrVoid().getText()
+                context = current.parentCtx.getText()
                 break
             current = current.parentCtx
 
-        return parents,context
+        return parents, context
 
     def findmethodacess(self, c):
         parents = ""
-        modifiers=[]
+        modifiers = []
         current = c
         while current is not None:
             if "ClassBodyDeclaration" in type(current.parentCtx).__name__:
-                parents=(current.parentCtx.modifier())
+                parents = current.parentCtx.modifier()
                 break
             current = current.parentCtx
         for x in parents:
             if x.classOrInterfaceModifier():
                 modifiers.append(x.classOrInterfaceModifier().getText())
         return modifiers
-
-
-
 
     implement = []
 
@@ -62,23 +55,31 @@ class Throws_TrowsBy(JavaParserLabeledListener):
     #                                        "col": col[:-1],
     #                                        "type_ent_longname": myType_longname})
 
-
-    def enterMethodDeclaration(self, ctx:JavaParserLabeled.EnumDeclarationContext):
+    def enterMethodDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
 
         if ctx.THROWS():
             modifiers = self.findmethodacess(ctx)
             mothodedreturn, methodcontext = self.findmethodreturntype(ctx)
             refEntName = ctx.qualifiedNameList().getText()
             if refEntName:
-                allrefs = class_properties.ClassPropertiesListener.findParents(ctx)  # self.findParents(ctx)
+                allrefs = class_properties.ClassPropertiesListener.findParents(
+                    ctx
+                )  # self.findParents(ctx)
                 refent = allrefs[-1]
                 entlongname = ".".join(allrefs)
                 [line, col] = str(ctx.start).split(",")[3].split(":")
 
-                self.implement.append({"scopename": refent, "scopelongname": entlongname, "scopemodifiers": modifiers,
-                                    "scopereturntype": mothodedreturn, "scopecontent": methodcontext,
-                                    "line": line, "col": col[:-1], "refent": refEntName,
-                                    "scope_parent": allrefs[-2] if len(allrefs) > 2 else None,
-                                    "potential_refent": ".".join(
-                                        allrefs[:-1]) + "." + refEntName})
-
+                self.implement.append(
+                    {
+                        "scopename": refent,
+                        "scopelongname": entlongname,
+                        "scopemodifiers": modifiers,
+                        "scopereturntype": mothodedreturn,
+                        "scopecontent": methodcontext,
+                        "line": line,
+                        "col": col[:-1],
+                        "refent": refEntName,
+                        "scope_parent": allrefs[-2] if len(allrefs) > 2 else None,
+                        "potential_refent": ".".join(allrefs[:-1]) + "." + refEntName,
+                    }
+                )

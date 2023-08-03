@@ -9,7 +9,7 @@ sys.path.insert(0, BASE)
 
 
 PRJ_INDEX = 10
-METRIC_NAME = 'CountStmtDecl'
+METRIC_NAME = "CountStmtDecl"
 LAST_LOG = False
 
 
@@ -25,7 +25,9 @@ class StatementListener(JavaParserLabeledListener):
     def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
         self.counter += 1
 
-    def enterInterfaceMethodDeclaration(self, ctx: JavaParserLabeled.InterfaceMethodDeclarationContext):
+    def enterInterfaceMethodDeclaration(
+        self, ctx: JavaParserLabeled.InterfaceMethodDeclarationContext
+    ):
         self.update_repository(ctx, 1)
 
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
@@ -34,7 +36,9 @@ class StatementListener(JavaParserLabeledListener):
     def enterFieldDeclaration(self, ctx: JavaParserLabeled.FieldDeclarationContext):
         self.update_repository(ctx, 1)
 
-    def enterLocalVariableDeclaration(self, ctx: JavaParserLabeled.LocalVariableDeclarationContext):
+    def enterLocalVariableDeclaration(
+        self, ctx: JavaParserLabeled.LocalVariableDeclarationContext
+    ):
         self.update_repository(ctx, 1)
 
     # for
@@ -49,7 +53,9 @@ class StatementListener(JavaParserLabeledListener):
     def enterStatement15(self, ctx: JavaParserLabeled.Statement15Context):
         self.update_repository(ctx, 1)
 
-    def enterAnnotationMethodOrConstantRest0(self, ctx: JavaParserLabeled.AnnotationMethodOrConstantRest0Context):
+    def enterAnnotationMethodOrConstantRest0(
+        self, ctx: JavaParserLabeled.AnnotationMethodOrConstantRest0Context
+    ):
         self.update_repository(ctx, 1)
 
     def update_repository(self, ctx, increment):
@@ -64,5 +70,5 @@ class StatementListener(JavaParserLabeledListener):
                 self.repository.update(new_dict)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     stmt_main(PRJ_INDEX, StatementListener, METRIC_NAME, LAST_LOG)

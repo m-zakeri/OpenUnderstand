@@ -2,8 +2,15 @@
 
 __author__ = "Navid Mousavizadeh, Amir Mohammad Sohrabi, Sara Younesi, Deniz Ahmadi"
 __copyright__ = "Copyright 2022, The OpenUnderstand Project, Iran University of Science and technology"
-__credits__ = ["Dr.Parsa", "Dr.Zakeri", "Mehdi Razavi", "Navid Mousavizadeh", "Amir Mohammad Sohrabi", "Sara Younesi",
-               "Deniz Ahmadi"]
+__credits__ = [
+    "Dr.Parsa",
+    "Dr.Zakeri",
+    "Mehdi Razavi",
+    "Navid Mousavizadeh",
+    "Amir Mohammad Sohrabi",
+    "Sara Younesi",
+    "Deniz Ahmadi",
+]
 __license__ = "GPL"
 __version__ = "1.0.0"
 
@@ -12,7 +19,11 @@ from antlr4 import *
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from analysis_passes.entity_manager_G11 import get_created_entity_longname, get_all_files, get_created_entity_id
+from analysis_passes.entity_manager_G11 import (
+    get_created_entity_longname,
+    get_all_files,
+    get_created_entity_id,
+)
 from oudb.api import open as db_open, create_db
 
 
@@ -33,11 +44,11 @@ class AntlrHandler:
 
 
 class EssentialMetric:
-    def __init__(self, entity_longname='Project'):
+    def __init__(self, entity_longname="Project"):
         """get project or method entity and will calculate Cyclomatic Modified Metric of it."""
         self.files = []
         self.method = None
-        if entity_longname != 'Project':
+        if entity_longname != "Project":
             entity = get_created_entity_longname(entity_longname)
             if entity is None:
                 raise Exception("Couldn't find entity.")
@@ -177,14 +188,13 @@ class EssentialMetricListener(JavaParserLabeledListener):
             if ctx.IDENTIFIER().getText() == self.method._name:
                 self.method_entered = True
 
-
     def exitMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         if self.method is not None:
             if ctx.IDENTIFIER().getText() == self.method._name:
                 self.method_entered = False
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     create_db("../../benchmark2_database.oudb", project_dir="..\..\benchmark")
     db = db_open("../../benchmark2_database.oudb")
     # try:

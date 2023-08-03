@@ -6,23 +6,23 @@ from utils_g10 import Project, get_project_info, get_parse_tree
 from utils_g10 import report_metric, get_method_prefixes
 
 PRJ_INDEX = 2
-METRIC_NAME = 'Cyclomatic'
+METRIC_NAME = "Cyclomatic"
 
 
 def make_enum_scope():
     return [
         {
-            "kind": 'Java Method Public Member',
-            "name": 'values',
+            "kind": "Java Method Public Member",
+            "name": "values",
             "longname": "",
-            "cyclomatic": 1
+            "cyclomatic": 1,
         },
         {
-            "kind": 'Java Method Public Member',
-            "name": 'valueOf',
+            "kind": "Java Method Public Member",
+            "name": "valueOf",
             "longname": "",
-            "cyclomatic": 1
-        }
+            "cyclomatic": 1,
+        },
     ]
 
 
@@ -50,14 +50,12 @@ def make_method_scope(ctx):
         name = "(lambda_expr)"
         kind = get_kind_name(prefixes, is_lambda=True)
 
-    return {
-        "kind": kind,
-        "name": name,
-        "longname": ""
-    }
+    return {"kind": kind, "name": name, "longname": ""}
 
 
-def get_kind_name(prefixes, is_constructor=False, is_lambda=False, is_generic=False, is_main=False):
+def get_kind_name(
+    prefixes, is_constructor=False, is_lambda=False, is_generic=False, is_main=False
+):
     p_static = ""
     p_final = ""
     p_generic = ""
@@ -105,10 +103,12 @@ def get_method_ctx(ctx):
     current = ctx.parentCtx
     while current is not None:
         type_name = type(current).__name__
-        if type_name in ['MethodDeclarationContext',
-                         'GenericMethodDeclarationContext',
-                         'ConstructorDeclarationContext',
-                         'GenericConstructorDeclarationContext']:
+        if type_name in [
+            "MethodDeclarationContext",
+            "GenericMethodDeclarationContext",
+            "ConstructorDeclarationContext",
+            "GenericConstructorDeclarationContext",
+        ]:
             return current
         current = current.parentCtx
     return None
@@ -132,32 +132,38 @@ class CyclomaticListener(JavaParserLabeledListener):
             parent_scope_ctx = scope_ctx.parentCtx
             if type(parent_scope_ctx).__name__ in [
                 "GenericMethodDeclarationContext",
-                'GenericConstructorDeclarationContext'
+                "GenericConstructorDeclarationContext",
             ]:
                 scope_ctx = parent_scope_ctx
 
         prefixes = get_method_prefixes(scope_ctx)
-        if 'abstract' not in prefixes:
+        if "abstract" not in prefixes:
             self.repository.append(scope_ctx)
             self.project_cyclomatic += 1
 
-    def enterGenericMethodDeclaration(self, ctx: JavaParserLabeled.GenericMethodDeclarationContext):
-        self.update_repository(ctx, kind='GenericMethodDeclarationContext')
+    def enterGenericMethodDeclaration(
+        self, ctx: JavaParserLabeled.GenericMethodDeclarationContext
+    ):
+        self.update_repository(ctx, kind="GenericMethodDeclarationContext")
 
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         # Parent can be genericMethodDeclaration
         if type(ctx.parentCtx).__name__ == "GenericMethodDeclarationContext":
             return
-        self.update_repository(ctx, kind='MethodDeclarationContext')
+        self.update_repository(ctx, kind="MethodDeclarationContext")
 
-    def enterGenericConstructorDeclaration(self, ctx: JavaParserLabeled.GenericConstructorDeclarationContext):
-        self.update_repository(ctx, kind='GenericConstructorDeclarationContext')
+    def enterGenericConstructorDeclaration(
+        self, ctx: JavaParserLabeled.GenericConstructorDeclarationContext
+    ):
+        self.update_repository(ctx, kind="GenericConstructorDeclarationContext")
 
-    def enterConstructorDeclaration(self, ctx: JavaParserLabeled.ConstructorDeclarationContext):
+    def enterConstructorDeclaration(
+        self, ctx: JavaParserLabeled.ConstructorDeclarationContext
+    ):
         # Parent can be genericConstructorDeclaration
         if type(ctx.parentCtx).__name__ == "GenericConstructorDeclarationContext":
             return
-        self.update_repository(ctx, kind='ConstructorDeclarationContext')
+        self.update_repository(ctx, kind="ConstructorDeclarationContext")
 
     def enterEnumDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
         # valueOf and values for Enums
@@ -200,7 +206,7 @@ class CyclomaticListener(JavaParserLabeledListener):
 
 def main():
     info = get_project_info(PRJ_INDEX)
-    p = Project(info['PROJECT_PATH'], info['PROJECT_NAME'])
+    p = Project(info["PROJECT_PATH"], info["PROJECT_NAME"])
     p.get_java_files()
 
     walker = ParseTreeWalker()
@@ -218,16 +224,21 @@ def main():
     for ctx in cyclomatic_counter:
         cyclomatic = cyclomatic_counter[ctx]
 
-        if type(ctx).__name__ == 'EnumDeclarationContext':
+        if type(ctx).__name__ == "EnumDeclarationContext":
             cyclomatic_list.extend(make_enum_scope())
         else:
             cyclomatic_obj = make_method_scope(ctx)
-            cyclomatic_obj['val'] = cyclomatic
+            cyclomatic_obj["val"] = cyclomatic
             cyclomatic_list.append(cyclomatic_obj)
-            ent_kind_set.add(cyclomatic_obj['kind'])
+            ent_kind_set.add(cyclomatic_obj["kind"])
 
-    report_metric(cyclomatic_listener.project_cyclomatic, ent_kind_set, cyclomatic_list, METRIC_NAME)
+    report_metric(
+        cyclomatic_listener.project_cyclomatic,
+        ent_kind_set,
+        cyclomatic_list,
+        METRIC_NAME,
+    )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

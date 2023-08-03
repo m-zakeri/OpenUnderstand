@@ -11,8 +11,10 @@ This module find all OpenUnderstand create and createby references in a Java pro
 
 """
 
-__author__ = 'Parmida Majmasanaye , Zahra Momeninezhad , Bayan Divaani-Azar , Bavan Divaani-Azar'
-__version__ = '0.1.0'
+__author__ = (
+    "Parmida Majmasanaye , Zahra Momeninezhad , Bayan Divaani-Azar , Bavan Divaani-Azar"
+)
+__version__ = "0.1.0"
 
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
@@ -20,7 +22,6 @@ import analysis_passes.g6_class_properties as class_properties
 
 
 class CreateAndCreateByListener(JavaParserLabeledListener):
-
     def __init__(self):
         self.class_name = None
         self.package_name = None
@@ -71,7 +72,7 @@ class CreateAndCreateByListener(JavaParserLabeledListener):
         current = ctx
         while current is not None:
             if "ClassBodyDeclaration" in type(current.parentCtx).__name__:
-                parents = (current.parentCtx.modifier())
+                parents = current.parentCtx.modifier()
                 break
             current = current.parentCtx
 
@@ -108,16 +109,17 @@ class CreateAndCreateByListener(JavaParserLabeledListener):
             modifiers = self.get_method_modifiers(ctx)
             method_return, method_context = self.get_method_content(ctx)
             self.create.append(
-                {"scope_name": all_refs[-1],
-                 "scope_longname": ".".join(all_refs),
-                 "scope_modifiers": modifiers,
-                 "scope_return_type": method_return,
-                 "scope_content": method_context,
-                 "line": line,
-                 "col": col[:-1],
-                 "new_class_name": self.new_class_name,
-                 "scope_parent": all_refs[-2] if len(all_refs) > 2 else None,
-                 "package_name": self.package_name,
-                 "new_class_path": new_class_path})
-
-
+                {
+                    "scope_name": all_refs[-1],
+                    "scope_longname": ".".join(all_refs),
+                    "scope_modifiers": modifiers,
+                    "scope_return_type": method_return,
+                    "scope_content": method_context,
+                    "line": line,
+                    "col": col[:-1],
+                    "new_class_name": self.new_class_name,
+                    "scope_parent": all_refs[-2] if len(all_refs) > 2 else None,
+                    "package_name": self.package_name,
+                    "new_class_path": new_class_path,
+                }
+            )

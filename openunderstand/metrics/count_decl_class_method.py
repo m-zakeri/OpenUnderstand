@@ -12,5 +12,3 @@ def declare_method_count():
             else:
                 class_methods[ent_model._parent._longname] += 1
     return class_methods
-
-

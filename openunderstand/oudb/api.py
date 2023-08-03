@@ -1,4 +1,5 @@
 import os
+
 # encoding: utf-8
 # module understand calls itself understandAPI
 # from D:\program files\SciTools\bin\pc-win64\Python\understand.pyd
@@ -210,44 +211,41 @@ for lexeme in file.lexer():
 
 # Variables with simple values
 
-COMMENT = 'Comment'
-CONTINUATION = 'Continuation'
-DEDENT = 'Dedent'
-ENDOFSTATEMENT = 'EndOfStatement'
-EOF = 'EOF'
-IDENTIFIER = 'Identifier'
-IDSEQ = 'IdSeq'
-INDENT = 'Indent'
-KEYWORD = 'Keyword'
-LABEL = 'Label'
-LITERAL = 'Literal'
-NEWLINE = 'Newline'
-OPERATOR = 'Operator'
-PREPROCESSOR = 'Preprocessor'
-PUNCTUATION = 'Punctuation'
-STRING = 'String'
-WHITESPACE = 'Whitespace'
+COMMENT = "Comment"
+CONTINUATION = "Continuation"
+DEDENT = "Dedent"
+ENDOFSTATEMENT = "EndOfStatement"
+EOF = "EOF"
+IDENTIFIER = "Identifier"
+IDSEQ = "IdSeq"
+INDENT = "Indent"
+KEYWORD = "Keyword"
+LABEL = "Label"
+LITERAL = "Literal"
+NEWLINE = "Newline"
+OPERATOR = "Operator"
+PREPROCESSOR = "Preprocessor"
+PUNCTUATION = "Punctuation"
+STRING = "String"
+WHITESPACE = "Whitespace"
 
 
 def create_db(dbname, project_dir: str, project_name=None):
 
-
-    db = SqliteDatabase(dbname, pragmas={
-        'journal_mode': 'wal',
-        'cache_size': -1 * 64000,  # 64MB
-        'ignore_check_constraints': 0,
-        'synchronous': 0})
-    db.bind(
-        [KindModel, EntityModel, ReferenceModel, ProjectModel]
+    db = SqliteDatabase(
+        dbname,
+        pragmas={
+            "journal_mode": "wal",
+            "cache_size": -1 * 64000,  # 64MB
+            "ignore_check_constraints": 0,
+            "synchronous": 0,
+        },
     )
-    db.create_tables(
-        [KindModel, EntityModel, ReferenceModel, ProjectModel]
-    )
+    db.bind([KindModel, EntityModel, ReferenceModel, ProjectModel])
+    db.create_tables([KindModel, EntityModel, ReferenceModel, ProjectModel])
 
     ProjectModel.get_or_create(
-        name=project_name or os.path.basename(dbname),
-        root=project_dir,
-        db_path=dbname
+        name=project_name or os.path.basename(dbname), root=project_dir, db_path=dbname
     )
     return open(dbname)
 
@@ -272,19 +270,19 @@ def open(dbname):  # real signature unknown; restored from __doc__
     if not os.path.isfile(dbname):
         raise UnderstandError()
 
-    db = SqliteDatabase(dbname, pragmas={
-        'journal_mode': 'wal',
-        'cache_size': -1 * 64000,  # 64MB
-        'ignore_check_constraints': 0,
-        'synchronous': 0})
-
-    db.bind(
-        [KindModel, EntityModel, ReferenceModel, ProjectModel]
+    db = SqliteDatabase(
+        dbname,
+        pragmas={
+            "journal_mode": "wal",
+            "cache_size": -1 * 64000,  # 64MB
+            "ignore_check_constraints": 0,
+            "synchronous": 0,
+        },
     )
 
-    obj = ProjectModel.get_or_none(
-        db_path=dbname
-    )
+    db.bind([KindModel, EntityModel, ReferenceModel, ProjectModel])
+
+    obj = ProjectModel.get_or_none(db_path=dbname)
     return Db(db_obj=obj)
 
 
@@ -298,6 +296,7 @@ def version():  # real signature unknown; restored from __doc__
 
 
 # classes
+
 
 class Db:
     """
@@ -363,7 +362,7 @@ class Db:
             query = EntityModel.select()
 
         for ent in query:
-            my_ent = Ent(**ent.__dict__.get('__data__'))
+            my_ent = Ent(**ent.__dict__.get("__data__"))
             all_ents.append(my_ent)
 
         return all_ents
@@ -381,7 +380,7 @@ class Db:
         """
         try:
             ent = EntityModel.get_by_id(pk=id)
-            return Ent(**ent.__dict__.get('__data__'))
+            return Ent(**ent.__dict__.get("__data__"))
         except EntityModel.DoesNotExist:
             return None
 
@@ -399,7 +398,9 @@ class Db:
         """
         return str(self._language)
 
-    def lookup(self, name, kindstring=None):  # real signature unknown; restored from __doc__
+    def lookup(
+        self, name, kindstring=None
+    ):  # real signature unknown; restored from __doc__
         """
         oudb.lookup(name [,kindstring]) -> list of understand.Ent
 
@@ -428,12 +429,12 @@ class Db:
             (EntityModel._name.contains(name)) | (EntityModel._longname.contains(name))
         )
         for ent in query:
-            ents.append(
-                Ent(**ent.__dict__.get('__data__'))
-            )
+            ents.append(Ent(**ent.__dict__.get("__data__")))
         return ents
 
-    def lookup_uniquename(self, uniquename):  # real signature unknown; restored from __doc__
+    def lookup_uniquename(
+        self, uniquename
+    ):  # real signature unknown; restored from __doc__
         """
         oudb.lookup_uniquename(uniquename) -> ent
 
@@ -454,7 +455,9 @@ class Db:
         """
         return str(self._name)
 
-    def relative_file_name(self, absolute_path):  # real signature unknown; restored from __doc__
+    def relative_file_name(
+        self, absolute_path
+    ):  # real signature unknown; restored from __doc__
         """
         oudb.relative_file_name(absolute_path) -> string
 
@@ -465,7 +468,7 @@ class Db:
         return os.path.relpath(absolute_path, common_prefix)
 
     def __str__(self, *args, **kwargs):  # real signature unknown
-        """ Return str(self). """
+        """Return str(self)."""
         return self.name()
 
 
@@ -511,6 +514,7 @@ class Ent:
       understand.Ent.uniquename()
       understand.Ent.value()
     """
+
     _id: int
     _kind: int
     _parent: int
@@ -557,7 +561,9 @@ class Ent:
         """
         return {}
 
-    def ents(self, refkindstring, entkindstring=None):  # real signature unknown; restored from __doc__
+    def ents(
+        self, refkindstring, entkindstring=None
+    ):  # real signature unknown; restored from __doc__
         """
         ent.ents(refkindstring [,entkindstring]) -> list of understand.Ent
 
@@ -577,7 +583,8 @@ class Ent:
         )
         if refkindstring:
             kinds = KindModel.select().where(
-                (KindModel._name.contains(refkindstring)) & (KindModel.is_ent_kind == False)
+                (KindModel._name.contains(refkindstring))
+                & (KindModel.is_ent_kind == False)
             )
             query = query.where(ReferenceModel._kind.in_(kinds))
 
@@ -585,13 +592,12 @@ class Ent:
             if entkindstring is not None:
                 if entkindstring.lower() not in ref._ent._kind._name.lower():
                     continue
-            ents.add(
-                Ent(**ref._ent.__dict__.get('__data__'))
-            )
+            ents.add(Ent(**ref._ent.__dict__.get("__data__")))
         return list(ents)
 
-    def filerefs(self, refkindstring=None, entkindstring=None,
-                 unique=None):  # real signature unknown; restored from __doc__
+    def filerefs(
+        self, refkindstring=None, entkindstring=None, unique=None
+    ):  # real signature unknown; restored from __doc__
         """
         ent.filerefs([refkindstring [,entkindstring [,unique]]]) -> list of understand.Ref
 
@@ -618,7 +624,7 @@ class Ent:
         return []
 
     def freetext(self, option):  # real signature unknown; restored from __doc__
-        """ ent.freetext(option) -> string """
+        """ent.freetext(option) -> string"""
         return ""
 
     def ib(self, options=None):  # real signature unknown; restored from __doc__
@@ -679,7 +685,7 @@ class Ent:
         Return the kind object for the entity.
         """
         kind = KindModel.get_by_id(self._kind)
-        return Kind(**kind.__dict__.get('__data__'))
+        return Kind(**kind.__dict__.get("__data__"))
 
     def kindname(self):  # real signature unknown; restored from __doc__
         """
@@ -747,7 +753,9 @@ class Ent:
         """
         return str(self._name)
 
-    def parameters(self, shownames=True):  # real signature unknown; restored from __doc__
+    def parameters(
+        self, shownames=True
+    ):  # real signature unknown; restored from __doc__
         """
         ent.parameters(shownames=True) -> string
 
@@ -763,9 +771,7 @@ class Ent:
         to get some information about these cases. If no parameters are
         available, None is returned.
         """
-        ents = EntityModel.select().where(
-            EntityModel._parent == self._id
-        )
+        ents = EntityModel.select().where(EntityModel._parent == self._id)
         pars = []
         for ent in ents:
             obj = Ent(**ent.__dict__.get("__data__"))
@@ -780,7 +786,7 @@ class Ent:
         Return the parent of the entity or None if none
         """
         entity = EntityModel.get_by_id(pk=self._parent)
-        return Ent(**entity.__dict__.get('__data__'))
+        return Ent(**entity.__dict__.get("__data__"))
 
     def parsetime(self):  # real signature unknown; restored from __doc__
         """
@@ -793,7 +799,9 @@ class Ent:
         """
         return 0
 
-    def ref(self, *args, **kwargs):  # real signature unknown; NOTE: unreliably restored from __doc__
+    def ref(
+        self, *args, **kwargs
+    ):  # real signature unknown; NOTE: unreliably restored from __doc__
         """
         ent.ref([refkindstring [,entkindstring]) -> understand.Ref
 
@@ -801,8 +809,9 @@ class Ent:
         """
         return self.refs(*args, **kwargs)[:1]
 
-    def refs(self, refkindstring=None, entkindstring=None,
-             unique=None):  # real signature unknown; restored from __doc__
+    def refs(
+        self, refkindstring=None, entkindstring=None, unique=None
+    ):  # real signature unknown; restored from __doc__
         """
         ent.refs([refkindstring [,entkindstring [,unique]]]) -> list of understand.Ref
 
@@ -821,33 +830,25 @@ class Ent:
         true, only the first matching reference to each unique entity is
         returned
         """
-        query = ReferenceModel.select().where(
-            ReferenceModel._scope == self._id
-        )
+        query = ReferenceModel.select().where(ReferenceModel._scope == self._id)
         if refkindstring:
             kinds = KindModel.select().where(
-                (KindModel.is_ent_kind == False) & (KindModel._name.contains(refkindstring))
+                (KindModel.is_ent_kind == False)
+                & (KindModel._name.contains(refkindstring))
             )
-            query = query.where(
-                ReferenceModel._kind.in_(kinds)
-            )
+            query = query.where(ReferenceModel._kind.in_(kinds))
 
         if entkindstring:
             kinds = KindModel.select().where(
-                (KindModel.is_ent_kind == True) & (KindModel._name.contains(entkindstring))
+                (KindModel.is_ent_kind == True)
+                & (KindModel._name.contains(entkindstring))
             )
-            ents = EntityModel.select().where(
-                EntityModel._kind.in_(kinds)
-            )
-            query = query.where(
-                ReferenceModel._ent.in_(ents)
-            )
+            ents = EntityModel.select().where(EntityModel._kind.in_(kinds))
+            query = query.where(ReferenceModel._ent.in_(ents))
         references = []
 
         for ref in query:
-            references.append(
-                Ref(**ref.__dict__.get('__data__'))
-            )
+            references.append(Ref(**ref.__dict__.get("__data__")))
 
         if unique:
             references = references[:1]
@@ -921,33 +922,33 @@ class Ent:
         return None
 
     def __eq__(self, other):  # real signature unknown
-        """ Return self==value. """
+        """Return self==value."""
         if isinstance(other, Ent):
             return self.id() == other.id()
         return NotImplemented
 
     def __ge__(self, *args, **kwargs):  # real signature unknown
-        """ Return self>=value. """
+        """Return self>=value."""
         pass
 
     def __gt__(self, *args, **kwargs):  # real signature unknown
-        """ Return self>value. """
+        """Return self>value."""
         pass
 
     def __hash__(self, *args, **kwargs):  # real signature unknown
-        """ Return hash(self). """
+        """Return hash(self)."""
         return hash(self.id())
 
     def __le__(self, *args, **kwargs):  # real signature unknown
-        """ Return self<=value. """
+        """Return self<=value."""
         pass
 
     def __lt__(self, *args, **kwargs):  # real signature unknown
-        """ Return self<value. """
+        """Return self<value."""
         pass
 
     def __ne__(self, *args, **kwargs):  # real signature unknown
-        """ Return self!=value. """
+        """Return self!=value."""
         pass
 
     def __str__(self):
@@ -979,6 +980,7 @@ class Kind(object):
       understand.Kind.list_entity([entkind])
       understand.Kind.list_reference([refkind])
     """
+
     _id: int
     _inv: int
     _name: str
@@ -1003,7 +1005,7 @@ class Kind(object):
         if self.is_ent_kind:
             raise UnderstandError()
         inverse = KindModel.get_by_id(pk=self._inv)
-        return Kind(**inverse.__data__.get('__data__'))
+        return Kind(**inverse.__data__.get("__data__"))
 
     @staticmethod
     def list_entity(entkind=""):  # real signature unknown; restored from __doc__
@@ -1016,14 +1018,14 @@ class Kind(object):
         to get the list of all c function entity kinds:
           kinds = understand.Kind.list_entity("c function")
         """
-        query = KindModel.select().where(KindModel.is_ent_kind == True, KindModel._name.contains(entkind))
+        query = KindModel.select().where(
+            KindModel.is_ent_kind == True, KindModel._name.contains(entkind)
+        )
         kinds = []
         if query.count() == 0:
             query = KindModel.select().where(KindModel.is_ent_kind == True)
         for kind in query:
-            kinds.append(
-                Kind(**kind.__dict__.get('__data__'))
-            )
+            kinds.append(Kind(**kind.__dict__.get("__data__")))
         return kinds
 
     @staticmethod
@@ -1037,14 +1039,14 @@ class Kind(object):
         to get the list of all ada declare reference kinds:
           kinds = understand.Kind.list_entity("ada declare")
         """
-        query = KindModel.select().where(KindModel.is_ent_kind == False, KindModel._name.contains(refkind))
+        query = KindModel.select().where(
+            KindModel.is_ent_kind == False, KindModel._name.contains(refkind)
+        )
         kinds = []
         if query.count() == 0:
             query = KindModel.select().where(KindModel.is_ent_kind == False)
         for kind in query:
-            kinds.append(
-                Kind(**kind.__dict__.get('__data__'))
-            )
+            kinds.append(Kind(**kind.__dict__.get("__data__")))
         return kinds
 
     def longname(self):  # real signature unknown; restored from __doc__
@@ -1069,11 +1071,11 @@ class Kind(object):
         return str(self._name)
 
     def __repr__(self, *args, **kwargs):  # real signature unknown
-        """ Return repr(self). """
+        """Return repr(self)."""
         return self.name()
 
     def __str__(self, *args, **kwargs):  # real signature unknown
-        """ Return str(self). """
+        """Return str(self)."""
         return self.name()
 
 
@@ -1092,6 +1094,7 @@ class Ref(object):
       understand.Ref.scope()
       understand.Ref.__str__() --kindname ent file(line)
     """
+
     _id: int
     _kind: int
     _file: int
@@ -1115,7 +1118,7 @@ class Ref(object):
         Return the entity being referenced.
         """
         entity = EntityModel.get_by_id(pk=self._ent)
-        return Ent(**entity.__dict__.get('__data__'))
+        return Ent(**entity.__dict__.get("__data__"))
 
     def file(self):  # real signature unknown; restored from __doc__
         """
@@ -1124,7 +1127,7 @@ class Ref(object):
         Return the file where the reference occurred.
         """
         entity = EntityModel.get_by_id(pk=self._file)
-        return Ent(**entity.__dict__.get('__data__'))
+        return Ent(**entity.__dict__.get("__data__"))
 
     def isforward(self):  # real signature unknown; restored from __doc__
         """
@@ -1142,7 +1145,7 @@ class Ref(object):
         Return the reference kind.
         """
         refkind = KindModel.get_by_id(pk=self._kind)
-        return Kind(**refkind.__dict__.get('__data__'))
+        return Kind(**refkind.__dict__.get("__data__"))
 
     def kindname(self):  # real signature unknown; restored from __doc__
         """
@@ -1179,14 +1182,14 @@ class Ref(object):
         Return the entity performing the reference.
         """
         entity = EntityModel.get_by_id(pk=self._scope)
-        return Ent(**entity.__dict__.get('__data__'))
+        return Ent(**entity.__dict__.get("__data__"))
 
     def __repr__(self, *args, **kwargs):  # real signature unknown
-        """ Return repr(self). """
+        """Return repr(self)."""
         return f"{self.kind()} {self.ent()} {self.file()}({self._line}, {self._column})"
 
     def __str__(self, *args, **kwargs):  # real signature unknown
-        """ Return str(self). """
+        """Return str(self)."""
         return f"{self.kind()} {self.ent()} {self.file()}({self._line}, {self._column})"
 
 
@@ -1195,7 +1198,9 @@ class UnderstandError(Exception):
     def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
-    __weakref__ = property(lambda self: object(), lambda self, v: None, lambda self: None)  # default
+    __weakref__ = property(
+        lambda self: object(), lambda self, v: None, lambda self: None
+    )  # default
     """list of weak references to the object (if defined)"""
 
 
@@ -1205,8 +1210,9 @@ class Violation(object):
       understand.Violation.add_fixit_hint(line,column,length[,text])
     """
 
-    def add_fixit_hint(self, line, column, end_line, end_column,
-                       text=None):  # real signature unknown; restored from __doc__
+    def add_fixit_hint(
+        self, line, column, end_line, end_column, text=None
+    ):  # real signature unknown; restored from __doc__
         """
         violation.add_fixit_hint(line,column,end_line,end_column[,text]) -> None
 

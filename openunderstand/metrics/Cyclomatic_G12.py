@@ -17,12 +17,12 @@ def countParents(ctx):
 class CyclomaticListener(JavaParserLabeledListener):
     def __init__(self, class_):
         self.method_count_Cyclomatic = 1
-        self.file = ''
+        self.file = ""
         self.enter_method = False
         self.enter_block = False
         self.enter_class = False
         self.method_long_names = {}
-        self.packagename = ''
+        self.packagename = ""
         self.class_name = class_
         self.max_value = 0
         self.classes = {}
@@ -53,7 +53,11 @@ class CyclomaticListener(JavaParserLabeledListener):
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
 
-        if self.class_name == ctx.IDENTIFIER().getText() or self.class_name == '' or self.class_name is None:
+        if (
+            self.class_name == ctx.IDENTIFIER().getText()
+            or self.class_name == ""
+            or self.class_name is None
+        ):
             self.enter_class = True
         self.classes = {}
 
@@ -87,7 +91,13 @@ class CyclomaticListener(JavaParserLabeledListener):
     # enter-case
 
     def exitMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
-        longname = self.packagename + '.' + countParents(ctx) + '.' + ctx.IDENTIFIER().getText()
+        longname = (
+            self.packagename
+            + "."
+            + countParents(ctx)
+            + "."
+            + ctx.IDENTIFIER().getText()
+        )
         # print('method' , longname , self.method_count_Cyclomatic)
         self.method_long_names[longname] = self.method_count_Cyclomatic
 
@@ -114,7 +124,9 @@ class CyclomaticListener(JavaParserLabeledListener):
             self.method_count_Cyclomatic += 1
 
     def exitClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
-        longname = self.packagename + '.' + countParents(ctx) + ctx.IDENTIFIER().getText()
+        longname = (
+            self.packagename + "." + countParents(ctx) + ctx.IDENTIFIER().getText()
+        )
         self.classes[longname] = self.max_value
         self.max_value = 0
 
@@ -128,14 +140,14 @@ def get_parse_tree(file_path):
 
 
 def main():
-    path2 = r'C:\Users\Asus Vivobook\PycharmProjects\pythonProject\benchmark\calculator_app\src\com\calculator\app\display\print_fail.java'
-    path3 = r'C:\Users\Asus Vivobook\PycharmProjects\pythonProject\benchmark\ganttproject\biz.ganttproject.core\src\main\java\biz\ganttproject\core\calendar\GPCalendarBase.java'
-    path = r'C:\Users\Asus Vivobook\PycharmProjects\pythonProject\benchmark\ganttproject\ganttproject\src\main\java\net\sourceforge\ganttproject\gui\scrolling\ScrollingManager.java.java'
+    path2 = r"C:\Users\Asus Vivobook\PycharmProjects\pythonProject\benchmark\calculator_app\src\com\calculator\app\display\print_fail.java"
+    path3 = r"C:\Users\Asus Vivobook\PycharmProjects\pythonProject\benchmark\ganttproject\biz.ganttproject.core\src\main\java\biz\ganttproject\core\calendar\GPCalendarBase.java"
+    path = r"C:\Users\Asus Vivobook\PycharmProjects\pythonProject\benchmark\ganttproject\ganttproject\src\main\java\net\sourceforge\ganttproject\gui\scrolling\ScrollingManager.java.java"
     tree = get_parse_tree(path)
-    listener = CyclomaticListener('')
+    listener = CyclomaticListener("")
     walker = ParseTreeWalker()
     walker.walk(listener, tree)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -11,7 +11,7 @@ from halstead import main_
 
 
 def main(args):
-    stream = FileStream(args.file, encoding='utf8')
+    stream = FileStream(args.file, encoding="utf8")
     lexer = JavaLexer(stream)
     token_stream = CommonTokenStream(lexer)
     parser = JavaParserLabeled(token_stream)
@@ -53,8 +53,9 @@ def main(args):
     except:
         pass
 
+
 def main2(args, file_path):
-    stream = FileStream(args.file, encoding='utf8')
+    stream = FileStream(args.file, encoding="utf8")
     lexer = JavaLexer(stream)
     token_stream = CommonTokenStream(lexer)
     parser = JavaParserLabeled(token_stream)
@@ -68,7 +69,7 @@ def main2(args, file_path):
     my_listener.get_res
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     inp = str(input("Enter the path to the Java project:"))
     # C:\Users\Roozbeh\PycharmProjects\pythonProject\Software Metrics
 
@@ -83,9 +84,12 @@ if __name__ == '__main__':
             argparser = argparse.ArgumentParser()
             print(filename)
             argparser.add_argument(
-                '-n', '--file',
-                help='Input source', default=os.path.join(dirpath, filename))
+                "-n",
+                "--file",
+                help="Input source",
+                default=os.path.join(dirpath, filename),
+            )
             args = argparser.parse_args()
-            #main(args)
-            filepath = inp+"\\"+filename
+            # main(args)
+            filepath = inp + "\\" + filename
             main2(args, filepath)

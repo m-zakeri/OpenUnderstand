@@ -10,21 +10,19 @@ from fnmatch import fnmatch
 import argparse
 
 
-
-def get_max_inheritance(inheritances,key):
-    current_classs=key
-    level=0
-    while(True):
-        if(not current_classs in inheritances.keys()):
+def get_max_inheritance(inheritances, key):
+    current_classs = key
+    level = 0
+    while True:
+        if not current_classs in inheritances.keys():
             break
-        elif(len(inheritances[current_classs])==0):
+        elif len(inheritances[current_classs]) == 0:
             break
         else:
-            level+=1
-            current_classs=inheritances[current_classs][0]
+            level += 1
+            current_classs = inheritances[current_classs][0]
 
-    return  level
-
+    return level
 
 
 def getListOfFiles(dirName):
@@ -41,8 +39,8 @@ def getListOfFiles(dirName):
     return allFiles
 
 
-if __name__ == '__main__':
-    classes={}
+if __name__ == "__main__":
+    classes = {}
     class_names = []
     path = "H:/OpenUnderstand/benchmark/jvlt-1.3.2"
 
@@ -52,7 +50,7 @@ if __name__ == '__main__':
         try:
 
             # at first we should Stream text from input file
-            inputfile = FileStream(file_address, encoding='utf8')
+            inputfile = FileStream(file_address, encoding="utf8")
             # then we must use lexer
             lex = JavaLexer(inputfile)
             # then we should tokenize that
@@ -67,16 +65,14 @@ if __name__ == '__main__':
             for n in listener.class_names:
                 class_names.append(n)
 
-
-
         except Exception as e:
             print("An Error occurred in file:" + file_address + "\n" + str(e))
 
     for c in class_names:
-        classes.update({c:[]})
+        classes.update({c: []})
 
     for file_address in files:
-        inputfile = FileStream(file_address, encoding='utf8')
+        inputfile = FileStream(file_address, encoding="utf8")
         # then we must use lexer
         lex = JavaLexer(inputfile)
         # then we should tokenize that
@@ -88,18 +84,16 @@ if __name__ == '__main__':
         treewalker2 = ParseTreeWalker()
         treewalker2.walk(t=ptree, listener=listener2)
 
-        classes=listener2.classes
-
-
+        classes = listener2.classes
 
     max_inheritances = {}
     for key in classes.keys():
         max_inheritances.update({key: get_max_inheritance(classes, key)})
 
-    print(f'Class Name = {max_inheritances}')
+    print(f"Class Name = {max_inheritances}")
 
     for file_address in files:
-        inputfile = FileStream(file_address, encoding='utf8')
+        inputfile = FileStream(file_address, encoding="utf8")
         # then we must use lexer
         lex = JavaLexer(inputfile)
         # then we should tokenize that
@@ -110,11 +104,10 @@ if __name__ == '__main__':
         listener3 = MaxNesting()
         treewalker3 = ParseTreeWalker()
         treewalker3.walk(t=ptree, listener=listener3)
-        print("Max Nesting of",file_address, " is: ", listener3.max_nesting)
-
+        print("Max Nesting of", file_address, " is: ", listener3.max_nesting)
 
     for file_address in files:
-        inputfile = FileStream(file_address, encoding='utf8')
+        inputfile = FileStream(file_address, encoding="utf8")
         # then we must use lexer
         lex = JavaLexer(inputfile)
         # then we should tokenize that
@@ -125,5 +118,4 @@ if __name__ == '__main__':
         listener4 = MinEssentialKnots()
         treewalker4 = ParseTreeWalker()
         treewalker4.walk(t=ptree, listener=listener4)
-        print("Min Essential knots of ",file_address, " is : ", listener4.counter)
-
+        print("Min Essential knots of ", file_address, " is : ", listener4.counter)

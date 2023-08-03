@@ -5,30 +5,33 @@ from oudb.api import open as db_open, create_db
 from oudb.models import KindModel, EntityModel, ReferenceModel
 from oudb.fill import main
 
+
 class ContainAndContainBy(JavaParserLabeledListener):
     contain = []
     packageInfo = []
 
-
-    def enterPackageDeclaration(self, ctx:JavaParserLabeled.PackageDeclarationContext):
+    def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
         self.packageInfo = []
         longname = ""
         for x in range(len(ctx.qualifiedName().IDENTIFIER())):
-            if  x == 0:
+            if x == 0:
                 longname = str(ctx.qualifiedName().IDENTIFIER()[x])
             else:
                 longname = longname + "." + str(ctx.qualifiedName().IDENTIFIER()[x])
 
-        self.packageInfo.append({"name":ctx.qualifiedName().IDENTIFIER()[-1],
-                                 "longname":longname,
-                                 "kind":"Package",
-                                 "contents" : "",
-                                 "parent" : None ,
-                                 "type" : None,
-                                 "value" : None
-                                 })
+        self.packageInfo.append(
+            {
+                "name": ctx.qualifiedName().IDENTIFIER()[-1],
+                "longname": longname,
+                "kind": "Package",
+                "contents": "",
+                "parent": None,
+                "type": None,
+                "value": None,
+            }
+        )
 
-    def enterClassDeclaration(self, ctx:JavaParserLabeled.ClassDeclarationContext):
+    def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         name = ctx.IDENTIFIER().getText()
         print(ctx.IDENTIFIER().getText())
         [line, col] = str(ctx.start).split(",")[3].split(":")  # line, column
@@ -51,30 +54,31 @@ class ContainAndContainBy(JavaParserLabeledListener):
         packageValue = self.packageInfo[0]["value"]
 
         parent = scope_parents[-2] if len(scope_parents) > 2 else None
-        kind ="Class"
-        modifiers = class_properties.ClassPropertiesListener.findClassOrInterfaceModifiers(
-            ctx)
+        kind = "Class"
+        modifiers = (
+            class_properties.ClassPropertiesListener.findClassOrInterfaceModifiers(ctx)
+        )
         content = ctx.getText()
 
-
-
-        self.contain.append({
-                             "package_name":packageName.getText(),
-                             "package_longname" :packageLongName,
-                             "package_kind" : packageKind,
-                             "package_content" : packageContent ,
-                             "package_parent" : packageParent,
-                             "package_type" : packageType ,
-                             "package_value" : packageValue,
-                             "name":name ,
-                             "longname" : scope_longname,
-                             "parent" : parent,
-                             "kind" : kind,
-                             "line" :line,
-                             "col" : col,
-                             "modifiers" : modifiers,
-                             "content":content,
-                             "type" : None ,
-                             "value" : None
-                             })
+        self.contain.append(
+            {
+                "package_name": packageName.getText(),
+                "package_longname": packageLongName,
+                "package_kind": packageKind,
+                "package_content": packageContent,
+                "package_parent": packageParent,
+                "package_type": packageType,
+                "package_value": packageValue,
+                "name": name,
+                "longname": scope_longname,
+                "parent": parent,
+                "kind": kind,
+                "line": line,
+                "col": col,
+                "modifiers": modifiers,
+                "content": content,
+                "type": None,
+                "value": None,
+            }
+        )
         print(self.contain)

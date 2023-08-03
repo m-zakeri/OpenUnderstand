@@ -14,16 +14,15 @@ class NAMMListener(JavaParserLabeledListener):
         self.Mutator = []
         self.att = []
 
-
     @property
     def get_NAMM(self):
         self.compare()
         d = {}
-        d['Accessor_num'] = self.Accessor_num
-        d['Mutator_num'] = self.Mutator_num
-        return  d
+        d["Accessor_num"] = self.Accessor_num
+        d["Mutator_num"] = self.Mutator_num
+        return d
 
-    def enterBlockStatement1(self, ctx:JavaParserLabeled.BlockStatement1Context):
+    def enterBlockStatement1(self, ctx: JavaParserLabeled.BlockStatement1Context):
         id1 = ctx.children[0]
         t = type(id1)
         if t == JavaParserLabeled.Statement10Context:
@@ -59,7 +58,6 @@ class NAMMListener(JavaParserLabeledListener):
             except:
                 pass
 
-
     def enterFieldDeclaration(self, ctx: JavaParserLabeled.FieldDeclarationContext):
         id = ctx.variableDeclarators().children[0].children[0].IDENTIFIER().getText()
         self.att.append(id)
@@ -67,13 +65,13 @@ class NAMMListener(JavaParserLabeledListener):
     def compare(self):
         for item in self.Accessor:
             if item in self.att:
-                self.Accessor_num+=1
+                self.Accessor_num += 1
         for item in self.Mutator:
             if item in self.att:
-                self.Mutator_num+=1
+                self.Mutator_num += 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     create_db("../../benchmark2_database.oudb", project_dir="..\..\benchmark")
     db = db_open("../../benchmark2_database.oudb")
 
@@ -109,4 +107,3 @@ if __name__ == '__main__':
         walker = ParseTreeWalker()
         walker.walk(listener=listener, t=parse_tree)
     print(listener.get_NAMM)
-

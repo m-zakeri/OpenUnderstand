@@ -6,6 +6,7 @@ from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 
 # Common Helper Functions
 
+
 class Project:
     def __init__(self, project_dir, project_name=None):
         self.project_dir = project_dir
@@ -16,7 +17,7 @@ class Project:
         for dir_path, _, file_names in os.walk(self.project_dir):
             for file in file_names:
                 lowercase_file = str(file).lower()
-                if lowercase_file.endswith('.java'):
+                if lowercase_file.endswith(".java"):
                     path = os.path.join(dir_path, file)
                     path = path.replace("/", "\\")
                     path = os.path.abspath(path)
@@ -25,17 +26,17 @@ class Project:
 
 def get_project_info(index, ref_name=None):
     project_names = [
-        'calculator_app',       # 0
-        'JSON',                 # 1
-        'testing_legacy_code',  # 2
-        'TheAlgorithms',        # 3
-        'jhotdraw-develop',     # 4
-        'xerces2j',             # 5
-        'jvlt-1.3.2',           # 6
-        'jfreechart',           # 7
-        'ganttproject',         # 8
-        '105_freemind',         # 9
-        'custom'                # 10
+        "calculator_app",  # 0
+        "JSON",  # 1
+        "testing_legacy_code",  # 2
+        "TheAlgorithms",  # 3
+        "jhotdraw-develop",  # 4
+        "xerces2j",  # 5
+        "jvlt-1.3.2",  # 6
+        "jfreechart",  # 7
+        "ganttproject",  # 8
+        "105_freemind",  # 9
+        "custom",  # 10
     ]
     project_name = project_names[index]
     db_path = f"../../../databases/{ref_name}/{project_name}"
@@ -49,9 +50,9 @@ def get_project_info(index, ref_name=None):
     project_path = os.path.abspath(project_path)
 
     return {
-        'PROJECT_NAME': project_name,
-        'DB_PATH': db_path,
-        'PROJECT_PATH': project_path,
+        "PROJECT_NAME": project_name,
+        "DB_PATH": db_path,
+        "PROJECT_PATH": project_path,
     }
 
 
@@ -71,14 +72,16 @@ def get_parent(parent_file_name, files):
 
 
 def report_metric(project_metric_count, ent_kind_set, project_metric_list, metric_name):
-    sorted_list = sorted(project_metric_list, key=lambda d: (d['val'], d['name']))
+    sorted_list = sorted(project_metric_list, key=lambda d: (d["val"], d["name"]))
     for e in sorted_list:
-        print({
-            'val': e['val'],
-            'name': e['name'],
-            'kind': e['kind'],
-            # 'ln': e['longname']
-        })
+        print(
+            {
+                "val": e["val"],
+                "name": e["name"],
+                "kind": e["kind"],
+                # 'ln': e['longname']
+            }
+        )
     print("-" * 25)
 
     print(f"Entities with {metric_name}: {len(ent_kind_set)}")
@@ -90,6 +93,7 @@ def report_metric(project_metric_count, ent_kind_set, project_metric_list, metri
 
 
 # Prefix producers
+
 
 def get_class_prefixes(ctx, ctx_type):
     branches = ctx.parentCtx.children
@@ -119,13 +123,14 @@ def get_method_prefixes(ctx):
 
 # Statement Helper Functions
 
+
 def stmt_main(prj_index, listener_class, metric_name, last_log=False):
     info = get_project_info(prj_index)
-    p = Project(info['PROJECT_PATH'], info['PROJECT_NAME'])
+    p = Project(info["PROJECT_PATH"], info["PROJECT_NAME"])
     p.get_java_files()
     walker = ParseTreeWalker()
 
-    ent_kind_set = {'Java File'}
+    ent_kind_set = {"Java File"}
     project_metric_list = []
     project_metric_counter = 0
 
@@ -138,58 +143,81 @@ def stmt_main(prj_index, listener_class, metric_name, last_log=False):
         file_metric_count = listener.counter
 
         for ent, count in file_metric_dict.items():
-            ent_name = ent.split('$$$')[0]
-            remain = ent.split('$$$')[1]
-            ent_kind, ent_longname = remain.split('-', 1)
-            if str(ent_name).startswith('package'):
-                ent_longname = ent_longname.replace('package', '')
-                ent_longname = ent_longname.replace('; class', '.')
-                ent_longname = ent_longname.replace(' ', '')
+            ent_name = ent.split("$$$")[0]
+            remain = ent.split("$$$")[1]
+            ent_kind, ent_longname = remain.split("-", 1)
+            if str(ent_name).startswith("package"):
+                ent_longname = ent_longname.replace("package", "")
+                ent_longname = ent_longname.replace("; class", ".")
+                ent_longname = ent_longname.replace(" ", "")
 
             new_metric = {
-                'val': count,
-                'name': ent_name,
-                'kind': ent_kind,
-                'longname': ent_longname
+                "val": count,
+                "name": ent_name,
+                "kind": ent_kind,
+                "longname": ent_longname,
             }
             if not last_log:
-                print({i: new_metric[i] for i in new_metric if i != 'longname'})
+                print({i: new_metric[i] for i in new_metric if i != "longname"})
 
             project_metric_list.append(new_metric)
             project_metric_counter += count
             ent_kind_set.add(ent_kind)
 
         new_metric = {
-            'val': file_metric_count,
-            'name': file_name,
-            'kind': 'Java File',
-            'longname': file_path
+            "val": file_metric_count,
+            "name": file_name,
+            "kind": "Java File",
+            "longname": file_path,
         }
         if not last_log:
-            print({i: new_metric[i] for i in new_metric if i != 'longname'})
+            print({i: new_metric[i] for i in new_metric if i != "longname"})
 
         project_metric_list.append(new_metric)
         project_metric_counter += file_metric_count
 
     if last_log:
-        report_metric(project_metric_counter, ent_kind_set, project_metric_list, metric_name)
+        report_metric(
+            project_metric_counter, ent_kind_set, project_metric_list, metric_name
+        )
 
 
 def get_keys(ctx):
     result = find_scope(ctx)
     keys = []
     for res in result:
-        if res['static_type'] != '':
-            key = str(res['method_name']) + '$$$' + str(res['kind_name']) + '-' + str(res['access_type']) + ' ' + str(res['static_type']) + ' ' \
-                  + str(res['return_type']) + ' ' + str(res['method_name'])
+        if res["static_type"] != "":
+            key = (
+                str(res["method_name"])
+                + "$$$"
+                + str(res["kind_name"])
+                + "-"
+                + str(res["access_type"])
+                + " "
+                + str(res["static_type"])
+                + " "
+                + str(res["return_type"])
+                + " "
+                + str(res["method_name"])
+            )
         else:
-            key = str(res['method_name']) + '$$$' + str(res['kind_name']) + '-' + str(res['access_type']) + ' ' \
-                  + str(res['return_type']) + ' ' + str(res['method_name'])
+            key = (
+                str(res["method_name"])
+                + "$$$"
+                + str(res["kind_name"])
+                + "-"
+                + str(res["access_type"])
+                + " "
+                + str(res["return_type"])
+                + " "
+                + str(res["method_name"])
+            )
         keys.append(key)
     return keys
 
 
 # Scope makers
+
 
 def make_scope_interface(ctx):
     prefixes = get_class_prefixes(ctx, "InterfaceDeclarationContext")
@@ -198,11 +226,11 @@ def make_scope_interface(ctx):
     return_type = ctx.children[0].getText()
     access_type = ctx.parentCtx.parentCtx.children[0].getText()
     return {
-        'kind_name': kind_name,
-        'method_name': class_name,
-        'return_type': return_type,
-        'access_type': access_type,
-        'static_type': ''
+        "kind_name": kind_name,
+        "method_name": class_name,
+        "return_type": return_type,
+        "access_type": access_type,
+        "static_type": "",
     }
 
 
@@ -212,16 +240,16 @@ def make_scope_lambda(ctx):
     class_name = ctx.children[1]
     return_type = ctx.children[0].getText()
     access_type = ctx.parentCtx.parentCtx.children[0].getText()
-    if ctx.parentCtx.parentCtx.children[1].getText() == 'static':
+    if ctx.parentCtx.parentCtx.children[1].getText() == "static":
         static_type = ctx.parentCtx.parentCtx.children[1].getText()
     else:
-        static_type = ''
+        static_type = ""
     return {
-        'kind_name': kind_name,
-        'method_name': class_name,
-        'return_type': return_type,
-        'access_type': access_type,
-        'static_type': static_type
+        "kind_name": kind_name,
+        "method_name": class_name,
+        "return_type": return_type,
+        "access_type": access_type,
+        "static_type": static_type,
     }
 
 
@@ -231,16 +259,16 @@ def make_scope_class(ctx):
     class_name = ctx.children[1].getText()
     return_type = ctx.children[0].getText()
     access_type = ctx.parentCtx.parentCtx.children[0].getText()
-    static_type = ''
+    static_type = ""
     if len(ctx.parentCtx.parentCtx.children) > 1:
-        if ctx.parentCtx.parentCtx.children[1].getText() == 'static':
+        if ctx.parentCtx.parentCtx.children[1].getText() == "static":
             static_type = ctx.parentCtx.parentCtx.children[1].getText()
     return {
-        'kind_name': kind_name,
-        'method_name': class_name,
-        'return_type': return_type,
-        'access_type': access_type,
-        'static_type': static_type
+        "kind_name": kind_name,
+        "method_name": class_name,
+        "return_type": return_type,
+        "access_type": access_type,
+        "static_type": static_type,
     }
 
 
@@ -250,16 +278,16 @@ def make_scope_method(ctx):
     method_name = ctx.children[1]
     return_type = ctx.children[0].getText()
     access_type = ctx.parentCtx.parentCtx.children[0].getText()
-    static_type = ''
+    static_type = ""
     if len(ctx.parentCtx.parentCtx.children) > 1:
-        if ctx.parentCtx.parentCtx.children[1].getText() == 'static':
+        if ctx.parentCtx.parentCtx.children[1].getText() == "static":
             static_type = ctx.parentCtx.parentCtx.children[1].getText()
     return {
-        'kind_name': kind_name,
-        'method_name': method_name,
-        'return_type': return_type,
-        'access_type': access_type,
-        'static_type': static_type
+        "kind_name": kind_name,
+        "method_name": method_name,
+        "return_type": return_type,
+        "access_type": access_type,
+        "static_type": static_type,
     }
 
 
@@ -269,20 +297,21 @@ def make_scope_constructor(ctx):
     method_name = ctx.IDENTIFIER().getText()
     return_type = ctx.children[0].getText()
     access_type = ctx.parentCtx.parentCtx.children[0].getText()
-    static_type = ''
+    static_type = ""
     if len(ctx.parentCtx.parentCtx.children) > 1:
-        if ctx.parentCtx.parentCtx.children[1].getText() == 'static':
+        if ctx.parentCtx.parentCtx.children[1].getText() == "static":
             static_type = ctx.parentCtx.parentCtx.children[1].getText()
     return {
-        'kind_name': kind_name,
-        'method_name': method_name,
-        'return_type': return_type,
-        'access_type': access_type,
-        'static_type': static_type
+        "kind_name": kind_name,
+        "method_name": method_name,
+        "return_type": return_type,
+        "access_type": access_type,
+        "static_type": static_type,
     }
 
 
 # Scope finders
+
 
 def search_scope(ctx, type_names):
     # Traverse bottom up until reaching a class or method
@@ -298,17 +327,27 @@ def search_scope(ctx, type_names):
 
 def find_scope(ctx):
     scope = []
-    if str(ctx.children[0]) == 'package':
-        return [{
-            'kind_name': 'Java Package',
-            'method_name': ctx.children[1].getText(),
-            'return_type': '',
-            'access_type': '',
-            'static_type': ''
-        }]
-    scope_ctx = search_scope(ctx, ["ClassDeclarationContext", "MethodDeclarationContext",
-                                   "InterfaceDeclarationContext", "AnnotationTypeDeclarationContext",
-                                   "ConstructorDeclarationContext", "LambdaExpressionContext"])
+    if str(ctx.children[0]) == "package":
+        return [
+            {
+                "kind_name": "Java Package",
+                "method_name": ctx.children[1].getText(),
+                "return_type": "",
+                "access_type": "",
+                "static_type": "",
+            }
+        ]
+    scope_ctx = search_scope(
+        ctx,
+        [
+            "ClassDeclarationContext",
+            "MethodDeclarationContext",
+            "InterfaceDeclarationContext",
+            "AnnotationTypeDeclarationContext",
+            "ConstructorDeclarationContext",
+            "LambdaExpressionContext",
+        ],
+    )
     for item in scope_ctx:
         if type(item).__name__ == "ClassDeclarationContext":
             scope.append(make_scope_class(item))
