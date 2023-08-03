@@ -471,6 +471,30 @@ class Project:
                 _scope=ent,
             )
 
+    @staticmethod
+    def add_modify_and_modifyby_reference(ref_dicts):
+        for ref_dict in ref_dicts:
+            longname = ref_dict['ent']
+            ent = ModifyListener.get_different_combinations(longname)
+            scope = ref_dict['scope']
+            # print(ref_dict)
+            _, _ = ReferenceModel.get_or_create(
+                _kind=208,
+                _file=ref_dict['file'],
+                _line=ref_dict['line'],
+                _column=ref_dict['column'],
+                _ent=ent if ent is not None else "NOT FOUND",
+                _scope=scope,
+            )
+            _, _ = ReferenceModel.get_or_create(
+                _kind=209,
+                _file=ref_dict['file'],
+                _line=ref_dict['line'],
+                _column=ref_dict['column'],
+                _ent=scope,
+                _scope=ent if ent is not None else "NOT FOUND",
+            )
+
     def addCallNonDynamicOrCallNonDynamicByRefs(
         self, ref_dicts, file_ent, file_address
     ):
@@ -505,7 +529,9 @@ class Project:
             )
 
     def addCreateRefs(self, ref_dicts, file_ent, file_address):
+
         for ref_dict in ref_dicts:
+
             scope = EntityModel.get_or_create(
                 _kind=self.findKindWithKeywords("Method", ref_dict["scopemodifiers"]),
                 _name=ref_dict["scopename"],
@@ -516,9 +542,11 @@ class Project:
                 _longname=ref_dict["scopelongname"],
                 _contents=["scopecontent"],
             )[0]
+
             ent = self.getCreatedClassEntity(
                 ref_dict["refent"], ref_dict["potential_refent"], file_address
             )
+
             Create = ReferenceModel.get_or_create(
                 _kind=190,
                 _file=file_ent,
@@ -527,6 +555,7 @@ class Project:
                 _scope=scope,
                 _ent=ent,
             )
+
             Createby = ReferenceModel.get_or_create(
                 _kind=191,
                 _file=file_ent,
@@ -535,6 +564,7 @@ class Project:
                 _scope=ent,
                 _ent=scope,
             )
+
 
     def getPackageEntity(self, file_ent, name, longname):
         # package kind id: 72
@@ -571,14 +601,14 @@ class Project:
     def getCreatedClassEntity(
         self, class_longname, class_potential_longname, file_address
     ):
-        props = p.getClassProperties(class_potential_longname, file_address)
+        props = self.getClassProperties(class_potential_longname, file_address)
         if not props:
             return self.getClassEntity(class_longname, file_address)
         else:
             return self.getClassEntity(class_potential_longname, file_address)
 
     def getClassEntity(self, class_longname, file_address):
-        props = p.getClassProperties(class_longname, file_address)
+        props = self.getClassProperties(class_longname, file_address)
         if not props:  # This class is unknown, unknown class id: 84
             ent = EntityModel.get_or_create(
                 _kind=84,
@@ -602,7 +632,7 @@ class Project:
     def getInterfaceEntity(
         self, interface_longname, file_address
     ):  # can't be of unknown kind!
-        props = p.getInterfaceProperties(interface_longname, file_address)
+        props = self.getInterfaceProperties(interface_longname, file_address)
         if not props:
             return None
         else:
@@ -1034,11 +1064,8 @@ def runner(path_project: str = ""):
         entity_generator = EntityGenerator(file_address, parse_tree)
 
         try:
-            logger.info("0 create")
             listener = CreateAndCreateBy()
-            logger.info("1 create")
             p.Walk(listener, tree)
-            logger.info("2 create")
             p.addCreateRefs(listener.create, file_ent, file_address)
             logger.info("create refs success ")
         except Exception as e:
@@ -1075,7 +1102,6 @@ def runner(path_project: str = ""):
         try:
             # modify
             listener = ModifyListener(entity_generator)
-            listener.modify = []
             p.Walk(listener, parse_tree)
             modify_modifyby_list = modify_modifyby_list + listener.modify
             logger.info("modify success ")
@@ -1144,7 +1170,6 @@ def runner(path_project: str = ""):
         try:
             # dotref
             listener = DotRef_DotRefBy()
-            listener.declare = []
             p.Walk(listener, tree)
             p.addThrows_TrowsByRefs(
                 listener.implement, file_ent, file_address, 198, 199, False
@@ -1160,7 +1185,7 @@ def runner(path_project: str = ""):
             pass
 
 
-    p.add(modify_modifyby_list)
+    p.add_modify_and_modifyby_reference(modify_modifyby_list)
     #     try:
     #
     #         listener = CyclomaticListener()
