@@ -258,7 +258,7 @@ class Project:
             )
             print("Set Init Added!")
 
-    def addSetRefs(self, d, file_ent):
+    def addSetRefs(self, d, file_ent, stream):
 
         for type_tuple in d:
             par = EntityModel.get(_name=type_tuple[7])
@@ -299,10 +299,10 @@ class Project:
                 _ent=scope,
                 _scope=ent,
             )
-            print("Set Added!")
 
-    def addUseRefs(self, d_use, file_ent):
-        for use_tuple in d_use["useBy"]:
+
+    def addUseRefs(self, d_use, file_ent, stream):
+        for use_tuple in d_use:
             ent, h_c1 = EntityModel.get_or_create(
                 _kind=226,
                 _parent=None,
@@ -1188,10 +1188,10 @@ def runner(path_project: str = ""):
 
         try:
             # set ref
-            listener = SetAndSetByListener(file_ent)
+            listener = SetAndSetByListener(file_address)
             p.Walk(listener, tree)
             p.addSetRefs(
-                listener.setBy, file_ent
+                listener.setBy, file_ent, ""
             )
             logger.info("set Ref success ")
         except Exception as e:
@@ -1208,7 +1208,7 @@ def runner(path_project: str = ""):
             listener = UseAndUseByListener()
             p.Walk(listener, tree)
             p.addUseRefs(
-                listener.useBy, file_ent
+                listener.useBy, file_ent, ""
             )
             logger.info("use ref success ")
         except Exception as e:
@@ -1222,7 +1222,7 @@ def runner(path_project: str = ""):
 
         try:
             # call ref
-            listener = CallAndCallBy()
+            listener = CallNonDynamicAndCallNonDynamicBy()
             p.Walk(listener, tree)
             p.addCallOrCallByRefs(
                 listener.implement, file_ent, file_address
@@ -1237,19 +1237,3 @@ def runner(path_project: str = ""):
             )
             pass
 
-        try:
-            # variable ref
-            listener = VariableListener()
-            p.Walk(listener, tree)
-            p.addDeclareRefs(
-                listener.implement, file_ent, file_address, 198, 199, False
-            )
-            logger.info("variable ref success ")
-        except Exception as e:
-            logger.error(
-                "An Error occurred in variable ref in file :"
-                + file_address
-                + "\n"
-                + str(e)
-            )
-            pass

@@ -1,7 +1,7 @@
 # Group 13
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-
+from os.path import basename
 
 class SetAndSetByListener(JavaParserLabeledListener):
     def __init__(self, file_name):
@@ -11,7 +11,7 @@ class SetAndSetByListener(JavaParserLabeledListener):
         self.in_variable_initializer = False
         self.initializer_identifier_number = 0
         self.number_of_primary_4 = 0
-        self.file_name = file_name
+        self.file_name = basename(file_name)
         self.package_name = ""
         self.setBy = []
         self.enterd_expression = False
@@ -21,9 +21,7 @@ class SetAndSetByListener(JavaParserLabeledListener):
         self.class_name = ""
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
-        name_of_file = self.file_name.split("\\")[
-            self.file_name.split("\\").count(0) - 1
-        ]
+        name_of_file = self.file_name
         self.ex_name = ctx.children[1].getText()
         long_name = name_of_file.replace(".java", "") + "." + self.ex_name
         line = ctx.children[0].symbol.line
@@ -31,9 +29,7 @@ class SetAndSetByListener(JavaParserLabeledListener):
 
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
 
-        name_of_file = self.file_name.split("\\")[
-            self.file_name.split("\\").count(0) - 1
-        ]
+        name_of_file = self.file_name
         self.ex_name = ctx.children[1].getText()
 
     def enterExpression21(self, ctx: JavaParserLabeled.Expression21Context):
@@ -43,9 +39,7 @@ class SetAndSetByListener(JavaParserLabeledListener):
 
     def exitExpression21(self, ctx: JavaParserLabeled.Expression21Context):
         try:
-            name_of_file = self.file_name.split("\\")[
-                self.file_name.split("\\").count(0) - 1
-            ]
+            name_of_file = self.file_name
             set_long_name = (
                 name_of_file.replace(".java", "")
                 + "."

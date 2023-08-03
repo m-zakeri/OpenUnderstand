@@ -22,7 +22,9 @@ class CallNonDynamicAndCallNonDynamicBy(JavaParserLabeledListener):
     #Todo: Implementing the ANTLR listener pass for Java Call and Java Callby reference kind
     """
 
-    implement = []
+    def __init__(self):
+        self.implement = []
+
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         bodies = ctx.classBody().classBodyDeclaration()
