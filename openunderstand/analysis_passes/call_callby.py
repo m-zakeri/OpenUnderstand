@@ -14,7 +14,7 @@ from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 import analysis_passes.class_properties as class_properties
 from analysis_passes.general_scope_listener import GeneralScopeListener
 
-implement = []
+
 
 
 class CallAndCallBy(GeneralScopeListener):
@@ -47,6 +47,7 @@ class CallAndCallBy(GeneralScopeListener):
         self.is_var_non_primitive_type = False
         self.non_primitive_var_type = None
         self.local_method_variables = {}
+        self.implement = []
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         bodies = ctx.classBody().classBodyDeclaration()

@@ -78,6 +78,7 @@ from analysis_passes.g6_class_properties import (
     InterfacePropertiesListener,
 )
 
+
 from metrics.AvgCyclomatic import CyclomaticListener
 from metrics.AvgCyclomaticStrict import CyclomaticStrictListener
 from metrics.AvgCyclomaticModified import CyclomaticModifiedListener
@@ -1062,6 +1063,7 @@ def runner(path_project: str = ""):
         entity_generator = EntityGenerator(file_address, parse_tree)
 
         try:
+            #  create refs TODO: fix NOT NULL constraint failed: entitymodel._kind_id
             listener = CreateAndCreateBy()
             p.Walk(listener, tree)
             p.addCreateRefs(listener.create, file_ent, file_address)
@@ -1168,7 +1170,7 @@ def runner(path_project: str = ""):
             pass
 
         try:
-            # dotref TODO:  'ClassBodyDeclaration1Context' object has no attribute 'modifier'
+            # dot ref TODO:  'ClassBodyDeclaration1Context' object has no attribute 'modifier'
             listener = DotRef_DotRefBy()
             p.Walk(listener, tree)
             p.addThrows_TrowsByRefs(
@@ -1184,3 +1186,70 @@ def runner(path_project: str = ""):
             )
             pass
 
+        try:
+            # set ref
+            listener = SetAndSetByListener(file_ent)
+            p.Walk(listener, tree)
+            p.addSetRefs(
+                listener.setBy, file_ent
+            )
+            logger.info("set Ref success ")
+        except Exception as e:
+            logger.error(
+                "An Error occurred in set ref in file :"
+                + file_address
+                + "\n"
+                + str(e)
+            )
+            pass
+
+        try:
+            # use ref
+            listener = UseAndUseByListener()
+            p.Walk(listener, tree)
+            p.addUseRefs(
+                listener.useBy, file_ent
+            )
+            logger.info("use ref success ")
+        except Exception as e:
+            logger.error(
+                "An Error occurred in use ref in file :"
+                + file_address
+                + "\n"
+                + str(e)
+            )
+            pass
+
+        try:
+            # call ref
+            listener = CallAndCallBy()
+            p.Walk(listener, tree)
+            p.addCallOrCallByRefs(
+                listener.implement, file_ent, file_address
+            )
+            logger.info("call ref success ")
+        except Exception as e:
+            logger.error(
+                "An Error occurred in call ref in file :"
+                + file_address
+                + "\n"
+                + str(e)
+            )
+            pass
+
+        try:
+            # variable ref
+            listener = VariableListener()
+            p.Walk(listener, tree)
+            p.addDeclareRefs(
+                listener.implement, file_ent, file_address, 198, 199, False
+            )
+            logger.info("variable ref success ")
+        except Exception as e:
+            logger.error(
+                "An Error occurred in variable ref in file :"
+                + file_address
+                + "\n"
+                + str(e)
+            )
+            pass
