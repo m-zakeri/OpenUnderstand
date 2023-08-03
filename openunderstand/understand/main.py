@@ -50,7 +50,7 @@ from oudb.fill import fill
 from analysis_passes.couple_coupleby import CoupleAndCoupleBy
 from analysis_passes.create_createby_g11 import CreateAndCreateBy
 from analysis_passes.declare_declarein import DeclareAndDeclareinListener
-from analysis_passes.define_and_definein_new import DefineListener
+from analysis_passes.define_definein import DefineListener
 
 from analysis_passes.modify_modifyby import ModifyListener
 from analysis_passes.usemodule_usemoduleby_g11 import UseModuleUseModuleByListener
@@ -70,12 +70,14 @@ from analysis_passes.set_setby import SetAndSetByListener
 from analysis_passes.setinit_setinitby import SetInitAndSetInitByListener
 from understand.override_overrideby__G12 import overridelistener
 from understand.couple_coupleby__G12 import CoupleAndCoupleBy
-from analysis_passes.g6_create_createby import CreateAndCreateByListener
-from analysis_passes.g6_declare_declarein import DeclareAndDeclareinListener
+from analysis_passes.create_createby_g9 import CreateAndCreateBy
+# from analysis_passes.g6_declare_declarein import DeclareAndDeclareinListener
+from analysis_passes.declare_declarein import DeclareAndDeclareinListener
 from analysis_passes.g6_class_properties import (
     ClassPropertiesListener,
     InterfacePropertiesListener,
 )
+
 from metrics.AvgCyclomatic import CyclomaticListener
 from metrics.AvgCyclomaticStrict import CyclomaticStrictListener
 from metrics.AvgCyclomaticModified import CyclomaticModifiedListener
@@ -1024,46 +1026,42 @@ def runner(path_project: str = ""):
                 path=file_address, name=os.path.basename(file_address)
             )
             tree = p.Parse(file_address)
+            logger.info("file parse success")
         except Exception as e:
-            logger.error("An Error occurred in file:" + file_address + "\n" + str(e))
+            logger.error("An Error occurred in file file parse:" + file_address + "\n" + str(e))
             continue
 
         entity_generator = EntityGenerator(file_address, parse_tree)
 
         try:
-            listener = CreateAndCreateByListener()
+            logger.info("0 create")
+            listener = CreateAndCreateBy()
+            logger.info("1 create")
             p.Walk(listener, tree)
-            listener.get_refers()
-            p.addCreateRefs(listener.get_create(), file_ent, file_address)
+            logger.info("2 create")
+            p.addCreateRefs(listener.create, file_ent, file_address)
+            logger.info("create refs success ")
         except Exception as e:
             logger.error(
-                "An Error occurred in file:" + file_address + "\n" + str(e))
-        flag =False
+                "An Error occurred in file create refs :" + file_address + "\n" + str(e))
         try:
-            define_listener = DefineListener()
-            p.Walk(define_listener, tree)
-            package_name = define_listener.package["package_name"]
-            p.add_entity_package(define_listener.package, file_address)
-            flag = True
+            listener = DefineListener()
+            p.Walk(listener, tree)
+            p.addDefineRefs(listener.defines, file_ent)
+            logger.info("define success ")
         except Exception as e:
             logger.error(
-                "An Error occurred for reference implement in file:"
+                "An Error occurred for reference implement in file define:"
                 + file_address
                 + "\n"
                 + str(e)
             )
-        if flag:
-            addDefineEntity(p=p, define_listener=define_listener.fields, logger=logger, ent="variable", package_name=package_name, file_address=file_address)
-            addDefineEntity(p=p, define_listener=define_listener.methods, logger=logger, ent="method", package_name=package_name, file_address=file_address)
-            addDefineEntity(p=p, define_listener=define_listener.formal_parameters, logger=logger, ent="parameter", package_name=package_name, file_address=file_address)
-            addDefineEntity(p=p, define_listener=define_listener.local_variables, logger=logger, ent="local variable", package_name=package_name, file_address=file_address)
-            addDefineEntity(p=p, define_listener=define_listener.interfaces, logger=logger, ent="interface", package_name=package_name, file_address=file_address)
 
         try:
             # declare
             listener = DeclareAndDeclareinListener()
             p.Walk(listener, tree)
-            p.addDeclareRefs(listener.get_declare_dicts, file_ent)
+            p.addDeclareRefs(listener.declare, file_ent)
             logger.info("declare success ")
         except Exception as e:
             logger.error(
@@ -1073,30 +1071,21 @@ def runner(path_project: str = ""):
                 + str(e)
             )
 
-        # try:
-        #     listener = VariableListener(entity_generator)
-        #     p.Walk(listener, parse_tree)
-        # except Exception as e:
-        #     logger.error(
-        #         "An Error occurred for reference variable in file:"
-        #         + file_address
-        #         + "\n"
-        #         + str(e)
-        #     )
 
-        # try:
-        #     # modify
-        #     listener = ModifyListener(entity_generator)
-        #     listener.modify = []
-        #     p.Walk(listener, parse_tree)
-        #     modify_modifyby_list = modify_modifyby_list + listener.modify
-        # except Exception as e:
-        #     logger.error(
-        #         "An Error occurred for reference create/createBy in file:"
-        #         + file_address
-        #         + "\n"
-        #         + str(e)
-        #     )
+        try:
+            # modify
+            listener = ModifyListener(entity_generator)
+            listener.modify = []
+            p.Walk(listener, parse_tree)
+            modify_modifyby_list = modify_modifyby_list + listener.modify
+            logger.info("modify success ")
+        except Exception as e:
+            logger.error(
+                "An Error occurred for reference modify in file:"
+                + file_address
+                + "\n"
+                + str(e)
+            )
 
         try:
             listener = overridelistener()
@@ -1107,6 +1096,7 @@ def runner(path_project: str = ""):
             p.Walk(listener, tree)
             classesx = listener.get_classes
             extendedlist = listener.get_extendeds
+            logger.info("overrides success ")
         except Exception as e:
             logger.error(
                 "An Error occurred in override reference in file :"
@@ -1124,6 +1114,7 @@ def runner(path_project: str = ""):
             p.Walk(listener, tree)
             classescoupleby = listener.get_classes
             couple = listener.get_couples
+            logger.info("couple success ")
         except Exception as e:
             logger.error(
                 "An Error occurred in couple reference in file :"
@@ -1143,7 +1134,7 @@ def runner(path_project: str = ""):
             logger.info("Throws success ")
         except Exception as e:
             logger.error(
-                "An Error occurred in couple reference in file :"
+                "An Error occurred in throws in file :"
                 + file_address
                 + "\n"
                 + str(e)
@@ -1161,13 +1152,15 @@ def runner(path_project: str = ""):
             logger.info("DotRef success ")
         except Exception as e:
             logger.error(
-                "An Error occurred in couple reference in file :"
+                "An Error occurred in dotref in file :"
                 + file_address
                 + "\n"
                 + str(e)
             )
             pass
 
+
+    p.add(modify_modifyby_list)
     #     try:
     #
     #         listener = CyclomaticListener()
