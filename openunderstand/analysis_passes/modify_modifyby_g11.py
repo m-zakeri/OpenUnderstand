@@ -17,11 +17,11 @@ class ModifyModifyByListener(JavaParserLabeledListener):
     """
     #Todo: Implementing the ANTLR listener pass for Java modify and Java modifyby reference kind
     """
-
-    modifyBy = []
-    scope = None
-    ent = None
-    isE7 = False
+    def __init__(self):
+        self.modifyBy = []
+        self.scope = None
+        self.ent = None
+        self.isE7 = False
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         self.scope = ctx.IDENTIFIER().getText()

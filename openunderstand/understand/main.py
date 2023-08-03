@@ -670,14 +670,13 @@ class Project:
                 return False
         return True
 
-    def addoverridereference(self, classes, extendedfiles):
+    def addoverridereference(self, classes, extendedfiles, file_ent):
         for tuples in extendedfiles:
             main = tuples[0]
             fromx = tuples[1]
             methodsmain = classes[main]
             for x in methodsmain:
                 file = x["File"]
-                file_ent = self.getFileEntity(file)
                 kindx = self.findKindWithKeywords(x["scope_kind"], x["scope_modifiers"])
                 if kindx is None:
                     kindx = x["modifiersx"]
@@ -698,7 +697,7 @@ class Project:
                     for y in mathodsfrom:
 
                         if y["MethodIs"] == methodname1:
-                            fe = self.getFileEntity(y["File"])
+                            fe = file_ent
                             kind = self.findKindWithKeywords(
                                 y["scope_kind"], y["scope_modifiers"]
                             )
@@ -935,10 +934,10 @@ class Project:
             implementBy_ref = ReferenceModel.get_or_create(_kind=id2, _file=file_ent, _line=ref_dict["line"],
                                                            _column=ref_dict["col"], _ent=scope, _scope=ent)
 
-    def addcouplereference(self, classes, couples):
+    def addcouplereference(self, classes, couples, file_ent):
         keykind = ""
         for c in couples:
-            file_ent = self.getFileEntity(c["File"])
+
             scope = EntityModel.get_or_create(
                 _kind=self.findKindWithKeywords(c["scope_kind"], c["scope_modifiers"]),
                 _name=c["scope_name"],
@@ -954,7 +953,7 @@ class Project:
                     for key in keylist:
                         if key in classes:
                             c1 = classes[key]
-                            file_ent2 = self.getFileEntity(c1["File"])
+                            file_ent2 = file_ent
                             keykind = self.findKindWithKeywords(
                                 c1["scope_kind"], c1["scope_modifiers"]
                             )
@@ -1043,7 +1042,6 @@ def runner(path_project: str = ""):
     logger = setup_logger()
     p = Project()
     files = p.getListOfFiles(path_project)
-    modify_modifyby_list = []
     classesx = {}
     extendedlist = []
     classescoupleby = {}
@@ -1100,10 +1098,10 @@ def runner(path_project: str = ""):
 
 
         try:
-            # modify
-            listener = ModifyListener(entity_generator)
+            # modify TODO : FIX modify error not found
+            listener = ModifyListener(entity_generator, logger)
             p.Walk(listener, parse_tree)
-            modify_modifyby_list = modify_modifyby_list + listener.modify
+            p.add_modify_and_modifyby_reference(listener.modify)
             logger.info("modify success ")
         except Exception as e:
             logger.error(
@@ -1122,6 +1120,7 @@ def runner(path_project: str = ""):
             p.Walk(listener, tree)
             classesx = listener.get_classes
             extendedlist = listener.get_extendeds
+            p.addoverridereference(classesx, extendedlist, file_ent)
             logger.info("overrides success ")
         except Exception as e:
             logger.error(
@@ -1140,6 +1139,7 @@ def runner(path_project: str = ""):
             p.Walk(listener, tree)
             classescoupleby = listener.get_classes
             couple = listener.get_couples
+            p.addcouplereference(classescoupleby, couple, file_ent)
             logger.info("couple success ")
         except Exception as e:
             logger.error(
@@ -1168,7 +1168,7 @@ def runner(path_project: str = ""):
             pass
 
         try:
-            # dotref
+            # dotref TODO:  'ClassBodyDeclaration1Context' object has no attribute 'modifier'
             listener = DotRef_DotRefBy()
             p.Walk(listener, tree)
             p.addThrows_TrowsByRefs(
@@ -1184,107 +1184,3 @@ def runner(path_project: str = ""):
             )
             pass
 
-
-    p.add_modify_and_modifyby_reference(modify_modifyby_list)
-    #     try:
-    #
-    #         listener = CyclomaticListener()
-    #         p.Walk(listener, tree)
-    #         with open('AvgCyclomatic.txt', 'a') as f:
-    #             f.write(f"AvgCyclomatic:{listener.get_dict}")
-    #             f.write('\n')
-    #     except Exception as e:
-    #         print("An Error occurred for AvgCyclomatic implement in file:" + file_address + "\n" + str(e))
-    #
-    #     try:
-    #
-    #         listener = CyclomaticStrictListener()
-    #         p.Walk(listener, tree)
-    #         with open('AvgCyclomaticStrict.txt', 'a') as f:
-    #             f.write(f"AvgCyclomaticStrict:{listener.get_dict}")
-    #             f.write('\n')
-    #     except Exception as e:
-    #         print("An Error occurred for AvgCyclomaticStrict implement in file:" + file_address + "\n" + str(e))
-    #
-    #     try:
-    #
-    #         listener = CyclomaticModifiedListener()
-    #         p.Walk(listener, tree)
-    #         with open('AvgCyclomaticModified.txt', 'a') as f:
-    #             f.write(f"AvgCyclomaticModified:{listener.get_dict}")
-    #             f.write('\n')
-    #     except Exception as e:
-    #         print("An Error occurred for AvgCyclomaticModified implement in file:" + file_address + "\n" + str(e))
-    #
-    #     try:
-    #
-    #         listener = EssentialListener()
-    #         p.Walk(listener, tree)
-    #         with open('AvgEssential.txt', 'a') as f:
-    #             f.write(f"AvgEssential:{listener.get_dict}")
-    #             f.write('\n')
-    #     except Exception as e:
-    #         print("An Error occurred for AvgEssential implement in file:" + file_address + "\n" + str(e))
-    #
-    #
-    # try:
-    #     p.addoverridereference(classesx, extendedlist)
-    # except Exception as e:
-    #     print("An Error occurred in couple reference " + str(e))
-    #
-    # try:
-    #     p.addcouplereference(classescoupleby , couple)
-    #
-    # except Exception as e:
-    #     print("An Error occurred in override reference " + str(e))
-    #
-    #
-    # # Project.add_create_and_createby_reference(create_createby_list)
-    # # Project.add_modify_and_modifyby_reference(modify_modifyby_list)
-    # try:
-    #     # metrics lot
-    #     listener = LineOfCode(file_address=file_address)
-    #     p.Walk(listener, tree)
-    #     CountLineCode = listener.get_countLineCode
-    #     CountLineComment = listener.get_countLineComment
-    #     ContLineDecl = listener.get_countLineDecl
-    #     CountLineExe = listener.get_countLineExec
-    #     a += CountLineCode['file']
-    #     b += CountLineComment['file']
-    #     c += CountLineExe['file']
-    #     d += ContLineDecl['file']
-    #     print(f'CuntLineCode={CountLineCode}')
-    #     print(f'CuntLineComment={CountLineComment}')
-    #     print(f'CuntLineExe={CountLineExe}')
-    #     print(f'CuntLineDecl={ContLineDecl}')
-    #     # print(
-    #     #     f'CountLIneCode: {CountLineCode["file"]} , CountLIneComment: {CountLineComment["file"]} , CountLINeExec: {CountLineExe["file"]} , CountLINeDecl: {ContLineDecl["file"]} ')
-    #     # print("''''''''''''''''''''''''''''''''''''''''''''''''''''''''''\n")
-    #     # df_clc = pd.DataFrame(data=stringify(listener.get_countLineCode), index=[1])
-    #     # df_clcomment = pd.DataFrame(data=stringify(listener.get_countLineComment), index=[1])
-    #     # df_cld = pd.DataFrame(data=stringify(listener.get_countLineDecl), index=[1])
-    #     # df_cle = pd.DataFrame(data=stringify(listener.get_countLineExec), index=[1])
-    #     # writer = pd.ExcelWriter(
-    #     #     r'C:\Users\Lenovo\Desktop\compiler\compiler-project-dev\openunderstand\countlinecode.xlsx')
-    #     # df_clc.to_excel(writer, 'countLineCode', index=False)
-    #     # df_clcomment.to_excel(writer, 'countLineComnnet', index=False)
-    #     # df_cld.to_excel(writer, 'countLineDecl', index=False)
-    #     # df_cle.to_excel(writer, 'countLineExe', index=False)
-    #     # writer.save()
-    # except Exception as e:
-    #     print("An Error occurred in couple reference in file :" + file_address + "\n" + str(e))
-    #     pass
-    # try:
-    #     p.addoverridereference(classesx, extendedlist)
-    # except Exception as e:
-    #     print("An Error occurred in couple reference " + str(e))
-    #
-    # try:
-    #     p.addcouplereference(classescoupleby, couple)
-    #
-    # except Exception as e:
-    #     print("An Error occurred in override reference " + str(e))
-    # try:
-    #     print(f'TotalCountLIneCode: {a} , TotalCountLineComment:{b} , TotalCountLineExe:{c} , TotalCOuntLIneDecl:{d} ')
-    # except Exception as e:
-    #     print("An Error occurred in override reference " + str(e))

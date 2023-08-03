@@ -2,7 +2,7 @@ from antlr4 import *
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from oudb.models import KindModel, EntityModel, ReferenceModel
-from analysis_passes.g10_import_importby import (
+from analysis_passes.import_importby_g10_2 import (
     Project,
     get_parse_tree,
     get_project_info,
