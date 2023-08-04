@@ -25,7 +25,6 @@ class CallNonDynamicAndCallNonDynamicBy(JavaParserLabeledListener):
     def __init__(self):
         self.implement = []
 
-
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         bodies = ctx.classBody().classBodyDeclaration()
         if bodies is not None:

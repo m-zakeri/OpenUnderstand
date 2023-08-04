@@ -3,6 +3,7 @@ from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from os.path import basename
 
+
 class SetAndSetByListener(JavaParserLabeledListener):
     def __init__(self, file_name):
         self.ex_name = ""

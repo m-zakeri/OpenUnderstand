@@ -17,6 +17,7 @@ class ModifyModifyByListener(JavaParserLabeledListener):
     """
     #Todo: Implementing the ANTLR listener pass for Java modify and Java modifyby reference kind
     """
+
     def __init__(self):
         self.modifyBy = []
         self.scope = None

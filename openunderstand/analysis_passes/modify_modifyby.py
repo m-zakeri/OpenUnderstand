@@ -4,7 +4,7 @@ from analysis_passes.entity_manager_g11 import get_created_entity_longname
 
 
 class ModifyListener(JavaParserLabeledListener):
-    def __init__(self, entity_manager_object , logger):
+    def __init__(self, entity_manager_object, logger):
         self.entity_manager = entity_manager_object
         self.package = ""
         self._class = ""
@@ -19,7 +19,6 @@ class ModifyListener(JavaParserLabeledListener):
 
         self.package = ctx.qualifiedName().getText()
 
-
     # class parent
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
 
@@ -27,18 +26,15 @@ class ModifyListener(JavaParserLabeledListener):
 
         self.parent = ctx.IDENTIFIER().getText()
 
-
     # exit class parent
     def exitClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
 
         self._class = ""
 
-
     # method parent
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
 
         self.parent = self._class + ctx.IDENTIFIER().getText()
-
 
     # interface parent
     def enterInterfaceDeclaration(
@@ -47,13 +43,11 @@ class ModifyListener(JavaParserLabeledListener):
 
         self.parent = ctx.IDENTIFIER().getText()
 
-
     def enterExpression1(self, ctx: JavaParserLabeled.Expression1Context):
 
         if self.enter_modify:
 
             self.name = ctx.IDENTIFIER().getText()
-
 
     def enterExpression6(self, ctx: JavaParserLabeled.Expression6Context):
 
@@ -79,7 +73,6 @@ class ModifyListener(JavaParserLabeledListener):
                 "scope": parent[0],
             }
         )
-
 
     def enterExpression7(self, ctx: JavaParserLabeled.Expression7Context):
 
@@ -140,7 +133,6 @@ class ModifyListener(JavaParserLabeledListener):
                     "scope": parent[0],
                 }
             )
-
 
     def exitExpression6(self, ctx: JavaParserLabeled.Expression6Context):
 

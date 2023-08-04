@@ -15,8 +15,6 @@ import analysis_passes.class_properties as class_properties
 from analysis_passes.general_scope_listener import GeneralScopeListener
 
 
-
-
 class CallAndCallBy(GeneralScopeListener):
     """
     #Todo: Implementing the ANTLR listener pass for Java Call and Java Callby reference kind
