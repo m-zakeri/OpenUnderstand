@@ -19,7 +19,7 @@ setuptools.setup(
     version="0.1.0",
     author="Morteza Zakeri, Amin HassanZarei, Ali Ayati",
     author_email="m-zakeri@live.com",
-    license='MIT',
+    license="MIT",
     description="A free implementation of Sci-tools Understand API",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -34,10 +34,17 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     package_dir={"": "openunderstand"},
-    packages=setuptools.find_packages(where="openunderstand",
-                                      ),
+    packages=setuptools.find_packages(
+        where="openunderstand",
+    ),
     include_package_data=True,
-    package_data={"": ["*.csv", "*.xlsx", ], "openunderstand": ["oudb/java_ent_kinds.txt", "oudb/java_ref_kinds.txt"]},
+    package_data={
+        "": [
+            "*.csv",
+            "*.xlsx",
+        ],
+        "openunderstand": ["oudb/java_ent_kinds.txt", "oudb/java_ref_kinds.txt"],
+    },
     exclude_package_data={"": ["README.md"]},
     python_requires=">=3.8",
     install_requires=[
@@ -49,5 +56,5 @@ setuptools.setup(
         "pyparsing>=2.4.7",
         "python-dateutil>=2.8.2",
         "regex>=2021.7.6",
-    ]
+    ],
 )

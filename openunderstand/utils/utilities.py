@@ -1,17 +1,19 @@
 import time
 import logging
 import configparser
+from os.path import basename
 
 
 def timer_decorator(logger):
     def decorator(func):
-        def wrapper(*args, **kwargs):
+        def wrapper(self, *args, **kwargs):
             start_time = time.time()
-            result = func(*args, **kwargs)
+            file_address = kwargs.get("file_address")
+            result = func(self, *args, **kwargs)
             end_time = time.time()
             elapsed_time = end_time - start_time
             logger.info(
-                f"The function '{func.__name__}' took {elapsed_time:.2f} seconds to execute."
+                f"The function '{func.__name__}' with file address '{basename(file_address)}' took {elapsed_time:.2f} seconds to execute."
             )
             return result
 

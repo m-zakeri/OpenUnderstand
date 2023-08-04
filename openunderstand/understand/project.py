@@ -12,6 +12,8 @@ from analysis_passes.g6_class_properties import (
     InterfacePropertiesListener,
 )
 
+# from utils.antler_parser import _cpp_parse
+
 
 class Project:
     def __init__(self):
@@ -33,6 +35,9 @@ class Project:
         tokens = CommonTokenStream(lexer)
         parser = JavaParserLabeled(tokens)
         return_tree = parser.compilationUnit()
+        # return_tree = _cpp_parse(
+        #     stream=file_stream, java_parser_labeld=JavaParserLabeled
+        # )
         self.tree = return_tree
         return return_tree
 

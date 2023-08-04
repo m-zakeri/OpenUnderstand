@@ -130,7 +130,7 @@ class ListenersAndParsers:
             )
 
     @timer_decorator(logger)
-    def couple_listener(self, logger, tree, file_ent, file_address, p):
+    def couple_listener(self, tree, file_ent, file_address, p):
         classescoupleby = {}
         couple = []
         try:
@@ -142,7 +142,7 @@ class ListenersAndParsers:
             classescoupleby = listener.get_classes
             couple = listener.get_couples
             p.addcouplereference(classescoupleby, couple, file_ent)
-            logger.info("couple success ")
+            self.logger.info("couple success ")
         except Exception as e:
             self.logger.error(
                 "An Error occurred in couple reference in file :"
