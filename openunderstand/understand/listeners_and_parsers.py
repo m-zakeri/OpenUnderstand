@@ -21,7 +21,6 @@ import os
 
 logger = setup_logger()
 
-
 class ListenersAndParsers:
     def __init__(self):
         self.logger = logger
@@ -33,7 +32,7 @@ class ListenersAndParsers:
             file_ent = p.getFileEntity(
                 path=file_address, name=os.path.basename(file_address)
             )
-            tree = p.Parse(file_address)
+            tree = parse_tree
             self.logger.info("file parse success")
             return tree, parse_tree, file_ent
         except Exception as e:

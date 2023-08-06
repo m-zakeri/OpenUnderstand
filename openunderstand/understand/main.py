@@ -36,4 +36,6 @@ def runner(path_project: str = ""):
     project = Project()
     files = project.getListOfFiles(path_project)
     with Pool(cpu_count()) as pool:
-        pool.map(process_file, files)
+        pool.map_async(process_file, files)
+        pool.close()
+        pool.join()
