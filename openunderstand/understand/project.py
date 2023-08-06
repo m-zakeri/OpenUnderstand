@@ -17,9 +17,9 @@ from analysis_passes.g6_class_properties import (
 
 class Project:
     def __init__(self):
-        pass
+        self.tree = None
 
-    tree = None
+
 
     @staticmethod
     def listToString(s):
