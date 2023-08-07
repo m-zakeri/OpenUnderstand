@@ -1,5 +1,0 @@
-AvgCyclomaticStrict:{'XJavac': 6.0}
-AvgCyclomaticStrict:{'InternalTaglet': 0.36363636363636365}
-AvgCyclomaticStrict:{'ArrayFillingCodeGenerator': 11.0}
-AvgCyclomaticStrict:{'ExperimentalTaglet': 0.36363636363636365}
-AvgCyclomaticStrict:{'XMLCharGenerator': 21.0}

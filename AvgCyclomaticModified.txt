@@ -1,5 +1,0 @@
-AvgCyclomaticModified:{'XJavac': 2.5}
-AvgCyclomaticModified:{'InternalTaglet': 0.36363636363636365}
-AvgCyclomaticModified:{'ArrayFillingCodeGenerator': 7.0}
-AvgCyclomaticModified:{'ExperimentalTaglet': 0.36363636363636365}
-AvgCyclomaticModified:{'XMLCharGenerator': 21.0}

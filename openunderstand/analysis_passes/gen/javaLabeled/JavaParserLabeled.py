@@ -1,4 +1,4 @@
-# Generated from F:/IUST_4001/Compiler/Project/OpenUnderstand/OpenUnderstand/grammars\JavaParserLabeled.g4 by ANTLR 4.9.1
+# Generated from F:/IUST_4001/Compiler/Project/OpenUnderstand/OpenUnderstand/grammars\JavaLabeledParser.g4 by ANTLR 4.9.1
 # encoding: utf-8
 from antlr4 import *
 from io import StringIO
@@ -744,7 +744,7 @@ def serializedATN():
 
 class JavaParserLabeled(Parser):
 
-    grammarFileName = "JavaParserLabeled.g4"
+    grammarFileName = "JavaLabeledParser.g4"
 
     atn = ATNDeserializer().deserialize(serializedATN())
 

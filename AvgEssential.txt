@@ -1,5 +1,0 @@
-AvgEssential:{'XJavac': 0.5}
-AvgEssential:{'InternalTaglet': 0.18181818181818182}
-AvgEssential:{'ArrayFillingCodeGenerator': 1.0}
-AvgEssential:{'ExperimentalTaglet': 0.18181818181818182}
-AvgEssential:{'XMLCharGenerator': 1.0}

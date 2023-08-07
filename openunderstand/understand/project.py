@@ -105,7 +105,7 @@ class Project:
                 _ent=scope,
             )
 
-    def addTypeRefs(self, d_type, file_ent):
+    def addTypeRefs(self, d_type, file_ent, stream:str = ""):
         for type_tuple in d_type["typedBy"]:
             ent, h_c1 = EntityModel.get_or_create(
                 _kind=224,
@@ -189,7 +189,7 @@ class Project:
             )
             print("Set Init Added!")
 
-    def addSetRefs(self, d, file_ent, stream):
+    def addSetRefs(self, d, file_ent, stream:str = ""):
 
         for type_tuple in d:
             par = EntityModel.get(_name=type_tuple[7])
@@ -231,7 +231,7 @@ class Project:
                 _scope=ent,
             )
 
-    def addUseRefs(self, d_use, file_ent, stream):
+    def addUseRefs(self, d_use, file_ent, stream:str = ""):
         for use_tuple in d_use:
             ent, h_c1 = EntityModel.get_or_create(
                 _kind=226,
@@ -308,8 +308,8 @@ class Project:
     def addImplementOrImplementByRefs(self, ref_dicts, file_ent, file_address):
         pass
 
-    @staticmethod
-    def add_create_and_createby_reference(ref_dicts):
+
+    def add_create_and_createby_reference(self, ref_dicts, file_address, file_ent):
         for ref_dict in ref_dicts:
             scope = EntityModel.get_or_create(
                 _kind=self.findKindWithKeywords(
@@ -322,7 +322,7 @@ class Project:
                 _longname=ref_dict["scope_longname"],
                 _contents=ref_dict["scope_contents"],
             )[0]
-            ent = self.getImplementEntity(ref_dict["type_ent_longname"], file_address)
+            ent = self.getImplementEntity(ref_dict["type_ent_longname"], file_address, file_ent)
             implement_ref = ReferenceModel.get_or_create(
                 _kind=188,
                 _file=file_ent,
@@ -353,7 +353,7 @@ class Project:
                 _longname=ref_dict["scope_longname"],
                 _contents=ref_dict["scope_contents"],
             )[0]
-            ent = self.getImplementEntity(ref_dict["type_ent_longname"], file_address)
+            ent = self.getImplementEntity(ref_dict["type_ent_longname"], file_address, file_ent)
             extend_ref = ReferenceModel.get_or_create(
                 _kind=178,
                 _file=file_ent,
@@ -384,7 +384,7 @@ class Project:
                 _longname=ref_dict["scope_longname"],
                 _contents=ref_dict["scope_contents"],
             )[0]
-            ent = self.getImplementEntity(ref_dict["type_ent_longname"], file_address)
+            ent = self.getImplementEntity(ref_dict["type_ent_longname"], file_address, file_ent)
             call_ref = ReferenceModel.get_or_create(
                 _kind=172,
                 _file=file_ent,
@@ -441,7 +441,7 @@ class Project:
                 _longname=ref_dict["scope_longname"],
                 _contents=ref_dict["scope_contents"],
             )[0]
-            ent = self.getImplementEntity(ref_dict["type_ent_longname"], file_address)
+            ent = self.getImplementEntity(ref_dict["type_ent_longname"], file_address, file_ent)
             call_ref = ReferenceModel.get_or_create(
                 _kind=170,
                 _file=file_ent,
@@ -475,7 +475,7 @@ class Project:
             )[0]
 
             ent = self.getCreatedClassEntity(
-                ref_dict["refent"], ref_dict["potential_refent"], file_address
+                ref_dict["refent"], ref_dict["potential_refent"], file_address, file_ent
             )
 
             Create = ReferenceModel.get_or_create(
@@ -529,15 +529,15 @@ class Project:
         return listener.interface_properties
 
     def getCreatedClassEntity(
-        self, class_longname, class_potential_longname, file_address
+        self, class_longname, class_potential_longname, file_address, file_ent
     ):
         props = self.getClassProperties(class_potential_longname, file_address)
         if not props:
-            return self.getClassEntity(class_longname, file_address)
+            return self.getClassEntity(class_longname, file_address, file_ent)
         else:
-            return self.getClassEntity(class_potential_longname, file_address)
+            return self.getClassEntity(class_potential_longname, file_address, file_ent)
 
-    def getClassEntity(self, class_longname, file_address):
+    def getClassEntity(self, class_longname, file_address, file_ent):
         props = self.getClassProperties(class_longname, file_address)
         if not props:  # This class is unknown, unknown class id: 84
             ent = EntityModel.get_or_create(
@@ -576,10 +576,10 @@ class Project:
             )
         return ent[0]
 
-    def getImplementEntity(self, longname, file_address):
+    def getImplementEntity(self, longname, file_address, file_ent):
         ent = self.getInterfaceEntity(longname, file_address)
         if not ent:
-            ent = self.getClassEntity(longname, file_address)
+            ent = self.getClassEntity(longname, file_address, file_ent)
         return ent
 
     def findKindWithKeywords(self, type, modifiers):
@@ -800,7 +800,7 @@ class Project:
                 else f"{package_name}.{model_name}"
             )
             model_contents = entity_values["contents"]
-            model_parent = define_parent(
+            model_parent = self.define_parent(
                 entity_type, entity_values, file_path, package_name
             )
 
@@ -836,10 +836,10 @@ class Project:
                 _scope_id=model_parent._id,
             )
 
-    def getThrowEntity(self, longname, file_address):
+    def getThrowEntity(self, longname, file_address, file_ent):
         ent = self.getInterfaceEntity(longname, file_address)
         if not ent:
-            ent = self.getClassEntity(longname, file_address)
+            ent = self.getClassEntity(longname, file_address, file_ent)
         return ent
 
     def addThrows_TrowsByRefs(self, ref_dicts, file_ent, file_address, id1, id2, Throw):
@@ -863,7 +863,7 @@ class Project:
                         file_ent, ref_dict["refent"], ref_dict["refent"]
                     )
             else:
-                ent = self.getThrowEntity(ref_dict["refent"], file_address)
+                ent = self.getThrowEntity(ref_dict["refent"], file_address, file_ent)
 
             implement_ref = ReferenceModel.get_or_create(
                 _kind=id1,

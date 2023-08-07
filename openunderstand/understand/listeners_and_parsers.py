@@ -11,6 +11,7 @@ from analysis_passes.entity_manager_g11 import (
     get_created_entity,
 )
 from analysis_passes.use_useby import UseAndUseByListener
+from analysis_passes.type_typedby import TypedAndTypedByListener
 from analysis_passes.set_setby import SetAndSetByListener
 from understand.override_overrideby__G12 import overridelistener
 from understand.couple_coupleby__G12 import CoupleAndCoupleBy
@@ -44,6 +45,20 @@ class ListenersAndParsers:
     @timer_decorator(logger)
     def entity_gen(self, file_address, parse_tree):
         return EntityGenerator(file_address, parse_tree)
+
+
+    @timer_decorator(logger)
+    def type_listener(self, tree, file_ent, file_address, p):
+        try:
+            listener = TypedAndTypedByListener()
+            p.Walk(listener, tree)
+            p.addTypeRefs(listener.get_type, file_ent)
+            self.logger.info("type refs success ")
+        except Exception as e:
+            self.logger.error(
+                "An Error occurred in file type refs :" + file_address + "\n" + str(e)
+            )
+
 
     @timer_decorator(logger)
     def create_listener(self, tree, file_ent, file_address, p):

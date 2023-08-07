@@ -1,4 +1,4 @@
-# Generated from F:/IUST_4001/Compiler/Project/OpenUnderstand/OpenUnderstand/grammars\JavaParserLabeled.g4 by ANTLR 4.9.1
+# Generated from F:/IUST_4001/Compiler/Project/OpenUnderstand/OpenUnderstand/grammars\JavaLabeledParser.g4 by ANTLR 4.9.1
 from antlr4 import *
 
 if __name__ is not None and "." in __name__:

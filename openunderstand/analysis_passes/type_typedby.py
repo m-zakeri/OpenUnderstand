@@ -3,8 +3,7 @@ from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 
 
 class TypedAndTypedByListener(JavaParserLabeledListener):
-    def __init__(self, file_name):
-        self.file_name = file_name
+    def __init__(self):
         self.package_name = ""
         self.typedBy = []
 

@@ -51,17 +51,21 @@ class SA_ErrorListener:
         pass
 
 
-# Load the shared library or object file
-antlr_lib = ctypes.cdll.LoadLibrary(
-    join(
-        getcwd(),
-        "gen",
-        "java8speedy",
-        "antlr4-runtime",
-        "src",
-        "sa_javalabeled_cpp_parser.so",
-    )
-)  # Replace with the actual path to your shared library
+
+# antlr_lib = ctypes.cdll.LoadLibrary(
+#     join(
+#         getcwd(),
+#         "gen",
+#         "java8speedy",
+#         "antlr4-runtime",
+#         "src",
+#         "sa_javalabeled.cpython-310-x86_64-linux-gnu.so",
+#     )
+# )  # Replace with the actual path to your shared library
+# from .sa_javalabeled_cpp_parser import JavaLabeledParser
+import sa_javalabeled
+
+antlr_lib = sa_javalabeled
 
 
 def _cpp_parse(

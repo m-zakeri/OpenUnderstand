@@ -5,8 +5,6 @@
 
 #pragma once
 
-#include <atomic>
-
 #include "atn/ATNSimulator.h"
 #include "atn/LexerATNConfig.h"
 #include "atn/ATNConfigSet.h"
@@ -91,7 +89,7 @@ namespace atn {
     SimState _prevAccept;
 
   public:
-    static std::atomic<int> match_calls;
+    static int match_calls;
 
     LexerATNSimulator(const ATN &atn, std::vector<dfa::DFA> &decisionToDFA, PredictionContextCache &sharedContextCache);
     LexerATNSimulator(Lexer *recog, const ATN &atn, std::vector<dfa::DFA> &decisionToDFA, PredictionContextCache &sharedContextCache);

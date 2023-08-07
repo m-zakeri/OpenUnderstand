@@ -1,4 +1,4 @@
-# Generated from JavaParserLabeled.g4 by ANTLR 4.9
+# Generated from JavaLabeledParser.g4 by ANTLR 4.9
 # encoding: utf-8
 from antlr4 import *
 from io import StringIO
@@ -744,7 +744,7 @@ def serializedATN():
 
 class JavaParserLabeled(Parser):
 
-    grammarFileName = "JavaParserLabeled.g4"
+    grammarFileName = "JavaLabeledParser.g4"
 
     atn = ATNDeserializer().deserialize(serializedATN())
 

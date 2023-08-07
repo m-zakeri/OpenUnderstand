@@ -363,7 +363,6 @@ class FileEntityManager:
             _longname=self.longname,
             _contents=self.contents,
         )
-        print("processing file:", file_ent)
         return file_ent
 
     @staticmethod

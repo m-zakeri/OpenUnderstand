@@ -12,6 +12,7 @@ def process_file(file_address):
     entity_generator = lap.entity_gen(file_address=file_address, parse_tree=parse_tree)
     listeners = [
         lap.create_listener,
+        lap.type_listener,
         lap.define_listener,
         lap.declare_listener,
         lap.override_listener,

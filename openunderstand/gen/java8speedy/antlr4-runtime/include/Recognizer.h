@@ -6,7 +6,6 @@
 #pragma once
 
 #include "ProxyErrorListener.h"
-#include "support/Casts.h"
 
 namespace antlr4 {
 
@@ -80,7 +79,7 @@ namespace antlr4 {
     /// @returns The ATN interpreter used by the recognizer for prediction.
     template <class T>
     T* getInterpreter() const {
-      return antlrcpp::downCast<T *>(_interpreter);
+      return dynamic_cast<T *>(_interpreter);
     }
 
     /**
