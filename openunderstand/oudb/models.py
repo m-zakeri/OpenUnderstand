@@ -18,6 +18,7 @@ class KindModel(Model):
     def __repr__(self):
         return str(self._name)
 
+
     @property
     def is_ref_kind(self):
         return not self.is_ent_kind

@@ -53,6 +53,7 @@ def count_decl_method_all(dbname):
         if "Method" in ent_model._kind._name:
             exists = class_methods.get(ent_model._parent._name, -1)
             if exists == -1:
+
                 class_methods[ent_model._parent._name] = 1
             else:
                 class_methods[ent_model._parent._name] += 1

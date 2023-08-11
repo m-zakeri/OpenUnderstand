@@ -51,7 +51,6 @@ class SA_ErrorListener:
         pass
 
 
-
 # antlr_lib = ctypes.cdll.LoadLibrary(
 #     join(
 #         getcwd(),

@@ -5,7 +5,7 @@ import fnmatch
 import setuptools
 
 target = platform.system().lower()
-PLATFORMS = {'windows', 'linux', 'darwin', 'cygwin'}
+PLATFORMS = {"windows", "linux", "darwin", "cygwin"}
 for known in PLATFORMS:
     if target.startswith(known):
         target = known
@@ -15,25 +15,26 @@ def run_setup(with_binary):
     if with_binary:
 
         extra_compile_args = {
-            'windows': ['/DANTLR4CPP_STATIC', '/Zc:__cplusplus', '/std:c++17'],
-            'linux': ['-std=c++17'],
-            'darwin': ['-std=c++17'],
-            'cygwin': ['-std=c++17'],
+            "windows": ["/DANTLR4CPP_STATIC", "/Zc:__cplusplus", "/std:c++17"],
+            "linux": ["-std=c++17"],
+            "darwin": ["-std=c++17"],
+            "cygwin": ["-std=c++17"],
         }
 
         # Define an Extension object that describes the Antlr accelerator
         parser_ext = setuptools.Extension(
             # Extension name shall be at the same level as the sa_mygrammar_parser.py module
-            name='sa_javalabeled',
-
+            name="sa_javalabeled",
             # Add the Antlr runtime source directory to the include search path
             include_dirs=[os.path.join(os.getcwd(), "antlr4-runtime", "include")],
-
             # Rather than listing each C++ file (Antlr has a lot!), discover them automatically
-            sources=get_files(os.path.join(os.getcwd(), "antlr4-runtime", "include"), "*.cpp"),
-            depends=get_files(os.path.join(os.getcwd(), "antlr4-runtime", "include"), "*.h"),
-
-            extra_compile_args=extra_compile_args.get(target, [])
+            sources=get_files(
+                os.path.join(os.getcwd(), "antlr4-runtime", "include"), "*.cpp"
+            ),
+            depends=get_files(
+                os.path.join(os.getcwd(), "antlr4-runtime", "include"), "*.h"
+            ),
+            extra_compile_args=extra_compile_args.get(target, []),
         )
         ext_modules = [parser_ext]
     else:
@@ -41,13 +42,13 @@ def run_setup(with_binary):
 
     # Define a package
     setuptools.setup(
-        name='spam',
-        version='1.0.0',
-        description='Example Speedy Antlr project',
+        name="spam",
+        version="1.0.0",
+        description="Example Speedy Antlr project",
         packages=setuptools.find_packages("src"),
-        package_dir={"": os.getcwd()+"/antlr4-runtime/src"},
+        package_dir={"": os.getcwd() + "/antlr4-runtime/src"},
         include_package_data=True,
-        python_requires='>=3.6.0',
+        python_requires=">=3.6.0",
         install_requires=[
             "antlr4-python3-runtime >= 4.9, < 4.12",
         ],
@@ -55,9 +56,11 @@ def run_setup(with_binary):
         cmdclass={"build_ext": ve_build_ext},
     )
 
-#===============================================================================
+
+# ===============================================================================
 from setuptools.command.build_ext import build_ext
 from distutils.errors import CCompilerError, DistutilsExecError, DistutilsPlatformError
+
 
 def get_files(path, pattern):
     """
@@ -109,7 +112,7 @@ if not using_fallback:
     try:
         run_setup(with_binary=True)
     except BuildFailed:
-        if 'SPAM_EXAMPLE_REQUIRE_CI_BINARY_BUILD' in os.environ:
+        if "SPAM_EXAMPLE_REQUIRE_CI_BINARY_BUILD" in os.environ:
             # Require build to pass if running in travis-ci
             raise
         else:

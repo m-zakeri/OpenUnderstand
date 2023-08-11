@@ -3,7 +3,8 @@ from analysis_passes.DotRef_DorRefBy import DotRef_DotRefBy
 from analysis_passes.callNonDynamic_callNonDynamicby import (
     CallNonDynamicAndCallNonDynamicBy,
 )
-from analysis_passes.define_definein import DefineListener
+# from analysis_passes.define_definein import DefineListener
+from analysis_passes.define_and_definin_g6 import DefineListener
 from analysis_passes.modify_modifyby import ModifyListener
 from analysis_passes.entity_manager_g11 import (
     EntityGenerator,
@@ -21,6 +22,7 @@ from utils.utilities import setup_logger, timer_decorator
 import os
 
 logger = setup_logger()
+
 
 class ListenersAndParsers:
     def __init__(self):
@@ -46,7 +48,6 @@ class ListenersAndParsers:
     def entity_gen(self, file_address, parse_tree):
         return EntityGenerator(file_address, parse_tree)
 
-
     @timer_decorator(logger)
     def type_listener(self, tree, file_ent, file_address, p):
         try:
@@ -58,7 +59,6 @@ class ListenersAndParsers:
             self.logger.error(
                 "An Error occurred in file type refs :" + file_address + "\n" + str(e)
             )
-
 
     @timer_decorator(logger)
     def create_listener(self, tree, file_ent, file_address, p):
@@ -78,7 +78,30 @@ class ListenersAndParsers:
         try:
             listener = DefineListener()
             p.Walk(listener, tree)
-            p.addDefineRefs(listener.defines, file_ent)
+            package_name = listener.package["package_name"]
+            p.add_entity_package(listener.package, file_address)
+            p.add_defined_entities(
+                listener.classes, "class", package_name, file_address
+            )
+            p.add_defined_entities(
+                listener.interfaces, "interface", package_name, file_address
+            )
+            p.add_defined_entities(
+                listener.fields, "variable", package_name, file_address
+            )
+            p.add_defined_entities(
+                listener.methods, "method", package_name, file_address
+            )
+            p.add_defined_entities(
+                listener.local_variables,
+                "local variable",
+                package_name,
+                file_address,
+            )
+            p.add_defined_entities(
+                listener.formal_parameters, "parameter", package_name,
+                file_address
+            )
             self.logger.info("define success ")
         except Exception as e:
             self.logger.error(

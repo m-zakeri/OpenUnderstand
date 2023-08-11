@@ -3,10 +3,11 @@
 from antlr4 import *
 from io import StringIO
 import sys
+
 if sys.version_info[1] > 5:
-	from typing import TextIO
+    from typing import TextIO
 else:
-	from typing.io import TextIO
+    from typing.io import TextIO
 
 
 def serializedATN():
@@ -17,8 +18,8 @@ def serializedATN():
         buf.write("\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22\4\23\t\23")
         buf.write("\4\24\t\24\4\25\t\25\4\26\t\26\4\27\t\27\4\30\t\30\4\31")
         buf.write("\t\31\4\32\t\32\4\33\t\33\4\34\t\34\4\35\t\35\4\36\t\36")
-        buf.write("\4\37\t\37\4 \t \4!\t!\4\"\t\"\4#\t#\4$\t$\4%\t%\4&\t")
-        buf.write("&\4\'\t\'\4(\t(\4)\t)\4*\t*\4+\t+\4,\t,\4-\t-\4.\t.\4")
+        buf.write('\4\37\t\37\4 \t \4!\t!\4"\t"\4#\t#\4$\t$\4%\t%\4&\t')
+        buf.write("&\4'\t'\4(\t(\4)\t)\4*\t*\4+\t+\4,\t,\4-\t-\4.\t.\4")
         buf.write("/\t/\4\60\t\60\4\61\t\61\4\62\t\62\4\63\t\63\4\64\t\64")
         buf.write("\4\65\t\65\4\66\t\66\4\67\t\67\48\t8\49\t9\4:\t:\4;\t")
         buf.write(";\4<\t<\4=\t=\4>\t>\4?\t?\4@\t@\4A\tA\4B\tB\4C\tC\4D\t")
@@ -62,10 +63,10 @@ def serializedATN():
         buf.write("\37\3 \3 \3 \7 \u0201\n \f \16 \u0204\13 \3 \3 \3 \3!")
         buf.write("\7!\u020a\n!\f!\16!\u020d\13!\3!\3!\3!\7!\u0212\n!\f!")
         buf.write("\16!\u0215\13!\3!\3!\5!\u0219\n!\3!\3!\3!\3!\7!\u021f")
-        buf.write("\n!\f!\16!\u0222\13!\3!\3!\5!\u0226\n!\3!\3!\3\"\3\"\3")
-        buf.write("\"\3\"\3\"\3\"\5\"\u0230\n\"\3#\3#\3#\3$\3$\3$\7$\u0238")
+        buf.write('\n!\f!\16!\u0222\13!\3!\3!\5!\u0226\n!\3!\3!\3"\3"\3')
+        buf.write('"\3"\3"\3"\5"\u0230\n"\3#\3#\3#\3$\3$\3$\7$\u0238')
         buf.write("\n$\f$\16$\u023b\13$\3%\3%\3%\5%\u0240\n%\3&\3&\3&\7&")
-        buf.write("\u0245\n&\f&\16&\u0248\13&\3\'\3\'\5\'\u024c\n\'\3(\3")
+        buf.write("\u0245\n&\f&\16&\u0248\13&\3'\3'\5'\u024c\n'\3(\3")
         buf.write("(\3(\3(\7(\u0252\n(\f(\16(\u0255\13(\3(\5(\u0258\n(\5")
         buf.write("(\u025a\n(\3(\3(\3)\3)\5)\u0260\n)\3)\3)\3)\5)\u0265\n")
         buf.write(")\7)\u0267\n)\f)\16)\u026a\13)\3*\3*\7*\u026e\n*\f*\16")
@@ -135,7 +136,7 @@ def serializedATN():
         buf.write("\13e\3f\3f\3g\3g\3g\3g\7g\u057d\ng\fg\16g\u0580\13g\3")
         buf.write("g\3g\3h\3h\3h\3h\5h\u0588\nh\5h\u058a\nh\3i\3i\3i\3i\5")
         buf.write("i\u0590\ni\3j\3j\5j\u0594\nj\3j\3j\3j\2\3\u00a8k\2\4\6")
-        buf.write("\b\n\f\16\20\22\24\26\30\32\34\36 \"$&(*,.\60\62\64\66")
+        buf.write('\b\n\f\16\20\22\24\26\30\32\34\36 "$&(*,.\60\62\64\66')
         buf.write("8:<>@BDFHJLNPRTVXZ\\^`bdfhjlnprtvxz|~\u0080\u0082\u0084")
         buf.write("\u0086\u0088\u008a\u008c\u008e\u0090\u0092\u0094\u0096")
         buf.write("\u0098\u009a\u009c\u009e\u00a0\u00a2\u00a4\u00a6\u00a8")
@@ -143,12 +144,12 @@ def serializedATN():
         buf.write("\u00bc\u00be\u00c0\u00c2\u00c4\u00c6\u00c8\u00ca\u00cc")
         buf.write("\u00ce\u00d0\u00d2\2\16\4\2\23\23**\3\2\658\3\29:\3\2")
         buf.write("UX\3\2KL\4\2YZ^^\3\2WX\4\2IJPQ\4\2OORR\4\2HH_i\3\2UV\n")
-        buf.write("\2\5\5\7\7\n\n\20\20\26\26\35\35\37\37\'\'\2\u0637\2\u00d5")
+        buf.write("\2\5\5\7\7\n\n\20\20\26\26\35\35\37\37''\2\u0637\2\u00d5")
         buf.write("\3\2\2\2\4\u00e8\3\2\2\2\6\u00ef\3\2\2\2\b\u0107\3\2\2")
         buf.write("\2\n\u010e\3\2\2\2\f\u0118\3\2\2\2\16\u011c\3\2\2\2\20")
         buf.write("\u011e\3\2\2\2\22\u012d\3\2\2\2\24\u013b\3\2\2\2\26\u0149")
         buf.write("\3\2\2\2\30\u0151\3\2\2\2\32\u0163\3\2\2\2\34\u016e\3")
-        buf.write("\2\2\2\36\u0178\3\2\2\2 \u017f\3\2\2\2\"\u018a\3\2\2\2")
+        buf.write('\2\2\2\36\u0178\3\2\2\2 \u017f\3\2\2\2"\u018a\3\2\2\2')
         buf.write("$\u0193\3\2\2\2&\u01a8\3\2\2\2(\u01b3\3\2\2\2*\u01b5\3")
         buf.write("\2\2\2,\u01c7\3\2\2\2.\u01cb\3\2\2\2\60\u01cd\3\2\2\2")
         buf.write("\62\u01d0\3\2\2\2\64\u01d3\3\2\2\2\66\u01db\3\2\2\28\u01e7")
@@ -187,7 +188,7 @@ def serializedATN():
         buf.write("\u00e4\3\3\2\2\2\u00e5\u00e7\5h\65\2\u00e6\u00e5\3\2\2")
         buf.write("\2\u00e7\u00ea\3\2\2\2\u00e8\u00e6\3\2\2\2\u00e8\u00e9")
         buf.write("\3\2\2\2\u00e9\u00eb\3\2\2\2\u00ea\u00e8\3\2\2\2\u00eb")
-        buf.write("\u00ec\7\"\2\2\u00ec\u00ed\5^\60\2\u00ed\u00ee\7E\2\2")
+        buf.write('\u00ec\7"\2\2\u00ec\u00ed\5^\60\2\u00ed\u00ee\7E\2\2')
         buf.write("\u00ee\5\3\2\2\2\u00ef\u00f1\7\33\2\2\u00f0\u00f2\7(\2")
         buf.write("\2\u00f1\u00f0\3\2\2\2\u00f1\u00f2\3\2\2\2\u00f2\u00f3")
         buf.write("\3\2\2\2\u00f3\u00f6\5^\60\2\u00f4\u00f5\7G\2\2\u00f5")
@@ -218,7 +219,7 @@ def serializedATN():
         buf.write("\5\u00c8e\2\u0125\u0123\3\2\2\2\u0125\u0126\3\2\2\2\u0126")
         buf.write("\u0129\3\2\2\2\u0127\u0128\7\32\2\2\u0128\u012a\5\u00c6")
         buf.write("d\2\u0129\u0127\3\2\2\2\u0129\u012a\3\2\2\2\u012a\u012b")
-        buf.write("\3\2\2\2\u012b\u012c\5\"\22\2\u012c\21\3\2\2\2\u012d\u012e")
+        buf.write('\3\2\2\2\u012b\u012c\5"\22\2\u012c\21\3\2\2\2\u012d\u012e')
         buf.write("\7J\2\2\u012e\u0133\5\24\13\2\u012f\u0130\7F\2\2\u0130")
         buf.write("\u0132\5\24\13\2\u0131\u012f\3\2\2\2\u0132\u0135\3\2\2")
         buf.write("\2\u0133\u0131\3\2\2\2\u0133\u0134\3\2\2\2\u0134\u0136")
@@ -249,7 +250,7 @@ def serializedATN():
         buf.write("\u0170\3\2\2\2\u016e\u016c\3\2\2\2\u016e\u016f\3\2\2\2")
         buf.write("\u016f\u0171\3\2\2\2\u0170\u016e\3\2\2\2\u0171\u0173\7")
         buf.write("q\2\2\u0172\u0174\5\u00d2j\2\u0173\u0172\3\2\2\2\u0173")
-        buf.write("\u0174\3\2\2\2\u0174\u0176\3\2\2\2\u0175\u0177\5\"\22")
+        buf.write('\u0174\3\2\2\2\u0174\u0176\3\2\2\2\u0175\u0177\5"\22')
         buf.write("\2\u0176\u0175\3\2\2\2\u0176\u0177\3\2\2\2\u0177\35\3")
         buf.write("\2\2\2\u0178\u017c\7E\2\2\u0179\u017b\5&\24\2\u017a\u0179")
         buf.write("\3\2\2\2\u017b\u017e\3\2\2\2\u017c\u017a\3\2\2\2\u017c")
@@ -272,7 +273,7 @@ def serializedATN():
         buf.write("\u01a4\u01a2\3\2\2\2\u01a4\u01a5\3\2\2\2\u01a5\u01a7\3")
         buf.write("\2\2\2\u01a6\u01a4\3\2\2\2\u01a7\u01a9\5(\25\2\u01a8\u019c")
         buf.write("\3\2\2\2\u01a8\u019e\3\2\2\2\u01a8\u01a4\3\2\2\2\u01a9")
-        buf.write("\'\3\2\2\2\u01aa\u01b4\5*\26\2\u01ab\u01b4\5\60\31\2\u01ac")
+        buf.write("'\3\2\2\2\u01aa\u01b4\5*\26\2\u01ab\u01b4\5\60\31\2\u01ac")
         buf.write("\u01b4\5\66\34\2\u01ad\u01b4\5\64\33\2\u01ae\u01b4\5\62")
         buf.write("\32\2\u01af\u01b4\5 \21\2\u01b0\u01b4\5r:\2\u01b1\u01b4")
         buf.write("\5\20\t\2\u01b2\u01b4\5\30\r\2\u01b3\u01aa\3\2\2\2\u01b3")
@@ -313,8 +314,8 @@ def serializedATN():
         buf.write("q\2\2\u01fe\u01ff\7C\2\2\u01ff\u0201\7D\2\2\u0200\u01fe")
         buf.write("\3\2\2\2\u0201\u0204\3\2\2\2\u0202\u0200\3\2\2\2\u0202")
         buf.write("\u0203\3\2\2\2\u0203\u0205\3\2\2\2\u0204\u0202\3\2\2\2")
-        buf.write("\u0205\u0206\7H\2\2\u0206\u0207\5L\'\2\u0207?\3\2\2\2")
-        buf.write("\u0208\u020a\5B\"\2\u0209\u0208\3\2\2\2\u020a\u020d\3")
+        buf.write("\u0205\u0206\7H\2\2\u0206\u0207\5L'\2\u0207?\3\2\2\2")
+        buf.write('\u0208\u020a\5B"\2\u0209\u0208\3\2\2\2\u020a\u020d\3')
         buf.write("\2\2\2\u020b\u0209\3\2\2\2\u020b\u020c\3\2\2\2\u020c\u0218")
         buf.write("\3\2\2\2\u020d\u020b\3\2\2\2\u020e\u0219\5.\30\2\u020f")
         buf.write("\u0213\5\22\n\2\u0210\u0212\5h\65\2\u0211\u0210\3\2\2")
@@ -337,14 +338,14 @@ def serializedATN():
         buf.write("F\2\2\u0236\u0238\5H%\2\u0237\u0235\3\2\2\2\u0238\u023b")
         buf.write("\3\2\2\2\u0239\u0237\3\2\2\2\u0239\u023a\3\2\2\2\u023a")
         buf.write("G\3\2\2\2\u023b\u0239\3\2\2\2\u023c\u023f\5J&\2\u023d")
-        buf.write("\u023e\7H\2\2\u023e\u0240\5L\'\2\u023f\u023d\3\2\2\2\u023f")
+        buf.write("\u023e\7H\2\2\u023e\u0240\5L'\2\u023f\u023d\3\2\2\2\u023f")
         buf.write("\u0240\3\2\2\2\u0240I\3\2\2\2\u0241\u0246\7q\2\2\u0242")
         buf.write("\u0243\7C\2\2\u0243\u0245\7D\2\2\u0244\u0242\3\2\2\2\u0245")
         buf.write("\u0248\3\2\2\2\u0246\u0244\3\2\2\2\u0246\u0247\3\2\2\2")
         buf.write("\u0247K\3\2\2\2\u0248\u0246\3\2\2\2\u0249\u024c\5N(\2")
         buf.write("\u024a\u024c\5\u00a8U\2\u024b\u0249\3\2\2\2\u024b\u024a")
         buf.write("\3\2\2\2\u024cM\3\2\2\2\u024d\u0259\7A\2\2\u024e\u0253")
-        buf.write("\5L\'\2\u024f\u0250\7F\2\2\u0250\u0252\5L\'\2\u0251\u024f")
+        buf.write("\5L'\2\u024f\u0250\7F\2\2\u0250\u0252\5L'\2\u0251\u024f")
         buf.write("\3\2\2\2\u0252\u0255\3\2\2\2\u0253\u0251\3\2\2\2\u0253")
         buf.write("\u0254\3\2\2\2\u0254\u0257\3\2\2\2\u0255\u0253\3\2\2\2")
         buf.write("\u0256\u0258\7F\2\2\u0257\u0256\3\2\2\2\u0257\u0258\3")
@@ -682,7 +683,7 @@ def serializedATN():
         buf.write("\3\2\2\2\u053c\u053f\3\2\2\2\u053d\u053b\3\2\2\2\u053d")
         buf.write("\u053e\3\2\2\2\u053e\u0541\3\2\2\2\u053f\u053d\3\2\2\2")
         buf.write("\u0540\u0525\3\2\2\2\u0540\u052e\3\2\2\2\u0541\u00bb\3")
-        buf.write("\2\2\2\u0542\u0544\5\u00d2j\2\u0543\u0545\5\"\22\2\u0544")
+        buf.write('\2\2\2\u0542\u0544\5\u00d2j\2\u0543\u0545\5"\22\2\u0544')
         buf.write("\u0543\3\2\2\2\u0544\u0545\3\2\2\2\u0545\u00bd\3\2\2\2")
         buf.write("\u0546\u0547\5\u00c4c\2\u0547\u0548\5\u00d0i\2\u0548\u00bf")
         buf.write("\3\2\2\2\u0549\u054a\7J\2\2\u054a\u054d\7I\2\2\u054b\u054d")
@@ -741,59 +742,241 @@ def serializedATN():
         return buf.getvalue()
 
 
-class JavaLabeledParser ( Parser ):
+class JavaLabeledParser(Parser):
 
     grammarFileName = "JavaLabeledParser.g4"
 
     atn = ATNDeserializer().deserialize(serializedATN())
 
-    decisionsToDFA = [ DFA(ds, i) for i, ds in enumerate(atn.decisionToState) ]
+    decisionsToDFA = [DFA(ds, i) for i, ds in enumerate(atn.decisionToState)]
 
     sharedContextCache = PredictionContextCache()
 
-    literalNames = [ "<INVALID>", "'abstract'", "'assert'", "'boolean'", 
-                     "'break'", "'byte'", "'case'", "'catch'", "'char'", 
-                     "'class'", "'const'", "'continue'", "'default'", "'do'", 
-                     "'double'", "'else'", "'enum'", "'extends'", "'final'", 
-                     "'finally'", "'float'", "'for'", "'if'", "'goto'", 
-                     "'implements'", "'import'", "'instanceof'", "'int'", 
-                     "'interface'", "'long'", "'native'", "'new'", "'package'", 
-                     "'private'", "'protected'", "'public'", "'return'", 
-                     "'short'", "'static'", "'strictfp'", "'super'", "'switch'", 
-                     "'synchronized'", "'this'", "'throw'", "'throws'", 
-                     "'transient'", "'try'", "'void'", "'volatile'", "'while'", 
-                     "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                     "<INVALID>", "<INVALID>", "<INVALID>", "<INVALID>", 
-                     "<INVALID>", "'null'", "'('", "')'", "'{'", "'}'", 
-                     "'['", "']'", "';'", "','", "'.'", "'='", "'>'", "'<'", 
-                     "'!'", "'~'", "'?'", "':'", "'=='", "'<='", "'>='", 
-                     "'!='", "'&&'", "'||'", "'++'", "'--'", "'+'", "'-'", 
-                     "'*'", "'/'", "'&'", "'|'", "'^'", "'%'", "'+='", "'-='", 
-                     "'*='", "'/='", "'&='", "'|='", "'^='", "'%='", "'<<='", 
-                     "'>>='", "'>>>='", "'->'", "'::'", "'@'", "'...'" ]
+    literalNames = [
+        "<INVALID>",
+        "'abstract'",
+        "'assert'",
+        "'boolean'",
+        "'break'",
+        "'byte'",
+        "'case'",
+        "'catch'",
+        "'char'",
+        "'class'",
+        "'const'",
+        "'continue'",
+        "'default'",
+        "'do'",
+        "'double'",
+        "'else'",
+        "'enum'",
+        "'extends'",
+        "'final'",
+        "'finally'",
+        "'float'",
+        "'for'",
+        "'if'",
+        "'goto'",
+        "'implements'",
+        "'import'",
+        "'instanceof'",
+        "'int'",
+        "'interface'",
+        "'long'",
+        "'native'",
+        "'new'",
+        "'package'",
+        "'private'",
+        "'protected'",
+        "'public'",
+        "'return'",
+        "'short'",
+        "'static'",
+        "'strictfp'",
+        "'super'",
+        "'switch'",
+        "'synchronized'",
+        "'this'",
+        "'throw'",
+        "'throws'",
+        "'transient'",
+        "'try'",
+        "'void'",
+        "'volatile'",
+        "'while'",
+        "<INVALID>",
+        "<INVALID>",
+        "<INVALID>",
+        "<INVALID>",
+        "<INVALID>",
+        "<INVALID>",
+        "<INVALID>",
+        "<INVALID>",
+        "<INVALID>",
+        "'null'",
+        "'('",
+        "')'",
+        "'{'",
+        "'}'",
+        "'['",
+        "']'",
+        "';'",
+        "','",
+        "'.'",
+        "'='",
+        "'>'",
+        "'<'",
+        "'!'",
+        "'~'",
+        "'?'",
+        "':'",
+        "'=='",
+        "'<='",
+        "'>='",
+        "'!='",
+        "'&&'",
+        "'||'",
+        "'++'",
+        "'--'",
+        "'+'",
+        "'-'",
+        "'*'",
+        "'/'",
+        "'&'",
+        "'|'",
+        "'^'",
+        "'%'",
+        "'+='",
+        "'-='",
+        "'*='",
+        "'/='",
+        "'&='",
+        "'|='",
+        "'^='",
+        "'%='",
+        "'<<='",
+        "'>>='",
+        "'>>>='",
+        "'->'",
+        "'::'",
+        "'@'",
+        "'...'",
+    ]
 
-    symbolicNames = [ "<INVALID>", "ABSTRACT", "ASSERT", "BOOLEAN", "BREAK", 
-                      "BYTE", "CASE", "CATCH", "CHAR", "CLASS", "CONST", 
-                      "CONTINUE", "DEFAULT", "DO", "DOUBLE", "ELSE", "ENUM", 
-                      "EXTENDS", "FINAL", "FINALLY", "FLOAT", "FOR", "IF", 
-                      "GOTO", "IMPLEMENTS", "IMPORT", "INSTANCEOF", "INT", 
-                      "INTERFACE", "LONG", "NATIVE", "NEW", "PACKAGE", "PRIVATE", 
-                      "PROTECTED", "PUBLIC", "RETURN", "SHORT", "STATIC", 
-                      "STRICTFP", "SUPER", "SWITCH", "SYNCHRONIZED", "THIS", 
-                      "THROW", "THROWS", "TRANSIENT", "TRY", "VOID", "VOLATILE", 
-                      "WHILE", "DECIMAL_LITERAL", "HEX_LITERAL", "OCT_LITERAL", 
-                      "BINARY_LITERAL", "FLOAT_LITERAL", "HEX_FLOAT_LITERAL", 
-                      "BOOL_LITERAL", "CHAR_LITERAL", "STRING_LITERAL", 
-                      "NULL_LITERAL", "LPAREN", "RPAREN", "LBRACE", "RBRACE", 
-                      "LBRACK", "RBRACK", "SEMI", "COMMA", "DOT", "ASSIGN", 
-                      "GT", "LT", "BANG", "TILDE", "QUESTION", "COLON", 
-                      "EQUAL", "LE", "GE", "NOTEQUAL", "AND", "OR", "INC", 
-                      "DEC", "ADD", "SUB", "MUL", "DIV", "BITAND", "BITOR", 
-                      "CARET", "MOD", "ADD_ASSIGN", "SUB_ASSIGN", "MUL_ASSIGN", 
-                      "DIV_ASSIGN", "AND_ASSIGN", "OR_ASSIGN", "XOR_ASSIGN", 
-                      "MOD_ASSIGN", "LSHIFT_ASSIGN", "RSHIFT_ASSIGN", "URSHIFT_ASSIGN", 
-                      "ARROW", "COLONCOLON", "AT", "ELLIPSIS", "WS", "COMMENT", 
-                      "LINE_COMMENT", "IDENTIFIER" ]
+    symbolicNames = [
+        "<INVALID>",
+        "ABSTRACT",
+        "ASSERT",
+        "BOOLEAN",
+        "BREAK",
+        "BYTE",
+        "CASE",
+        "CATCH",
+        "CHAR",
+        "CLASS",
+        "CONST",
+        "CONTINUE",
+        "DEFAULT",
+        "DO",
+        "DOUBLE",
+        "ELSE",
+        "ENUM",
+        "EXTENDS",
+        "FINAL",
+        "FINALLY",
+        "FLOAT",
+        "FOR",
+        "IF",
+        "GOTO",
+        "IMPLEMENTS",
+        "IMPORT",
+        "INSTANCEOF",
+        "INT",
+        "INTERFACE",
+        "LONG",
+        "NATIVE",
+        "NEW",
+        "PACKAGE",
+        "PRIVATE",
+        "PROTECTED",
+        "PUBLIC",
+        "RETURN",
+        "SHORT",
+        "STATIC",
+        "STRICTFP",
+        "SUPER",
+        "SWITCH",
+        "SYNCHRONIZED",
+        "THIS",
+        "THROW",
+        "THROWS",
+        "TRANSIENT",
+        "TRY",
+        "VOID",
+        "VOLATILE",
+        "WHILE",
+        "DECIMAL_LITERAL",
+        "HEX_LITERAL",
+        "OCT_LITERAL",
+        "BINARY_LITERAL",
+        "FLOAT_LITERAL",
+        "HEX_FLOAT_LITERAL",
+        "BOOL_LITERAL",
+        "CHAR_LITERAL",
+        "STRING_LITERAL",
+        "NULL_LITERAL",
+        "LPAREN",
+        "RPAREN",
+        "LBRACE",
+        "RBRACE",
+        "LBRACK",
+        "RBRACK",
+        "SEMI",
+        "COMMA",
+        "DOT",
+        "ASSIGN",
+        "GT",
+        "LT",
+        "BANG",
+        "TILDE",
+        "QUESTION",
+        "COLON",
+        "EQUAL",
+        "LE",
+        "GE",
+        "NOTEQUAL",
+        "AND",
+        "OR",
+        "INC",
+        "DEC",
+        "ADD",
+        "SUB",
+        "MUL",
+        "DIV",
+        "BITAND",
+        "BITOR",
+        "CARET",
+        "MOD",
+        "ADD_ASSIGN",
+        "SUB_ASSIGN",
+        "MUL_ASSIGN",
+        "DIV_ASSIGN",
+        "AND_ASSIGN",
+        "OR_ASSIGN",
+        "XOR_ASSIGN",
+        "MOD_ASSIGN",
+        "LSHIFT_ASSIGN",
+        "RSHIFT_ASSIGN",
+        "URSHIFT_ASSIGN",
+        "ARROW",
+        "COLONCOLON",
+        "AT",
+        "ELLIPSIS",
+        "WS",
+        "COMMENT",
+        "LINE_COMMENT",
+        "IDENTIFIER",
+    ]
 
     RULE_compilationUnit = 0
     RULE_packageDeclaration = 1
@@ -901,167 +1084,241 @@ class JavaLabeledParser ( Parser ):
     RULE_explicitGenericInvocationSuffix = 103
     RULE_arguments = 104
 
-    ruleNames =  [ "compilationUnit", "packageDeclaration", "importDeclaration", 
-                   "typeDeclaration", "modifier", "classOrInterfaceModifier", 
-                   "variableModifier", "classDeclaration", "typeParameters", 
-                   "typeParameter", "typeBound", "enumDeclaration", "enumConstants", 
-                   "enumConstant", "enumBodyDeclarations", "interfaceDeclaration", 
-                   "classBody", "interfaceBody", "classBodyDeclaration", 
-                   "memberDeclaration", "methodDeclaration", "methodBody", 
-                   "typeTypeOrVoid", "genericMethodDeclaration", "genericConstructorDeclaration", 
-                   "constructorDeclaration", "fieldDeclaration", "interfaceBodyDeclaration", 
-                   "interfaceMemberDeclaration", "constDeclaration", "constantDeclarator", 
-                   "interfaceMethodDeclaration", "interfaceMethodModifier", 
-                   "genericInterfaceMethodDeclaration", "variableDeclarators", 
-                   "variableDeclarator", "variableDeclaratorId", "variableInitializer", 
-                   "arrayInitializer", "classOrInterfaceType", "typeArgument", 
-                   "qualifiedNameList", "formalParameters", "formalParameterList", 
-                   "formalParameter", "lastFormalParameter", "qualifiedName", 
-                   "literal", "integerLiteral", "floatLiteral", "altAnnotationQualifiedName", 
-                   "annotation", "elementValuePairs", "elementValuePair", 
-                   "elementValue", "elementValueArrayInitializer", "annotationTypeDeclaration", 
-                   "annotationTypeBody", "annotationTypeElementDeclaration", 
-                   "annotationTypeElementRest", "annotationMethodOrConstantRest", 
-                   "annotationMethodRest", "annotationConstantRest", "defaultValue", 
-                   "block", "blockStatement", "localVariableDeclaration", 
-                   "localTypeDeclaration", "statement", "catchClause", "catchType", 
-                   "finallyBlock", "resourceSpecification", "resources", 
-                   "resource", "switchBlockStatementGroup", "switchLabel", 
-                   "forControl", "forInit", "enhancedForControl", "parExpression", 
-                   "expressionList", "methodCall", "expression", "lambdaExpression", 
-                   "lambdaParameters", "lambdaBody", "primary", "classType", 
-                   "creator", "createdName", "innerCreator", "arrayCreatorRest", 
-                   "classCreatorRest", "explicitGenericInvocation", "typeArgumentsOrDiamond", 
-                   "nonWildcardTypeArgumentsOrDiamond", "nonWildcardTypeArguments", 
-                   "typeList", "typeType", "primitiveType", "typeArguments", 
-                   "superSuffix", "explicitGenericInvocationSuffix", "arguments" ]
+    ruleNames = [
+        "compilationUnit",
+        "packageDeclaration",
+        "importDeclaration",
+        "typeDeclaration",
+        "modifier",
+        "classOrInterfaceModifier",
+        "variableModifier",
+        "classDeclaration",
+        "typeParameters",
+        "typeParameter",
+        "typeBound",
+        "enumDeclaration",
+        "enumConstants",
+        "enumConstant",
+        "enumBodyDeclarations",
+        "interfaceDeclaration",
+        "classBody",
+        "interfaceBody",
+        "classBodyDeclaration",
+        "memberDeclaration",
+        "methodDeclaration",
+        "methodBody",
+        "typeTypeOrVoid",
+        "genericMethodDeclaration",
+        "genericConstructorDeclaration",
+        "constructorDeclaration",
+        "fieldDeclaration",
+        "interfaceBodyDeclaration",
+        "interfaceMemberDeclaration",
+        "constDeclaration",
+        "constantDeclarator",
+        "interfaceMethodDeclaration",
+        "interfaceMethodModifier",
+        "genericInterfaceMethodDeclaration",
+        "variableDeclarators",
+        "variableDeclarator",
+        "variableDeclaratorId",
+        "variableInitializer",
+        "arrayInitializer",
+        "classOrInterfaceType",
+        "typeArgument",
+        "qualifiedNameList",
+        "formalParameters",
+        "formalParameterList",
+        "formalParameter",
+        "lastFormalParameter",
+        "qualifiedName",
+        "literal",
+        "integerLiteral",
+        "floatLiteral",
+        "altAnnotationQualifiedName",
+        "annotation",
+        "elementValuePairs",
+        "elementValuePair",
+        "elementValue",
+        "elementValueArrayInitializer",
+        "annotationTypeDeclaration",
+        "annotationTypeBody",
+        "annotationTypeElementDeclaration",
+        "annotationTypeElementRest",
+        "annotationMethodOrConstantRest",
+        "annotationMethodRest",
+        "annotationConstantRest",
+        "defaultValue",
+        "block",
+        "blockStatement",
+        "localVariableDeclaration",
+        "localTypeDeclaration",
+        "statement",
+        "catchClause",
+        "catchType",
+        "finallyBlock",
+        "resourceSpecification",
+        "resources",
+        "resource",
+        "switchBlockStatementGroup",
+        "switchLabel",
+        "forControl",
+        "forInit",
+        "enhancedForControl",
+        "parExpression",
+        "expressionList",
+        "methodCall",
+        "expression",
+        "lambdaExpression",
+        "lambdaParameters",
+        "lambdaBody",
+        "primary",
+        "classType",
+        "creator",
+        "createdName",
+        "innerCreator",
+        "arrayCreatorRest",
+        "classCreatorRest",
+        "explicitGenericInvocation",
+        "typeArgumentsOrDiamond",
+        "nonWildcardTypeArgumentsOrDiamond",
+        "nonWildcardTypeArguments",
+        "typeList",
+        "typeType",
+        "primitiveType",
+        "typeArguments",
+        "superSuffix",
+        "explicitGenericInvocationSuffix",
+        "arguments",
+    ]
 
     EOF = Token.EOF
-    ABSTRACT=1
-    ASSERT=2
-    BOOLEAN=3
-    BREAK=4
-    BYTE=5
-    CASE=6
-    CATCH=7
-    CHAR=8
-    CLASS=9
-    CONST=10
-    CONTINUE=11
-    DEFAULT=12
-    DO=13
-    DOUBLE=14
-    ELSE=15
-    ENUM=16
-    EXTENDS=17
-    FINAL=18
-    FINALLY=19
-    FLOAT=20
-    FOR=21
-    IF=22
-    GOTO=23
-    IMPLEMENTS=24
-    IMPORT=25
-    INSTANCEOF=26
-    INT=27
-    INTERFACE=28
-    LONG=29
-    NATIVE=30
-    NEW=31
-    PACKAGE=32
-    PRIVATE=33
-    PROTECTED=34
-    PUBLIC=35
-    RETURN=36
-    SHORT=37
-    STATIC=38
-    STRICTFP=39
-    SUPER=40
-    SWITCH=41
-    SYNCHRONIZED=42
-    THIS=43
-    THROW=44
-    THROWS=45
-    TRANSIENT=46
-    TRY=47
-    VOID=48
-    VOLATILE=49
-    WHILE=50
-    DECIMAL_LITERAL=51
-    HEX_LITERAL=52
-    OCT_LITERAL=53
-    BINARY_LITERAL=54
-    FLOAT_LITERAL=55
-    HEX_FLOAT_LITERAL=56
-    BOOL_LITERAL=57
-    CHAR_LITERAL=58
-    STRING_LITERAL=59
-    NULL_LITERAL=60
-    LPAREN=61
-    RPAREN=62
-    LBRACE=63
-    RBRACE=64
-    LBRACK=65
-    RBRACK=66
-    SEMI=67
-    COMMA=68
-    DOT=69
-    ASSIGN=70
-    GT=71
-    LT=72
-    BANG=73
-    TILDE=74
-    QUESTION=75
-    COLON=76
-    EQUAL=77
-    LE=78
-    GE=79
-    NOTEQUAL=80
-    AND=81
-    OR=82
-    INC=83
-    DEC=84
-    ADD=85
-    SUB=86
-    MUL=87
-    DIV=88
-    BITAND=89
-    BITOR=90
-    CARET=91
-    MOD=92
-    ADD_ASSIGN=93
-    SUB_ASSIGN=94
-    MUL_ASSIGN=95
-    DIV_ASSIGN=96
-    AND_ASSIGN=97
-    OR_ASSIGN=98
-    XOR_ASSIGN=99
-    MOD_ASSIGN=100
-    LSHIFT_ASSIGN=101
-    RSHIFT_ASSIGN=102
-    URSHIFT_ASSIGN=103
-    ARROW=104
-    COLONCOLON=105
-    AT=106
-    ELLIPSIS=107
-    WS=108
-    COMMENT=109
-    LINE_COMMENT=110
-    IDENTIFIER=111
+    ABSTRACT = 1
+    ASSERT = 2
+    BOOLEAN = 3
+    BREAK = 4
+    BYTE = 5
+    CASE = 6
+    CATCH = 7
+    CHAR = 8
+    CLASS = 9
+    CONST = 10
+    CONTINUE = 11
+    DEFAULT = 12
+    DO = 13
+    DOUBLE = 14
+    ELSE = 15
+    ENUM = 16
+    EXTENDS = 17
+    FINAL = 18
+    FINALLY = 19
+    FLOAT = 20
+    FOR = 21
+    IF = 22
+    GOTO = 23
+    IMPLEMENTS = 24
+    IMPORT = 25
+    INSTANCEOF = 26
+    INT = 27
+    INTERFACE = 28
+    LONG = 29
+    NATIVE = 30
+    NEW = 31
+    PACKAGE = 32
+    PRIVATE = 33
+    PROTECTED = 34
+    PUBLIC = 35
+    RETURN = 36
+    SHORT = 37
+    STATIC = 38
+    STRICTFP = 39
+    SUPER = 40
+    SWITCH = 41
+    SYNCHRONIZED = 42
+    THIS = 43
+    THROW = 44
+    THROWS = 45
+    TRANSIENT = 46
+    TRY = 47
+    VOID = 48
+    VOLATILE = 49
+    WHILE = 50
+    DECIMAL_LITERAL = 51
+    HEX_LITERAL = 52
+    OCT_LITERAL = 53
+    BINARY_LITERAL = 54
+    FLOAT_LITERAL = 55
+    HEX_FLOAT_LITERAL = 56
+    BOOL_LITERAL = 57
+    CHAR_LITERAL = 58
+    STRING_LITERAL = 59
+    NULL_LITERAL = 60
+    LPAREN = 61
+    RPAREN = 62
+    LBRACE = 63
+    RBRACE = 64
+    LBRACK = 65
+    RBRACK = 66
+    SEMI = 67
+    COMMA = 68
+    DOT = 69
+    ASSIGN = 70
+    GT = 71
+    LT = 72
+    BANG = 73
+    TILDE = 74
+    QUESTION = 75
+    COLON = 76
+    EQUAL = 77
+    LE = 78
+    GE = 79
+    NOTEQUAL = 80
+    AND = 81
+    OR = 82
+    INC = 83
+    DEC = 84
+    ADD = 85
+    SUB = 86
+    MUL = 87
+    DIV = 88
+    BITAND = 89
+    BITOR = 90
+    CARET = 91
+    MOD = 92
+    ADD_ASSIGN = 93
+    SUB_ASSIGN = 94
+    MUL_ASSIGN = 95
+    DIV_ASSIGN = 96
+    AND_ASSIGN = 97
+    OR_ASSIGN = 98
+    XOR_ASSIGN = 99
+    MOD_ASSIGN = 100
+    LSHIFT_ASSIGN = 101
+    RSHIFT_ASSIGN = 102
+    URSHIFT_ASSIGN = 103
+    ARROW = 104
+    COLONCOLON = 105
+    AT = 106
+    ELLIPSIS = 107
+    WS = 108
+    COMMENT = 109
+    LINE_COMMENT = 110
+    IDENTIFIER = 111
 
-    def __init__(self, input:TokenStream, output:TextIO = sys.stdout):
+    def __init__(self, input: TokenStream, output: TextIO = sys.stdout):
         super().__init__(input, output)
         self.checkVersion("4.9.1")
-        self._interp = ParserATNSimulator(self, self.atn, self.decisionsToDFA, self.sharedContextCache)
+        self._interp = ParserATNSimulator(
+            self, self.atn, self.decisionsToDFA, self.sharedContextCache
+        )
         self._predicates = None
 
-
-
-
     class CompilationUnitContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -1069,48 +1326,51 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.EOF, 0)
 
         def packageDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.PackageDeclarationContext,0)
+            return self.getTypedRuleContext(
+                JavaLabeledParser.PackageDeclarationContext, 0
+            )
 
-
-        def importDeclaration(self, i:int=None):
+        def importDeclaration(self, i: int = None):
             if i is None:
-                return self.getTypedRuleContexts(JavaLabeledParser.ImportDeclarationContext)
+                return self.getTypedRuleContexts(
+                    JavaLabeledParser.ImportDeclarationContext
+                )
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ImportDeclarationContext,i)
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.ImportDeclarationContext, i
+                )
 
-
-        def typeDeclaration(self, i:int=None):
+        def typeDeclaration(self, i: int = None):
             if i is None:
-                return self.getTypedRuleContexts(JavaLabeledParser.TypeDeclarationContext)
+                return self.getTypedRuleContexts(
+                    JavaLabeledParser.TypeDeclarationContext
+                )
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.TypeDeclarationContext,i)
-
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.TypeDeclarationContext, i
+                )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_compilationUnit
-
-
-
 
     def compilationUnit(self):
 
         localctx = JavaLabeledParser.CompilationUnitContext(self, self._ctx, self.state)
         self.enterRule(localctx, 0, self.RULE_compilationUnit)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 211
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,0,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 0, self._ctx)
             if la_ == 1:
                 self.state = 210
                 self.packageDeclaration()
 
-
             self.state = 216
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==JavaLabeledParser.IMPORT:
+            while _la == JavaLabeledParser.IMPORT:
                 self.state = 213
                 self.importDeclaration()
                 self.state = 218
@@ -1120,7 +1380,36 @@ class JavaLabeledParser ( Parser ):
             self.state = 222
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << JavaLabeledParser.ABSTRACT) | (1 << JavaLabeledParser.CLASS) | (1 << JavaLabeledParser.ENUM) | (1 << JavaLabeledParser.FINAL) | (1 << JavaLabeledParser.INTERFACE) | (1 << JavaLabeledParser.PRIVATE) | (1 << JavaLabeledParser.PROTECTED) | (1 << JavaLabeledParser.PUBLIC) | (1 << JavaLabeledParser.STATIC) | (1 << JavaLabeledParser.STRICTFP))) != 0) or ((((_la - 67)) & ~0x3f) == 0 and ((1 << (_la - 67)) & ((1 << (JavaLabeledParser.SEMI - 67)) | (1 << (JavaLabeledParser.AT - 67)) | (1 << (JavaLabeledParser.IDENTIFIER - 67)))) != 0):
+            while (
+                ((_la) & ~0x3F) == 0
+                and (
+                    (1 << _la)
+                    & (
+                        (1 << JavaLabeledParser.ABSTRACT)
+                        | (1 << JavaLabeledParser.CLASS)
+                        | (1 << JavaLabeledParser.ENUM)
+                        | (1 << JavaLabeledParser.FINAL)
+                        | (1 << JavaLabeledParser.INTERFACE)
+                        | (1 << JavaLabeledParser.PRIVATE)
+                        | (1 << JavaLabeledParser.PROTECTED)
+                        | (1 << JavaLabeledParser.PUBLIC)
+                        | (1 << JavaLabeledParser.STATIC)
+                        | (1 << JavaLabeledParser.STRICTFP)
+                    )
+                )
+                != 0
+            ) or (
+                (((_la - 67)) & ~0x3F) == 0
+                and (
+                    (1 << (_la - 67))
+                    & (
+                        (1 << (JavaLabeledParser.SEMI - 67))
+                        | (1 << (JavaLabeledParser.AT - 67))
+                        | (1 << (JavaLabeledParser.IDENTIFIER - 67))
+                    )
+                )
+                != 0
+            ):
                 self.state = 219
                 self.typeDeclaration()
                 self.state = 224
@@ -1137,11 +1426,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class PackageDeclarationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -1149,36 +1439,33 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.PACKAGE, 0)
 
         def qualifiedName(self):
-            return self.getTypedRuleContext(JavaLabeledParser.QualifiedNameContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.QualifiedNameContext, 0)
 
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
 
-        def annotation(self, i:int=None):
+        def annotation(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.AnnotationContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext,i)
-
+                return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext, i)
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_packageDeclaration
 
-
-
-
     def packageDeclaration(self):
 
-        localctx = JavaLabeledParser.PackageDeclarationContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.PackageDeclarationContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 2, self.RULE_packageDeclaration)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 230
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==JavaLabeledParser.AT or _la==JavaLabeledParser.IDENTIFIER:
+            while _la == JavaLabeledParser.AT or _la == JavaLabeledParser.IDENTIFIER:
                 self.state = 227
                 self.annotation()
                 self.state = 232
@@ -1199,11 +1486,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ImportDeclarationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -1211,8 +1499,7 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.IMPORT, 0)
 
         def qualifiedName(self):
-            return self.getTypedRuleContext(JavaLabeledParser.QualifiedNameContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.QualifiedNameContext, 0)
 
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
@@ -1229,14 +1516,13 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_importDeclaration
 
-
-
-
     def importDeclaration(self):
 
-        localctx = JavaLabeledParser.ImportDeclarationContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.ImportDeclarationContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 4, self.RULE_importDeclaration)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 237
@@ -1244,22 +1530,20 @@ class JavaLabeledParser ( Parser ):
             self.state = 239
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==JavaLabeledParser.STATIC:
+            if _la == JavaLabeledParser.STATIC:
                 self.state = 238
                 self.match(JavaLabeledParser.STATIC)
-
 
             self.state = 241
             self.qualifiedName()
             self.state = 244
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==JavaLabeledParser.DOT:
+            if _la == JavaLabeledParser.DOT:
                 self.state = 242
                 self.match(JavaLabeledParser.DOT)
                 self.state = 243
                 self.match(JavaLabeledParser.MUL)
-
 
             self.state = 246
             self.match(JavaLabeledParser.SEMI)
@@ -1271,45 +1555,48 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class TypeDeclarationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def classDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ClassDeclarationContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.ClassDeclarationContext, 0
+            )
 
         def enumDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.EnumDeclarationContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.EnumDeclarationContext, 0)
 
         def interfaceDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.InterfaceDeclarationContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.InterfaceDeclarationContext, 0
+            )
 
         def annotationTypeDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.AnnotationTypeDeclarationContext,0)
+            return self.getTypedRuleContext(
+                JavaLabeledParser.AnnotationTypeDeclarationContext, 0
+            )
 
-
-        def classOrInterfaceModifier(self, i:int=None):
+        def classOrInterfaceModifier(self, i: int = None):
             if i is None:
-                return self.getTypedRuleContexts(JavaLabeledParser.ClassOrInterfaceModifierContext)
+                return self.getTypedRuleContexts(
+                    JavaLabeledParser.ClassOrInterfaceModifierContext
+                )
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ClassOrInterfaceModifierContext,i)
-
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.ClassOrInterfaceModifierContext, i
+                )
 
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_typeDeclaration
-
-
-
 
     def typeDeclaration(self):
 
@@ -1319,18 +1606,31 @@ class JavaLabeledParser ( Parser ):
             self.state = 261
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [JavaLabeledParser.ABSTRACT, JavaLabeledParser.CLASS, JavaLabeledParser.ENUM, JavaLabeledParser.FINAL, JavaLabeledParser.INTERFACE, JavaLabeledParser.PRIVATE, JavaLabeledParser.PROTECTED, JavaLabeledParser.PUBLIC, JavaLabeledParser.STATIC, JavaLabeledParser.STRICTFP, JavaLabeledParser.AT, JavaLabeledParser.IDENTIFIER]:
+            if token in [
+                JavaLabeledParser.ABSTRACT,
+                JavaLabeledParser.CLASS,
+                JavaLabeledParser.ENUM,
+                JavaLabeledParser.FINAL,
+                JavaLabeledParser.INTERFACE,
+                JavaLabeledParser.PRIVATE,
+                JavaLabeledParser.PROTECTED,
+                JavaLabeledParser.PUBLIC,
+                JavaLabeledParser.STATIC,
+                JavaLabeledParser.STRICTFP,
+                JavaLabeledParser.AT,
+                JavaLabeledParser.IDENTIFIER,
+            ]:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 251
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,6,self._ctx)
-                while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                    if _alt==1:
+                _alt = self._interp.adaptivePredict(self._input, 6, self._ctx)
+                while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                    if _alt == 1:
                         self.state = 248
-                        self.classOrInterfaceModifier() 
+                        self.classOrInterfaceModifier()
                     self.state = 253
                     self._errHandler.sync(self)
-                    _alt = self._interp.adaptivePredict(self._input,6,self._ctx)
+                    _alt = self._interp.adaptivePredict(self._input, 6, self._ctx)
 
                 self.state = 258
                 self._errHandler.sync(self)
@@ -1371,17 +1671,19 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ModifierContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def classOrInterfaceModifier(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ClassOrInterfaceModifierContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.ClassOrInterfaceModifierContext, 0
+            )
 
         def NATIVE(self):
             return self.getToken(JavaLabeledParser.NATIVE, 0)
@@ -1398,9 +1700,6 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_modifier
 
-
-
-
     def modifier(self):
 
         localctx = JavaLabeledParser.ModifierContext(self, self._ctx, self.state)
@@ -1409,7 +1708,17 @@ class JavaLabeledParser ( Parser ):
             self.state = 268
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [JavaLabeledParser.ABSTRACT, JavaLabeledParser.FINAL, JavaLabeledParser.PRIVATE, JavaLabeledParser.PROTECTED, JavaLabeledParser.PUBLIC, JavaLabeledParser.STATIC, JavaLabeledParser.STRICTFP, JavaLabeledParser.AT, JavaLabeledParser.IDENTIFIER]:
+            if token in [
+                JavaLabeledParser.ABSTRACT,
+                JavaLabeledParser.FINAL,
+                JavaLabeledParser.PRIVATE,
+                JavaLabeledParser.PROTECTED,
+                JavaLabeledParser.PUBLIC,
+                JavaLabeledParser.STATIC,
+                JavaLabeledParser.STRICTFP,
+                JavaLabeledParser.AT,
+                JavaLabeledParser.IDENTIFIER,
+            ]:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 263
                 self.classOrInterfaceModifier()
@@ -1445,17 +1754,17 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ClassOrInterfaceModifierContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def annotation(self):
-            return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext, 0)
 
         def PUBLIC(self):
             return self.getToken(JavaLabeledParser.PUBLIC, 0)
@@ -1481,12 +1790,11 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_classOrInterfaceModifier
 
-
-
-
     def classOrInterfaceModifier(self):
 
-        localctx = JavaLabeledParser.ClassOrInterfaceModifierContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.ClassOrInterfaceModifierContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 10, self.RULE_classOrInterfaceModifier)
         try:
             self.state = 278
@@ -1543,11 +1851,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class VariableModifierContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -1555,18 +1864,16 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.FINAL, 0)
 
         def annotation(self):
-            return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext, 0)
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_variableModifier
 
-
-
-
     def variableModifier(self):
 
-        localctx = JavaLabeledParser.VariableModifierContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.VariableModifierContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 12, self.RULE_variableModifier)
         try:
             self.state = 282
@@ -1593,11 +1900,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ClassDeclarationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -1608,38 +1916,33 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.IDENTIFIER, 0)
 
         def classBody(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ClassBodyContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.ClassBodyContext, 0)
 
         def typeParameters(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeParametersContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.TypeParametersContext, 0)
 
         def EXTENDS(self):
             return self.getToken(JavaLabeledParser.EXTENDS, 0)
 
         def typeType(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext, 0)
 
         def IMPLEMENTS(self):
             return self.getToken(JavaLabeledParser.IMPLEMENTS, 0)
 
         def typeList(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeListContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.TypeListContext, 0)
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_classDeclaration
 
-
-
-
     def classDeclaration(self):
 
-        localctx = JavaLabeledParser.ClassDeclarationContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.ClassDeclarationContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 14, self.RULE_classDeclaration)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 284
@@ -1649,30 +1952,27 @@ class JavaLabeledParser ( Parser ):
             self.state = 287
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==JavaLabeledParser.LT:
+            if _la == JavaLabeledParser.LT:
                 self.state = 286
                 self.typeParameters()
-
 
             self.state = 291
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==JavaLabeledParser.EXTENDS:
+            if _la == JavaLabeledParser.EXTENDS:
                 self.state = 289
                 self.match(JavaLabeledParser.EXTENDS)
                 self.state = 290
                 self.typeType()
 
-
             self.state = 295
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==JavaLabeledParser.IMPLEMENTS:
+            if _la == JavaLabeledParser.IMPLEMENTS:
                 self.state = 293
                 self.match(JavaLabeledParser.IMPLEMENTS)
                 self.state = 294
                 self.typeList()
-
 
             self.state = 297
             self.classBody()
@@ -1684,28 +1984,30 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class TypeParametersContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def LT(self):
             return self.getToken(JavaLabeledParser.LT, 0)
 
-        def typeParameter(self, i:int=None):
+        def typeParameter(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.TypeParameterContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.TypeParameterContext,i)
-
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.TypeParameterContext, i
+                )
 
         def GT(self):
             return self.getToken(JavaLabeledParser.GT, 0)
 
-        def COMMA(self, i:int=None):
+        def COMMA(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.COMMA)
             else:
@@ -1714,14 +2016,11 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_typeParameters
 
-
-
-
     def typeParameters(self):
 
         localctx = JavaLabeledParser.TypeParametersContext(self, self._ctx, self.state)
         self.enterRule(localctx, 16, self.RULE_typeParameters)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 299
@@ -1731,7 +2030,7 @@ class JavaLabeledParser ( Parser ):
             self.state = 305
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==JavaLabeledParser.COMMA:
+            while _la == JavaLabeledParser.COMMA:
                 self.state = 301
                 self.match(JavaLabeledParser.COMMA)
                 self.state = 302
@@ -1750,77 +2049,72 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class TypeParameterContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def IDENTIFIER(self):
             return self.getToken(JavaLabeledParser.IDENTIFIER, 0)
 
-        def annotation(self, i:int=None):
+        def annotation(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.AnnotationContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext,i)
-
+                return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext, i)
 
         def EXTENDS(self):
             return self.getToken(JavaLabeledParser.EXTENDS, 0)
 
         def typeBound(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeBoundContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.TypeBoundContext, 0)
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_typeParameter
-
-
-
 
     def typeParameter(self):
 
         localctx = JavaLabeledParser.TypeParameterContext(self, self._ctx, self.state)
         self.enterRule(localctx, 18, self.RULE_typeParameter)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 313
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,16,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
+            _alt = self._interp.adaptivePredict(self._input, 16, self._ctx)
+            while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                if _alt == 1:
                     self.state = 310
-                    self.annotation() 
+                    self.annotation()
                 self.state = 315
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,16,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input, 16, self._ctx)
 
             self.state = 316
             self.match(JavaLabeledParser.IDENTIFIER)
             self.state = 325
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==JavaLabeledParser.EXTENDS:
+            if _la == JavaLabeledParser.EXTENDS:
                 self.state = 317
                 self.match(JavaLabeledParser.EXTENDS)
                 self.state = 321
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,17,self._ctx)
-                while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                    if _alt==1:
+                _alt = self._interp.adaptivePredict(self._input, 17, self._ctx)
+                while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                    if _alt == 1:
                         self.state = 318
-                        self.annotation() 
+                        self.annotation()
                     self.state = 323
                     self._errHandler.sync(self)
-                    _alt = self._interp.adaptivePredict(self._input,17,self._ctx)
+                    _alt = self._interp.adaptivePredict(self._input, 17, self._ctx)
 
                 self.state = 324
                 self.typeBound()
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -1830,22 +2124,22 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class TypeBoundContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def typeType(self, i:int=None):
+        def typeType(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.TypeTypeContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext,i)
+                return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext, i)
 
-
-        def BITAND(self, i:int=None):
+        def BITAND(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.BITAND)
             else:
@@ -1854,14 +2148,11 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_typeBound
 
-
-
-
     def typeBound(self):
 
         localctx = JavaLabeledParser.TypeBoundContext(self, self._ctx, self.state)
         self.enterRule(localctx, 20, self.RULE_typeBound)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 327
@@ -1869,7 +2160,7 @@ class JavaLabeledParser ( Parser ):
             self.state = 332
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==JavaLabeledParser.BITAND:
+            while _la == JavaLabeledParser.BITAND:
                 self.state = 328
                 self.match(JavaLabeledParser.BITAND)
                 self.state = 329
@@ -1886,11 +2177,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class EnumDeclarationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -1910,31 +2202,27 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.IMPLEMENTS, 0)
 
         def typeList(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeListContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.TypeListContext, 0)
 
         def enumConstants(self):
-            return self.getTypedRuleContext(JavaLabeledParser.EnumConstantsContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.EnumConstantsContext, 0)
 
         def COMMA(self):
             return self.getToken(JavaLabeledParser.COMMA, 0)
 
         def enumBodyDeclarations(self):
-            return self.getTypedRuleContext(JavaLabeledParser.EnumBodyDeclarationsContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.EnumBodyDeclarationsContext, 0
+            )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_enumDeclaration
-
-
-
 
     def enumDeclaration(self):
 
         localctx = JavaLabeledParser.EnumDeclarationContext(self, self._ctx, self.state)
         self.enterRule(localctx, 22, self.RULE_enumDeclaration)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 335
@@ -1944,38 +2232,34 @@ class JavaLabeledParser ( Parser ):
             self.state = 339
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==JavaLabeledParser.IMPLEMENTS:
+            if _la == JavaLabeledParser.IMPLEMENTS:
                 self.state = 337
                 self.match(JavaLabeledParser.IMPLEMENTS)
                 self.state = 338
                 self.typeList()
-
 
             self.state = 341
             self.match(JavaLabeledParser.LBRACE)
             self.state = 343
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==JavaLabeledParser.AT or _la==JavaLabeledParser.IDENTIFIER:
+            if _la == JavaLabeledParser.AT or _la == JavaLabeledParser.IDENTIFIER:
                 self.state = 342
                 self.enumConstants()
-
 
             self.state = 346
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==JavaLabeledParser.COMMA:
+            if _la == JavaLabeledParser.COMMA:
                 self.state = 345
                 self.match(JavaLabeledParser.COMMA)
-
 
             self.state = 349
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==JavaLabeledParser.SEMI:
+            if _la == JavaLabeledParser.SEMI:
                 self.state = 348
                 self.enumBodyDeclarations()
-
 
             self.state = 351
             self.match(JavaLabeledParser.RBRACE)
@@ -1987,22 +2271,24 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class EnumConstantsContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def enumConstant(self, i:int=None):
+        def enumConstant(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.EnumConstantContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.EnumConstantContext,i)
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.EnumConstantContext, i
+                )
 
-
-        def COMMA(self, i:int=None):
+        def COMMA(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.COMMA)
             else:
@@ -2010,9 +2296,6 @@ class JavaLabeledParser ( Parser ):
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_enumConstants
-
-
-
 
     def enumConstants(self):
 
@@ -2024,16 +2307,16 @@ class JavaLabeledParser ( Parser ):
             self.enumConstant()
             self.state = 358
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,24,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
+            _alt = self._interp.adaptivePredict(self._input, 24, self._ctx)
+            while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                if _alt == 1:
                     self.state = 354
                     self.match(JavaLabeledParser.COMMA)
                     self.state = 355
-                    self.enumConstant() 
+                    self.enumConstant()
                 self.state = 360
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,24,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input, 24, self._ctx)
 
         except RecognitionException as re:
             localctx.exception = re
@@ -2043,73 +2326,66 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class EnumConstantContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def IDENTIFIER(self):
             return self.getToken(JavaLabeledParser.IDENTIFIER, 0)
 
-        def annotation(self, i:int=None):
+        def annotation(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.AnnotationContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext,i)
-
+                return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext, i)
 
         def arguments(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ArgumentsContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.ArgumentsContext, 0)
 
         def classBody(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ClassBodyContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.ClassBodyContext, 0)
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_enumConstant
-
-
-
 
     def enumConstant(self):
 
         localctx = JavaLabeledParser.EnumConstantContext(self, self._ctx, self.state)
         self.enterRule(localctx, 26, self.RULE_enumConstant)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 364
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,25,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
+            _alt = self._interp.adaptivePredict(self._input, 25, self._ctx)
+            while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                if _alt == 1:
                     self.state = 361
-                    self.annotation() 
+                    self.annotation()
                 self.state = 366
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,25,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input, 25, self._ctx)
 
             self.state = 367
             self.match(JavaLabeledParser.IDENTIFIER)
             self.state = 369
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==JavaLabeledParser.LPAREN:
+            if _la == JavaLabeledParser.LPAREN:
                 self.state = 368
                 self.arguments()
-
 
             self.state = 372
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==JavaLabeledParser.LBRACE:
+            if _la == JavaLabeledParser.LBRACE:
                 self.state = 371
                 self.classBody()
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -2119,35 +2395,38 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class EnumBodyDeclarationsContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
 
-        def classBodyDeclaration(self, i:int=None):
+        def classBodyDeclaration(self, i: int = None):
             if i is None:
-                return self.getTypedRuleContexts(JavaLabeledParser.ClassBodyDeclarationContext)
+                return self.getTypedRuleContexts(
+                    JavaLabeledParser.ClassBodyDeclarationContext
+                )
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ClassBodyDeclarationContext,i)
-
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.ClassBodyDeclarationContext, i
+                )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_enumBodyDeclarations
 
-
-
-
     def enumBodyDeclarations(self):
 
-        localctx = JavaLabeledParser.EnumBodyDeclarationsContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.EnumBodyDeclarationsContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 28, self.RULE_enumBodyDeclarations)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 374
@@ -2155,7 +2434,51 @@ class JavaLabeledParser ( Parser ):
             self.state = 378
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << JavaLabeledParser.ABSTRACT) | (1 << JavaLabeledParser.BOOLEAN) | (1 << JavaLabeledParser.BYTE) | (1 << JavaLabeledParser.CHAR) | (1 << JavaLabeledParser.CLASS) | (1 << JavaLabeledParser.DOUBLE) | (1 << JavaLabeledParser.ENUM) | (1 << JavaLabeledParser.FINAL) | (1 << JavaLabeledParser.FLOAT) | (1 << JavaLabeledParser.INT) | (1 << JavaLabeledParser.INTERFACE) | (1 << JavaLabeledParser.LONG) | (1 << JavaLabeledParser.NATIVE) | (1 << JavaLabeledParser.PRIVATE) | (1 << JavaLabeledParser.PROTECTED) | (1 << JavaLabeledParser.PUBLIC) | (1 << JavaLabeledParser.SHORT) | (1 << JavaLabeledParser.STATIC) | (1 << JavaLabeledParser.STRICTFP) | (1 << JavaLabeledParser.SYNCHRONIZED) | (1 << JavaLabeledParser.TRANSIENT) | (1 << JavaLabeledParser.VOID) | (1 << JavaLabeledParser.VOLATILE) | (1 << JavaLabeledParser.LBRACE))) != 0) or ((((_la - 67)) & ~0x3f) == 0 and ((1 << (_la - 67)) & ((1 << (JavaLabeledParser.SEMI - 67)) | (1 << (JavaLabeledParser.LT - 67)) | (1 << (JavaLabeledParser.AT - 67)) | (1 << (JavaLabeledParser.IDENTIFIER - 67)))) != 0):
+            while (
+                ((_la) & ~0x3F) == 0
+                and (
+                    (1 << _la)
+                    & (
+                        (1 << JavaLabeledParser.ABSTRACT)
+                        | (1 << JavaLabeledParser.BOOLEAN)
+                        | (1 << JavaLabeledParser.BYTE)
+                        | (1 << JavaLabeledParser.CHAR)
+                        | (1 << JavaLabeledParser.CLASS)
+                        | (1 << JavaLabeledParser.DOUBLE)
+                        | (1 << JavaLabeledParser.ENUM)
+                        | (1 << JavaLabeledParser.FINAL)
+                        | (1 << JavaLabeledParser.FLOAT)
+                        | (1 << JavaLabeledParser.INT)
+                        | (1 << JavaLabeledParser.INTERFACE)
+                        | (1 << JavaLabeledParser.LONG)
+                        | (1 << JavaLabeledParser.NATIVE)
+                        | (1 << JavaLabeledParser.PRIVATE)
+                        | (1 << JavaLabeledParser.PROTECTED)
+                        | (1 << JavaLabeledParser.PUBLIC)
+                        | (1 << JavaLabeledParser.SHORT)
+                        | (1 << JavaLabeledParser.STATIC)
+                        | (1 << JavaLabeledParser.STRICTFP)
+                        | (1 << JavaLabeledParser.SYNCHRONIZED)
+                        | (1 << JavaLabeledParser.TRANSIENT)
+                        | (1 << JavaLabeledParser.VOID)
+                        | (1 << JavaLabeledParser.VOLATILE)
+                        | (1 << JavaLabeledParser.LBRACE)
+                    )
+                )
+                != 0
+            ) or (
+                (((_la - 67)) & ~0x3F) == 0
+                and (
+                    (1 << (_la - 67))
+                    & (
+                        (1 << (JavaLabeledParser.SEMI - 67))
+                        | (1 << (JavaLabeledParser.LT - 67))
+                        | (1 << (JavaLabeledParser.AT - 67))
+                        | (1 << (JavaLabeledParser.IDENTIFIER - 67))
+                    )
+                )
+                != 0
+            ):
                 self.state = 375
                 self.classBodyDeclaration()
                 self.state = 380
@@ -2170,11 +2493,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class InterfaceDeclarationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -2185,31 +2509,27 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.IDENTIFIER, 0)
 
         def interfaceBody(self):
-            return self.getTypedRuleContext(JavaLabeledParser.InterfaceBodyContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.InterfaceBodyContext, 0)
 
         def typeParameters(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeParametersContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.TypeParametersContext, 0)
 
         def EXTENDS(self):
             return self.getToken(JavaLabeledParser.EXTENDS, 0)
 
         def typeList(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeListContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.TypeListContext, 0)
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_interfaceDeclaration
 
-
-
-
     def interfaceDeclaration(self):
 
-        localctx = JavaLabeledParser.InterfaceDeclarationContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.InterfaceDeclarationContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 30, self.RULE_interfaceDeclaration)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 381
@@ -2219,20 +2539,18 @@ class JavaLabeledParser ( Parser ):
             self.state = 384
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==JavaLabeledParser.LT:
+            if _la == JavaLabeledParser.LT:
                 self.state = 383
                 self.typeParameters()
-
 
             self.state = 388
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==JavaLabeledParser.EXTENDS:
+            if _la == JavaLabeledParser.EXTENDS:
                 self.state = 386
                 self.match(JavaLabeledParser.EXTENDS)
                 self.state = 387
                 self.typeList()
-
 
             self.state = 390
             self.interfaceBody()
@@ -2244,11 +2562,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ClassBodyContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -2258,24 +2577,24 @@ class JavaLabeledParser ( Parser ):
         def RBRACE(self):
             return self.getToken(JavaLabeledParser.RBRACE, 0)
 
-        def classBodyDeclaration(self, i:int=None):
+        def classBodyDeclaration(self, i: int = None):
             if i is None:
-                return self.getTypedRuleContexts(JavaLabeledParser.ClassBodyDeclarationContext)
+                return self.getTypedRuleContexts(
+                    JavaLabeledParser.ClassBodyDeclarationContext
+                )
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ClassBodyDeclarationContext,i)
-
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.ClassBodyDeclarationContext, i
+                )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_classBody
-
-
-
 
     def classBody(self):
 
         localctx = JavaLabeledParser.ClassBodyContext(self, self._ctx, self.state)
         self.enterRule(localctx, 32, self.RULE_classBody)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 392
@@ -2283,7 +2602,51 @@ class JavaLabeledParser ( Parser ):
             self.state = 396
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << JavaLabeledParser.ABSTRACT) | (1 << JavaLabeledParser.BOOLEAN) | (1 << JavaLabeledParser.BYTE) | (1 << JavaLabeledParser.CHAR) | (1 << JavaLabeledParser.CLASS) | (1 << JavaLabeledParser.DOUBLE) | (1 << JavaLabeledParser.ENUM) | (1 << JavaLabeledParser.FINAL) | (1 << JavaLabeledParser.FLOAT) | (1 << JavaLabeledParser.INT) | (1 << JavaLabeledParser.INTERFACE) | (1 << JavaLabeledParser.LONG) | (1 << JavaLabeledParser.NATIVE) | (1 << JavaLabeledParser.PRIVATE) | (1 << JavaLabeledParser.PROTECTED) | (1 << JavaLabeledParser.PUBLIC) | (1 << JavaLabeledParser.SHORT) | (1 << JavaLabeledParser.STATIC) | (1 << JavaLabeledParser.STRICTFP) | (1 << JavaLabeledParser.SYNCHRONIZED) | (1 << JavaLabeledParser.TRANSIENT) | (1 << JavaLabeledParser.VOID) | (1 << JavaLabeledParser.VOLATILE) | (1 << JavaLabeledParser.LBRACE))) != 0) or ((((_la - 67)) & ~0x3f) == 0 and ((1 << (_la - 67)) & ((1 << (JavaLabeledParser.SEMI - 67)) | (1 << (JavaLabeledParser.LT - 67)) | (1 << (JavaLabeledParser.AT - 67)) | (1 << (JavaLabeledParser.IDENTIFIER - 67)))) != 0):
+            while (
+                ((_la) & ~0x3F) == 0
+                and (
+                    (1 << _la)
+                    & (
+                        (1 << JavaLabeledParser.ABSTRACT)
+                        | (1 << JavaLabeledParser.BOOLEAN)
+                        | (1 << JavaLabeledParser.BYTE)
+                        | (1 << JavaLabeledParser.CHAR)
+                        | (1 << JavaLabeledParser.CLASS)
+                        | (1 << JavaLabeledParser.DOUBLE)
+                        | (1 << JavaLabeledParser.ENUM)
+                        | (1 << JavaLabeledParser.FINAL)
+                        | (1 << JavaLabeledParser.FLOAT)
+                        | (1 << JavaLabeledParser.INT)
+                        | (1 << JavaLabeledParser.INTERFACE)
+                        | (1 << JavaLabeledParser.LONG)
+                        | (1 << JavaLabeledParser.NATIVE)
+                        | (1 << JavaLabeledParser.PRIVATE)
+                        | (1 << JavaLabeledParser.PROTECTED)
+                        | (1 << JavaLabeledParser.PUBLIC)
+                        | (1 << JavaLabeledParser.SHORT)
+                        | (1 << JavaLabeledParser.STATIC)
+                        | (1 << JavaLabeledParser.STRICTFP)
+                        | (1 << JavaLabeledParser.SYNCHRONIZED)
+                        | (1 << JavaLabeledParser.TRANSIENT)
+                        | (1 << JavaLabeledParser.VOID)
+                        | (1 << JavaLabeledParser.VOLATILE)
+                        | (1 << JavaLabeledParser.LBRACE)
+                    )
+                )
+                != 0
+            ) or (
+                (((_la - 67)) & ~0x3F) == 0
+                and (
+                    (1 << (_la - 67))
+                    & (
+                        (1 << (JavaLabeledParser.SEMI - 67))
+                        | (1 << (JavaLabeledParser.LT - 67))
+                        | (1 << (JavaLabeledParser.AT - 67))
+                        | (1 << (JavaLabeledParser.IDENTIFIER - 67))
+                    )
+                )
+                != 0
+            ):
                 self.state = 393
                 self.classBodyDeclaration()
                 self.state = 398
@@ -2300,11 +2663,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class InterfaceBodyContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -2314,24 +2678,24 @@ class JavaLabeledParser ( Parser ):
         def RBRACE(self):
             return self.getToken(JavaLabeledParser.RBRACE, 0)
 
-        def interfaceBodyDeclaration(self, i:int=None):
+        def interfaceBodyDeclaration(self, i: int = None):
             if i is None:
-                return self.getTypedRuleContexts(JavaLabeledParser.InterfaceBodyDeclarationContext)
+                return self.getTypedRuleContexts(
+                    JavaLabeledParser.InterfaceBodyDeclarationContext
+                )
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.InterfaceBodyDeclarationContext,i)
-
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.InterfaceBodyDeclarationContext, i
+                )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_interfaceBody
-
-
-
 
     def interfaceBody(self):
 
         localctx = JavaLabeledParser.InterfaceBodyContext(self, self._ctx, self.state)
         self.enterRule(localctx, 34, self.RULE_interfaceBody)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 401
@@ -2339,7 +2703,51 @@ class JavaLabeledParser ( Parser ):
             self.state = 405
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << JavaLabeledParser.ABSTRACT) | (1 << JavaLabeledParser.BOOLEAN) | (1 << JavaLabeledParser.BYTE) | (1 << JavaLabeledParser.CHAR) | (1 << JavaLabeledParser.CLASS) | (1 << JavaLabeledParser.DEFAULT) | (1 << JavaLabeledParser.DOUBLE) | (1 << JavaLabeledParser.ENUM) | (1 << JavaLabeledParser.FINAL) | (1 << JavaLabeledParser.FLOAT) | (1 << JavaLabeledParser.INT) | (1 << JavaLabeledParser.INTERFACE) | (1 << JavaLabeledParser.LONG) | (1 << JavaLabeledParser.NATIVE) | (1 << JavaLabeledParser.PRIVATE) | (1 << JavaLabeledParser.PROTECTED) | (1 << JavaLabeledParser.PUBLIC) | (1 << JavaLabeledParser.SHORT) | (1 << JavaLabeledParser.STATIC) | (1 << JavaLabeledParser.STRICTFP) | (1 << JavaLabeledParser.SYNCHRONIZED) | (1 << JavaLabeledParser.TRANSIENT) | (1 << JavaLabeledParser.VOID) | (1 << JavaLabeledParser.VOLATILE))) != 0) or ((((_la - 67)) & ~0x3f) == 0 and ((1 << (_la - 67)) & ((1 << (JavaLabeledParser.SEMI - 67)) | (1 << (JavaLabeledParser.LT - 67)) | (1 << (JavaLabeledParser.AT - 67)) | (1 << (JavaLabeledParser.IDENTIFIER - 67)))) != 0):
+            while (
+                ((_la) & ~0x3F) == 0
+                and (
+                    (1 << _la)
+                    & (
+                        (1 << JavaLabeledParser.ABSTRACT)
+                        | (1 << JavaLabeledParser.BOOLEAN)
+                        | (1 << JavaLabeledParser.BYTE)
+                        | (1 << JavaLabeledParser.CHAR)
+                        | (1 << JavaLabeledParser.CLASS)
+                        | (1 << JavaLabeledParser.DEFAULT)
+                        | (1 << JavaLabeledParser.DOUBLE)
+                        | (1 << JavaLabeledParser.ENUM)
+                        | (1 << JavaLabeledParser.FINAL)
+                        | (1 << JavaLabeledParser.FLOAT)
+                        | (1 << JavaLabeledParser.INT)
+                        | (1 << JavaLabeledParser.INTERFACE)
+                        | (1 << JavaLabeledParser.LONG)
+                        | (1 << JavaLabeledParser.NATIVE)
+                        | (1 << JavaLabeledParser.PRIVATE)
+                        | (1 << JavaLabeledParser.PROTECTED)
+                        | (1 << JavaLabeledParser.PUBLIC)
+                        | (1 << JavaLabeledParser.SHORT)
+                        | (1 << JavaLabeledParser.STATIC)
+                        | (1 << JavaLabeledParser.STRICTFP)
+                        | (1 << JavaLabeledParser.SYNCHRONIZED)
+                        | (1 << JavaLabeledParser.TRANSIENT)
+                        | (1 << JavaLabeledParser.VOID)
+                        | (1 << JavaLabeledParser.VOLATILE)
+                    )
+                )
+                != 0
+            ) or (
+                (((_la - 67)) & ~0x3F) == 0
+                and (
+                    (1 << (_la - 67))
+                    & (
+                        (1 << (JavaLabeledParser.SEMI - 67))
+                        | (1 << (JavaLabeledParser.LT - 67))
+                        | (1 << (JavaLabeledParser.AT - 67))
+                        | (1 << (JavaLabeledParser.IDENTIFIER - 67))
+                    )
+                )
+                != 0
+            ):
                 self.state = 402
                 self.interfaceBodyDeclaration()
                 self.state = 407
@@ -2356,114 +2764,117 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ClassBodyDeclarationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_classBodyDeclaration
 
-     
-        def copyFrom(self, ctx:ParserRuleContext):
+        def copyFrom(self, ctx: ParserRuleContext):
             super().copyFrom(ctx)
 
-
-
     class ClassBodyDeclaration1Context(ClassBodyDeclarationContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ClassBodyDeclarationContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ClassBodyDeclarationContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def block(self):
-            return self.getTypedRuleContext(JavaLabeledParser.BlockContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.BlockContext, 0)
 
         def STATIC(self):
             return self.getToken(JavaLabeledParser.STATIC, 0)
 
-
     class ClassBodyDeclaration0Context(ClassBodyDeclarationContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ClassBodyDeclarationContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ClassBodyDeclarationContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
 
-
     class ClassBodyDeclaration2Context(ClassBodyDeclarationContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ClassBodyDeclarationContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ClassBodyDeclarationContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def memberDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.MemberDeclarationContext,0)
+            return self.getTypedRuleContext(
+                JavaLabeledParser.MemberDeclarationContext, 0
+            )
 
-        def modifier(self, i:int=None):
+        def modifier(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.ModifierContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ModifierContext,i)
-
-
-
+                return self.getTypedRuleContext(JavaLabeledParser.ModifierContext, i)
 
     def classBodyDeclaration(self):
 
-        localctx = JavaLabeledParser.ClassBodyDeclarationContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.ClassBodyDeclarationContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 36, self.RULE_classBodyDeclaration)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.state = 422
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,35,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 35, self._ctx)
             if la_ == 1:
-                localctx = JavaLabeledParser.ClassBodyDeclaration0Context(self, localctx)
+                localctx = JavaLabeledParser.ClassBodyDeclaration0Context(
+                    self, localctx
+                )
                 self.enterOuterAlt(localctx, 1)
                 self.state = 410
                 self.match(JavaLabeledParser.SEMI)
                 pass
 
             elif la_ == 2:
-                localctx = JavaLabeledParser.ClassBodyDeclaration1Context(self, localctx)
+                localctx = JavaLabeledParser.ClassBodyDeclaration1Context(
+                    self, localctx
+                )
                 self.enterOuterAlt(localctx, 2)
                 self.state = 412
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==JavaLabeledParser.STATIC:
+                if _la == JavaLabeledParser.STATIC:
                     self.state = 411
                     self.match(JavaLabeledParser.STATIC)
-
 
                 self.state = 414
                 self.block()
                 pass
 
             elif la_ == 3:
-                localctx = JavaLabeledParser.ClassBodyDeclaration2Context(self, localctx)
+                localctx = JavaLabeledParser.ClassBodyDeclaration2Context(
+                    self, localctx
+                )
                 self.enterOuterAlt(localctx, 3)
                 self.state = 418
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,34,self._ctx)
-                while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                    if _alt==1:
+                _alt = self._interp.adaptivePredict(self._input, 34, self._ctx)
+                while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                    if _alt == 1:
                         self.state = 415
-                        self.modifier() 
+                        self.modifier()
                     self.state = 420
                     self._errHandler.sync(self)
-                    _alt = self._interp.adaptivePredict(self._input,34,self._ctx)
+                    _alt = self._interp.adaptivePredict(self._input, 34, self._ctx)
 
                 self.state = 421
                 self.memberDeclaration()
                 pass
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -2473,132 +2884,137 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class MemberDeclarationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_memberDeclaration
 
-     
-        def copyFrom(self, ctx:ParserRuleContext):
+        def copyFrom(self, ctx: ParserRuleContext):
             super().copyFrom(ctx)
 
-
-
     class MemberDeclaration8Context(MemberDeclarationContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.MemberDeclarationContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.MemberDeclarationContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def enumDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.EnumDeclarationContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.EnumDeclarationContext, 0)
 
     class MemberDeclaration0Context(MemberDeclarationContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.MemberDeclarationContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.MemberDeclarationContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def methodDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.MethodDeclarationContext,0)
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.MethodDeclarationContext, 0
+            )
 
     class MemberDeclaration1Context(MemberDeclarationContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.MemberDeclarationContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.MemberDeclarationContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def genericMethodDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.GenericMethodDeclarationContext,0)
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.GenericMethodDeclarationContext, 0
+            )
 
     class MemberDeclaration2Context(MemberDeclarationContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.MemberDeclarationContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.MemberDeclarationContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def fieldDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.FieldDeclarationContext,0)
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.FieldDeclarationContext, 0
+            )
 
     class MemberDeclaration3Context(MemberDeclarationContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.MemberDeclarationContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.MemberDeclarationContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def constructorDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ConstructorDeclarationContext,0)
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.ConstructorDeclarationContext, 0
+            )
 
     class MemberDeclaration4Context(MemberDeclarationContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.MemberDeclarationContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.MemberDeclarationContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def genericConstructorDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.GenericConstructorDeclarationContext,0)
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.GenericConstructorDeclarationContext, 0
+            )
 
     class MemberDeclaration5Context(MemberDeclarationContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.MemberDeclarationContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.MemberDeclarationContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def interfaceDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.InterfaceDeclarationContext,0)
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.InterfaceDeclarationContext, 0
+            )
 
     class MemberDeclaration6Context(MemberDeclarationContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.MemberDeclarationContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.MemberDeclarationContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def annotationTypeDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.AnnotationTypeDeclarationContext,0)
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.AnnotationTypeDeclarationContext, 0
+            )
 
     class MemberDeclaration7Context(MemberDeclarationContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.MemberDeclarationContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.MemberDeclarationContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def classDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ClassDeclarationContext,0)
-
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.ClassDeclarationContext, 0
+            )
 
     def memberDeclaration(self):
 
-        localctx = JavaLabeledParser.MemberDeclarationContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.MemberDeclarationContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 38, self.RULE_memberDeclaration)
         try:
             self.state = 433
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,36,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 36, self._ctx)
             if la_ == 1:
                 localctx = JavaLabeledParser.MemberDeclaration0Context(self, localctx)
                 self.enterOuterAlt(localctx, 1)
@@ -2662,7 +3078,6 @@ class JavaLabeledParser ( Parser ):
                 self.enumDeclaration()
                 pass
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -2671,36 +3086,36 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class MethodDeclarationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def typeTypeOrVoid(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeOrVoidContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeOrVoidContext, 0)
 
         def IDENTIFIER(self):
             return self.getToken(JavaLabeledParser.IDENTIFIER, 0)
 
         def formalParameters(self):
-            return self.getTypedRuleContext(JavaLabeledParser.FormalParametersContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.FormalParametersContext, 0
+            )
 
         def methodBody(self):
-            return self.getTypedRuleContext(JavaLabeledParser.MethodBodyContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.MethodBodyContext, 0)
 
-
-        def LBRACK(self, i:int=None):
+        def LBRACK(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.LBRACK)
             else:
                 return self.getToken(JavaLabeledParser.LBRACK, i)
 
-        def RBRACK(self, i:int=None):
+        def RBRACK(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.RBRACK)
             else:
@@ -2710,20 +3125,20 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.THROWS, 0)
 
         def qualifiedNameList(self):
-            return self.getTypedRuleContext(JavaLabeledParser.QualifiedNameListContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.QualifiedNameListContext, 0
+            )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_methodDeclaration
 
-
-
-
     def methodDeclaration(self):
 
-        localctx = JavaLabeledParser.MethodDeclarationContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.MethodDeclarationContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 40, self.RULE_methodDeclaration)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 435
@@ -2735,7 +3150,7 @@ class JavaLabeledParser ( Parser ):
             self.state = 442
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==JavaLabeledParser.LBRACK:
+            while _la == JavaLabeledParser.LBRACK:
                 self.state = 438
                 self.match(JavaLabeledParser.LBRACK)
                 self.state = 439
@@ -2747,12 +3162,11 @@ class JavaLabeledParser ( Parser ):
             self.state = 447
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==JavaLabeledParser.THROWS:
+            if _la == JavaLabeledParser.THROWS:
                 self.state = 445
                 self.match(JavaLabeledParser.THROWS)
                 self.state = 446
                 self.qualifiedNameList()
-
 
             self.state = 449
             self.methodBody()
@@ -2764,26 +3178,23 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class MethodBodyContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def block(self):
-            return self.getTypedRuleContext(JavaLabeledParser.BlockContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.BlockContext, 0)
 
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_methodBody
-
-
-
 
     def methodBody(self):
 
@@ -2814,26 +3225,23 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class TypeTypeOrVoidContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def typeType(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext, 0)
 
         def VOID(self):
             return self.getToken(JavaLabeledParser.VOID, 0)
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_typeTypeOrVoid
-
-
-
 
     def typeTypeOrVoid(self):
 
@@ -2843,7 +3251,18 @@ class JavaLabeledParser ( Parser ):
             self.state = 457
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [JavaLabeledParser.BOOLEAN, JavaLabeledParser.BYTE, JavaLabeledParser.CHAR, JavaLabeledParser.DOUBLE, JavaLabeledParser.FLOAT, JavaLabeledParser.INT, JavaLabeledParser.LONG, JavaLabeledParser.SHORT, JavaLabeledParser.AT, JavaLabeledParser.IDENTIFIER]:
+            if token in [
+                JavaLabeledParser.BOOLEAN,
+                JavaLabeledParser.BYTE,
+                JavaLabeledParser.CHAR,
+                JavaLabeledParser.DOUBLE,
+                JavaLabeledParser.FLOAT,
+                JavaLabeledParser.INT,
+                JavaLabeledParser.LONG,
+                JavaLabeledParser.SHORT,
+                JavaLabeledParser.AT,
+                JavaLabeledParser.IDENTIFIER,
+            ]:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 455
                 self.typeType()
@@ -2864,31 +3283,31 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class GenericMethodDeclarationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def typeParameters(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeParametersContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.TypeParametersContext, 0)
 
         def methodDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.MethodDeclarationContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.MethodDeclarationContext, 0
+            )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_genericMethodDeclaration
 
-
-
-
     def genericMethodDeclaration(self):
 
-        localctx = JavaLabeledParser.GenericMethodDeclarationContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.GenericMethodDeclarationContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 46, self.RULE_genericMethodDeclaration)
         try:
             self.enterOuterAlt(localctx, 1)
@@ -2904,31 +3323,31 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class GenericConstructorDeclarationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def typeParameters(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeParametersContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.TypeParametersContext, 0)
 
         def constructorDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ConstructorDeclarationContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.ConstructorDeclarationContext, 0
+            )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_genericConstructorDeclaration
 
-
-
-
     def genericConstructorDeclaration(self):
 
-        localctx = JavaLabeledParser.GenericConstructorDeclarationContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.GenericConstructorDeclarationContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 48, self.RULE_genericConstructorDeclaration)
         try:
             self.enterOuterAlt(localctx, 1)
@@ -2944,44 +3363,45 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ConstructorDeclarationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-            self.constructorBody = None # BlockContext
+            self.constructorBody = None  # BlockContext
 
         def IDENTIFIER(self):
             return self.getToken(JavaLabeledParser.IDENTIFIER, 0)
 
         def formalParameters(self):
-            return self.getTypedRuleContext(JavaLabeledParser.FormalParametersContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.FormalParametersContext, 0
+            )
 
         def block(self):
-            return self.getTypedRuleContext(JavaLabeledParser.BlockContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.BlockContext, 0)
 
         def THROWS(self):
             return self.getToken(JavaLabeledParser.THROWS, 0)
 
         def qualifiedNameList(self):
-            return self.getTypedRuleContext(JavaLabeledParser.QualifiedNameListContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.QualifiedNameListContext, 0
+            )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_constructorDeclaration
 
-
-
-
     def constructorDeclaration(self):
 
-        localctx = JavaLabeledParser.ConstructorDeclarationContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.ConstructorDeclarationContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 50, self.RULE_constructorDeclaration)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 465
@@ -2991,12 +3411,11 @@ class JavaLabeledParser ( Parser ):
             self.state = 469
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==JavaLabeledParser.THROWS:
+            if _la == JavaLabeledParser.THROWS:
                 self.state = 467
                 self.match(JavaLabeledParser.THROWS)
                 self.state = 468
                 self.qualifiedNameList()
-
 
             self.state = 471
             localctx.constructorBody = self.block()
@@ -3008,21 +3427,22 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class FieldDeclarationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def typeType(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext, 0)
 
         def variableDeclarators(self):
-            return self.getTypedRuleContext(JavaLabeledParser.VariableDeclaratorsContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.VariableDeclaratorsContext, 0
+            )
 
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
@@ -3030,12 +3450,11 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_fieldDeclaration
 
-
-
-
     def fieldDeclaration(self):
 
-        localctx = JavaLabeledParser.FieldDeclarationContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.FieldDeclarationContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 52, self.RULE_fieldDeclaration)
         try:
             self.enterOuterAlt(localctx, 1)
@@ -3053,24 +3472,25 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class InterfaceBodyDeclarationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def interfaceMemberDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.InterfaceMemberDeclarationContext,0)
+            return self.getTypedRuleContext(
+                JavaLabeledParser.InterfaceMemberDeclarationContext, 0
+            )
 
-
-        def modifier(self, i:int=None):
+        def modifier(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.ModifierContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ModifierContext,i)
-
+                return self.getTypedRuleContext(JavaLabeledParser.ModifierContext, i)
 
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
@@ -3078,29 +3498,56 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_interfaceBodyDeclaration
 
-
-
-
     def interfaceBodyDeclaration(self):
 
-        localctx = JavaLabeledParser.InterfaceBodyDeclarationContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.InterfaceBodyDeclarationContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 54, self.RULE_interfaceBodyDeclaration)
         try:
             self.state = 485
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [JavaLabeledParser.ABSTRACT, JavaLabeledParser.BOOLEAN, JavaLabeledParser.BYTE, JavaLabeledParser.CHAR, JavaLabeledParser.CLASS, JavaLabeledParser.DEFAULT, JavaLabeledParser.DOUBLE, JavaLabeledParser.ENUM, JavaLabeledParser.FINAL, JavaLabeledParser.FLOAT, JavaLabeledParser.INT, JavaLabeledParser.INTERFACE, JavaLabeledParser.LONG, JavaLabeledParser.NATIVE, JavaLabeledParser.PRIVATE, JavaLabeledParser.PROTECTED, JavaLabeledParser.PUBLIC, JavaLabeledParser.SHORT, JavaLabeledParser.STATIC, JavaLabeledParser.STRICTFP, JavaLabeledParser.SYNCHRONIZED, JavaLabeledParser.TRANSIENT, JavaLabeledParser.VOID, JavaLabeledParser.VOLATILE, JavaLabeledParser.LT, JavaLabeledParser.AT, JavaLabeledParser.IDENTIFIER]:
+            if token in [
+                JavaLabeledParser.ABSTRACT,
+                JavaLabeledParser.BOOLEAN,
+                JavaLabeledParser.BYTE,
+                JavaLabeledParser.CHAR,
+                JavaLabeledParser.CLASS,
+                JavaLabeledParser.DEFAULT,
+                JavaLabeledParser.DOUBLE,
+                JavaLabeledParser.ENUM,
+                JavaLabeledParser.FINAL,
+                JavaLabeledParser.FLOAT,
+                JavaLabeledParser.INT,
+                JavaLabeledParser.INTERFACE,
+                JavaLabeledParser.LONG,
+                JavaLabeledParser.NATIVE,
+                JavaLabeledParser.PRIVATE,
+                JavaLabeledParser.PROTECTED,
+                JavaLabeledParser.PUBLIC,
+                JavaLabeledParser.SHORT,
+                JavaLabeledParser.STATIC,
+                JavaLabeledParser.STRICTFP,
+                JavaLabeledParser.SYNCHRONIZED,
+                JavaLabeledParser.TRANSIENT,
+                JavaLabeledParser.VOID,
+                JavaLabeledParser.VOLATILE,
+                JavaLabeledParser.LT,
+                JavaLabeledParser.AT,
+                JavaLabeledParser.IDENTIFIER,
+            ]:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 480
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,42,self._ctx)
-                while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                    if _alt==1:
+                _alt = self._interp.adaptivePredict(self._input, 42, self._ctx)
+                while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                    if _alt == 1:
                         self.state = 477
-                        self.modifier() 
+                        self.modifier()
                     self.state = 482
                     self._errHandler.sync(self)
-                    _alt = self._interp.adaptivePredict(self._input,42,self._ctx)
+                    _alt = self._interp.adaptivePredict(self._input, 42, self._ctx)
 
                 self.state = 483
                 self.interfaceMemberDeclaration()
@@ -3121,159 +3568,175 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class InterfaceMemberDeclarationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_interfaceMemberDeclaration
 
-     
-        def copyFrom(self, ctx:ParserRuleContext):
+        def copyFrom(self, ctx: ParserRuleContext):
             super().copyFrom(ctx)
 
-
-
     class InterfaceMemberDeclaration6Context(InterfaceMemberDeclarationContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.InterfaceMemberDeclarationContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.InterfaceMemberDeclarationContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def enumDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.EnumDeclarationContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.EnumDeclarationContext, 0)
 
     class InterfaceMemberDeclaration5Context(InterfaceMemberDeclarationContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.InterfaceMemberDeclarationContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.InterfaceMemberDeclarationContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def classDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ClassDeclarationContext,0)
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.ClassDeclarationContext, 0
+            )
 
     class InterfaceMemberDeclaration4Context(InterfaceMemberDeclarationContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.InterfaceMemberDeclarationContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.InterfaceMemberDeclarationContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def annotationTypeDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.AnnotationTypeDeclarationContext,0)
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.AnnotationTypeDeclarationContext, 0
+            )
 
     class InterfaceMemberDeclaration3Context(InterfaceMemberDeclarationContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.InterfaceMemberDeclarationContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.InterfaceMemberDeclarationContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def interfaceDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.InterfaceDeclarationContext,0)
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.InterfaceDeclarationContext, 0
+            )
 
     class InterfaceMemberDeclaration2Context(InterfaceMemberDeclarationContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.InterfaceMemberDeclarationContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.InterfaceMemberDeclarationContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def genericInterfaceMethodDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.GenericInterfaceMethodDeclarationContext,0)
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.GenericInterfaceMethodDeclarationContext, 0
+            )
 
     class InterfaceMemberDeclaration1Context(InterfaceMemberDeclarationContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.InterfaceMemberDeclarationContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.InterfaceMemberDeclarationContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def interfaceMethodDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.InterfaceMethodDeclarationContext,0)
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.InterfaceMethodDeclarationContext, 0
+            )
 
     class InterfaceMemberDeclaration0Context(InterfaceMemberDeclarationContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.InterfaceMemberDeclarationContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.InterfaceMemberDeclarationContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def constDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ConstDeclarationContext,0)
-
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.ConstDeclarationContext, 0
+            )
 
     def interfaceMemberDeclaration(self):
 
-        localctx = JavaLabeledParser.InterfaceMemberDeclarationContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.InterfaceMemberDeclarationContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 56, self.RULE_interfaceMemberDeclaration)
         try:
             self.state = 494
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,44,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 44, self._ctx)
             if la_ == 1:
-                localctx = JavaLabeledParser.InterfaceMemberDeclaration0Context(self, localctx)
+                localctx = JavaLabeledParser.InterfaceMemberDeclaration0Context(
+                    self, localctx
+                )
                 self.enterOuterAlt(localctx, 1)
                 self.state = 487
                 self.constDeclaration()
                 pass
 
             elif la_ == 2:
-                localctx = JavaLabeledParser.InterfaceMemberDeclaration1Context(self, localctx)
+                localctx = JavaLabeledParser.InterfaceMemberDeclaration1Context(
+                    self, localctx
+                )
                 self.enterOuterAlt(localctx, 2)
                 self.state = 488
                 self.interfaceMethodDeclaration()
                 pass
 
             elif la_ == 3:
-                localctx = JavaLabeledParser.InterfaceMemberDeclaration2Context(self, localctx)
+                localctx = JavaLabeledParser.InterfaceMemberDeclaration2Context(
+                    self, localctx
+                )
                 self.enterOuterAlt(localctx, 3)
                 self.state = 489
                 self.genericInterfaceMethodDeclaration()
                 pass
 
             elif la_ == 4:
-                localctx = JavaLabeledParser.InterfaceMemberDeclaration3Context(self, localctx)
+                localctx = JavaLabeledParser.InterfaceMemberDeclaration3Context(
+                    self, localctx
+                )
                 self.enterOuterAlt(localctx, 4)
                 self.state = 490
                 self.interfaceDeclaration()
                 pass
 
             elif la_ == 5:
-                localctx = JavaLabeledParser.InterfaceMemberDeclaration4Context(self, localctx)
+                localctx = JavaLabeledParser.InterfaceMemberDeclaration4Context(
+                    self, localctx
+                )
                 self.enterOuterAlt(localctx, 5)
                 self.state = 491
                 self.annotationTypeDeclaration()
                 pass
 
             elif la_ == 6:
-                localctx = JavaLabeledParser.InterfaceMemberDeclaration5Context(self, localctx)
+                localctx = JavaLabeledParser.InterfaceMemberDeclaration5Context(
+                    self, localctx
+                )
                 self.enterOuterAlt(localctx, 6)
                 self.state = 492
                 self.classDeclaration()
                 pass
 
             elif la_ == 7:
-                localctx = JavaLabeledParser.InterfaceMemberDeclaration6Context(self, localctx)
+                localctx = JavaLabeledParser.InterfaceMemberDeclaration6Context(
+                    self, localctx
+                )
                 self.enterOuterAlt(localctx, 7)
                 self.state = 493
                 self.enumDeclaration()
                 pass
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -3283,29 +3746,32 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ConstDeclarationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def typeType(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext, 0)
 
-
-        def constantDeclarator(self, i:int=None):
+        def constantDeclarator(self, i: int = None):
             if i is None:
-                return self.getTypedRuleContexts(JavaLabeledParser.ConstantDeclaratorContext)
+                return self.getTypedRuleContexts(
+                    JavaLabeledParser.ConstantDeclaratorContext
+                )
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ConstantDeclaratorContext,i)
-
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.ConstantDeclaratorContext, i
+                )
 
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
 
-        def COMMA(self, i:int=None):
+        def COMMA(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.COMMA)
             else:
@@ -3314,14 +3780,13 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_constDeclaration
 
-
-
-
     def constDeclaration(self):
 
-        localctx = JavaLabeledParser.ConstDeclarationContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.ConstDeclarationContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 58, self.RULE_constDeclaration)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 496
@@ -3331,7 +3796,7 @@ class JavaLabeledParser ( Parser ):
             self.state = 502
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==JavaLabeledParser.COMMA:
+            while _la == JavaLabeledParser.COMMA:
                 self.state = 498
                 self.match(JavaLabeledParser.COMMA)
                 self.state = 499
@@ -3350,11 +3815,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ConstantDeclaratorContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -3365,16 +3831,17 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.ASSIGN, 0)
 
         def variableInitializer(self):
-            return self.getTypedRuleContext(JavaLabeledParser.VariableInitializerContext,0)
+            return self.getTypedRuleContext(
+                JavaLabeledParser.VariableInitializerContext, 0
+            )
 
-
-        def LBRACK(self, i:int=None):
+        def LBRACK(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.LBRACK)
             else:
                 return self.getToken(JavaLabeledParser.LBRACK, i)
 
-        def RBRACK(self, i:int=None):
+        def RBRACK(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.RBRACK)
             else:
@@ -3383,14 +3850,13 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_constantDeclarator
 
-
-
-
     def constantDeclarator(self):
 
-        localctx = JavaLabeledParser.ConstantDeclaratorContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.ConstantDeclaratorContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 60, self.RULE_constantDeclarator)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 507
@@ -3398,7 +3864,7 @@ class JavaLabeledParser ( Parser ):
             self.state = 512
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==JavaLabeledParser.LBRACK:
+            while _la == JavaLabeledParser.LBRACK:
                 self.state = 508
                 self.match(JavaLabeledParser.LBRACK)
                 self.state = 509
@@ -3419,11 +3885,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class InterfaceMethodDeclarationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -3431,35 +3898,36 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.IDENTIFIER, 0)
 
         def formalParameters(self):
-            return self.getTypedRuleContext(JavaLabeledParser.FormalParametersContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.FormalParametersContext, 0
+            )
 
         def methodBody(self):
-            return self.getTypedRuleContext(JavaLabeledParser.MethodBodyContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.MethodBodyContext, 0)
 
         def typeTypeOrVoid(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeOrVoidContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeOrVoidContext, 0)
 
         def typeParameters(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeParametersContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.TypeParametersContext, 0)
 
-
-        def interfaceMethodModifier(self, i:int=None):
+        def interfaceMethodModifier(self, i: int = None):
             if i is None:
-                return self.getTypedRuleContexts(JavaLabeledParser.InterfaceMethodModifierContext)
+                return self.getTypedRuleContexts(
+                    JavaLabeledParser.InterfaceMethodModifierContext
+                )
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.InterfaceMethodModifierContext,i)
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.InterfaceMethodModifierContext, i
+                )
 
-
-        def LBRACK(self, i:int=None):
+        def LBRACK(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.LBRACK)
             else:
                 return self.getToken(JavaLabeledParser.LBRACK, i)
 
-        def RBRACK(self, i:int=None):
+        def RBRACK(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.RBRACK)
             else:
@@ -3469,44 +3937,55 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.THROWS, 0)
 
         def qualifiedNameList(self):
-            return self.getTypedRuleContext(JavaLabeledParser.QualifiedNameListContext,0)
+            return self.getTypedRuleContext(
+                JavaLabeledParser.QualifiedNameListContext, 0
+            )
 
-
-        def annotation(self, i:int=None):
+        def annotation(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.AnnotationContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext,i)
-
+                return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext, i)
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_interfaceMethodDeclaration
 
-
-
-
     def interfaceMethodDeclaration(self):
 
-        localctx = JavaLabeledParser.InterfaceMethodDeclarationContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.InterfaceMethodDeclarationContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 62, self.RULE_interfaceMethodDeclaration)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 521
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,47,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
+            _alt = self._interp.adaptivePredict(self._input, 47, self._ctx)
+            while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                if _alt == 1:
                     self.state = 518
-                    self.interfaceMethodModifier() 
+                    self.interfaceMethodModifier()
                 self.state = 523
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,47,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input, 47, self._ctx)
 
             self.state = 534
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [JavaLabeledParser.BOOLEAN, JavaLabeledParser.BYTE, JavaLabeledParser.CHAR, JavaLabeledParser.DOUBLE, JavaLabeledParser.FLOAT, JavaLabeledParser.INT, JavaLabeledParser.LONG, JavaLabeledParser.SHORT, JavaLabeledParser.VOID, JavaLabeledParser.AT, JavaLabeledParser.IDENTIFIER]:
+            if token in [
+                JavaLabeledParser.BOOLEAN,
+                JavaLabeledParser.BYTE,
+                JavaLabeledParser.CHAR,
+                JavaLabeledParser.DOUBLE,
+                JavaLabeledParser.FLOAT,
+                JavaLabeledParser.INT,
+                JavaLabeledParser.LONG,
+                JavaLabeledParser.SHORT,
+                JavaLabeledParser.VOID,
+                JavaLabeledParser.AT,
+                JavaLabeledParser.IDENTIFIER,
+            ]:
                 self.state = 524
                 self.typeTypeOrVoid()
                 pass
@@ -3515,14 +3994,14 @@ class JavaLabeledParser ( Parser ):
                 self.typeParameters()
                 self.state = 529
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,48,self._ctx)
-                while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                    if _alt==1:
+                _alt = self._interp.adaptivePredict(self._input, 48, self._ctx)
+                while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                    if _alt == 1:
                         self.state = 526
-                        self.annotation() 
+                        self.annotation()
                     self.state = 531
                     self._errHandler.sync(self)
-                    _alt = self._interp.adaptivePredict(self._input,48,self._ctx)
+                    _alt = self._interp.adaptivePredict(self._input, 48, self._ctx)
 
                 self.state = 532
                 self.typeTypeOrVoid()
@@ -3537,7 +4016,7 @@ class JavaLabeledParser ( Parser ):
             self.state = 542
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==JavaLabeledParser.LBRACK:
+            while _la == JavaLabeledParser.LBRACK:
                 self.state = 538
                 self.match(JavaLabeledParser.LBRACK)
                 self.state = 539
@@ -3549,12 +4028,11 @@ class JavaLabeledParser ( Parser ):
             self.state = 547
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==JavaLabeledParser.THROWS:
+            if _la == JavaLabeledParser.THROWS:
                 self.state = 545
                 self.match(JavaLabeledParser.THROWS)
                 self.state = 546
                 self.qualifiedNameList()
-
 
             self.state = 549
             self.methodBody()
@@ -3566,17 +4044,17 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class InterfaceMethodModifierContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def annotation(self):
-            return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext, 0)
 
         def PUBLIC(self):
             return self.getToken(JavaLabeledParser.PUBLIC, 0)
@@ -3596,12 +4074,11 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_interfaceMethodModifier
 
-
-
-
     def interfaceMethodModifier(self):
 
-        localctx = JavaLabeledParser.InterfaceMethodModifierContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.InterfaceMethodModifierContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 64, self.RULE_interfaceMethodModifier)
         try:
             self.state = 557
@@ -3648,31 +4125,31 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class GenericInterfaceMethodDeclarationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def typeParameters(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeParametersContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.TypeParametersContext, 0)
 
         def interfaceMethodDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.InterfaceMethodDeclarationContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.InterfaceMethodDeclarationContext, 0
+            )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_genericInterfaceMethodDeclaration
 
-
-
-
     def genericInterfaceMethodDeclaration(self):
 
-        localctx = JavaLabeledParser.GenericInterfaceMethodDeclarationContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.GenericInterfaceMethodDeclarationContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 66, self.RULE_genericInterfaceMethodDeclaration)
         try:
             self.enterOuterAlt(localctx, 1)
@@ -3688,22 +4165,26 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class VariableDeclaratorsContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def variableDeclarator(self, i:int=None):
+        def variableDeclarator(self, i: int = None):
             if i is None:
-                return self.getTypedRuleContexts(JavaLabeledParser.VariableDeclaratorContext)
+                return self.getTypedRuleContexts(
+                    JavaLabeledParser.VariableDeclaratorContext
+                )
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.VariableDeclaratorContext,i)
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.VariableDeclaratorContext, i
+                )
 
-
-        def COMMA(self, i:int=None):
+        def COMMA(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.COMMA)
             else:
@@ -3712,14 +4193,13 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_variableDeclarators
 
-
-
-
     def variableDeclarators(self):
 
-        localctx = JavaLabeledParser.VariableDeclaratorsContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.VariableDeclaratorsContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 68, self.RULE_variableDeclarators)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 562
@@ -3727,7 +4207,7 @@ class JavaLabeledParser ( Parser ):
             self.state = 567
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==JavaLabeledParser.COMMA:
+            while _la == JavaLabeledParser.COMMA:
                 self.state = 563
                 self.match(JavaLabeledParser.COMMA)
                 self.state = 564
@@ -3744,36 +4224,38 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class VariableDeclaratorContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def variableDeclaratorId(self):
-            return self.getTypedRuleContext(JavaLabeledParser.VariableDeclaratorIdContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.VariableDeclaratorIdContext, 0
+            )
 
         def ASSIGN(self):
             return self.getToken(JavaLabeledParser.ASSIGN, 0)
 
         def variableInitializer(self):
-            return self.getTypedRuleContext(JavaLabeledParser.VariableInitializerContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.VariableInitializerContext, 0
+            )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_variableDeclarator
 
-
-
-
     def variableDeclarator(self):
 
-        localctx = JavaLabeledParser.VariableDeclaratorContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.VariableDeclaratorContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 70, self.RULE_variableDeclarator)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 570
@@ -3781,12 +4263,11 @@ class JavaLabeledParser ( Parser ):
             self.state = 573
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==JavaLabeledParser.ASSIGN:
+            if _la == JavaLabeledParser.ASSIGN:
                 self.state = 571
                 self.match(JavaLabeledParser.ASSIGN)
                 self.state = 572
                 self.variableInitializer()
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -3796,24 +4277,25 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class VariableDeclaratorIdContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def IDENTIFIER(self):
             return self.getToken(JavaLabeledParser.IDENTIFIER, 0)
 
-        def LBRACK(self, i:int=None):
+        def LBRACK(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.LBRACK)
             else:
                 return self.getToken(JavaLabeledParser.LBRACK, i)
 
-        def RBRACK(self, i:int=None):
+        def RBRACK(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.RBRACK)
             else:
@@ -3822,14 +4304,13 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_variableDeclaratorId
 
-
-
-
     def variableDeclaratorId(self):
 
-        localctx = JavaLabeledParser.VariableDeclaratorIdContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.VariableDeclaratorIdContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 72, self.RULE_variableDeclaratorId)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 575
@@ -3837,7 +4318,7 @@ class JavaLabeledParser ( Parser ):
             self.state = 580
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==JavaLabeledParser.LBRACK:
+            while _la == JavaLabeledParser.LBRACK:
                 self.state = 576
                 self.match(JavaLabeledParser.LBRACK)
                 self.state = 577
@@ -3854,50 +4335,48 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class VariableInitializerContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_variableInitializer
 
-     
-        def copyFrom(self, ctx:ParserRuleContext):
+        def copyFrom(self, ctx: ParserRuleContext):
             super().copyFrom(ctx)
 
-
-
     class VariableInitializer1Context(VariableInitializerContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.VariableInitializerContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.VariableInitializerContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def expression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, 0)
 
     class VariableInitializer0Context(VariableInitializerContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.VariableInitializerContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.VariableInitializerContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def arrayInitializer(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ArrayInitializerContext,0)
-
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.ArrayInitializerContext, 0
+            )
 
     def variableInitializer(self):
 
-        localctx = JavaLabeledParser.VariableInitializerContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.VariableInitializerContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 74, self.RULE_variableInitializer)
         try:
             self.state = 585
@@ -3909,7 +4388,40 @@ class JavaLabeledParser ( Parser ):
                 self.state = 583
                 self.arrayInitializer()
                 pass
-            elif token in [JavaLabeledParser.BOOLEAN, JavaLabeledParser.BYTE, JavaLabeledParser.CHAR, JavaLabeledParser.DOUBLE, JavaLabeledParser.FLOAT, JavaLabeledParser.INT, JavaLabeledParser.LONG, JavaLabeledParser.NEW, JavaLabeledParser.SHORT, JavaLabeledParser.SUPER, JavaLabeledParser.THIS, JavaLabeledParser.VOID, JavaLabeledParser.DECIMAL_LITERAL, JavaLabeledParser.HEX_LITERAL, JavaLabeledParser.OCT_LITERAL, JavaLabeledParser.BINARY_LITERAL, JavaLabeledParser.FLOAT_LITERAL, JavaLabeledParser.HEX_FLOAT_LITERAL, JavaLabeledParser.BOOL_LITERAL, JavaLabeledParser.CHAR_LITERAL, JavaLabeledParser.STRING_LITERAL, JavaLabeledParser.NULL_LITERAL, JavaLabeledParser.LPAREN, JavaLabeledParser.LT, JavaLabeledParser.BANG, JavaLabeledParser.TILDE, JavaLabeledParser.INC, JavaLabeledParser.DEC, JavaLabeledParser.ADD, JavaLabeledParser.SUB, JavaLabeledParser.AT, JavaLabeledParser.IDENTIFIER]:
+            elif token in [
+                JavaLabeledParser.BOOLEAN,
+                JavaLabeledParser.BYTE,
+                JavaLabeledParser.CHAR,
+                JavaLabeledParser.DOUBLE,
+                JavaLabeledParser.FLOAT,
+                JavaLabeledParser.INT,
+                JavaLabeledParser.LONG,
+                JavaLabeledParser.NEW,
+                JavaLabeledParser.SHORT,
+                JavaLabeledParser.SUPER,
+                JavaLabeledParser.THIS,
+                JavaLabeledParser.VOID,
+                JavaLabeledParser.DECIMAL_LITERAL,
+                JavaLabeledParser.HEX_LITERAL,
+                JavaLabeledParser.OCT_LITERAL,
+                JavaLabeledParser.BINARY_LITERAL,
+                JavaLabeledParser.FLOAT_LITERAL,
+                JavaLabeledParser.HEX_FLOAT_LITERAL,
+                JavaLabeledParser.BOOL_LITERAL,
+                JavaLabeledParser.CHAR_LITERAL,
+                JavaLabeledParser.STRING_LITERAL,
+                JavaLabeledParser.NULL_LITERAL,
+                JavaLabeledParser.LPAREN,
+                JavaLabeledParser.LT,
+                JavaLabeledParser.BANG,
+                JavaLabeledParser.TILDE,
+                JavaLabeledParser.INC,
+                JavaLabeledParser.DEC,
+                JavaLabeledParser.ADD,
+                JavaLabeledParser.SUB,
+                JavaLabeledParser.AT,
+                JavaLabeledParser.IDENTIFIER,
+            ]:
                 localctx = JavaLabeledParser.VariableInitializer1Context(self, localctx)
                 self.enterOuterAlt(localctx, 2)
                 self.state = 584
@@ -3926,11 +4438,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ArrayInitializerContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -3940,14 +4453,17 @@ class JavaLabeledParser ( Parser ):
         def RBRACE(self):
             return self.getToken(JavaLabeledParser.RBRACE, 0)
 
-        def variableInitializer(self, i:int=None):
+        def variableInitializer(self, i: int = None):
             if i is None:
-                return self.getTypedRuleContexts(JavaLabeledParser.VariableInitializerContext)
+                return self.getTypedRuleContexts(
+                    JavaLabeledParser.VariableInitializerContext
+                )
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.VariableInitializerContext,i)
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.VariableInitializerContext, i
+                )
 
-
-        def COMMA(self, i:int=None):
+        def COMMA(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.COMMA)
             else:
@@ -3956,14 +4472,13 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_arrayInitializer
 
-
-
-
     def arrayInitializer(self):
 
-        localctx = JavaLabeledParser.ArrayInitializerContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.ArrayInitializerContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 76, self.RULE_arrayInitializer)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 587
@@ -3971,31 +4486,77 @@ class JavaLabeledParser ( Parser ):
             self.state = 599
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << JavaLabeledParser.BOOLEAN) | (1 << JavaLabeledParser.BYTE) | (1 << JavaLabeledParser.CHAR) | (1 << JavaLabeledParser.DOUBLE) | (1 << JavaLabeledParser.FLOAT) | (1 << JavaLabeledParser.INT) | (1 << JavaLabeledParser.LONG) | (1 << JavaLabeledParser.NEW) | (1 << JavaLabeledParser.SHORT) | (1 << JavaLabeledParser.SUPER) | (1 << JavaLabeledParser.THIS) | (1 << JavaLabeledParser.VOID) | (1 << JavaLabeledParser.DECIMAL_LITERAL) | (1 << JavaLabeledParser.HEX_LITERAL) | (1 << JavaLabeledParser.OCT_LITERAL) | (1 << JavaLabeledParser.BINARY_LITERAL) | (1 << JavaLabeledParser.FLOAT_LITERAL) | (1 << JavaLabeledParser.HEX_FLOAT_LITERAL) | (1 << JavaLabeledParser.BOOL_LITERAL) | (1 << JavaLabeledParser.CHAR_LITERAL) | (1 << JavaLabeledParser.STRING_LITERAL) | (1 << JavaLabeledParser.NULL_LITERAL) | (1 << JavaLabeledParser.LPAREN) | (1 << JavaLabeledParser.LBRACE))) != 0) or ((((_la - 72)) & ~0x3f) == 0 and ((1 << (_la - 72)) & ((1 << (JavaLabeledParser.LT - 72)) | (1 << (JavaLabeledParser.BANG - 72)) | (1 << (JavaLabeledParser.TILDE - 72)) | (1 << (JavaLabeledParser.INC - 72)) | (1 << (JavaLabeledParser.DEC - 72)) | (1 << (JavaLabeledParser.ADD - 72)) | (1 << (JavaLabeledParser.SUB - 72)) | (1 << (JavaLabeledParser.AT - 72)) | (1 << (JavaLabeledParser.IDENTIFIER - 72)))) != 0):
+            if (
+                ((_la) & ~0x3F) == 0
+                and (
+                    (1 << _la)
+                    & (
+                        (1 << JavaLabeledParser.BOOLEAN)
+                        | (1 << JavaLabeledParser.BYTE)
+                        | (1 << JavaLabeledParser.CHAR)
+                        | (1 << JavaLabeledParser.DOUBLE)
+                        | (1 << JavaLabeledParser.FLOAT)
+                        | (1 << JavaLabeledParser.INT)
+                        | (1 << JavaLabeledParser.LONG)
+                        | (1 << JavaLabeledParser.NEW)
+                        | (1 << JavaLabeledParser.SHORT)
+                        | (1 << JavaLabeledParser.SUPER)
+                        | (1 << JavaLabeledParser.THIS)
+                        | (1 << JavaLabeledParser.VOID)
+                        | (1 << JavaLabeledParser.DECIMAL_LITERAL)
+                        | (1 << JavaLabeledParser.HEX_LITERAL)
+                        | (1 << JavaLabeledParser.OCT_LITERAL)
+                        | (1 << JavaLabeledParser.BINARY_LITERAL)
+                        | (1 << JavaLabeledParser.FLOAT_LITERAL)
+                        | (1 << JavaLabeledParser.HEX_FLOAT_LITERAL)
+                        | (1 << JavaLabeledParser.BOOL_LITERAL)
+                        | (1 << JavaLabeledParser.CHAR_LITERAL)
+                        | (1 << JavaLabeledParser.STRING_LITERAL)
+                        | (1 << JavaLabeledParser.NULL_LITERAL)
+                        | (1 << JavaLabeledParser.LPAREN)
+                        | (1 << JavaLabeledParser.LBRACE)
+                    )
+                )
+                != 0
+            ) or (
+                (((_la - 72)) & ~0x3F) == 0
+                and (
+                    (1 << (_la - 72))
+                    & (
+                        (1 << (JavaLabeledParser.LT - 72))
+                        | (1 << (JavaLabeledParser.BANG - 72))
+                        | (1 << (JavaLabeledParser.TILDE - 72))
+                        | (1 << (JavaLabeledParser.INC - 72))
+                        | (1 << (JavaLabeledParser.DEC - 72))
+                        | (1 << (JavaLabeledParser.ADD - 72))
+                        | (1 << (JavaLabeledParser.SUB - 72))
+                        | (1 << (JavaLabeledParser.AT - 72))
+                        | (1 << (JavaLabeledParser.IDENTIFIER - 72))
+                    )
+                )
+                != 0
+            ):
                 self.state = 588
                 self.variableInitializer()
                 self.state = 593
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,57,self._ctx)
-                while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                    if _alt==1:
+                _alt = self._interp.adaptivePredict(self._input, 57, self._ctx)
+                while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                    if _alt == 1:
                         self.state = 589
                         self.match(JavaLabeledParser.COMMA)
                         self.state = 590
-                        self.variableInitializer() 
+                        self.variableInitializer()
                     self.state = 595
                     self._errHandler.sync(self)
-                    _alt = self._interp.adaptivePredict(self._input,57,self._ctx)
+                    _alt = self._interp.adaptivePredict(self._input, 57, self._ctx)
 
                 self.state = 597
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==JavaLabeledParser.COMMA:
+                if _la == JavaLabeledParser.COMMA:
                     self.state = 596
                     self.match(JavaLabeledParser.COMMA)
-
-
-
 
             self.state = 601
             self.match(JavaLabeledParser.RBRACE)
@@ -4007,28 +4568,30 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ClassOrInterfaceTypeContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def IDENTIFIER(self, i:int=None):
+        def IDENTIFIER(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.IDENTIFIER)
             else:
                 return self.getToken(JavaLabeledParser.IDENTIFIER, i)
 
-        def typeArguments(self, i:int=None):
+        def typeArguments(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.TypeArgumentsContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.TypeArgumentsContext,i)
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.TypeArgumentsContext, i
+                )
 
-
-        def DOT(self, i:int=None):
+        def DOT(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.DOT)
             else:
@@ -4037,12 +4600,11 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_classOrInterfaceType
 
-
-
-
     def classOrInterfaceType(self):
 
-        localctx = JavaLabeledParser.ClassOrInterfaceTypeContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.ClassOrInterfaceTypeContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 78, self.RULE_classOrInterfaceType)
         try:
             self.enterOuterAlt(localctx, 1)
@@ -4050,32 +4612,30 @@ class JavaLabeledParser ( Parser ):
             self.match(JavaLabeledParser.IDENTIFIER)
             self.state = 605
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,60,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 60, self._ctx)
             if la_ == 1:
                 self.state = 604
                 self.typeArguments()
 
-
             self.state = 614
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,62,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
+            _alt = self._interp.adaptivePredict(self._input, 62, self._ctx)
+            while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                if _alt == 1:
                     self.state = 607
                     self.match(JavaLabeledParser.DOT)
                     self.state = 608
                     self.match(JavaLabeledParser.IDENTIFIER)
                     self.state = 610
                     self._errHandler.sync(self)
-                    la_ = self._interp.adaptivePredict(self._input,61,self._ctx)
+                    la_ = self._interp.adaptivePredict(self._input, 61, self._ctx)
                     if la_ == 1:
                         self.state = 609
                         self.typeArguments()
 
-             
                 self.state = 616
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,62,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input, 62, self._ctx)
 
         except RecognitionException as re:
             localctx.exception = re
@@ -4085,57 +4645,55 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class TypeArgumentContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_typeArgument
 
-     
-        def copyFrom(self, ctx:ParserRuleContext):
+        def copyFrom(self, ctx: ParserRuleContext):
             super().copyFrom(ctx)
 
-
-
     class TypeArgument0Context(TypeArgumentContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.TypeArgumentContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.TypeArgumentContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def typeType(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext, 0)
 
         def QUESTION(self):
             return self.getToken(JavaLabeledParser.QUESTION, 0)
-        def annotation(self, i:int=None):
+
+        def annotation(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.AnnotationContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext,i)
+                return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext, i)
 
         def EXTENDS(self):
             return self.getToken(JavaLabeledParser.EXTENDS, 0)
+
         def SUPER(self):
             return self.getToken(JavaLabeledParser.SUPER, 0)
-
-
 
     def typeArgument(self):
 
         localctx = JavaLabeledParser.TypeArgumentContext(self, self._ctx, self.state)
         self.enterRule(localctx, 80, self.RULE_typeArgument)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.state = 629
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,65,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 65, self._ctx)
             if la_ == 1:
                 localctx = JavaLabeledParser.TypeArgument0Context(self, localctx)
                 self.enterOuterAlt(localctx, 1)
@@ -4149,7 +4707,9 @@ class JavaLabeledParser ( Parser ):
                 self.state = 621
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                while _la==JavaLabeledParser.AT or _la==JavaLabeledParser.IDENTIFIER:
+                while (
+                    _la == JavaLabeledParser.AT or _la == JavaLabeledParser.IDENTIFIER
+                ):
                     self.state = 618
                     self.annotation()
                     self.state = 623
@@ -4161,10 +4721,13 @@ class JavaLabeledParser ( Parser ):
                 self.state = 627
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==JavaLabeledParser.EXTENDS or _la==JavaLabeledParser.SUPER:
+                if _la == JavaLabeledParser.EXTENDS or _la == JavaLabeledParser.SUPER:
                     self.state = 625
                     _la = self._input.LA(1)
-                    if not(_la==JavaLabeledParser.EXTENDS or _la==JavaLabeledParser.SUPER):
+                    if not (
+                        _la == JavaLabeledParser.EXTENDS
+                        or _la == JavaLabeledParser.SUPER
+                    ):
                         self._errHandler.recoverInline(self)
                     else:
                         self._errHandler.reportMatch(self)
@@ -4172,9 +4735,7 @@ class JavaLabeledParser ( Parser ):
                     self.state = 626
                     self.typeType()
 
-
                 pass
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -4184,22 +4745,24 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class QualifiedNameListContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def qualifiedName(self, i:int=None):
+        def qualifiedName(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.QualifiedNameContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.QualifiedNameContext,i)
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.QualifiedNameContext, i
+                )
 
-
-        def COMMA(self, i:int=None):
+        def COMMA(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.COMMA)
             else:
@@ -4208,14 +4771,13 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_qualifiedNameList
 
-
-
-
     def qualifiedNameList(self):
 
-        localctx = JavaLabeledParser.QualifiedNameListContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.QualifiedNameListContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 82, self.RULE_qualifiedNameList)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 631
@@ -4223,7 +4785,7 @@ class JavaLabeledParser ( Parser ):
             self.state = 636
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==JavaLabeledParser.COMMA:
+            while _la == JavaLabeledParser.COMMA:
                 self.state = 632
                 self.match(JavaLabeledParser.COMMA)
                 self.state = 633
@@ -4240,11 +4802,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class FormalParametersContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -4255,20 +4818,20 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.RPAREN, 0)
 
         def formalParameterList(self):
-            return self.getTypedRuleContext(JavaLabeledParser.FormalParameterListContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.FormalParameterListContext, 0
+            )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_formalParameters
 
-
-
-
     def formalParameters(self):
 
-        localctx = JavaLabeledParser.FormalParametersContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.FormalParametersContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 84, self.RULE_formalParameters)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 639
@@ -4276,10 +4839,30 @@ class JavaLabeledParser ( Parser ):
             self.state = 641
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << JavaLabeledParser.BOOLEAN) | (1 << JavaLabeledParser.BYTE) | (1 << JavaLabeledParser.CHAR) | (1 << JavaLabeledParser.DOUBLE) | (1 << JavaLabeledParser.FINAL) | (1 << JavaLabeledParser.FLOAT) | (1 << JavaLabeledParser.INT) | (1 << JavaLabeledParser.LONG) | (1 << JavaLabeledParser.SHORT))) != 0) or _la==JavaLabeledParser.AT or _la==JavaLabeledParser.IDENTIFIER:
+            if (
+                (
+                    ((_la) & ~0x3F) == 0
+                    and (
+                        (1 << _la)
+                        & (
+                            (1 << JavaLabeledParser.BOOLEAN)
+                            | (1 << JavaLabeledParser.BYTE)
+                            | (1 << JavaLabeledParser.CHAR)
+                            | (1 << JavaLabeledParser.DOUBLE)
+                            | (1 << JavaLabeledParser.FINAL)
+                            | (1 << JavaLabeledParser.FLOAT)
+                            | (1 << JavaLabeledParser.INT)
+                            | (1 << JavaLabeledParser.LONG)
+                            | (1 << JavaLabeledParser.SHORT)
+                        )
+                    )
+                    != 0
+                )
+                or _la == JavaLabeledParser.AT
+                or _la == JavaLabeledParser.IDENTIFIER
+            ):
                 self.state = 640
                 self.formalParameterList()
-
 
             self.state = 643
             self.match(JavaLabeledParser.RPAREN)
@@ -4291,67 +4874,72 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class FormalParameterListContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_formalParameterList
 
-     
-        def copyFrom(self, ctx:ParserRuleContext):
+        def copyFrom(self, ctx: ParserRuleContext):
             super().copyFrom(ctx)
 
-
-
     class FormalParameterList1Context(FormalParameterListContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.FormalParameterListContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.FormalParameterListContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def lastFormalParameter(self):
-            return self.getTypedRuleContext(JavaLabeledParser.LastFormalParameterContext,0)
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.LastFormalParameterContext, 0
+            )
 
     class FormalParameterList0Context(FormalParameterListContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.FormalParameterListContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.FormalParameterListContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
-        def formalParameter(self, i:int=None):
+        def formalParameter(self, i: int = None):
             if i is None:
-                return self.getTypedRuleContexts(JavaLabeledParser.FormalParameterContext)
+                return self.getTypedRuleContexts(
+                    JavaLabeledParser.FormalParameterContext
+                )
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.FormalParameterContext,i)
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.FormalParameterContext, i
+                )
 
-        def COMMA(self, i:int=None):
+        def COMMA(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.COMMA)
             else:
                 return self.getToken(JavaLabeledParser.COMMA, i)
+
         def lastFormalParameter(self):
-            return self.getTypedRuleContext(JavaLabeledParser.LastFormalParameterContext,0)
-
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.LastFormalParameterContext, 0
+            )
 
     def formalParameterList(self):
 
-        localctx = JavaLabeledParser.FormalParameterListContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.FormalParameterListContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 86, self.RULE_formalParameterList)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.state = 658
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,70,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 70, self._ctx)
             if la_ == 1:
                 localctx = JavaLabeledParser.FormalParameterList0Context(self, localctx)
                 self.enterOuterAlt(localctx, 1)
@@ -4359,26 +4947,25 @@ class JavaLabeledParser ( Parser ):
                 self.formalParameter()
                 self.state = 650
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,68,self._ctx)
-                while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                    if _alt==1:
+                _alt = self._interp.adaptivePredict(self._input, 68, self._ctx)
+                while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                    if _alt == 1:
                         self.state = 646
                         self.match(JavaLabeledParser.COMMA)
                         self.state = 647
-                        self.formalParameter() 
+                        self.formalParameter()
                     self.state = 652
                     self._errHandler.sync(self)
-                    _alt = self._interp.adaptivePredict(self._input,68,self._ctx)
+                    _alt = self._interp.adaptivePredict(self._input, 68, self._ctx)
 
                 self.state = 655
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==JavaLabeledParser.COMMA:
+                if _la == JavaLabeledParser.COMMA:
                     self.state = 653
                     self.match(JavaLabeledParser.COMMA)
                     self.state = 654
                     self.lastFormalParameter()
-
 
                 pass
 
@@ -4389,7 +4976,6 @@ class JavaLabeledParser ( Parser ):
                 self.lastFormalParameter()
                 pass
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -4398,34 +4984,35 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class FormalParameterContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def typeType(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext, 0)
 
         def variableDeclaratorId(self):
-            return self.getTypedRuleContext(JavaLabeledParser.VariableDeclaratorIdContext,0)
+            return self.getTypedRuleContext(
+                JavaLabeledParser.VariableDeclaratorIdContext, 0
+            )
 
-
-        def variableModifier(self, i:int=None):
+        def variableModifier(self, i: int = None):
             if i is None:
-                return self.getTypedRuleContexts(JavaLabeledParser.VariableModifierContext)
+                return self.getTypedRuleContexts(
+                    JavaLabeledParser.VariableModifierContext
+                )
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.VariableModifierContext,i)
-
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.VariableModifierContext, i
+                )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_formalParameter
-
-
-
 
     def formalParameter(self):
 
@@ -4435,14 +5022,14 @@ class JavaLabeledParser ( Parser ):
             self.enterOuterAlt(localctx, 1)
             self.state = 663
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,71,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
+            _alt = self._interp.adaptivePredict(self._input, 71, self._ctx)
+            while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                if _alt == 1:
                     self.state = 660
-                    self.variableModifier() 
+                    self.variableModifier()
                 self.state = 665
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,71,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input, 71, self._ctx)
 
             self.state = 666
             self.typeType()
@@ -4456,69 +5043,71 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class LastFormalParameterContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def typeType(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext, 0)
 
         def ELLIPSIS(self):
             return self.getToken(JavaLabeledParser.ELLIPSIS, 0)
 
         def variableDeclaratorId(self):
-            return self.getTypedRuleContext(JavaLabeledParser.VariableDeclaratorIdContext,0)
+            return self.getTypedRuleContext(
+                JavaLabeledParser.VariableDeclaratorIdContext, 0
+            )
 
-
-        def variableModifier(self, i:int=None):
+        def variableModifier(self, i: int = None):
             if i is None:
-                return self.getTypedRuleContexts(JavaLabeledParser.VariableModifierContext)
+                return self.getTypedRuleContexts(
+                    JavaLabeledParser.VariableModifierContext
+                )
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.VariableModifierContext,i)
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.VariableModifierContext, i
+                )
 
-
-        def annotation(self, i:int=None):
+        def annotation(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.AnnotationContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext,i)
-
+                return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext, i)
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_lastFormalParameter
 
-
-
-
     def lastFormalParameter(self):
 
-        localctx = JavaLabeledParser.LastFormalParameterContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.LastFormalParameterContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 90, self.RULE_lastFormalParameter)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 672
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,72,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
+            _alt = self._interp.adaptivePredict(self._input, 72, self._ctx)
+            while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                if _alt == 1:
                     self.state = 669
-                    self.variableModifier() 
+                    self.variableModifier()
                 self.state = 674
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,72,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input, 72, self._ctx)
 
             self.state = 675
             self.typeType()
             self.state = 679
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==JavaLabeledParser.AT or _la==JavaLabeledParser.IDENTIFIER:
+            while _la == JavaLabeledParser.AT or _la == JavaLabeledParser.IDENTIFIER:
                 self.state = 676
                 self.annotation()
                 self.state = 681
@@ -4537,21 +5126,22 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class QualifiedNameContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def IDENTIFIER(self, i:int=None):
+        def IDENTIFIER(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.IDENTIFIER)
             else:
                 return self.getToken(JavaLabeledParser.IDENTIFIER, i)
 
-        def DOT(self, i:int=None):
+        def DOT(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.DOT)
             else:
@@ -4559,9 +5149,6 @@ class JavaLabeledParser ( Parser ):
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_qualifiedName
-
-
-
 
     def qualifiedName(self):
 
@@ -4573,16 +5160,16 @@ class JavaLabeledParser ( Parser ):
             self.match(JavaLabeledParser.IDENTIFIER)
             self.state = 690
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,74,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
+            _alt = self._interp.adaptivePredict(self._input, 74, self._ctx)
+            while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                if _alt == 1:
                     self.state = 686
                     self.match(JavaLabeledParser.DOT)
                     self.state = 687
-                    self.match(JavaLabeledParser.IDENTIFIER) 
+                    self.match(JavaLabeledParser.IDENTIFIER)
                 self.state = 692
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,74,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input, 74, self._ctx)
 
         except RecognitionException as re:
             localctx.exception = re
@@ -4592,86 +5179,80 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class LiteralContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_literal
 
-     
-        def copyFrom(self, ctx:ParserRuleContext):
+        def copyFrom(self, ctx: ParserRuleContext):
             super().copyFrom(ctx)
 
-
-
     class Literal2Context(LiteralContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.LiteralContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.LiteralContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def CHAR_LITERAL(self):
             return self.getToken(JavaLabeledParser.CHAR_LITERAL, 0)
 
-
     class Literal1Context(LiteralContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.LiteralContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.LiteralContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def floatLiteral(self):
-            return self.getTypedRuleContext(JavaLabeledParser.FloatLiteralContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.FloatLiteralContext, 0)
 
     class Literal0Context(LiteralContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.LiteralContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.LiteralContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def integerLiteral(self):
-            return self.getTypedRuleContext(JavaLabeledParser.IntegerLiteralContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.IntegerLiteralContext, 0)
 
     class Literal5Context(LiteralContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.LiteralContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.LiteralContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def NULL_LITERAL(self):
             return self.getToken(JavaLabeledParser.NULL_LITERAL, 0)
 
-
     class Literal4Context(LiteralContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.LiteralContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.LiteralContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def BOOL_LITERAL(self):
             return self.getToken(JavaLabeledParser.BOOL_LITERAL, 0)
 
-
     class Literal3Context(LiteralContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.LiteralContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.LiteralContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def STRING_LITERAL(self):
             return self.getToken(JavaLabeledParser.STRING_LITERAL, 0)
-
-
 
     def literal(self):
 
@@ -4681,13 +5262,21 @@ class JavaLabeledParser ( Parser ):
             self.state = 699
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [JavaLabeledParser.DECIMAL_LITERAL, JavaLabeledParser.HEX_LITERAL, JavaLabeledParser.OCT_LITERAL, JavaLabeledParser.BINARY_LITERAL]:
+            if token in [
+                JavaLabeledParser.DECIMAL_LITERAL,
+                JavaLabeledParser.HEX_LITERAL,
+                JavaLabeledParser.OCT_LITERAL,
+                JavaLabeledParser.BINARY_LITERAL,
+            ]:
                 localctx = JavaLabeledParser.Literal0Context(self, localctx)
                 self.enterOuterAlt(localctx, 1)
                 self.state = 693
                 self.integerLiteral()
                 pass
-            elif token in [JavaLabeledParser.FLOAT_LITERAL, JavaLabeledParser.HEX_FLOAT_LITERAL]:
+            elif token in [
+                JavaLabeledParser.FLOAT_LITERAL,
+                JavaLabeledParser.HEX_FLOAT_LITERAL,
+            ]:
                 localctx = JavaLabeledParser.Literal1Context(self, localctx)
                 self.enterOuterAlt(localctx, 2)
                 self.state = 694
@@ -4728,11 +5317,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class IntegerLiteralContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -4751,19 +5341,30 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_integerLiteral
 
-
-
-
     def integerLiteral(self):
 
         localctx = JavaLabeledParser.IntegerLiteralContext(self, self._ctx, self.state)
         self.enterRule(localctx, 96, self.RULE_integerLiteral)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 701
             _la = self._input.LA(1)
-            if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << JavaLabeledParser.DECIMAL_LITERAL) | (1 << JavaLabeledParser.HEX_LITERAL) | (1 << JavaLabeledParser.OCT_LITERAL) | (1 << JavaLabeledParser.BINARY_LITERAL))) != 0)):
+            if not (
+                (
+                    ((_la) & ~0x3F) == 0
+                    and (
+                        (1 << _la)
+                        & (
+                            (1 << JavaLabeledParser.DECIMAL_LITERAL)
+                            | (1 << JavaLabeledParser.HEX_LITERAL)
+                            | (1 << JavaLabeledParser.OCT_LITERAL)
+                            | (1 << JavaLabeledParser.BINARY_LITERAL)
+                        )
+                    )
+                    != 0
+                )
+            ):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -4776,11 +5377,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class FloatLiteralContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -4793,19 +5395,19 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_floatLiteral
 
-
-
-
     def floatLiteral(self):
 
         localctx = JavaLabeledParser.FloatLiteralContext(self, self._ctx, self.state)
         self.enterRule(localctx, 98, self.RULE_floatLiteral)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 703
             _la = self._input.LA(1)
-            if not(_la==JavaLabeledParser.FLOAT_LITERAL or _la==JavaLabeledParser.HEX_FLOAT_LITERAL):
+            if not (
+                _la == JavaLabeledParser.FLOAT_LITERAL
+                or _la == JavaLabeledParser.HEX_FLOAT_LITERAL
+            ):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -4818,24 +5420,25 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class AltAnnotationQualifiedNameContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def AT(self):
             return self.getToken(JavaLabeledParser.AT, 0)
 
-        def IDENTIFIER(self, i:int=None):
+        def IDENTIFIER(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.IDENTIFIER)
             else:
                 return self.getToken(JavaLabeledParser.IDENTIFIER, i)
 
-        def DOT(self, i:int=None):
+        def DOT(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.DOT)
             else:
@@ -4844,20 +5447,19 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_altAnnotationQualifiedName
 
-
-
-
     def altAnnotationQualifiedName(self):
 
-        localctx = JavaLabeledParser.AltAnnotationQualifiedNameContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.AltAnnotationQualifiedNameContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 100, self.RULE_altAnnotationQualifiedName)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 709
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==JavaLabeledParser.IDENTIFIER:
+            while _la == JavaLabeledParser.IDENTIFIER:
                 self.state = 705
                 self.match(JavaLabeledParser.IDENTIFIER)
                 self.state = 706
@@ -4878,11 +5480,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class AnnotationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -4890,12 +5493,12 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.AT, 0)
 
         def qualifiedName(self):
-            return self.getTypedRuleContext(JavaLabeledParser.QualifiedNameContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.QualifiedNameContext, 0)
 
         def altAnnotationQualifiedName(self):
-            return self.getTypedRuleContext(JavaLabeledParser.AltAnnotationQualifiedNameContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.AltAnnotationQualifiedNameContext, 0
+            )
 
         def LPAREN(self):
             return self.getToken(JavaLabeledParser.LPAREN, 0)
@@ -4904,29 +5507,26 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.RPAREN, 0)
 
         def elementValuePairs(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ElementValuePairsContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.ElementValuePairsContext, 0
+            )
 
         def elementValue(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ElementValueContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.ElementValueContext, 0)
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_annotation
-
-
-
 
     def annotation(self):
 
         localctx = JavaLabeledParser.AnnotationContext(self, self._ctx, self.state)
         self.enterRule(localctx, 102, self.RULE_annotation)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 718
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,77,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 77, self._ctx)
             if la_ == 1:
                 self.state = 715
                 self.match(JavaLabeledParser.AT)
@@ -4939,16 +5539,15 @@ class JavaLabeledParser ( Parser ):
                 self.altAnnotationQualifiedName()
                 pass
 
-
             self.state = 726
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==JavaLabeledParser.LPAREN:
+            if _la == JavaLabeledParser.LPAREN:
                 self.state = 720
                 self.match(JavaLabeledParser.LPAREN)
                 self.state = 723
                 self._errHandler.sync(self)
-                la_ = self._interp.adaptivePredict(self._input,78,self._ctx)
+                la_ = self._interp.adaptivePredict(self._input, 78, self._ctx)
                 if la_ == 1:
                     self.state = 721
                     self.elementValuePairs()
@@ -4957,10 +5556,8 @@ class JavaLabeledParser ( Parser ):
                     self.state = 722
                     self.elementValue()
 
-
                 self.state = 725
                 self.match(JavaLabeledParser.RPAREN)
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -4970,22 +5567,26 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ElementValuePairsContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def elementValuePair(self, i:int=None):
+        def elementValuePair(self, i: int = None):
             if i is None:
-                return self.getTypedRuleContexts(JavaLabeledParser.ElementValuePairContext)
+                return self.getTypedRuleContexts(
+                    JavaLabeledParser.ElementValuePairContext
+                )
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ElementValuePairContext,i)
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.ElementValuePairContext, i
+                )
 
-
-        def COMMA(self, i:int=None):
+        def COMMA(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.COMMA)
             else:
@@ -4994,14 +5595,13 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_elementValuePairs
 
-
-
-
     def elementValuePairs(self):
 
-        localctx = JavaLabeledParser.ElementValuePairsContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.ElementValuePairsContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 104, self.RULE_elementValuePairs)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 728
@@ -5009,7 +5609,7 @@ class JavaLabeledParser ( Parser ):
             self.state = 733
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==JavaLabeledParser.COMMA:
+            while _la == JavaLabeledParser.COMMA:
                 self.state = 729
                 self.match(JavaLabeledParser.COMMA)
                 self.state = 730
@@ -5026,11 +5626,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ElementValuePairContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -5041,18 +5642,16 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.ASSIGN, 0)
 
         def elementValue(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ElementValueContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.ElementValueContext, 0)
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_elementValuePair
 
-
-
-
     def elementValuePair(self):
 
-        localctx = JavaLabeledParser.ElementValuePairContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.ElementValuePairContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 106, self.RULE_elementValuePair)
         try:
             self.enterOuterAlt(localctx, 1)
@@ -5070,57 +5669,52 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ElementValueContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_elementValue
 
-     
-        def copyFrom(self, ctx:ParserRuleContext):
+        def copyFrom(self, ctx: ParserRuleContext):
             super().copyFrom(ctx)
 
-
-
     class ElementValue0Context(ElementValueContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ElementValueContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ElementValueContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def expression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, 0)
 
     class ElementValue2Context(ElementValueContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ElementValueContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ElementValueContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def elementValueArrayInitializer(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ElementValueArrayInitializerContext,0)
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.ElementValueArrayInitializerContext, 0
+            )
 
     class ElementValue1Context(ElementValueContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ElementValueContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ElementValueContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def annotation(self):
-            return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext,0)
-
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext, 0)
 
     def elementValue(self):
 
@@ -5129,7 +5723,7 @@ class JavaLabeledParser ( Parser ):
         try:
             self.state = 743
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,81,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 81, self._ctx)
             if la_ == 1:
                 localctx = JavaLabeledParser.ElementValue0Context(self, localctx)
                 self.enterOuterAlt(localctx, 1)
@@ -5151,7 +5745,6 @@ class JavaLabeledParser ( Parser ):
                 self.elementValueArrayInitializer()
                 pass
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -5160,11 +5753,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ElementValueArrayInitializerContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -5174,14 +5768,15 @@ class JavaLabeledParser ( Parser ):
         def RBRACE(self):
             return self.getToken(JavaLabeledParser.RBRACE, 0)
 
-        def elementValue(self, i:int=None):
+        def elementValue(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.ElementValueContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ElementValueContext,i)
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.ElementValueContext, i
+                )
 
-
-        def COMMA(self, i:int=None):
+        def COMMA(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.COMMA)
             else:
@@ -5190,14 +5785,13 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_elementValueArrayInitializer
 
-
-
-
     def elementValueArrayInitializer(self):
 
-        localctx = JavaLabeledParser.ElementValueArrayInitializerContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.ElementValueArrayInitializerContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 110, self.RULE_elementValueArrayInitializer)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 745
@@ -5205,31 +5799,77 @@ class JavaLabeledParser ( Parser ):
             self.state = 754
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << JavaLabeledParser.BOOLEAN) | (1 << JavaLabeledParser.BYTE) | (1 << JavaLabeledParser.CHAR) | (1 << JavaLabeledParser.DOUBLE) | (1 << JavaLabeledParser.FLOAT) | (1 << JavaLabeledParser.INT) | (1 << JavaLabeledParser.LONG) | (1 << JavaLabeledParser.NEW) | (1 << JavaLabeledParser.SHORT) | (1 << JavaLabeledParser.SUPER) | (1 << JavaLabeledParser.THIS) | (1 << JavaLabeledParser.VOID) | (1 << JavaLabeledParser.DECIMAL_LITERAL) | (1 << JavaLabeledParser.HEX_LITERAL) | (1 << JavaLabeledParser.OCT_LITERAL) | (1 << JavaLabeledParser.BINARY_LITERAL) | (1 << JavaLabeledParser.FLOAT_LITERAL) | (1 << JavaLabeledParser.HEX_FLOAT_LITERAL) | (1 << JavaLabeledParser.BOOL_LITERAL) | (1 << JavaLabeledParser.CHAR_LITERAL) | (1 << JavaLabeledParser.STRING_LITERAL) | (1 << JavaLabeledParser.NULL_LITERAL) | (1 << JavaLabeledParser.LPAREN) | (1 << JavaLabeledParser.LBRACE))) != 0) or ((((_la - 72)) & ~0x3f) == 0 and ((1 << (_la - 72)) & ((1 << (JavaLabeledParser.LT - 72)) | (1 << (JavaLabeledParser.BANG - 72)) | (1 << (JavaLabeledParser.TILDE - 72)) | (1 << (JavaLabeledParser.INC - 72)) | (1 << (JavaLabeledParser.DEC - 72)) | (1 << (JavaLabeledParser.ADD - 72)) | (1 << (JavaLabeledParser.SUB - 72)) | (1 << (JavaLabeledParser.AT - 72)) | (1 << (JavaLabeledParser.IDENTIFIER - 72)))) != 0):
+            if (
+                ((_la) & ~0x3F) == 0
+                and (
+                    (1 << _la)
+                    & (
+                        (1 << JavaLabeledParser.BOOLEAN)
+                        | (1 << JavaLabeledParser.BYTE)
+                        | (1 << JavaLabeledParser.CHAR)
+                        | (1 << JavaLabeledParser.DOUBLE)
+                        | (1 << JavaLabeledParser.FLOAT)
+                        | (1 << JavaLabeledParser.INT)
+                        | (1 << JavaLabeledParser.LONG)
+                        | (1 << JavaLabeledParser.NEW)
+                        | (1 << JavaLabeledParser.SHORT)
+                        | (1 << JavaLabeledParser.SUPER)
+                        | (1 << JavaLabeledParser.THIS)
+                        | (1 << JavaLabeledParser.VOID)
+                        | (1 << JavaLabeledParser.DECIMAL_LITERAL)
+                        | (1 << JavaLabeledParser.HEX_LITERAL)
+                        | (1 << JavaLabeledParser.OCT_LITERAL)
+                        | (1 << JavaLabeledParser.BINARY_LITERAL)
+                        | (1 << JavaLabeledParser.FLOAT_LITERAL)
+                        | (1 << JavaLabeledParser.HEX_FLOAT_LITERAL)
+                        | (1 << JavaLabeledParser.BOOL_LITERAL)
+                        | (1 << JavaLabeledParser.CHAR_LITERAL)
+                        | (1 << JavaLabeledParser.STRING_LITERAL)
+                        | (1 << JavaLabeledParser.NULL_LITERAL)
+                        | (1 << JavaLabeledParser.LPAREN)
+                        | (1 << JavaLabeledParser.LBRACE)
+                    )
+                )
+                != 0
+            ) or (
+                (((_la - 72)) & ~0x3F) == 0
+                and (
+                    (1 << (_la - 72))
+                    & (
+                        (1 << (JavaLabeledParser.LT - 72))
+                        | (1 << (JavaLabeledParser.BANG - 72))
+                        | (1 << (JavaLabeledParser.TILDE - 72))
+                        | (1 << (JavaLabeledParser.INC - 72))
+                        | (1 << (JavaLabeledParser.DEC - 72))
+                        | (1 << (JavaLabeledParser.ADD - 72))
+                        | (1 << (JavaLabeledParser.SUB - 72))
+                        | (1 << (JavaLabeledParser.AT - 72))
+                        | (1 << (JavaLabeledParser.IDENTIFIER - 72))
+                    )
+                )
+                != 0
+            ):
                 self.state = 746
                 self.elementValue()
                 self.state = 751
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,82,self._ctx)
-                while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                    if _alt==1:
+                _alt = self._interp.adaptivePredict(self._input, 82, self._ctx)
+                while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                    if _alt == 1:
                         self.state = 747
                         self.match(JavaLabeledParser.COMMA)
                         self.state = 748
-                        self.elementValue() 
+                        self.elementValue()
                     self.state = 753
                     self._errHandler.sync(self)
-                    _alt = self._interp.adaptivePredict(self._input,82,self._ctx)
-
-
+                    _alt = self._interp.adaptivePredict(self._input, 82, self._ctx)
 
             self.state = 757
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==JavaLabeledParser.COMMA:
+            if _la == JavaLabeledParser.COMMA:
                 self.state = 756
                 self.match(JavaLabeledParser.COMMA)
-
 
             self.state = 759
             self.match(JavaLabeledParser.RBRACE)
@@ -5241,11 +5881,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class AnnotationTypeDeclarationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -5259,18 +5900,18 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.IDENTIFIER, 0)
 
         def annotationTypeBody(self):
-            return self.getTypedRuleContext(JavaLabeledParser.AnnotationTypeBodyContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.AnnotationTypeBodyContext, 0
+            )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_annotationTypeDeclaration
 
-
-
-
     def annotationTypeDeclaration(self):
 
-        localctx = JavaLabeledParser.AnnotationTypeDeclarationContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.AnnotationTypeDeclarationContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 112, self.RULE_annotationTypeDeclaration)
         try:
             self.enterOuterAlt(localctx, 1)
@@ -5290,11 +5931,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class AnnotationTypeBodyContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -5304,24 +5946,26 @@ class JavaLabeledParser ( Parser ):
         def RBRACE(self):
             return self.getToken(JavaLabeledParser.RBRACE, 0)
 
-        def annotationTypeElementDeclaration(self, i:int=None):
+        def annotationTypeElementDeclaration(self, i: int = None):
             if i is None:
-                return self.getTypedRuleContexts(JavaLabeledParser.AnnotationTypeElementDeclarationContext)
+                return self.getTypedRuleContexts(
+                    JavaLabeledParser.AnnotationTypeElementDeclarationContext
+                )
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.AnnotationTypeElementDeclarationContext,i)
-
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.AnnotationTypeElementDeclarationContext, i
+                )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_annotationTypeBody
 
-
-
-
     def annotationTypeBody(self):
 
-        localctx = JavaLabeledParser.AnnotationTypeBodyContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.AnnotationTypeBodyContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 114, self.RULE_annotationTypeBody)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 766
@@ -5329,7 +5973,48 @@ class JavaLabeledParser ( Parser ):
             self.state = 770
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << JavaLabeledParser.ABSTRACT) | (1 << JavaLabeledParser.BOOLEAN) | (1 << JavaLabeledParser.BYTE) | (1 << JavaLabeledParser.CHAR) | (1 << JavaLabeledParser.CLASS) | (1 << JavaLabeledParser.DOUBLE) | (1 << JavaLabeledParser.ENUM) | (1 << JavaLabeledParser.FINAL) | (1 << JavaLabeledParser.FLOAT) | (1 << JavaLabeledParser.INT) | (1 << JavaLabeledParser.INTERFACE) | (1 << JavaLabeledParser.LONG) | (1 << JavaLabeledParser.NATIVE) | (1 << JavaLabeledParser.PRIVATE) | (1 << JavaLabeledParser.PROTECTED) | (1 << JavaLabeledParser.PUBLIC) | (1 << JavaLabeledParser.SHORT) | (1 << JavaLabeledParser.STATIC) | (1 << JavaLabeledParser.STRICTFP) | (1 << JavaLabeledParser.SYNCHRONIZED) | (1 << JavaLabeledParser.TRANSIENT) | (1 << JavaLabeledParser.VOLATILE))) != 0) or ((((_la - 67)) & ~0x3f) == 0 and ((1 << (_la - 67)) & ((1 << (JavaLabeledParser.SEMI - 67)) | (1 << (JavaLabeledParser.AT - 67)) | (1 << (JavaLabeledParser.IDENTIFIER - 67)))) != 0):
+            while (
+                ((_la) & ~0x3F) == 0
+                and (
+                    (1 << _la)
+                    & (
+                        (1 << JavaLabeledParser.ABSTRACT)
+                        | (1 << JavaLabeledParser.BOOLEAN)
+                        | (1 << JavaLabeledParser.BYTE)
+                        | (1 << JavaLabeledParser.CHAR)
+                        | (1 << JavaLabeledParser.CLASS)
+                        | (1 << JavaLabeledParser.DOUBLE)
+                        | (1 << JavaLabeledParser.ENUM)
+                        | (1 << JavaLabeledParser.FINAL)
+                        | (1 << JavaLabeledParser.FLOAT)
+                        | (1 << JavaLabeledParser.INT)
+                        | (1 << JavaLabeledParser.INTERFACE)
+                        | (1 << JavaLabeledParser.LONG)
+                        | (1 << JavaLabeledParser.NATIVE)
+                        | (1 << JavaLabeledParser.PRIVATE)
+                        | (1 << JavaLabeledParser.PROTECTED)
+                        | (1 << JavaLabeledParser.PUBLIC)
+                        | (1 << JavaLabeledParser.SHORT)
+                        | (1 << JavaLabeledParser.STATIC)
+                        | (1 << JavaLabeledParser.STRICTFP)
+                        | (1 << JavaLabeledParser.SYNCHRONIZED)
+                        | (1 << JavaLabeledParser.TRANSIENT)
+                        | (1 << JavaLabeledParser.VOLATILE)
+                    )
+                )
+                != 0
+            ) or (
+                (((_la - 67)) & ~0x3F) == 0
+                and (
+                    (1 << (_la - 67))
+                    & (
+                        (1 << (JavaLabeledParser.SEMI - 67))
+                        | (1 << (JavaLabeledParser.AT - 67))
+                        | (1 << (JavaLabeledParser.IDENTIFIER - 67))
+                    )
+                )
+                != 0
+            ):
                 self.state = 767
                 self.annotationTypeElementDeclaration()
                 self.state = 772
@@ -5346,24 +6031,25 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class AnnotationTypeElementDeclarationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def annotationTypeElementRest(self):
-            return self.getTypedRuleContext(JavaLabeledParser.AnnotationTypeElementRestContext,0)
+            return self.getTypedRuleContext(
+                JavaLabeledParser.AnnotationTypeElementRestContext, 0
+            )
 
-
-        def modifier(self, i:int=None):
+        def modifier(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.ModifierContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ModifierContext,i)
-
+                return self.getTypedRuleContext(JavaLabeledParser.ModifierContext, i)
 
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
@@ -5371,29 +6057,53 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_annotationTypeElementDeclaration
 
-
-
-
     def annotationTypeElementDeclaration(self):
 
-        localctx = JavaLabeledParser.AnnotationTypeElementDeclarationContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.AnnotationTypeElementDeclarationContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 116, self.RULE_annotationTypeElementDeclaration)
         try:
             self.state = 783
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [JavaLabeledParser.ABSTRACT, JavaLabeledParser.BOOLEAN, JavaLabeledParser.BYTE, JavaLabeledParser.CHAR, JavaLabeledParser.CLASS, JavaLabeledParser.DOUBLE, JavaLabeledParser.ENUM, JavaLabeledParser.FINAL, JavaLabeledParser.FLOAT, JavaLabeledParser.INT, JavaLabeledParser.INTERFACE, JavaLabeledParser.LONG, JavaLabeledParser.NATIVE, JavaLabeledParser.PRIVATE, JavaLabeledParser.PROTECTED, JavaLabeledParser.PUBLIC, JavaLabeledParser.SHORT, JavaLabeledParser.STATIC, JavaLabeledParser.STRICTFP, JavaLabeledParser.SYNCHRONIZED, JavaLabeledParser.TRANSIENT, JavaLabeledParser.VOLATILE, JavaLabeledParser.AT, JavaLabeledParser.IDENTIFIER]:
+            if token in [
+                JavaLabeledParser.ABSTRACT,
+                JavaLabeledParser.BOOLEAN,
+                JavaLabeledParser.BYTE,
+                JavaLabeledParser.CHAR,
+                JavaLabeledParser.CLASS,
+                JavaLabeledParser.DOUBLE,
+                JavaLabeledParser.ENUM,
+                JavaLabeledParser.FINAL,
+                JavaLabeledParser.FLOAT,
+                JavaLabeledParser.INT,
+                JavaLabeledParser.INTERFACE,
+                JavaLabeledParser.LONG,
+                JavaLabeledParser.NATIVE,
+                JavaLabeledParser.PRIVATE,
+                JavaLabeledParser.PROTECTED,
+                JavaLabeledParser.PUBLIC,
+                JavaLabeledParser.SHORT,
+                JavaLabeledParser.STATIC,
+                JavaLabeledParser.STRICTFP,
+                JavaLabeledParser.SYNCHRONIZED,
+                JavaLabeledParser.TRANSIENT,
+                JavaLabeledParser.VOLATILE,
+                JavaLabeledParser.AT,
+                JavaLabeledParser.IDENTIFIER,
+            ]:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 778
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,86,self._ctx)
-                while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                    if _alt==1:
+                _alt = self._interp.adaptivePredict(self._input, 86, self._ctx)
+                while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                    if _alt == 1:
                         self.state = 775
-                        self.modifier() 
+                        self.modifier()
                     self.state = 780
                     self._errHandler.sync(self)
-                    _alt = self._interp.adaptivePredict(self._input,86,self._ctx)
+                    _alt = self._interp.adaptivePredict(self._input, 86, self._ctx)
 
                 self.state = 781
                 self.annotationTypeElementRest()
@@ -5414,103 +6124,111 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class AnnotationTypeElementRestContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_annotationTypeElementRest
 
-     
-        def copyFrom(self, ctx:ParserRuleContext):
+        def copyFrom(self, ctx: ParserRuleContext):
             super().copyFrom(ctx)
 
-
-
     class AnnotationTypeElementRest0Context(AnnotationTypeElementRestContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.AnnotationTypeElementRestContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.AnnotationTypeElementRestContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def typeType(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext, 0)
 
         def annotationMethodOrConstantRest(self):
-            return self.getTypedRuleContext(JavaLabeledParser.AnnotationMethodOrConstantRestContext,0)
+            return self.getTypedRuleContext(
+                JavaLabeledParser.AnnotationMethodOrConstantRestContext, 0
+            )
 
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
 
-
     class AnnotationTypeElementRest1Context(AnnotationTypeElementRestContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.AnnotationTypeElementRestContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.AnnotationTypeElementRestContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def classDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ClassDeclarationContext,0)
+            return self.getTypedRuleContext(
+                JavaLabeledParser.ClassDeclarationContext, 0
+            )
 
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
 
-
     class AnnotationTypeElementRest2Context(AnnotationTypeElementRestContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.AnnotationTypeElementRestContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.AnnotationTypeElementRestContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def interfaceDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.InterfaceDeclarationContext,0)
+            return self.getTypedRuleContext(
+                JavaLabeledParser.InterfaceDeclarationContext, 0
+            )
 
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
 
-
     class AnnotationTypeElementRest3Context(AnnotationTypeElementRestContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.AnnotationTypeElementRestContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.AnnotationTypeElementRestContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def enumDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.EnumDeclarationContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.EnumDeclarationContext, 0)
 
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
 
-
     class AnnotationTypeElementRest4Context(AnnotationTypeElementRestContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.AnnotationTypeElementRestContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.AnnotationTypeElementRestContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def annotationTypeDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.AnnotationTypeDeclarationContext,0)
+            return self.getTypedRuleContext(
+                JavaLabeledParser.AnnotationTypeDeclarationContext, 0
+            )
 
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
 
-
-
     def annotationTypeElementRest(self):
 
-        localctx = JavaLabeledParser.AnnotationTypeElementRestContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.AnnotationTypeElementRestContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 118, self.RULE_annotationTypeElementRest)
         try:
             self.state = 805
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,92,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 92, self._ctx)
             if la_ == 1:
-                localctx = JavaLabeledParser.AnnotationTypeElementRest0Context(self, localctx)
+                localctx = JavaLabeledParser.AnnotationTypeElementRest0Context(
+                    self, localctx
+                )
                 self.enterOuterAlt(localctx, 1)
                 self.state = 785
                 self.typeType()
@@ -5521,65 +6239,68 @@ class JavaLabeledParser ( Parser ):
                 pass
 
             elif la_ == 2:
-                localctx = JavaLabeledParser.AnnotationTypeElementRest1Context(self, localctx)
+                localctx = JavaLabeledParser.AnnotationTypeElementRest1Context(
+                    self, localctx
+                )
                 self.enterOuterAlt(localctx, 2)
                 self.state = 789
                 self.classDeclaration()
                 self.state = 791
                 self._errHandler.sync(self)
-                la_ = self._interp.adaptivePredict(self._input,88,self._ctx)
+                la_ = self._interp.adaptivePredict(self._input, 88, self._ctx)
                 if la_ == 1:
                     self.state = 790
                     self.match(JavaLabeledParser.SEMI)
 
-
                 pass
 
             elif la_ == 3:
-                localctx = JavaLabeledParser.AnnotationTypeElementRest2Context(self, localctx)
+                localctx = JavaLabeledParser.AnnotationTypeElementRest2Context(
+                    self, localctx
+                )
                 self.enterOuterAlt(localctx, 3)
                 self.state = 793
                 self.interfaceDeclaration()
                 self.state = 795
                 self._errHandler.sync(self)
-                la_ = self._interp.adaptivePredict(self._input,89,self._ctx)
+                la_ = self._interp.adaptivePredict(self._input, 89, self._ctx)
                 if la_ == 1:
                     self.state = 794
                     self.match(JavaLabeledParser.SEMI)
 
-
                 pass
 
             elif la_ == 4:
-                localctx = JavaLabeledParser.AnnotationTypeElementRest3Context(self, localctx)
+                localctx = JavaLabeledParser.AnnotationTypeElementRest3Context(
+                    self, localctx
+                )
                 self.enterOuterAlt(localctx, 4)
                 self.state = 797
                 self.enumDeclaration()
                 self.state = 799
                 self._errHandler.sync(self)
-                la_ = self._interp.adaptivePredict(self._input,90,self._ctx)
+                la_ = self._interp.adaptivePredict(self._input, 90, self._ctx)
                 if la_ == 1:
                     self.state = 798
                     self.match(JavaLabeledParser.SEMI)
 
-
                 pass
 
             elif la_ == 5:
-                localctx = JavaLabeledParser.AnnotationTypeElementRest4Context(self, localctx)
+                localctx = JavaLabeledParser.AnnotationTypeElementRest4Context(
+                    self, localctx
+                )
                 self.enterOuterAlt(localctx, 5)
                 self.state = 801
                 self.annotationTypeDeclaration()
                 self.state = 803
                 self._errHandler.sync(self)
-                la_ = self._interp.adaptivePredict(self._input,91,self._ctx)
+                la_ = self._interp.adaptivePredict(self._input, 91, self._ctx)
                 if la_ == 1:
                     self.state = 802
                     self.match(JavaLabeledParser.SEMI)
 
-
                 pass
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -5589,69 +6310,72 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class AnnotationMethodOrConstantRestContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_annotationMethodOrConstantRest
 
-     
-        def copyFrom(self, ctx:ParserRuleContext):
+        def copyFrom(self, ctx: ParserRuleContext):
             super().copyFrom(ctx)
 
-
-
     class AnnotationMethodOrConstantRest0Context(AnnotationMethodOrConstantRestContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.AnnotationMethodOrConstantRestContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.AnnotationMethodOrConstantRestContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def annotationMethodRest(self):
-            return self.getTypedRuleContext(JavaLabeledParser.AnnotationMethodRestContext,0)
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.AnnotationMethodRestContext, 0
+            )
 
     class AnnotationMethodOrConstantRest1Context(AnnotationMethodOrConstantRestContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.AnnotationMethodOrConstantRestContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.AnnotationMethodOrConstantRestContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def annotationConstantRest(self):
-            return self.getTypedRuleContext(JavaLabeledParser.AnnotationConstantRestContext,0)
-
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.AnnotationConstantRestContext, 0
+            )
 
     def annotationMethodOrConstantRest(self):
 
-        localctx = JavaLabeledParser.AnnotationMethodOrConstantRestContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.AnnotationMethodOrConstantRestContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 120, self.RULE_annotationMethodOrConstantRest)
         try:
             self.state = 809
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,93,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 93, self._ctx)
             if la_ == 1:
-                localctx = JavaLabeledParser.AnnotationMethodOrConstantRest0Context(self, localctx)
+                localctx = JavaLabeledParser.AnnotationMethodOrConstantRest0Context(
+                    self, localctx
+                )
                 self.enterOuterAlt(localctx, 1)
                 self.state = 807
                 self.annotationMethodRest()
                 pass
 
             elif la_ == 2:
-                localctx = JavaLabeledParser.AnnotationMethodOrConstantRest1Context(self, localctx)
+                localctx = JavaLabeledParser.AnnotationMethodOrConstantRest1Context(
+                    self, localctx
+                )
                 self.enterOuterAlt(localctx, 2)
                 self.state = 808
                 self.annotationConstantRest()
                 pass
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -5661,11 +6385,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class AnnotationMethodRestContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -5679,20 +6404,18 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.RPAREN, 0)
 
         def defaultValue(self):
-            return self.getTypedRuleContext(JavaLabeledParser.DefaultValueContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.DefaultValueContext, 0)
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_annotationMethodRest
 
-
-
-
     def annotationMethodRest(self):
 
-        localctx = JavaLabeledParser.AnnotationMethodRestContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.AnnotationMethodRestContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 122, self.RULE_annotationMethodRest)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 811
@@ -5704,10 +6427,9 @@ class JavaLabeledParser ( Parser ):
             self.state = 815
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==JavaLabeledParser.DEFAULT:
+            if _la == JavaLabeledParser.DEFAULT:
                 self.state = 814
                 self.defaultValue()
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -5717,27 +6439,28 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class AnnotationConstantRestContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def variableDeclarators(self):
-            return self.getTypedRuleContext(JavaLabeledParser.VariableDeclaratorsContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.VariableDeclaratorsContext, 0
+            )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_annotationConstantRest
 
-
-
-
     def annotationConstantRest(self):
 
-        localctx = JavaLabeledParser.AnnotationConstantRestContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.AnnotationConstantRestContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 124, self.RULE_annotationConstantRest)
         try:
             self.enterOuterAlt(localctx, 1)
@@ -5751,11 +6474,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class DefaultValueContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -5763,14 +6487,10 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.DEFAULT, 0)
 
         def elementValue(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ElementValueContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.ElementValueContext, 0)
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_defaultValue
-
-
-
 
     def defaultValue(self):
 
@@ -5790,11 +6510,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class BlockContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -5804,24 +6525,24 @@ class JavaLabeledParser ( Parser ):
         def RBRACE(self):
             return self.getToken(JavaLabeledParser.RBRACE, 0)
 
-        def blockStatement(self, i:int=None):
+        def blockStatement(self, i: int = None):
             if i is None:
-                return self.getTypedRuleContexts(JavaLabeledParser.BlockStatementContext)
+                return self.getTypedRuleContexts(
+                    JavaLabeledParser.BlockStatementContext
+                )
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.BlockStatementContext,i)
-
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.BlockStatementContext, i
+                )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_block
-
-
-
 
     def block(self):
 
         localctx = JavaLabeledParser.BlockContext(self, self._ctx, self.state)
         self.enterRule(localctx, 128, self.RULE_block)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 822
@@ -5829,7 +6550,78 @@ class JavaLabeledParser ( Parser ):
             self.state = 826
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << JavaLabeledParser.ABSTRACT) | (1 << JavaLabeledParser.ASSERT) | (1 << JavaLabeledParser.BOOLEAN) | (1 << JavaLabeledParser.BREAK) | (1 << JavaLabeledParser.BYTE) | (1 << JavaLabeledParser.CHAR) | (1 << JavaLabeledParser.CLASS) | (1 << JavaLabeledParser.CONTINUE) | (1 << JavaLabeledParser.DO) | (1 << JavaLabeledParser.DOUBLE) | (1 << JavaLabeledParser.FINAL) | (1 << JavaLabeledParser.FLOAT) | (1 << JavaLabeledParser.FOR) | (1 << JavaLabeledParser.IF) | (1 << JavaLabeledParser.INT) | (1 << JavaLabeledParser.INTERFACE) | (1 << JavaLabeledParser.LONG) | (1 << JavaLabeledParser.NEW) | (1 << JavaLabeledParser.PRIVATE) | (1 << JavaLabeledParser.PROTECTED) | (1 << JavaLabeledParser.PUBLIC) | (1 << JavaLabeledParser.RETURN) | (1 << JavaLabeledParser.SHORT) | (1 << JavaLabeledParser.STATIC) | (1 << JavaLabeledParser.STRICTFP) | (1 << JavaLabeledParser.SUPER) | (1 << JavaLabeledParser.SWITCH) | (1 << JavaLabeledParser.SYNCHRONIZED) | (1 << JavaLabeledParser.THIS) | (1 << JavaLabeledParser.THROW) | (1 << JavaLabeledParser.TRY) | (1 << JavaLabeledParser.VOID) | (1 << JavaLabeledParser.WHILE) | (1 << JavaLabeledParser.DECIMAL_LITERAL) | (1 << JavaLabeledParser.HEX_LITERAL) | (1 << JavaLabeledParser.OCT_LITERAL) | (1 << JavaLabeledParser.BINARY_LITERAL) | (1 << JavaLabeledParser.FLOAT_LITERAL) | (1 << JavaLabeledParser.HEX_FLOAT_LITERAL) | (1 << JavaLabeledParser.BOOL_LITERAL) | (1 << JavaLabeledParser.CHAR_LITERAL) | (1 << JavaLabeledParser.STRING_LITERAL) | (1 << JavaLabeledParser.NULL_LITERAL) | (1 << JavaLabeledParser.LPAREN) | (1 << JavaLabeledParser.LBRACE))) != 0) or ((((_la - 67)) & ~0x3f) == 0 and ((1 << (_la - 67)) & ((1 << (JavaLabeledParser.SEMI - 67)) | (1 << (JavaLabeledParser.LT - 67)) | (1 << (JavaLabeledParser.BANG - 67)) | (1 << (JavaLabeledParser.TILDE - 67)) | (1 << (JavaLabeledParser.INC - 67)) | (1 << (JavaLabeledParser.DEC - 67)) | (1 << (JavaLabeledParser.ADD - 67)) | (1 << (JavaLabeledParser.SUB - 67)) | (1 << (JavaLabeledParser.AT - 67)) | (1 << (JavaLabeledParser.IDENTIFIER - 67)))) != 0):
+            while (
+                ((_la) & ~0x3F) == 0
+                and (
+                    (1 << _la)
+                    & (
+                        (1 << JavaLabeledParser.ABSTRACT)
+                        | (1 << JavaLabeledParser.ASSERT)
+                        | (1 << JavaLabeledParser.BOOLEAN)
+                        | (1 << JavaLabeledParser.BREAK)
+                        | (1 << JavaLabeledParser.BYTE)
+                        | (1 << JavaLabeledParser.CHAR)
+                        | (1 << JavaLabeledParser.CLASS)
+                        | (1 << JavaLabeledParser.CONTINUE)
+                        | (1 << JavaLabeledParser.DO)
+                        | (1 << JavaLabeledParser.DOUBLE)
+                        | (1 << JavaLabeledParser.FINAL)
+                        | (1 << JavaLabeledParser.FLOAT)
+                        | (1 << JavaLabeledParser.FOR)
+                        | (1 << JavaLabeledParser.IF)
+                        | (1 << JavaLabeledParser.INT)
+                        | (1 << JavaLabeledParser.INTERFACE)
+                        | (1 << JavaLabeledParser.LONG)
+                        | (1 << JavaLabeledParser.NEW)
+                        | (1 << JavaLabeledParser.PRIVATE)
+                        | (1 << JavaLabeledParser.PROTECTED)
+                        | (1 << JavaLabeledParser.PUBLIC)
+                        | (1 << JavaLabeledParser.RETURN)
+                        | (1 << JavaLabeledParser.SHORT)
+                        | (1 << JavaLabeledParser.STATIC)
+                        | (1 << JavaLabeledParser.STRICTFP)
+                        | (1 << JavaLabeledParser.SUPER)
+                        | (1 << JavaLabeledParser.SWITCH)
+                        | (1 << JavaLabeledParser.SYNCHRONIZED)
+                        | (1 << JavaLabeledParser.THIS)
+                        | (1 << JavaLabeledParser.THROW)
+                        | (1 << JavaLabeledParser.TRY)
+                        | (1 << JavaLabeledParser.VOID)
+                        | (1 << JavaLabeledParser.WHILE)
+                        | (1 << JavaLabeledParser.DECIMAL_LITERAL)
+                        | (1 << JavaLabeledParser.HEX_LITERAL)
+                        | (1 << JavaLabeledParser.OCT_LITERAL)
+                        | (1 << JavaLabeledParser.BINARY_LITERAL)
+                        | (1 << JavaLabeledParser.FLOAT_LITERAL)
+                        | (1 << JavaLabeledParser.HEX_FLOAT_LITERAL)
+                        | (1 << JavaLabeledParser.BOOL_LITERAL)
+                        | (1 << JavaLabeledParser.CHAR_LITERAL)
+                        | (1 << JavaLabeledParser.STRING_LITERAL)
+                        | (1 << JavaLabeledParser.NULL_LITERAL)
+                        | (1 << JavaLabeledParser.LPAREN)
+                        | (1 << JavaLabeledParser.LBRACE)
+                    )
+                )
+                != 0
+            ) or (
+                (((_la - 67)) & ~0x3F) == 0
+                and (
+                    (1 << (_la - 67))
+                    & (
+                        (1 << (JavaLabeledParser.SEMI - 67))
+                        | (1 << (JavaLabeledParser.LT - 67))
+                        | (1 << (JavaLabeledParser.BANG - 67))
+                        | (1 << (JavaLabeledParser.TILDE - 67))
+                        | (1 << (JavaLabeledParser.INC - 67))
+                        | (1 << (JavaLabeledParser.DEC - 67))
+                        | (1 << (JavaLabeledParser.ADD - 67))
+                        | (1 << (JavaLabeledParser.SUB - 67))
+                        | (1 << (JavaLabeledParser.AT - 67))
+                        | (1 << (JavaLabeledParser.IDENTIFIER - 67))
+                    )
+                )
+                != 0
+            ):
                 self.state = 823
                 self.blockStatement()
                 self.state = 828
@@ -5846,59 +6638,57 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class BlockStatementContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_blockStatement
 
-     
-        def copyFrom(self, ctx:ParserRuleContext):
+        def copyFrom(self, ctx: ParserRuleContext):
             super().copyFrom(ctx)
 
-
-
     class BlockStatement1Context(BlockStatementContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.BlockStatementContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.BlockStatementContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def statement(self):
-            return self.getTypedRuleContext(JavaLabeledParser.StatementContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.StatementContext, 0)
 
     class BlockStatement0Context(BlockStatementContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.BlockStatementContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.BlockStatementContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def localVariableDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.LocalVariableDeclarationContext,0)
+            return self.getTypedRuleContext(
+                JavaLabeledParser.LocalVariableDeclarationContext, 0
+            )
 
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
 
-
     class BlockStatement2Context(BlockStatementContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.BlockStatementContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.BlockStatementContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def localTypeDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.LocalTypeDeclarationContext,0)
-
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.LocalTypeDeclarationContext, 0
+            )
 
     def blockStatement(self):
 
@@ -5907,7 +6697,7 @@ class JavaLabeledParser ( Parser ):
         try:
             self.state = 836
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,96,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 96, self._ctx)
             if la_ == 1:
                 localctx = JavaLabeledParser.BlockStatement0Context(self, localctx)
                 self.enterOuterAlt(localctx, 1)
@@ -5931,7 +6721,6 @@ class JavaLabeledParser ( Parser ):
                 self.localTypeDeclaration()
                 pass
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -5940,51 +6729,54 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class LocalVariableDeclarationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def typeType(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext, 0)
 
         def variableDeclarators(self):
-            return self.getTypedRuleContext(JavaLabeledParser.VariableDeclaratorsContext,0)
+            return self.getTypedRuleContext(
+                JavaLabeledParser.VariableDeclaratorsContext, 0
+            )
 
-
-        def variableModifier(self, i:int=None):
+        def variableModifier(self, i: int = None):
             if i is None:
-                return self.getTypedRuleContexts(JavaLabeledParser.VariableModifierContext)
+                return self.getTypedRuleContexts(
+                    JavaLabeledParser.VariableModifierContext
+                )
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.VariableModifierContext,i)
-
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.VariableModifierContext, i
+                )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_localVariableDeclaration
 
-
-
-
     def localVariableDeclaration(self):
 
-        localctx = JavaLabeledParser.LocalVariableDeclarationContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.LocalVariableDeclarationContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 132, self.RULE_localVariableDeclaration)
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 841
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,97,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
+            _alt = self._interp.adaptivePredict(self._input, 97, self._ctx)
+            while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                if _alt == 1:
                     self.state = 838
-                    self.variableModifier() 
+                    self.variableModifier()
                 self.state = 843
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,97,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input, 97, self._ctx)
 
             self.state = 844
             self.typeType()
@@ -5998,28 +6790,34 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class LocalTypeDeclarationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def classDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ClassDeclarationContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.ClassDeclarationContext, 0
+            )
 
         def interfaceDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.InterfaceDeclarationContext,0)
+            return self.getTypedRuleContext(
+                JavaLabeledParser.InterfaceDeclarationContext, 0
+            )
 
-
-        def classOrInterfaceModifier(self, i:int=None):
+        def classOrInterfaceModifier(self, i: int = None):
             if i is None:
-                return self.getTypedRuleContexts(JavaLabeledParser.ClassOrInterfaceModifierContext)
+                return self.getTypedRuleContexts(
+                    JavaLabeledParser.ClassOrInterfaceModifierContext
+                )
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ClassOrInterfaceModifierContext,i)
-
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.ClassOrInterfaceModifierContext, i
+                )
 
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
@@ -6027,24 +6825,54 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_localTypeDeclaration
 
-
-
-
     def localTypeDeclaration(self):
 
-        localctx = JavaLabeledParser.LocalTypeDeclarationContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.LocalTypeDeclarationContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 134, self.RULE_localTypeDeclaration)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.state = 858
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [JavaLabeledParser.ABSTRACT, JavaLabeledParser.CLASS, JavaLabeledParser.FINAL, JavaLabeledParser.INTERFACE, JavaLabeledParser.PRIVATE, JavaLabeledParser.PROTECTED, JavaLabeledParser.PUBLIC, JavaLabeledParser.STATIC, JavaLabeledParser.STRICTFP, JavaLabeledParser.AT, JavaLabeledParser.IDENTIFIER]:
+            if token in [
+                JavaLabeledParser.ABSTRACT,
+                JavaLabeledParser.CLASS,
+                JavaLabeledParser.FINAL,
+                JavaLabeledParser.INTERFACE,
+                JavaLabeledParser.PRIVATE,
+                JavaLabeledParser.PROTECTED,
+                JavaLabeledParser.PUBLIC,
+                JavaLabeledParser.STATIC,
+                JavaLabeledParser.STRICTFP,
+                JavaLabeledParser.AT,
+                JavaLabeledParser.IDENTIFIER,
+            ]:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 850
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                while (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << JavaLabeledParser.ABSTRACT) | (1 << JavaLabeledParser.FINAL) | (1 << JavaLabeledParser.PRIVATE) | (1 << JavaLabeledParser.PROTECTED) | (1 << JavaLabeledParser.PUBLIC) | (1 << JavaLabeledParser.STATIC) | (1 << JavaLabeledParser.STRICTFP))) != 0) or _la==JavaLabeledParser.AT or _la==JavaLabeledParser.IDENTIFIER:
+                while (
+                    (
+                        ((_la) & ~0x3F) == 0
+                        and (
+                            (1 << _la)
+                            & (
+                                (1 << JavaLabeledParser.ABSTRACT)
+                                | (1 << JavaLabeledParser.FINAL)
+                                | (1 << JavaLabeledParser.PRIVATE)
+                                | (1 << JavaLabeledParser.PROTECTED)
+                                | (1 << JavaLabeledParser.PUBLIC)
+                                | (1 << JavaLabeledParser.STATIC)
+                                | (1 << JavaLabeledParser.STRICTFP)
+                            )
+                        )
+                        != 0
+                    )
+                    or _la == JavaLabeledParser.AT
+                    or _la == JavaLabeledParser.IDENTIFIER
+                ):
                     self.state = 847
                     self.classOrInterfaceModifier()
                     self.state = 852
@@ -6082,333 +6910,350 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class StatementContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_statement
 
-     
-        def copyFrom(self, ctx:ParserRuleContext):
+        def copyFrom(self, ctx: ParserRuleContext):
             super().copyFrom(ctx)
 
-
-
     class Statement14Context(StatementContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.StatementContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.StatementContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
-
 
     class Statement15Context(StatementContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.StatementContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.StatementContext
             super().__init__(parser)
-            self.statementExpression = None # ExpressionContext
+            self.statementExpression = None  # ExpressionContext
             self.copyFrom(ctx)
 
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
+
         def expression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, 0)
 
     class Statement12Context(StatementContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.StatementContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.StatementContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def BREAK(self):
             return self.getToken(JavaLabeledParser.BREAK, 0)
+
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
+
         def IDENTIFIER(self):
             return self.getToken(JavaLabeledParser.IDENTIFIER, 0)
 
-
     class Statement13Context(StatementContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.StatementContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.StatementContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def CONTINUE(self):
             return self.getToken(JavaLabeledParser.CONTINUE, 0)
+
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
+
         def IDENTIFIER(self):
             return self.getToken(JavaLabeledParser.IDENTIFIER, 0)
 
-
     class Statement9Context(StatementContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.StatementContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.StatementContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def SYNCHRONIZED(self):
             return self.getToken(JavaLabeledParser.SYNCHRONIZED, 0)
+
         def parExpression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ParExpressionContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.ParExpressionContext, 0)
 
         def block(self):
-            return self.getTypedRuleContext(JavaLabeledParser.BlockContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.BlockContext, 0)
 
     class Statement7Context(StatementContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.StatementContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.StatementContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def TRY(self):
             return self.getToken(JavaLabeledParser.TRY, 0)
+
         def resourceSpecification(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ResourceSpecificationContext,0)
+            return self.getTypedRuleContext(
+                JavaLabeledParser.ResourceSpecificationContext, 0
+            )
 
         def block(self):
-            return self.getTypedRuleContext(JavaLabeledParser.BlockContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.BlockContext, 0)
 
-        def catchClause(self, i:int=None):
+        def catchClause(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.CatchClauseContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.CatchClauseContext,i)
+                return self.getTypedRuleContext(JavaLabeledParser.CatchClauseContext, i)
 
         def finallyBlock(self):
-            return self.getTypedRuleContext(JavaLabeledParser.FinallyBlockContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.FinallyBlockContext, 0)
 
     class Statement16Context(StatementContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.StatementContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.StatementContext
             super().__init__(parser)
-            self.identifierLabel = None # Token
+            self.identifierLabel = None  # Token
             self.copyFrom(ctx)
 
         def COLON(self):
             return self.getToken(JavaLabeledParser.COLON, 0)
+
         def statement(self):
-            return self.getTypedRuleContext(JavaLabeledParser.StatementContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.StatementContext, 0)
 
         def IDENTIFIER(self):
             return self.getToken(JavaLabeledParser.IDENTIFIER, 0)
 
-
     class Statement8Context(StatementContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.StatementContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.StatementContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def SWITCH(self):
             return self.getToken(JavaLabeledParser.SWITCH, 0)
+
         def parExpression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ParExpressionContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.ParExpressionContext, 0)
 
         def LBRACE(self):
             return self.getToken(JavaLabeledParser.LBRACE, 0)
+
         def RBRACE(self):
             return self.getToken(JavaLabeledParser.RBRACE, 0)
-        def switchBlockStatementGroup(self, i:int=None):
-            if i is None:
-                return self.getTypedRuleContexts(JavaLabeledParser.SwitchBlockStatementGroupContext)
-            else:
-                return self.getTypedRuleContext(JavaLabeledParser.SwitchBlockStatementGroupContext,i)
 
-        def switchLabel(self, i:int=None):
+        def switchBlockStatementGroup(self, i: int = None):
+            if i is None:
+                return self.getTypedRuleContexts(
+                    JavaLabeledParser.SwitchBlockStatementGroupContext
+                )
+            else:
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.SwitchBlockStatementGroupContext, i
+                )
+
+        def switchLabel(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.SwitchLabelContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.SwitchLabelContext,i)
-
-
+                return self.getTypedRuleContext(JavaLabeledParser.SwitchLabelContext, i)
 
     class Statement5Context(StatementContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.StatementContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.StatementContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def DO(self):
             return self.getToken(JavaLabeledParser.DO, 0)
+
         def statement(self):
-            return self.getTypedRuleContext(JavaLabeledParser.StatementContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.StatementContext, 0)
 
         def WHILE(self):
             return self.getToken(JavaLabeledParser.WHILE, 0)
+
         def parExpression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ParExpressionContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.ParExpressionContext, 0)
 
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
 
-
     class Statement6Context(StatementContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.StatementContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.StatementContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def TRY(self):
             return self.getToken(JavaLabeledParser.TRY, 0)
+
         def block(self):
-            return self.getTypedRuleContext(JavaLabeledParser.BlockContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.BlockContext, 0)
 
         def finallyBlock(self):
-            return self.getTypedRuleContext(JavaLabeledParser.FinallyBlockContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.FinallyBlockContext, 0)
 
-        def catchClause(self, i:int=None):
+        def catchClause(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.CatchClauseContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.CatchClauseContext,i)
-
-
+                return self.getTypedRuleContext(JavaLabeledParser.CatchClauseContext, i)
 
     class Statement3Context(StatementContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.StatementContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.StatementContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def FOR(self):
             return self.getToken(JavaLabeledParser.FOR, 0)
+
         def LPAREN(self):
             return self.getToken(JavaLabeledParser.LPAREN, 0)
+
         def forControl(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ForControlContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.ForControlContext, 0)
 
         def RPAREN(self):
             return self.getToken(JavaLabeledParser.RPAREN, 0)
+
         def statement(self):
-            return self.getTypedRuleContext(JavaLabeledParser.StatementContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.StatementContext, 0)
 
     class Statement4Context(StatementContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.StatementContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.StatementContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def WHILE(self):
             return self.getToken(JavaLabeledParser.WHILE, 0)
+
         def parExpression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ParExpressionContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.ParExpressionContext, 0)
 
         def statement(self):
-            return self.getTypedRuleContext(JavaLabeledParser.StatementContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.StatementContext, 0)
 
     class Statement1Context(StatementContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.StatementContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.StatementContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def ASSERT(self):
             return self.getToken(JavaLabeledParser.ASSERT, 0)
-        def expression(self, i:int=None):
+
+        def expression(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.ExpressionContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,i)
+                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, i)
 
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
+
         def COLON(self):
             return self.getToken(JavaLabeledParser.COLON, 0)
 
-
     class Statement2Context(StatementContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.StatementContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.StatementContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def IF(self):
             return self.getToken(JavaLabeledParser.IF, 0)
-        def parExpression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ParExpressionContext,0)
 
-        def statement(self, i:int=None):
+        def parExpression(self):
+            return self.getTypedRuleContext(JavaLabeledParser.ParExpressionContext, 0)
+
+        def statement(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.StatementContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.StatementContext,i)
+                return self.getTypedRuleContext(JavaLabeledParser.StatementContext, i)
 
         def ELSE(self):
             return self.getToken(JavaLabeledParser.ELSE, 0)
 
-
     class Statement0Context(StatementContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.StatementContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.StatementContext
             super().__init__(parser)
-            self.blockLabel = None # BlockContext
+            self.blockLabel = None  # BlockContext
             self.copyFrom(ctx)
 
         def block(self):
-            return self.getTypedRuleContext(JavaLabeledParser.BlockContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.BlockContext, 0)
 
     class Statement10Context(StatementContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.StatementContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.StatementContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def RETURN(self):
             return self.getToken(JavaLabeledParser.RETURN, 0)
+
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
+
         def expression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, 0)
 
     class Statement11Context(StatementContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.StatementContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.StatementContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def THROW(self):
             return self.getToken(JavaLabeledParser.THROW, 0)
+
         def expression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, 0)
 
         def SEMI(self):
             return self.getToken(JavaLabeledParser.SEMI, 0)
-
-
 
     def statement(self):
 
         localctx = JavaLabeledParser.StatementContext(self, self._ctx, self.state)
         self.enterRule(localctx, 136, self.RULE_statement)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.state = 964
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,113,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 113, self._ctx)
             if la_ == 1:
                 localctx = JavaLabeledParser.Statement0Context(self, localctx)
                 self.enterOuterAlt(localctx, 1)
@@ -6426,12 +7271,11 @@ class JavaLabeledParser ( Parser ):
                 self.state = 865
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==JavaLabeledParser.COLON:
+                if _la == JavaLabeledParser.COLON:
                     self.state = 863
                     self.match(JavaLabeledParser.COLON)
                     self.state = 864
                     self.expression(0)
-
 
                 self.state = 867
                 self.match(JavaLabeledParser.SEMI)
@@ -6448,13 +7292,12 @@ class JavaLabeledParser ( Parser ):
                 self.statement()
                 self.state = 874
                 self._errHandler.sync(self)
-                la_ = self._interp.adaptivePredict(self._input,102,self._ctx)
+                la_ = self._interp.adaptivePredict(self._input, 102, self._ctx)
                 if la_ == 1:
                     self.state = 872
                     self.match(JavaLabeledParser.ELSE)
                     self.state = 873
                     self.statement()
-
 
                 pass
 
@@ -6510,25 +7353,24 @@ class JavaLabeledParser ( Parser ):
                 self._errHandler.sync(self)
                 token = self._input.LA(1)
                 if token in [JavaLabeledParser.CATCH]:
-                    self.state = 895 
+                    self.state = 895
                     self._errHandler.sync(self)
                     _la = self._input.LA(1)
                     while True:
                         self.state = 894
                         self.catchClause()
-                        self.state = 897 
+                        self.state = 897
                         self._errHandler.sync(self)
                         _la = self._input.LA(1)
-                        if not (_la==JavaLabeledParser.CATCH):
+                        if not (_la == JavaLabeledParser.CATCH):
                             break
 
                     self.state = 900
                     self._errHandler.sync(self)
                     _la = self._input.LA(1)
-                    if _la==JavaLabeledParser.FINALLY:
+                    if _la == JavaLabeledParser.FINALLY:
                         self.state = 899
                         self.finallyBlock()
-
 
                     pass
                 elif token in [JavaLabeledParser.FINALLY]:
@@ -6552,7 +7394,7 @@ class JavaLabeledParser ( Parser ):
                 self.state = 911
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                while _la==JavaLabeledParser.CATCH:
+                while _la == JavaLabeledParser.CATCH:
                     self.state = 908
                     self.catchClause()
                     self.state = 913
@@ -6562,10 +7404,9 @@ class JavaLabeledParser ( Parser ):
                 self.state = 915
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==JavaLabeledParser.FINALLY:
+                if _la == JavaLabeledParser.FINALLY:
                     self.state = 914
                     self.finallyBlock()
-
 
                 pass
 
@@ -6580,19 +7421,19 @@ class JavaLabeledParser ( Parser ):
                 self.match(JavaLabeledParser.LBRACE)
                 self.state = 923
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,108,self._ctx)
-                while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                    if _alt==1:
+                _alt = self._interp.adaptivePredict(self._input, 108, self._ctx)
+                while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                    if _alt == 1:
                         self.state = 920
-                        self.switchBlockStatementGroup() 
+                        self.switchBlockStatementGroup()
                     self.state = 925
                     self._errHandler.sync(self)
-                    _alt = self._interp.adaptivePredict(self._input,108,self._ctx)
+                    _alt = self._interp.adaptivePredict(self._input, 108, self._ctx)
 
                 self.state = 929
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                while _la==JavaLabeledParser.CASE or _la==JavaLabeledParser.DEFAULT:
+                while _la == JavaLabeledParser.CASE or _la == JavaLabeledParser.DEFAULT:
                     self.state = 926
                     self.switchLabel()
                     self.state = 931
@@ -6622,10 +7463,57 @@ class JavaLabeledParser ( Parser ):
                 self.state = 940
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << JavaLabeledParser.BOOLEAN) | (1 << JavaLabeledParser.BYTE) | (1 << JavaLabeledParser.CHAR) | (1 << JavaLabeledParser.DOUBLE) | (1 << JavaLabeledParser.FLOAT) | (1 << JavaLabeledParser.INT) | (1 << JavaLabeledParser.LONG) | (1 << JavaLabeledParser.NEW) | (1 << JavaLabeledParser.SHORT) | (1 << JavaLabeledParser.SUPER) | (1 << JavaLabeledParser.THIS) | (1 << JavaLabeledParser.VOID) | (1 << JavaLabeledParser.DECIMAL_LITERAL) | (1 << JavaLabeledParser.HEX_LITERAL) | (1 << JavaLabeledParser.OCT_LITERAL) | (1 << JavaLabeledParser.BINARY_LITERAL) | (1 << JavaLabeledParser.FLOAT_LITERAL) | (1 << JavaLabeledParser.HEX_FLOAT_LITERAL) | (1 << JavaLabeledParser.BOOL_LITERAL) | (1 << JavaLabeledParser.CHAR_LITERAL) | (1 << JavaLabeledParser.STRING_LITERAL) | (1 << JavaLabeledParser.NULL_LITERAL) | (1 << JavaLabeledParser.LPAREN))) != 0) or ((((_la - 72)) & ~0x3f) == 0 and ((1 << (_la - 72)) & ((1 << (JavaLabeledParser.LT - 72)) | (1 << (JavaLabeledParser.BANG - 72)) | (1 << (JavaLabeledParser.TILDE - 72)) | (1 << (JavaLabeledParser.INC - 72)) | (1 << (JavaLabeledParser.DEC - 72)) | (1 << (JavaLabeledParser.ADD - 72)) | (1 << (JavaLabeledParser.SUB - 72)) | (1 << (JavaLabeledParser.AT - 72)) | (1 << (JavaLabeledParser.IDENTIFIER - 72)))) != 0):
+                if (
+                    ((_la) & ~0x3F) == 0
+                    and (
+                        (1 << _la)
+                        & (
+                            (1 << JavaLabeledParser.BOOLEAN)
+                            | (1 << JavaLabeledParser.BYTE)
+                            | (1 << JavaLabeledParser.CHAR)
+                            | (1 << JavaLabeledParser.DOUBLE)
+                            | (1 << JavaLabeledParser.FLOAT)
+                            | (1 << JavaLabeledParser.INT)
+                            | (1 << JavaLabeledParser.LONG)
+                            | (1 << JavaLabeledParser.NEW)
+                            | (1 << JavaLabeledParser.SHORT)
+                            | (1 << JavaLabeledParser.SUPER)
+                            | (1 << JavaLabeledParser.THIS)
+                            | (1 << JavaLabeledParser.VOID)
+                            | (1 << JavaLabeledParser.DECIMAL_LITERAL)
+                            | (1 << JavaLabeledParser.HEX_LITERAL)
+                            | (1 << JavaLabeledParser.OCT_LITERAL)
+                            | (1 << JavaLabeledParser.BINARY_LITERAL)
+                            | (1 << JavaLabeledParser.FLOAT_LITERAL)
+                            | (1 << JavaLabeledParser.HEX_FLOAT_LITERAL)
+                            | (1 << JavaLabeledParser.BOOL_LITERAL)
+                            | (1 << JavaLabeledParser.CHAR_LITERAL)
+                            | (1 << JavaLabeledParser.STRING_LITERAL)
+                            | (1 << JavaLabeledParser.NULL_LITERAL)
+                            | (1 << JavaLabeledParser.LPAREN)
+                        )
+                    )
+                    != 0
+                ) or (
+                    (((_la - 72)) & ~0x3F) == 0
+                    and (
+                        (1 << (_la - 72))
+                        & (
+                            (1 << (JavaLabeledParser.LT - 72))
+                            | (1 << (JavaLabeledParser.BANG - 72))
+                            | (1 << (JavaLabeledParser.TILDE - 72))
+                            | (1 << (JavaLabeledParser.INC - 72))
+                            | (1 << (JavaLabeledParser.DEC - 72))
+                            | (1 << (JavaLabeledParser.ADD - 72))
+                            | (1 << (JavaLabeledParser.SUB - 72))
+                            | (1 << (JavaLabeledParser.AT - 72))
+                            | (1 << (JavaLabeledParser.IDENTIFIER - 72))
+                        )
+                    )
+                    != 0
+                ):
                     self.state = 939
                     self.expression(0)
-
 
                 self.state = 942
                 self.match(JavaLabeledParser.SEMI)
@@ -6650,10 +7538,9 @@ class JavaLabeledParser ( Parser ):
                 self.state = 949
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==JavaLabeledParser.IDENTIFIER:
+                if _la == JavaLabeledParser.IDENTIFIER:
                     self.state = 948
                     self.match(JavaLabeledParser.IDENTIFIER)
-
 
                 self.state = 951
                 self.match(JavaLabeledParser.SEMI)
@@ -6667,10 +7554,9 @@ class JavaLabeledParser ( Parser ):
                 self.state = 954
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==JavaLabeledParser.IDENTIFIER:
+                if _la == JavaLabeledParser.IDENTIFIER:
                     self.state = 953
                     self.match(JavaLabeledParser.IDENTIFIER)
-
 
                 self.state = 956
                 self.match(JavaLabeledParser.SEMI)
@@ -6703,7 +7589,6 @@ class JavaLabeledParser ( Parser ):
                 self.statement()
                 pass
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -6712,11 +7597,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class CatchClauseContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -6727,8 +7613,7 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.LPAREN, 0)
 
         def catchType(self):
-            return self.getTypedRuleContext(JavaLabeledParser.CatchTypeContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.CatchTypeContext, 0)
 
         def IDENTIFIER(self):
             return self.getToken(JavaLabeledParser.IDENTIFIER, 0)
@@ -6737,21 +7622,20 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.RPAREN, 0)
 
         def block(self):
-            return self.getTypedRuleContext(JavaLabeledParser.BlockContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.BlockContext, 0)
 
-
-        def variableModifier(self, i:int=None):
+        def variableModifier(self, i: int = None):
             if i is None:
-                return self.getTypedRuleContexts(JavaLabeledParser.VariableModifierContext)
+                return self.getTypedRuleContexts(
+                    JavaLabeledParser.VariableModifierContext
+                )
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.VariableModifierContext,i)
-
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.VariableModifierContext, i
+                )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_catchClause
-
-
-
 
     def catchClause(self):
 
@@ -6765,14 +7649,14 @@ class JavaLabeledParser ( Parser ):
             self.match(JavaLabeledParser.LPAREN)
             self.state = 971
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,114,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
+            _alt = self._interp.adaptivePredict(self._input, 114, self._ctx)
+            while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                if _alt == 1:
                     self.state = 968
-                    self.variableModifier() 
+                    self.variableModifier()
                 self.state = 973
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,114,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input, 114, self._ctx)
 
             self.state = 974
             self.catchType()
@@ -6790,22 +7674,24 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class CatchTypeContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def qualifiedName(self, i:int=None):
+        def qualifiedName(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.QualifiedNameContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.QualifiedNameContext,i)
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.QualifiedNameContext, i
+                )
 
-
-        def BITOR(self, i:int=None):
+        def BITOR(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.BITOR)
             else:
@@ -6814,14 +7700,11 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_catchType
 
-
-
-
     def catchType(self):
 
         localctx = JavaLabeledParser.CatchTypeContext(self, self._ctx, self.state)
         self.enterRule(localctx, 140, self.RULE_catchType)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 979
@@ -6829,7 +7712,7 @@ class JavaLabeledParser ( Parser ):
             self.state = 984
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==JavaLabeledParser.BITOR:
+            while _la == JavaLabeledParser.BITOR:
                 self.state = 980
                 self.match(JavaLabeledParser.BITOR)
                 self.state = 981
@@ -6846,11 +7729,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class FinallyBlockContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -6858,14 +7742,10 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.FINALLY, 0)
 
         def block(self):
-            return self.getTypedRuleContext(JavaLabeledParser.BlockContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.BlockContext, 0)
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_finallyBlock
-
-
-
 
     def finallyBlock(self):
 
@@ -6885,11 +7765,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ResourceSpecificationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -6897,8 +7778,7 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.LPAREN, 0)
 
         def resources(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ResourcesContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.ResourcesContext, 0)
 
         def RPAREN(self):
             return self.getToken(JavaLabeledParser.RPAREN, 0)
@@ -6909,14 +7789,13 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_resourceSpecification
 
-
-
-
     def resourceSpecification(self):
 
-        localctx = JavaLabeledParser.ResourceSpecificationContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.ResourceSpecificationContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 144, self.RULE_resourceSpecification)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 990
@@ -6926,10 +7805,9 @@ class JavaLabeledParser ( Parser ):
             self.state = 993
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==JavaLabeledParser.SEMI:
+            if _la == JavaLabeledParser.SEMI:
                 self.state = 992
                 self.match(JavaLabeledParser.SEMI)
-
 
             self.state = 995
             self.match(JavaLabeledParser.RPAREN)
@@ -6941,22 +7819,22 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ResourcesContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def resource(self, i:int=None):
+        def resource(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.ResourceContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ResourceContext,i)
+                return self.getTypedRuleContext(JavaLabeledParser.ResourceContext, i)
 
-
-        def SEMI(self, i:int=None):
+        def SEMI(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.SEMI)
             else:
@@ -6964,9 +7842,6 @@ class JavaLabeledParser ( Parser ):
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_resources
-
-
-
 
     def resources(self):
 
@@ -6978,16 +7853,16 @@ class JavaLabeledParser ( Parser ):
             self.resource()
             self.state = 1002
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,117,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
+            _alt = self._interp.adaptivePredict(self._input, 117, self._ctx)
+            while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                if _alt == 1:
                     self.state = 998
                     self.match(JavaLabeledParser.SEMI)
                     self.state = 999
-                    self.resource() 
+                    self.resource()
                 self.state = 1004
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,117,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input, 117, self._ctx)
 
         except RecognitionException as re:
             localctx.exception = re
@@ -6997,41 +7872,43 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ResourceContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def classOrInterfaceType(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ClassOrInterfaceTypeContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.ClassOrInterfaceTypeContext, 0
+            )
 
         def variableDeclaratorId(self):
-            return self.getTypedRuleContext(JavaLabeledParser.VariableDeclaratorIdContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.VariableDeclaratorIdContext, 0
+            )
 
         def ASSIGN(self):
             return self.getToken(JavaLabeledParser.ASSIGN, 0)
 
         def expression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, 0)
 
-
-        def variableModifier(self, i:int=None):
+        def variableModifier(self, i: int = None):
             if i is None:
-                return self.getTypedRuleContexts(JavaLabeledParser.VariableModifierContext)
+                return self.getTypedRuleContexts(
+                    JavaLabeledParser.VariableModifierContext
+                )
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.VariableModifierContext,i)
-
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.VariableModifierContext, i
+                )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_resource
-
-
-
 
     def resource(self):
 
@@ -7041,14 +7918,14 @@ class JavaLabeledParser ( Parser ):
             self.enterOuterAlt(localctx, 1)
             self.state = 1008
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,118,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
+            _alt = self._interp.adaptivePredict(self._input, 118, self._ctx)
+            while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                if _alt == 1:
                     self.state = 1005
-                    self.variableModifier() 
+                    self.variableModifier()
                 self.state = 1010
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,118,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input, 118, self._ctx)
 
             self.state = 1011
             self.classOrInterfaceType()
@@ -7066,63 +7943,141 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class SwitchBlockStatementGroupContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def switchLabel(self, i:int=None):
+        def switchLabel(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.SwitchLabelContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.SwitchLabelContext,i)
+                return self.getTypedRuleContext(JavaLabeledParser.SwitchLabelContext, i)
 
-
-        def blockStatement(self, i:int=None):
+        def blockStatement(self, i: int = None):
             if i is None:
-                return self.getTypedRuleContexts(JavaLabeledParser.BlockStatementContext)
+                return self.getTypedRuleContexts(
+                    JavaLabeledParser.BlockStatementContext
+                )
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.BlockStatementContext,i)
-
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.BlockStatementContext, i
+                )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_switchBlockStatementGroup
 
-
-
-
     def switchBlockStatementGroup(self):
 
-        localctx = JavaLabeledParser.SwitchBlockStatementGroupContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.SwitchBlockStatementGroupContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 150, self.RULE_switchBlockStatementGroup)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 1017 
+            self.state = 1017
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while True:
                 self.state = 1016
                 self.switchLabel()
-                self.state = 1019 
+                self.state = 1019
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if not (_la==JavaLabeledParser.CASE or _la==JavaLabeledParser.DEFAULT):
+                if not (
+                    _la == JavaLabeledParser.CASE or _la == JavaLabeledParser.DEFAULT
+                ):
                     break
 
-            self.state = 1022 
+            self.state = 1022
             self._errHandler.sync(self)
             _la = self._input.LA(1)
             while True:
                 self.state = 1021
                 self.blockStatement()
-                self.state = 1024 
+                self.state = 1024
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if not ((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << JavaLabeledParser.ABSTRACT) | (1 << JavaLabeledParser.ASSERT) | (1 << JavaLabeledParser.BOOLEAN) | (1 << JavaLabeledParser.BREAK) | (1 << JavaLabeledParser.BYTE) | (1 << JavaLabeledParser.CHAR) | (1 << JavaLabeledParser.CLASS) | (1 << JavaLabeledParser.CONTINUE) | (1 << JavaLabeledParser.DO) | (1 << JavaLabeledParser.DOUBLE) | (1 << JavaLabeledParser.FINAL) | (1 << JavaLabeledParser.FLOAT) | (1 << JavaLabeledParser.FOR) | (1 << JavaLabeledParser.IF) | (1 << JavaLabeledParser.INT) | (1 << JavaLabeledParser.INTERFACE) | (1 << JavaLabeledParser.LONG) | (1 << JavaLabeledParser.NEW) | (1 << JavaLabeledParser.PRIVATE) | (1 << JavaLabeledParser.PROTECTED) | (1 << JavaLabeledParser.PUBLIC) | (1 << JavaLabeledParser.RETURN) | (1 << JavaLabeledParser.SHORT) | (1 << JavaLabeledParser.STATIC) | (1 << JavaLabeledParser.STRICTFP) | (1 << JavaLabeledParser.SUPER) | (1 << JavaLabeledParser.SWITCH) | (1 << JavaLabeledParser.SYNCHRONIZED) | (1 << JavaLabeledParser.THIS) | (1 << JavaLabeledParser.THROW) | (1 << JavaLabeledParser.TRY) | (1 << JavaLabeledParser.VOID) | (1 << JavaLabeledParser.WHILE) | (1 << JavaLabeledParser.DECIMAL_LITERAL) | (1 << JavaLabeledParser.HEX_LITERAL) | (1 << JavaLabeledParser.OCT_LITERAL) | (1 << JavaLabeledParser.BINARY_LITERAL) | (1 << JavaLabeledParser.FLOAT_LITERAL) | (1 << JavaLabeledParser.HEX_FLOAT_LITERAL) | (1 << JavaLabeledParser.BOOL_LITERAL) | (1 << JavaLabeledParser.CHAR_LITERAL) | (1 << JavaLabeledParser.STRING_LITERAL) | (1 << JavaLabeledParser.NULL_LITERAL) | (1 << JavaLabeledParser.LPAREN) | (1 << JavaLabeledParser.LBRACE))) != 0) or ((((_la - 67)) & ~0x3f) == 0 and ((1 << (_la - 67)) & ((1 << (JavaLabeledParser.SEMI - 67)) | (1 << (JavaLabeledParser.LT - 67)) | (1 << (JavaLabeledParser.BANG - 67)) | (1 << (JavaLabeledParser.TILDE - 67)) | (1 << (JavaLabeledParser.INC - 67)) | (1 << (JavaLabeledParser.DEC - 67)) | (1 << (JavaLabeledParser.ADD - 67)) | (1 << (JavaLabeledParser.SUB - 67)) | (1 << (JavaLabeledParser.AT - 67)) | (1 << (JavaLabeledParser.IDENTIFIER - 67)))) != 0)):
+                if not (
+                    (
+                        ((_la) & ~0x3F) == 0
+                        and (
+                            (1 << _la)
+                            & (
+                                (1 << JavaLabeledParser.ABSTRACT)
+                                | (1 << JavaLabeledParser.ASSERT)
+                                | (1 << JavaLabeledParser.BOOLEAN)
+                                | (1 << JavaLabeledParser.BREAK)
+                                | (1 << JavaLabeledParser.BYTE)
+                                | (1 << JavaLabeledParser.CHAR)
+                                | (1 << JavaLabeledParser.CLASS)
+                                | (1 << JavaLabeledParser.CONTINUE)
+                                | (1 << JavaLabeledParser.DO)
+                                | (1 << JavaLabeledParser.DOUBLE)
+                                | (1 << JavaLabeledParser.FINAL)
+                                | (1 << JavaLabeledParser.FLOAT)
+                                | (1 << JavaLabeledParser.FOR)
+                                | (1 << JavaLabeledParser.IF)
+                                | (1 << JavaLabeledParser.INT)
+                                | (1 << JavaLabeledParser.INTERFACE)
+                                | (1 << JavaLabeledParser.LONG)
+                                | (1 << JavaLabeledParser.NEW)
+                                | (1 << JavaLabeledParser.PRIVATE)
+                                | (1 << JavaLabeledParser.PROTECTED)
+                                | (1 << JavaLabeledParser.PUBLIC)
+                                | (1 << JavaLabeledParser.RETURN)
+                                | (1 << JavaLabeledParser.SHORT)
+                                | (1 << JavaLabeledParser.STATIC)
+                                | (1 << JavaLabeledParser.STRICTFP)
+                                | (1 << JavaLabeledParser.SUPER)
+                                | (1 << JavaLabeledParser.SWITCH)
+                                | (1 << JavaLabeledParser.SYNCHRONIZED)
+                                | (1 << JavaLabeledParser.THIS)
+                                | (1 << JavaLabeledParser.THROW)
+                                | (1 << JavaLabeledParser.TRY)
+                                | (1 << JavaLabeledParser.VOID)
+                                | (1 << JavaLabeledParser.WHILE)
+                                | (1 << JavaLabeledParser.DECIMAL_LITERAL)
+                                | (1 << JavaLabeledParser.HEX_LITERAL)
+                                | (1 << JavaLabeledParser.OCT_LITERAL)
+                                | (1 << JavaLabeledParser.BINARY_LITERAL)
+                                | (1 << JavaLabeledParser.FLOAT_LITERAL)
+                                | (1 << JavaLabeledParser.HEX_FLOAT_LITERAL)
+                                | (1 << JavaLabeledParser.BOOL_LITERAL)
+                                | (1 << JavaLabeledParser.CHAR_LITERAL)
+                                | (1 << JavaLabeledParser.STRING_LITERAL)
+                                | (1 << JavaLabeledParser.NULL_LITERAL)
+                                | (1 << JavaLabeledParser.LPAREN)
+                                | (1 << JavaLabeledParser.LBRACE)
+                            )
+                        )
+                        != 0
+                    )
+                    or (
+                        (((_la - 67)) & ~0x3F) == 0
+                        and (
+                            (1 << (_la - 67))
+                            & (
+                                (1 << (JavaLabeledParser.SEMI - 67))
+                                | (1 << (JavaLabeledParser.LT - 67))
+                                | (1 << (JavaLabeledParser.BANG - 67))
+                                | (1 << (JavaLabeledParser.TILDE - 67))
+                                | (1 << (JavaLabeledParser.INC - 67))
+                                | (1 << (JavaLabeledParser.DEC - 67))
+                                | (1 << (JavaLabeledParser.ADD - 67))
+                                | (1 << (JavaLabeledParser.SUB - 67))
+                                | (1 << (JavaLabeledParser.AT - 67))
+                                | (1 << (JavaLabeledParser.IDENTIFIER - 67))
+                            )
+                        )
+                        != 0
+                    )
+                ):
                     break
 
         except RecognitionException as re:
@@ -7133,15 +8088,16 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class SwitchLabelContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-            self.constantExpression = None # ExpressionContext
-            self.enumConstantName = None # Token
+            self.constantExpression = None  # ExpressionContext
+            self.enumConstantName = None  # Token
 
         def CASE(self):
             return self.getToken(JavaLabeledParser.CASE, 0)
@@ -7150,8 +8106,7 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.COLON, 0)
 
         def expression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, 0)
 
         def IDENTIFIER(self):
             return self.getToken(JavaLabeledParser.IDENTIFIER, 0)
@@ -7161,9 +8116,6 @@ class JavaLabeledParser ( Parser ):
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_switchLabel
-
-
-
 
     def switchLabel(self):
 
@@ -7179,7 +8131,7 @@ class JavaLabeledParser ( Parser ):
                 self.match(JavaLabeledParser.CASE)
                 self.state = 1029
                 self._errHandler.sync(self)
-                la_ = self._interp.adaptivePredict(self._input,121,self._ctx)
+                la_ = self._interp.adaptivePredict(self._input, 121, self._ctx)
                 if la_ == 1:
                     self.state = 1027
                     localctx.constantExpression = self.expression(0)
@@ -7189,7 +8141,6 @@ class JavaLabeledParser ( Parser ):
                     self.state = 1028
                     localctx.enumConstantName = self.match(JavaLabeledParser.IDENTIFIER)
                     pass
-
 
                 self.state = 1031
                 self.match(JavaLabeledParser.COLON)
@@ -7212,68 +8163,65 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ForControlContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_forControl
 
-     
-        def copyFrom(self, ctx:ParserRuleContext):
+        def copyFrom(self, ctx: ParserRuleContext):
             super().copyFrom(ctx)
 
-
-
     class ForControl0Context(ForControlContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ForControlContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ForControlContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def enhancedForControl(self):
-            return self.getTypedRuleContext(JavaLabeledParser.EnhancedForControlContext,0)
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.EnhancedForControlContext, 0
+            )
 
     class ForControl1Context(ForControlContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ForControlContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ForControlContext
             super().__init__(parser)
-            self.forUpdate = None # ExpressionListContext
+            self.forUpdate = None  # ExpressionListContext
             self.copyFrom(ctx)
 
-        def SEMI(self, i:int=None):
+        def SEMI(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.SEMI)
             else:
                 return self.getToken(JavaLabeledParser.SEMI, i)
+
         def forInit(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ForInitContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.ForInitContext, 0)
 
         def expression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, 0)
 
         def expressionList(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionListContext,0)
-
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionListContext, 0)
 
     def forControl(self):
 
         localctx = JavaLabeledParser.ForControlContext(self, self._ctx, self.state)
         self.enterRule(localctx, 154, self.RULE_forControl)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.state = 1048
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,126,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 126, self._ctx)
             if la_ == 1:
                 localctx = JavaLabeledParser.ForControl0Context(self, localctx)
                 self.enterOuterAlt(localctx, 1)
@@ -7287,33 +8235,174 @@ class JavaLabeledParser ( Parser ):
                 self.state = 1038
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << JavaLabeledParser.BOOLEAN) | (1 << JavaLabeledParser.BYTE) | (1 << JavaLabeledParser.CHAR) | (1 << JavaLabeledParser.DOUBLE) | (1 << JavaLabeledParser.FINAL) | (1 << JavaLabeledParser.FLOAT) | (1 << JavaLabeledParser.INT) | (1 << JavaLabeledParser.LONG) | (1 << JavaLabeledParser.NEW) | (1 << JavaLabeledParser.SHORT) | (1 << JavaLabeledParser.SUPER) | (1 << JavaLabeledParser.THIS) | (1 << JavaLabeledParser.VOID) | (1 << JavaLabeledParser.DECIMAL_LITERAL) | (1 << JavaLabeledParser.HEX_LITERAL) | (1 << JavaLabeledParser.OCT_LITERAL) | (1 << JavaLabeledParser.BINARY_LITERAL) | (1 << JavaLabeledParser.FLOAT_LITERAL) | (1 << JavaLabeledParser.HEX_FLOAT_LITERAL) | (1 << JavaLabeledParser.BOOL_LITERAL) | (1 << JavaLabeledParser.CHAR_LITERAL) | (1 << JavaLabeledParser.STRING_LITERAL) | (1 << JavaLabeledParser.NULL_LITERAL) | (1 << JavaLabeledParser.LPAREN))) != 0) or ((((_la - 72)) & ~0x3f) == 0 and ((1 << (_la - 72)) & ((1 << (JavaLabeledParser.LT - 72)) | (1 << (JavaLabeledParser.BANG - 72)) | (1 << (JavaLabeledParser.TILDE - 72)) | (1 << (JavaLabeledParser.INC - 72)) | (1 << (JavaLabeledParser.DEC - 72)) | (1 << (JavaLabeledParser.ADD - 72)) | (1 << (JavaLabeledParser.SUB - 72)) | (1 << (JavaLabeledParser.AT - 72)) | (1 << (JavaLabeledParser.IDENTIFIER - 72)))) != 0):
+                if (
+                    ((_la) & ~0x3F) == 0
+                    and (
+                        (1 << _la)
+                        & (
+                            (1 << JavaLabeledParser.BOOLEAN)
+                            | (1 << JavaLabeledParser.BYTE)
+                            | (1 << JavaLabeledParser.CHAR)
+                            | (1 << JavaLabeledParser.DOUBLE)
+                            | (1 << JavaLabeledParser.FINAL)
+                            | (1 << JavaLabeledParser.FLOAT)
+                            | (1 << JavaLabeledParser.INT)
+                            | (1 << JavaLabeledParser.LONG)
+                            | (1 << JavaLabeledParser.NEW)
+                            | (1 << JavaLabeledParser.SHORT)
+                            | (1 << JavaLabeledParser.SUPER)
+                            | (1 << JavaLabeledParser.THIS)
+                            | (1 << JavaLabeledParser.VOID)
+                            | (1 << JavaLabeledParser.DECIMAL_LITERAL)
+                            | (1 << JavaLabeledParser.HEX_LITERAL)
+                            | (1 << JavaLabeledParser.OCT_LITERAL)
+                            | (1 << JavaLabeledParser.BINARY_LITERAL)
+                            | (1 << JavaLabeledParser.FLOAT_LITERAL)
+                            | (1 << JavaLabeledParser.HEX_FLOAT_LITERAL)
+                            | (1 << JavaLabeledParser.BOOL_LITERAL)
+                            | (1 << JavaLabeledParser.CHAR_LITERAL)
+                            | (1 << JavaLabeledParser.STRING_LITERAL)
+                            | (1 << JavaLabeledParser.NULL_LITERAL)
+                            | (1 << JavaLabeledParser.LPAREN)
+                        )
+                    )
+                    != 0
+                ) or (
+                    (((_la - 72)) & ~0x3F) == 0
+                    and (
+                        (1 << (_la - 72))
+                        & (
+                            (1 << (JavaLabeledParser.LT - 72))
+                            | (1 << (JavaLabeledParser.BANG - 72))
+                            | (1 << (JavaLabeledParser.TILDE - 72))
+                            | (1 << (JavaLabeledParser.INC - 72))
+                            | (1 << (JavaLabeledParser.DEC - 72))
+                            | (1 << (JavaLabeledParser.ADD - 72))
+                            | (1 << (JavaLabeledParser.SUB - 72))
+                            | (1 << (JavaLabeledParser.AT - 72))
+                            | (1 << (JavaLabeledParser.IDENTIFIER - 72))
+                        )
+                    )
+                    != 0
+                ):
                     self.state = 1037
                     self.forInit()
-
 
                 self.state = 1040
                 self.match(JavaLabeledParser.SEMI)
                 self.state = 1042
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << JavaLabeledParser.BOOLEAN) | (1 << JavaLabeledParser.BYTE) | (1 << JavaLabeledParser.CHAR) | (1 << JavaLabeledParser.DOUBLE) | (1 << JavaLabeledParser.FLOAT) | (1 << JavaLabeledParser.INT) | (1 << JavaLabeledParser.LONG) | (1 << JavaLabeledParser.NEW) | (1 << JavaLabeledParser.SHORT) | (1 << JavaLabeledParser.SUPER) | (1 << JavaLabeledParser.THIS) | (1 << JavaLabeledParser.VOID) | (1 << JavaLabeledParser.DECIMAL_LITERAL) | (1 << JavaLabeledParser.HEX_LITERAL) | (1 << JavaLabeledParser.OCT_LITERAL) | (1 << JavaLabeledParser.BINARY_LITERAL) | (1 << JavaLabeledParser.FLOAT_LITERAL) | (1 << JavaLabeledParser.HEX_FLOAT_LITERAL) | (1 << JavaLabeledParser.BOOL_LITERAL) | (1 << JavaLabeledParser.CHAR_LITERAL) | (1 << JavaLabeledParser.STRING_LITERAL) | (1 << JavaLabeledParser.NULL_LITERAL) | (1 << JavaLabeledParser.LPAREN))) != 0) or ((((_la - 72)) & ~0x3f) == 0 and ((1 << (_la - 72)) & ((1 << (JavaLabeledParser.LT - 72)) | (1 << (JavaLabeledParser.BANG - 72)) | (1 << (JavaLabeledParser.TILDE - 72)) | (1 << (JavaLabeledParser.INC - 72)) | (1 << (JavaLabeledParser.DEC - 72)) | (1 << (JavaLabeledParser.ADD - 72)) | (1 << (JavaLabeledParser.SUB - 72)) | (1 << (JavaLabeledParser.AT - 72)) | (1 << (JavaLabeledParser.IDENTIFIER - 72)))) != 0):
+                if (
+                    ((_la) & ~0x3F) == 0
+                    and (
+                        (1 << _la)
+                        & (
+                            (1 << JavaLabeledParser.BOOLEAN)
+                            | (1 << JavaLabeledParser.BYTE)
+                            | (1 << JavaLabeledParser.CHAR)
+                            | (1 << JavaLabeledParser.DOUBLE)
+                            | (1 << JavaLabeledParser.FLOAT)
+                            | (1 << JavaLabeledParser.INT)
+                            | (1 << JavaLabeledParser.LONG)
+                            | (1 << JavaLabeledParser.NEW)
+                            | (1 << JavaLabeledParser.SHORT)
+                            | (1 << JavaLabeledParser.SUPER)
+                            | (1 << JavaLabeledParser.THIS)
+                            | (1 << JavaLabeledParser.VOID)
+                            | (1 << JavaLabeledParser.DECIMAL_LITERAL)
+                            | (1 << JavaLabeledParser.HEX_LITERAL)
+                            | (1 << JavaLabeledParser.OCT_LITERAL)
+                            | (1 << JavaLabeledParser.BINARY_LITERAL)
+                            | (1 << JavaLabeledParser.FLOAT_LITERAL)
+                            | (1 << JavaLabeledParser.HEX_FLOAT_LITERAL)
+                            | (1 << JavaLabeledParser.BOOL_LITERAL)
+                            | (1 << JavaLabeledParser.CHAR_LITERAL)
+                            | (1 << JavaLabeledParser.STRING_LITERAL)
+                            | (1 << JavaLabeledParser.NULL_LITERAL)
+                            | (1 << JavaLabeledParser.LPAREN)
+                        )
+                    )
+                    != 0
+                ) or (
+                    (((_la - 72)) & ~0x3F) == 0
+                    and (
+                        (1 << (_la - 72))
+                        & (
+                            (1 << (JavaLabeledParser.LT - 72))
+                            | (1 << (JavaLabeledParser.BANG - 72))
+                            | (1 << (JavaLabeledParser.TILDE - 72))
+                            | (1 << (JavaLabeledParser.INC - 72))
+                            | (1 << (JavaLabeledParser.DEC - 72))
+                            | (1 << (JavaLabeledParser.ADD - 72))
+                            | (1 << (JavaLabeledParser.SUB - 72))
+                            | (1 << (JavaLabeledParser.AT - 72))
+                            | (1 << (JavaLabeledParser.IDENTIFIER - 72))
+                        )
+                    )
+                    != 0
+                ):
                     self.state = 1041
                     self.expression(0)
-
 
                 self.state = 1044
                 self.match(JavaLabeledParser.SEMI)
                 self.state = 1046
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << JavaLabeledParser.BOOLEAN) | (1 << JavaLabeledParser.BYTE) | (1 << JavaLabeledParser.CHAR) | (1 << JavaLabeledParser.DOUBLE) | (1 << JavaLabeledParser.FLOAT) | (1 << JavaLabeledParser.INT) | (1 << JavaLabeledParser.LONG) | (1 << JavaLabeledParser.NEW) | (1 << JavaLabeledParser.SHORT) | (1 << JavaLabeledParser.SUPER) | (1 << JavaLabeledParser.THIS) | (1 << JavaLabeledParser.VOID) | (1 << JavaLabeledParser.DECIMAL_LITERAL) | (1 << JavaLabeledParser.HEX_LITERAL) | (1 << JavaLabeledParser.OCT_LITERAL) | (1 << JavaLabeledParser.BINARY_LITERAL) | (1 << JavaLabeledParser.FLOAT_LITERAL) | (1 << JavaLabeledParser.HEX_FLOAT_LITERAL) | (1 << JavaLabeledParser.BOOL_LITERAL) | (1 << JavaLabeledParser.CHAR_LITERAL) | (1 << JavaLabeledParser.STRING_LITERAL) | (1 << JavaLabeledParser.NULL_LITERAL) | (1 << JavaLabeledParser.LPAREN))) != 0) or ((((_la - 72)) & ~0x3f) == 0 and ((1 << (_la - 72)) & ((1 << (JavaLabeledParser.LT - 72)) | (1 << (JavaLabeledParser.BANG - 72)) | (1 << (JavaLabeledParser.TILDE - 72)) | (1 << (JavaLabeledParser.INC - 72)) | (1 << (JavaLabeledParser.DEC - 72)) | (1 << (JavaLabeledParser.ADD - 72)) | (1 << (JavaLabeledParser.SUB - 72)) | (1 << (JavaLabeledParser.AT - 72)) | (1 << (JavaLabeledParser.IDENTIFIER - 72)))) != 0):
+                if (
+                    ((_la) & ~0x3F) == 0
+                    and (
+                        (1 << _la)
+                        & (
+                            (1 << JavaLabeledParser.BOOLEAN)
+                            | (1 << JavaLabeledParser.BYTE)
+                            | (1 << JavaLabeledParser.CHAR)
+                            | (1 << JavaLabeledParser.DOUBLE)
+                            | (1 << JavaLabeledParser.FLOAT)
+                            | (1 << JavaLabeledParser.INT)
+                            | (1 << JavaLabeledParser.LONG)
+                            | (1 << JavaLabeledParser.NEW)
+                            | (1 << JavaLabeledParser.SHORT)
+                            | (1 << JavaLabeledParser.SUPER)
+                            | (1 << JavaLabeledParser.THIS)
+                            | (1 << JavaLabeledParser.VOID)
+                            | (1 << JavaLabeledParser.DECIMAL_LITERAL)
+                            | (1 << JavaLabeledParser.HEX_LITERAL)
+                            | (1 << JavaLabeledParser.OCT_LITERAL)
+                            | (1 << JavaLabeledParser.BINARY_LITERAL)
+                            | (1 << JavaLabeledParser.FLOAT_LITERAL)
+                            | (1 << JavaLabeledParser.HEX_FLOAT_LITERAL)
+                            | (1 << JavaLabeledParser.BOOL_LITERAL)
+                            | (1 << JavaLabeledParser.CHAR_LITERAL)
+                            | (1 << JavaLabeledParser.STRING_LITERAL)
+                            | (1 << JavaLabeledParser.NULL_LITERAL)
+                            | (1 << JavaLabeledParser.LPAREN)
+                        )
+                    )
+                    != 0
+                ) or (
+                    (((_la - 72)) & ~0x3F) == 0
+                    and (
+                        (1 << (_la - 72))
+                        & (
+                            (1 << (JavaLabeledParser.LT - 72))
+                            | (1 << (JavaLabeledParser.BANG - 72))
+                            | (1 << (JavaLabeledParser.TILDE - 72))
+                            | (1 << (JavaLabeledParser.INC - 72))
+                            | (1 << (JavaLabeledParser.DEC - 72))
+                            | (1 << (JavaLabeledParser.ADD - 72))
+                            | (1 << (JavaLabeledParser.SUB - 72))
+                            | (1 << (JavaLabeledParser.AT - 72))
+                            | (1 << (JavaLabeledParser.IDENTIFIER - 72))
+                        )
+                    )
+                    != 0
+                ):
                     self.state = 1045
                     localctx.forUpdate = self.expressionList()
 
-
                 pass
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -7323,46 +8412,42 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ForInitContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_forInit
 
-     
-        def copyFrom(self, ctx:ParserRuleContext):
+        def copyFrom(self, ctx: ParserRuleContext):
             super().copyFrom(ctx)
 
-
-
     class ForInit1Context(ForInitContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ForInitContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ForInitContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def expressionList(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionListContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionListContext, 0)
 
     class ForInit0Context(ForInitContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ForInitContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ForInitContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def localVariableDeclaration(self):
-            return self.getTypedRuleContext(JavaLabeledParser.LocalVariableDeclarationContext,0)
-
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.LocalVariableDeclarationContext, 0
+            )
 
     def forInit(self):
 
@@ -7371,7 +8456,7 @@ class JavaLabeledParser ( Parser ):
         try:
             self.state = 1052
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,127,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 127, self._ctx)
             if la_ == 1:
                 localctx = JavaLabeledParser.ForInit0Context(self, localctx)
                 self.enterOuterAlt(localctx, 1)
@@ -7386,7 +8471,6 @@ class JavaLabeledParser ( Parser ):
                 self.expressionList()
                 pass
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -7395,58 +8479,60 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class EnhancedForControlContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def typeType(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext, 0)
 
         def variableDeclaratorId(self):
-            return self.getTypedRuleContext(JavaLabeledParser.VariableDeclaratorIdContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.VariableDeclaratorIdContext, 0
+            )
 
         def COLON(self):
             return self.getToken(JavaLabeledParser.COLON, 0)
 
         def expression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, 0)
 
-
-        def variableModifier(self, i:int=None):
+        def variableModifier(self, i: int = None):
             if i is None:
-                return self.getTypedRuleContexts(JavaLabeledParser.VariableModifierContext)
+                return self.getTypedRuleContexts(
+                    JavaLabeledParser.VariableModifierContext
+                )
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.VariableModifierContext,i)
-
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.VariableModifierContext, i
+                )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_enhancedForControl
 
-
-
-
     def enhancedForControl(self):
 
-        localctx = JavaLabeledParser.EnhancedForControlContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.EnhancedForControlContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 158, self.RULE_enhancedForControl)
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1057
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,128,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
+            _alt = self._interp.adaptivePredict(self._input, 128, self._ctx)
+            while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                if _alt == 1:
                     self.state = 1054
-                    self.variableModifier() 
+                    self.variableModifier()
                 self.state = 1059
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,128,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input, 128, self._ctx)
 
             self.state = 1060
             self.typeType()
@@ -7464,11 +8550,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ParExpressionContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -7476,17 +8563,13 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.LPAREN, 0)
 
         def expression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, 0)
 
         def RPAREN(self):
             return self.getToken(JavaLabeledParser.RPAREN, 0)
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_parExpression
-
-
-
 
     def parExpression(self):
 
@@ -7508,22 +8591,22 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ExpressionListContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def expression(self, i:int=None):
+        def expression(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.ExpressionContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,i)
+                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, i)
 
-
-        def COMMA(self, i:int=None):
+        def COMMA(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.COMMA)
             else:
@@ -7532,14 +8615,11 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_expressionList
 
-
-
-
     def expressionList(self):
 
         localctx = JavaLabeledParser.ExpressionListContext(self, self._ctx, self.state)
         self.enterRule(localctx, 162, self.RULE_expressionList)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1069
@@ -7547,7 +8627,7 @@ class JavaLabeledParser ( Parser ):
             self.state = 1074
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==JavaLabeledParser.COMMA:
+            while _la == JavaLabeledParser.COMMA:
                 self.state = 1070
                 self.match(JavaLabeledParser.COMMA)
                 self.state = 1071
@@ -7564,81 +8644,83 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class MethodCallContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_methodCall
 
-     
-        def copyFrom(self, ctx:ParserRuleContext):
+        def copyFrom(self, ctx: ParserRuleContext):
             super().copyFrom(ctx)
 
-
-
     class MethodCall0Context(MethodCallContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.MethodCallContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.MethodCallContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def IDENTIFIER(self):
             return self.getToken(JavaLabeledParser.IDENTIFIER, 0)
+
         def LPAREN(self):
             return self.getToken(JavaLabeledParser.LPAREN, 0)
+
         def RPAREN(self):
             return self.getToken(JavaLabeledParser.RPAREN, 0)
+
         def expressionList(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionListContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionListContext, 0)
 
     class MethodCall1Context(MethodCallContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.MethodCallContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.MethodCallContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def THIS(self):
             return self.getToken(JavaLabeledParser.THIS, 0)
+
         def LPAREN(self):
             return self.getToken(JavaLabeledParser.LPAREN, 0)
+
         def RPAREN(self):
             return self.getToken(JavaLabeledParser.RPAREN, 0)
+
         def expressionList(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionListContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionListContext, 0)
 
     class MethodCall2Context(MethodCallContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.MethodCallContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.MethodCallContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def SUPER(self):
             return self.getToken(JavaLabeledParser.SUPER, 0)
+
         def LPAREN(self):
             return self.getToken(JavaLabeledParser.LPAREN, 0)
+
         def RPAREN(self):
             return self.getToken(JavaLabeledParser.RPAREN, 0)
+
         def expressionList(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionListContext,0)
-
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionListContext, 0)
 
     def methodCall(self):
 
         localctx = JavaLabeledParser.MethodCallContext(self, self._ctx, self.state)
         self.enterRule(localctx, 164, self.RULE_methodCall)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.state = 1095
             self._errHandler.sync(self)
@@ -7653,10 +8735,57 @@ class JavaLabeledParser ( Parser ):
                 self.state = 1080
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << JavaLabeledParser.BOOLEAN) | (1 << JavaLabeledParser.BYTE) | (1 << JavaLabeledParser.CHAR) | (1 << JavaLabeledParser.DOUBLE) | (1 << JavaLabeledParser.FLOAT) | (1 << JavaLabeledParser.INT) | (1 << JavaLabeledParser.LONG) | (1 << JavaLabeledParser.NEW) | (1 << JavaLabeledParser.SHORT) | (1 << JavaLabeledParser.SUPER) | (1 << JavaLabeledParser.THIS) | (1 << JavaLabeledParser.VOID) | (1 << JavaLabeledParser.DECIMAL_LITERAL) | (1 << JavaLabeledParser.HEX_LITERAL) | (1 << JavaLabeledParser.OCT_LITERAL) | (1 << JavaLabeledParser.BINARY_LITERAL) | (1 << JavaLabeledParser.FLOAT_LITERAL) | (1 << JavaLabeledParser.HEX_FLOAT_LITERAL) | (1 << JavaLabeledParser.BOOL_LITERAL) | (1 << JavaLabeledParser.CHAR_LITERAL) | (1 << JavaLabeledParser.STRING_LITERAL) | (1 << JavaLabeledParser.NULL_LITERAL) | (1 << JavaLabeledParser.LPAREN))) != 0) or ((((_la - 72)) & ~0x3f) == 0 and ((1 << (_la - 72)) & ((1 << (JavaLabeledParser.LT - 72)) | (1 << (JavaLabeledParser.BANG - 72)) | (1 << (JavaLabeledParser.TILDE - 72)) | (1 << (JavaLabeledParser.INC - 72)) | (1 << (JavaLabeledParser.DEC - 72)) | (1 << (JavaLabeledParser.ADD - 72)) | (1 << (JavaLabeledParser.SUB - 72)) | (1 << (JavaLabeledParser.AT - 72)) | (1 << (JavaLabeledParser.IDENTIFIER - 72)))) != 0):
+                if (
+                    ((_la) & ~0x3F) == 0
+                    and (
+                        (1 << _la)
+                        & (
+                            (1 << JavaLabeledParser.BOOLEAN)
+                            | (1 << JavaLabeledParser.BYTE)
+                            | (1 << JavaLabeledParser.CHAR)
+                            | (1 << JavaLabeledParser.DOUBLE)
+                            | (1 << JavaLabeledParser.FLOAT)
+                            | (1 << JavaLabeledParser.INT)
+                            | (1 << JavaLabeledParser.LONG)
+                            | (1 << JavaLabeledParser.NEW)
+                            | (1 << JavaLabeledParser.SHORT)
+                            | (1 << JavaLabeledParser.SUPER)
+                            | (1 << JavaLabeledParser.THIS)
+                            | (1 << JavaLabeledParser.VOID)
+                            | (1 << JavaLabeledParser.DECIMAL_LITERAL)
+                            | (1 << JavaLabeledParser.HEX_LITERAL)
+                            | (1 << JavaLabeledParser.OCT_LITERAL)
+                            | (1 << JavaLabeledParser.BINARY_LITERAL)
+                            | (1 << JavaLabeledParser.FLOAT_LITERAL)
+                            | (1 << JavaLabeledParser.HEX_FLOAT_LITERAL)
+                            | (1 << JavaLabeledParser.BOOL_LITERAL)
+                            | (1 << JavaLabeledParser.CHAR_LITERAL)
+                            | (1 << JavaLabeledParser.STRING_LITERAL)
+                            | (1 << JavaLabeledParser.NULL_LITERAL)
+                            | (1 << JavaLabeledParser.LPAREN)
+                        )
+                    )
+                    != 0
+                ) or (
+                    (((_la - 72)) & ~0x3F) == 0
+                    and (
+                        (1 << (_la - 72))
+                        & (
+                            (1 << (JavaLabeledParser.LT - 72))
+                            | (1 << (JavaLabeledParser.BANG - 72))
+                            | (1 << (JavaLabeledParser.TILDE - 72))
+                            | (1 << (JavaLabeledParser.INC - 72))
+                            | (1 << (JavaLabeledParser.DEC - 72))
+                            | (1 << (JavaLabeledParser.ADD - 72))
+                            | (1 << (JavaLabeledParser.SUB - 72))
+                            | (1 << (JavaLabeledParser.AT - 72))
+                            | (1 << (JavaLabeledParser.IDENTIFIER - 72))
+                        )
+                    )
+                    != 0
+                ):
                     self.state = 1079
                     self.expressionList()
-
 
                 self.state = 1082
                 self.match(JavaLabeledParser.RPAREN)
@@ -7671,10 +8800,57 @@ class JavaLabeledParser ( Parser ):
                 self.state = 1086
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << JavaLabeledParser.BOOLEAN) | (1 << JavaLabeledParser.BYTE) | (1 << JavaLabeledParser.CHAR) | (1 << JavaLabeledParser.DOUBLE) | (1 << JavaLabeledParser.FLOAT) | (1 << JavaLabeledParser.INT) | (1 << JavaLabeledParser.LONG) | (1 << JavaLabeledParser.NEW) | (1 << JavaLabeledParser.SHORT) | (1 << JavaLabeledParser.SUPER) | (1 << JavaLabeledParser.THIS) | (1 << JavaLabeledParser.VOID) | (1 << JavaLabeledParser.DECIMAL_LITERAL) | (1 << JavaLabeledParser.HEX_LITERAL) | (1 << JavaLabeledParser.OCT_LITERAL) | (1 << JavaLabeledParser.BINARY_LITERAL) | (1 << JavaLabeledParser.FLOAT_LITERAL) | (1 << JavaLabeledParser.HEX_FLOAT_LITERAL) | (1 << JavaLabeledParser.BOOL_LITERAL) | (1 << JavaLabeledParser.CHAR_LITERAL) | (1 << JavaLabeledParser.STRING_LITERAL) | (1 << JavaLabeledParser.NULL_LITERAL) | (1 << JavaLabeledParser.LPAREN))) != 0) or ((((_la - 72)) & ~0x3f) == 0 and ((1 << (_la - 72)) & ((1 << (JavaLabeledParser.LT - 72)) | (1 << (JavaLabeledParser.BANG - 72)) | (1 << (JavaLabeledParser.TILDE - 72)) | (1 << (JavaLabeledParser.INC - 72)) | (1 << (JavaLabeledParser.DEC - 72)) | (1 << (JavaLabeledParser.ADD - 72)) | (1 << (JavaLabeledParser.SUB - 72)) | (1 << (JavaLabeledParser.AT - 72)) | (1 << (JavaLabeledParser.IDENTIFIER - 72)))) != 0):
+                if (
+                    ((_la) & ~0x3F) == 0
+                    and (
+                        (1 << _la)
+                        & (
+                            (1 << JavaLabeledParser.BOOLEAN)
+                            | (1 << JavaLabeledParser.BYTE)
+                            | (1 << JavaLabeledParser.CHAR)
+                            | (1 << JavaLabeledParser.DOUBLE)
+                            | (1 << JavaLabeledParser.FLOAT)
+                            | (1 << JavaLabeledParser.INT)
+                            | (1 << JavaLabeledParser.LONG)
+                            | (1 << JavaLabeledParser.NEW)
+                            | (1 << JavaLabeledParser.SHORT)
+                            | (1 << JavaLabeledParser.SUPER)
+                            | (1 << JavaLabeledParser.THIS)
+                            | (1 << JavaLabeledParser.VOID)
+                            | (1 << JavaLabeledParser.DECIMAL_LITERAL)
+                            | (1 << JavaLabeledParser.HEX_LITERAL)
+                            | (1 << JavaLabeledParser.OCT_LITERAL)
+                            | (1 << JavaLabeledParser.BINARY_LITERAL)
+                            | (1 << JavaLabeledParser.FLOAT_LITERAL)
+                            | (1 << JavaLabeledParser.HEX_FLOAT_LITERAL)
+                            | (1 << JavaLabeledParser.BOOL_LITERAL)
+                            | (1 << JavaLabeledParser.CHAR_LITERAL)
+                            | (1 << JavaLabeledParser.STRING_LITERAL)
+                            | (1 << JavaLabeledParser.NULL_LITERAL)
+                            | (1 << JavaLabeledParser.LPAREN)
+                        )
+                    )
+                    != 0
+                ) or (
+                    (((_la - 72)) & ~0x3F) == 0
+                    and (
+                        (1 << (_la - 72))
+                        & (
+                            (1 << (JavaLabeledParser.LT - 72))
+                            | (1 << (JavaLabeledParser.BANG - 72))
+                            | (1 << (JavaLabeledParser.TILDE - 72))
+                            | (1 << (JavaLabeledParser.INC - 72))
+                            | (1 << (JavaLabeledParser.DEC - 72))
+                            | (1 << (JavaLabeledParser.ADD - 72))
+                            | (1 << (JavaLabeledParser.SUB - 72))
+                            | (1 << (JavaLabeledParser.AT - 72))
+                            | (1 << (JavaLabeledParser.IDENTIFIER - 72))
+                        )
+                    )
+                    != 0
+                ):
                     self.state = 1085
                     self.expressionList()
-
 
                 self.state = 1088
                 self.match(JavaLabeledParser.RPAREN)
@@ -7689,10 +8865,57 @@ class JavaLabeledParser ( Parser ):
                 self.state = 1092
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << JavaLabeledParser.BOOLEAN) | (1 << JavaLabeledParser.BYTE) | (1 << JavaLabeledParser.CHAR) | (1 << JavaLabeledParser.DOUBLE) | (1 << JavaLabeledParser.FLOAT) | (1 << JavaLabeledParser.INT) | (1 << JavaLabeledParser.LONG) | (1 << JavaLabeledParser.NEW) | (1 << JavaLabeledParser.SHORT) | (1 << JavaLabeledParser.SUPER) | (1 << JavaLabeledParser.THIS) | (1 << JavaLabeledParser.VOID) | (1 << JavaLabeledParser.DECIMAL_LITERAL) | (1 << JavaLabeledParser.HEX_LITERAL) | (1 << JavaLabeledParser.OCT_LITERAL) | (1 << JavaLabeledParser.BINARY_LITERAL) | (1 << JavaLabeledParser.FLOAT_LITERAL) | (1 << JavaLabeledParser.HEX_FLOAT_LITERAL) | (1 << JavaLabeledParser.BOOL_LITERAL) | (1 << JavaLabeledParser.CHAR_LITERAL) | (1 << JavaLabeledParser.STRING_LITERAL) | (1 << JavaLabeledParser.NULL_LITERAL) | (1 << JavaLabeledParser.LPAREN))) != 0) or ((((_la - 72)) & ~0x3f) == 0 and ((1 << (_la - 72)) & ((1 << (JavaLabeledParser.LT - 72)) | (1 << (JavaLabeledParser.BANG - 72)) | (1 << (JavaLabeledParser.TILDE - 72)) | (1 << (JavaLabeledParser.INC - 72)) | (1 << (JavaLabeledParser.DEC - 72)) | (1 << (JavaLabeledParser.ADD - 72)) | (1 << (JavaLabeledParser.SUB - 72)) | (1 << (JavaLabeledParser.AT - 72)) | (1 << (JavaLabeledParser.IDENTIFIER - 72)))) != 0):
+                if (
+                    ((_la) & ~0x3F) == 0
+                    and (
+                        (1 << _la)
+                        & (
+                            (1 << JavaLabeledParser.BOOLEAN)
+                            | (1 << JavaLabeledParser.BYTE)
+                            | (1 << JavaLabeledParser.CHAR)
+                            | (1 << JavaLabeledParser.DOUBLE)
+                            | (1 << JavaLabeledParser.FLOAT)
+                            | (1 << JavaLabeledParser.INT)
+                            | (1 << JavaLabeledParser.LONG)
+                            | (1 << JavaLabeledParser.NEW)
+                            | (1 << JavaLabeledParser.SHORT)
+                            | (1 << JavaLabeledParser.SUPER)
+                            | (1 << JavaLabeledParser.THIS)
+                            | (1 << JavaLabeledParser.VOID)
+                            | (1 << JavaLabeledParser.DECIMAL_LITERAL)
+                            | (1 << JavaLabeledParser.HEX_LITERAL)
+                            | (1 << JavaLabeledParser.OCT_LITERAL)
+                            | (1 << JavaLabeledParser.BINARY_LITERAL)
+                            | (1 << JavaLabeledParser.FLOAT_LITERAL)
+                            | (1 << JavaLabeledParser.HEX_FLOAT_LITERAL)
+                            | (1 << JavaLabeledParser.BOOL_LITERAL)
+                            | (1 << JavaLabeledParser.CHAR_LITERAL)
+                            | (1 << JavaLabeledParser.STRING_LITERAL)
+                            | (1 << JavaLabeledParser.NULL_LITERAL)
+                            | (1 << JavaLabeledParser.LPAREN)
+                        )
+                    )
+                    != 0
+                ) or (
+                    (((_la - 72)) & ~0x3F) == 0
+                    and (
+                        (1 << (_la - 72))
+                        & (
+                            (1 << (JavaLabeledParser.LT - 72))
+                            | (1 << (JavaLabeledParser.BANG - 72))
+                            | (1 << (JavaLabeledParser.TILDE - 72))
+                            | (1 << (JavaLabeledParser.INC - 72))
+                            | (1 << (JavaLabeledParser.DEC - 72))
+                            | (1 << (JavaLabeledParser.ADD - 72))
+                            | (1 << (JavaLabeledParser.SUB - 72))
+                            | (1 << (JavaLabeledParser.AT - 72))
+                            | (1 << (JavaLabeledParser.IDENTIFIER - 72))
+                        )
+                    )
+                    != 0
+                ):
                     self.state = 1091
                     self.expressionList()
-
 
                 self.state = 1094
                 self.match(JavaLabeledParser.RPAREN)
@@ -7708,536 +8931,571 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ExpressionContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_expression
 
-     
-        def copyFrom(self, ctx:ParserRuleContext):
+        def copyFrom(self, ctx: ParserRuleContext):
             super().copyFrom(ctx)
 
-
     class Expression8Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
-            self.prefix = None # Token
+            self.prefix = None  # Token
             self.copyFrom(ctx)
 
         def expression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, 0)
 
         def TILDE(self):
             return self.getToken(JavaLabeledParser.TILDE, 0)
+
         def BANG(self):
             return self.getToken(JavaLabeledParser.BANG, 0)
 
-
     class Expression10Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
-            self.bop = None # Token
+            self.bop = None  # Token
             self.copyFrom(ctx)
 
-        def expression(self, i:int=None):
+        def expression(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.ExpressionContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,i)
+                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, i)
 
         def ADD(self):
             return self.getToken(JavaLabeledParser.ADD, 0)
+
         def SUB(self):
             return self.getToken(JavaLabeledParser.SUB, 0)
 
-
     class Expression9Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
-            self.bop = None # Token
+            self.bop = None  # Token
             self.copyFrom(ctx)
 
-        def expression(self, i:int=None):
+        def expression(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.ExpressionContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,i)
+                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, i)
 
         def MUL(self):
             return self.getToken(JavaLabeledParser.MUL, 0)
+
         def DIV(self):
             return self.getToken(JavaLabeledParser.DIV, 0)
+
         def MOD(self):
             return self.getToken(JavaLabeledParser.MOD, 0)
 
-
     class Expression12Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
-            self.bop = None # Token
+            self.bop = None  # Token
             self.copyFrom(ctx)
 
-        def expression(self, i:int=None):
+        def expression(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.ExpressionContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,i)
+                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, i)
 
         def LE(self):
             return self.getToken(JavaLabeledParser.LE, 0)
+
         def GE(self):
             return self.getToken(JavaLabeledParser.GE, 0)
+
         def GT(self):
             return self.getToken(JavaLabeledParser.GT, 0)
+
         def LT(self):
             return self.getToken(JavaLabeledParser.LT, 0)
 
-
     class Expression11Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
-        def expression(self, i:int=None):
+        def expression(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.ExpressionContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,i)
+                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, i)
 
-        def LT(self, i:int=None):
+        def LT(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.LT)
             else:
                 return self.getToken(JavaLabeledParser.LT, i)
-        def GT(self, i:int=None):
+
+        def GT(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.GT)
             else:
                 return self.getToken(JavaLabeledParser.GT, i)
 
-
     class Expression14Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
-            self.bop = None # Token
+            self.bop = None  # Token
             self.copyFrom(ctx)
 
-        def expression(self, i:int=None):
+        def expression(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.ExpressionContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,i)
+                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, i)
 
         def EQUAL(self):
             return self.getToken(JavaLabeledParser.EQUAL, 0)
+
         def NOTEQUAL(self):
             return self.getToken(JavaLabeledParser.NOTEQUAL, 0)
 
-
     class Expression13Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
-            self.bop = None # Token
+            self.bop = None  # Token
             self.copyFrom(ctx)
 
         def expression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, 0)
 
         def typeType(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext, 0)
 
         def INSTANCEOF(self):
             return self.getToken(JavaLabeledParser.INSTANCEOF, 0)
 
-
     class Expression16Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
-            self.bop = None # Token
+            self.bop = None  # Token
             self.copyFrom(ctx)
 
-        def expression(self, i:int=None):
+        def expression(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.ExpressionContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,i)
+                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, i)
 
         def CARET(self):
             return self.getToken(JavaLabeledParser.CARET, 0)
 
-
     class Expression15Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
-            self.bop = None # Token
+            self.bop = None  # Token
             self.copyFrom(ctx)
 
-        def expression(self, i:int=None):
+        def expression(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.ExpressionContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,i)
+                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, i)
 
         def BITAND(self):
             return self.getToken(JavaLabeledParser.BITAND, 0)
 
-
     class Expression18Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
-            self.bop = None # Token
+            self.bop = None  # Token
             self.copyFrom(ctx)
 
-        def expression(self, i:int=None):
+        def expression(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.ExpressionContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,i)
+                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, i)
 
         def AND(self):
             return self.getToken(JavaLabeledParser.AND, 0)
 
-
     class Expression17Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
-            self.bop = None # Token
+            self.bop = None  # Token
             self.copyFrom(ctx)
 
-        def expression(self, i:int=None):
+        def expression(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.ExpressionContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,i)
+                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, i)
 
         def BITOR(self):
             return self.getToken(JavaLabeledParser.BITOR, 0)
 
-
     class Expression19Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
-            self.bop = None # Token
+            self.bop = None  # Token
             self.copyFrom(ctx)
 
-        def expression(self, i:int=None):
+        def expression(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.ExpressionContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,i)
+                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, i)
 
         def OR(self):
             return self.getToken(JavaLabeledParser.OR, 0)
 
-
     class Expression6Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
-            self.postfix = None # Token
+            self.postfix = None  # Token
             self.copyFrom(ctx)
 
         def expression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, 0)
 
         def INC(self):
             return self.getToken(JavaLabeledParser.INC, 0)
+
         def DEC(self):
             return self.getToken(JavaLabeledParser.DEC, 0)
 
-
     class Expression7Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
-            self.prefix = None # Token
+            self.prefix = None  # Token
             self.copyFrom(ctx)
 
         def expression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, 0)
 
         def ADD(self):
             return self.getToken(JavaLabeledParser.ADD, 0)
+
         def SUB(self):
             return self.getToken(JavaLabeledParser.SUB, 0)
+
         def INC(self):
             return self.getToken(JavaLabeledParser.INC, 0)
+
         def DEC(self):
             return self.getToken(JavaLabeledParser.DEC, 0)
 
-
     class Expression4Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def NEW(self):
             return self.getToken(JavaLabeledParser.NEW, 0)
+
         def creator(self):
-            return self.getTypedRuleContext(JavaLabeledParser.CreatorContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.CreatorContext, 0)
 
     class Expression5Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def LPAREN(self):
             return self.getToken(JavaLabeledParser.LPAREN, 0)
+
         def typeType(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext, 0)
 
         def RPAREN(self):
             return self.getToken(JavaLabeledParser.RPAREN, 0)
-        def expression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,0)
 
-        def annotation(self, i:int=None):
+        def expression(self):
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, 0)
+
+        def annotation(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.AnnotationContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext,i)
-
-
+                return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext, i)
 
     class Expression2Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
-        def expression(self, i:int=None):
+        def expression(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.ExpressionContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,i)
+                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, i)
 
         def LBRACK(self):
             return self.getToken(JavaLabeledParser.LBRACK, 0)
+
         def RBRACK(self):
             return self.getToken(JavaLabeledParser.RBRACK, 0)
 
-
     class Expression3Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def methodCall(self):
-            return self.getTypedRuleContext(JavaLabeledParser.MethodCallContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.MethodCallContext, 0)
 
     class Expression0Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def primary(self):
-            return self.getTypedRuleContext(JavaLabeledParser.PrimaryContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.PrimaryContext, 0)
 
     class Expression1Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
-            self.bop = None # Token
+            self.bop = None  # Token
             self.copyFrom(ctx)
 
         def expression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, 0)
 
         def DOT(self):
             return self.getToken(JavaLabeledParser.DOT, 0)
+
         def IDENTIFIER(self):
             return self.getToken(JavaLabeledParser.IDENTIFIER, 0)
+
         def methodCall(self):
-            return self.getTypedRuleContext(JavaLabeledParser.MethodCallContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.MethodCallContext, 0)
 
         def THIS(self):
             return self.getToken(JavaLabeledParser.THIS, 0)
+
         def NEW(self):
             return self.getToken(JavaLabeledParser.NEW, 0)
+
         def innerCreator(self):
-            return self.getTypedRuleContext(JavaLabeledParser.InnerCreatorContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.InnerCreatorContext, 0)
 
         def SUPER(self):
             return self.getToken(JavaLabeledParser.SUPER, 0)
+
         def superSuffix(self):
-            return self.getTypedRuleContext(JavaLabeledParser.SuperSuffixContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.SuperSuffixContext, 0)
 
         def explicitGenericInvocation(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExplicitGenericInvocationContext,0)
+            return self.getTypedRuleContext(
+                JavaLabeledParser.ExplicitGenericInvocationContext, 0
+            )
 
         def nonWildcardTypeArguments(self):
-            return self.getTypedRuleContext(JavaLabeledParser.NonWildcardTypeArgumentsContext,0)
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.NonWildcardTypeArgumentsContext, 0
+            )
 
     class Expression21Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
-            self.bop = None # Token
+            self.bop = None  # Token
             self.copyFrom(ctx)
 
-        def expression(self, i:int=None):
+        def expression(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.ExpressionContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,i)
+                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, i)
 
         def ASSIGN(self):
             return self.getToken(JavaLabeledParser.ASSIGN, 0)
+
         def ADD_ASSIGN(self):
             return self.getToken(JavaLabeledParser.ADD_ASSIGN, 0)
+
         def SUB_ASSIGN(self):
             return self.getToken(JavaLabeledParser.SUB_ASSIGN, 0)
+
         def MUL_ASSIGN(self):
             return self.getToken(JavaLabeledParser.MUL_ASSIGN, 0)
+
         def DIV_ASSIGN(self):
             return self.getToken(JavaLabeledParser.DIV_ASSIGN, 0)
+
         def AND_ASSIGN(self):
             return self.getToken(JavaLabeledParser.AND_ASSIGN, 0)
+
         def OR_ASSIGN(self):
             return self.getToken(JavaLabeledParser.OR_ASSIGN, 0)
+
         def XOR_ASSIGN(self):
             return self.getToken(JavaLabeledParser.XOR_ASSIGN, 0)
+
         def RSHIFT_ASSIGN(self):
             return self.getToken(JavaLabeledParser.RSHIFT_ASSIGN, 0)
+
         def URSHIFT_ASSIGN(self):
             return self.getToken(JavaLabeledParser.URSHIFT_ASSIGN, 0)
+
         def LSHIFT_ASSIGN(self):
             return self.getToken(JavaLabeledParser.LSHIFT_ASSIGN, 0)
+
         def MOD_ASSIGN(self):
             return self.getToken(JavaLabeledParser.MOD_ASSIGN, 0)
 
-
     class Expression20Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
-            self.bop = None # Token
+            self.bop = None  # Token
             self.copyFrom(ctx)
 
-        def expression(self, i:int=None):
+        def expression(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.ExpressionContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,i)
+                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, i)
 
         def COLON(self):
             return self.getToken(JavaLabeledParser.COLON, 0)
+
         def QUESTION(self):
             return self.getToken(JavaLabeledParser.QUESTION, 0)
 
-
     class Expression23Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def expression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, 0)
 
         def COLONCOLON(self):
             return self.getToken(JavaLabeledParser.COLONCOLON, 0)
+
         def IDENTIFIER(self):
             return self.getToken(JavaLabeledParser.IDENTIFIER, 0)
+
         def typeArguments(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeArgumentsContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.TypeArgumentsContext, 0)
 
     class Expression22Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def lambdaExpression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.LambdaExpressionContext,0)
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.LambdaExpressionContext, 0
+            )
 
     class Expression25Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def classType(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ClassTypeContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.ClassTypeContext, 0)
 
         def COLONCOLON(self):
             return self.getToken(JavaLabeledParser.COLONCOLON, 0)
+
         def NEW(self):
             return self.getToken(JavaLabeledParser.NEW, 0)
+
         def typeArguments(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeArgumentsContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.TypeArgumentsContext, 0)
 
     class Expression24Context(ExpressionContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExpressionContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExpressionContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def typeType(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext, 0)
 
         def COLONCOLON(self):
             return self.getToken(JavaLabeledParser.COLONCOLON, 0)
+
         def IDENTIFIER(self):
             return self.getToken(JavaLabeledParser.IDENTIFIER, 0)
+
         def NEW(self):
             return self.getToken(JavaLabeledParser.NEW, 0)
+
         def typeArguments(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeArgumentsContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.TypeArgumentsContext, 0)
 
-
-
-
-    def expression(self, _p:int=0):
+    def expression(self, _p: int = 0):
         _parentctx = self._ctx
         _parentState = self.state
         localctx = JavaLabeledParser.ExpressionContext(self, self._ctx, _parentState)
         _prevctx = localctx
         _startState = 166
         self.enterRecursionRule(localctx, 166, self.RULE_expression, _p)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1134
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,138,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 138, self._ctx)
             if la_ == 1:
                 localctx = JavaLabeledParser.Expression0Context(self, localctx)
                 self._ctx = localctx
@@ -8273,14 +9531,14 @@ class JavaLabeledParser ( Parser ):
                 self.match(JavaLabeledParser.LPAREN)
                 self.state = 1106
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,134,self._ctx)
-                while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                    if _alt==1:
+                _alt = self._interp.adaptivePredict(self._input, 134, self._ctx)
+                while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                    if _alt == 1:
                         self.state = 1103
-                        self.annotation() 
+                        self.annotation()
                     self.state = 1108
                     self._errHandler.sync(self)
-                    _alt = self._interp.adaptivePredict(self._input,134,self._ctx)
+                    _alt = self._interp.adaptivePredict(self._input, 134, self._ctx)
 
                 self.state = 1109
                 self.typeType()
@@ -8297,7 +9555,21 @@ class JavaLabeledParser ( Parser ):
                 self.state = 1113
                 localctx.prefix = self._input.LT(1)
                 _la = self._input.LA(1)
-                if not(((((_la - 83)) & ~0x3f) == 0 and ((1 << (_la - 83)) & ((1 << (JavaLabeledParser.INC - 83)) | (1 << (JavaLabeledParser.DEC - 83)) | (1 << (JavaLabeledParser.ADD - 83)) | (1 << (JavaLabeledParser.SUB - 83)))) != 0)):
+                if not (
+                    (
+                        (((_la - 83)) & ~0x3F) == 0
+                        and (
+                            (1 << (_la - 83))
+                            & (
+                                (1 << (JavaLabeledParser.INC - 83))
+                                | (1 << (JavaLabeledParser.DEC - 83))
+                                | (1 << (JavaLabeledParser.ADD - 83))
+                                | (1 << (JavaLabeledParser.SUB - 83))
+                            )
+                        )
+                        != 0
+                    )
+                ):
                     localctx.prefix = self._errHandler.recoverInline(self)
                 else:
                     self._errHandler.reportMatch(self)
@@ -8313,7 +9585,9 @@ class JavaLabeledParser ( Parser ):
                 self.state = 1115
                 localctx.prefix = self._input.LT(1)
                 _la = self._input.LA(1)
-                if not(_la==JavaLabeledParser.BANG or _la==JavaLabeledParser.TILDE):
+                if not (
+                    _la == JavaLabeledParser.BANG or _la == JavaLabeledParser.TILDE
+                ):
                     localctx.prefix = self._errHandler.recoverInline(self)
                 else:
                     self._errHandler.reportMatch(self)
@@ -8345,10 +9619,9 @@ class JavaLabeledParser ( Parser ):
                     self.state = 1121
                     self._errHandler.sync(self)
                     _la = self._input.LA(1)
-                    if _la==JavaLabeledParser.LT:
+                    if _la == JavaLabeledParser.LT:
                         self.state = 1120
                         self.typeArguments()
-
 
                     self.state = 1123
                     self.match(JavaLabeledParser.IDENTIFIER)
@@ -8373,39 +9646,60 @@ class JavaLabeledParser ( Parser ):
                 self.state = 1130
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==JavaLabeledParser.LT:
+                if _la == JavaLabeledParser.LT:
                     self.state = 1129
                     self.typeArguments()
-
 
                 self.state = 1132
                 self.match(JavaLabeledParser.NEW)
                 pass
 
-
             self._ctx.stop = self._input.LT(-1)
             self.state = 1216
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,144,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
+            _alt = self._interp.adaptivePredict(self._input, 144, self._ctx)
+            while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                if _alt == 1:
                     if self._parseListeners is not None:
                         self.triggerExitRuleEvent()
                     _prevctx = localctx
                     self.state = 1214
                     self._errHandler.sync(self)
-                    la_ = self._interp.adaptivePredict(self._input,143,self._ctx)
+                    la_ = self._interp.adaptivePredict(self._input, 143, self._ctx)
                     if la_ == 1:
-                        localctx = JavaLabeledParser.Expression9Context(self, JavaLabeledParser.ExpressionContext(self, _parentctx, _parentState))
-                        self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
+                        localctx = JavaLabeledParser.Expression9Context(
+                            self,
+                            JavaLabeledParser.ExpressionContext(
+                                self, _parentctx, _parentState
+                            ),
+                        )
+                        self.pushNewRecursionContext(
+                            localctx, _startState, self.RULE_expression
+                        )
                         self.state = 1136
                         if not self.precpred(self._ctx, 17):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 17)")
+
+                            raise FailedPredicateException(
+                                self, "self.precpred(self._ctx, 17)"
+                            )
                         self.state = 1137
                         localctx.bop = self._input.LT(1)
                         _la = self._input.LA(1)
-                        if not(((((_la - 87)) & ~0x3f) == 0 and ((1 << (_la - 87)) & ((1 << (JavaLabeledParser.MUL - 87)) | (1 << (JavaLabeledParser.DIV - 87)) | (1 << (JavaLabeledParser.MOD - 87)))) != 0)):
+                        if not (
+                            (
+                                (((_la - 87)) & ~0x3F) == 0
+                                and (
+                                    (1 << (_la - 87))
+                                    & (
+                                        (1 << (JavaLabeledParser.MUL - 87))
+                                        | (1 << (JavaLabeledParser.DIV - 87))
+                                        | (1 << (JavaLabeledParser.MOD - 87))
+                                    )
+                                )
+                                != 0
+                            )
+                        ):
                             localctx.bop = self._errHandler.recoverInline(self)
                         else:
                             self._errHandler.reportMatch(self)
@@ -8415,16 +9709,28 @@ class JavaLabeledParser ( Parser ):
                         pass
 
                     elif la_ == 2:
-                        localctx = JavaLabeledParser.Expression10Context(self, JavaLabeledParser.ExpressionContext(self, _parentctx, _parentState))
-                        self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
+                        localctx = JavaLabeledParser.Expression10Context(
+                            self,
+                            JavaLabeledParser.ExpressionContext(
+                                self, _parentctx, _parentState
+                            ),
+                        )
+                        self.pushNewRecursionContext(
+                            localctx, _startState, self.RULE_expression
+                        )
                         self.state = 1139
                         if not self.precpred(self._ctx, 16):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 16)")
+
+                            raise FailedPredicateException(
+                                self, "self.precpred(self._ctx, 16)"
+                            )
                         self.state = 1140
                         localctx.bop = self._input.LT(1)
                         _la = self._input.LA(1)
-                        if not(_la==JavaLabeledParser.ADD or _la==JavaLabeledParser.SUB):
+                        if not (
+                            _la == JavaLabeledParser.ADD or _la == JavaLabeledParser.SUB
+                        ):
                             localctx.bop = self._errHandler.recoverInline(self)
                         else:
                             self._errHandler.reportMatch(self)
@@ -8434,15 +9740,25 @@ class JavaLabeledParser ( Parser ):
                         pass
 
                     elif la_ == 3:
-                        localctx = JavaLabeledParser.Expression11Context(self, JavaLabeledParser.ExpressionContext(self, _parentctx, _parentState))
-                        self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
+                        localctx = JavaLabeledParser.Expression11Context(
+                            self,
+                            JavaLabeledParser.ExpressionContext(
+                                self, _parentctx, _parentState
+                            ),
+                        )
+                        self.pushNewRecursionContext(
+                            localctx, _startState, self.RULE_expression
+                        )
                         self.state = 1142
                         if not self.precpred(self._ctx, 15):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 15)")
+
+                            raise FailedPredicateException(
+                                self, "self.precpred(self._ctx, 15)"
+                            )
                         self.state = 1150
                         self._errHandler.sync(self)
-                        la_ = self._interp.adaptivePredict(self._input,139,self._ctx)
+                        la_ = self._interp.adaptivePredict(self._input, 139, self._ctx)
                         if la_ == 1:
                             self.state = 1143
                             self.match(JavaLabeledParser.LT)
@@ -8466,22 +9782,45 @@ class JavaLabeledParser ( Parser ):
                             self.match(JavaLabeledParser.GT)
                             pass
 
-
                         self.state = 1152
                         self.expression(16)
                         pass
 
                     elif la_ == 4:
-                        localctx = JavaLabeledParser.Expression12Context(self, JavaLabeledParser.ExpressionContext(self, _parentctx, _parentState))
-                        self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
+                        localctx = JavaLabeledParser.Expression12Context(
+                            self,
+                            JavaLabeledParser.ExpressionContext(
+                                self, _parentctx, _parentState
+                            ),
+                        )
+                        self.pushNewRecursionContext(
+                            localctx, _startState, self.RULE_expression
+                        )
                         self.state = 1153
                         if not self.precpred(self._ctx, 14):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 14)")
+
+                            raise FailedPredicateException(
+                                self, "self.precpred(self._ctx, 14)"
+                            )
                         self.state = 1154
                         localctx.bop = self._input.LT(1)
                         _la = self._input.LA(1)
-                        if not(((((_la - 71)) & ~0x3f) == 0 and ((1 << (_la - 71)) & ((1 << (JavaLabeledParser.GT - 71)) | (1 << (JavaLabeledParser.LT - 71)) | (1 << (JavaLabeledParser.LE - 71)) | (1 << (JavaLabeledParser.GE - 71)))) != 0)):
+                        if not (
+                            (
+                                (((_la - 71)) & ~0x3F) == 0
+                                and (
+                                    (1 << (_la - 71))
+                                    & (
+                                        (1 << (JavaLabeledParser.GT - 71))
+                                        | (1 << (JavaLabeledParser.LT - 71))
+                                        | (1 << (JavaLabeledParser.LE - 71))
+                                        | (1 << (JavaLabeledParser.GE - 71))
+                                    )
+                                )
+                                != 0
+                            )
+                        ):
                             localctx.bop = self._errHandler.recoverInline(self)
                         else:
                             self._errHandler.reportMatch(self)
@@ -8491,16 +9830,29 @@ class JavaLabeledParser ( Parser ):
                         pass
 
                     elif la_ == 5:
-                        localctx = JavaLabeledParser.Expression14Context(self, JavaLabeledParser.ExpressionContext(self, _parentctx, _parentState))
-                        self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
+                        localctx = JavaLabeledParser.Expression14Context(
+                            self,
+                            JavaLabeledParser.ExpressionContext(
+                                self, _parentctx, _parentState
+                            ),
+                        )
+                        self.pushNewRecursionContext(
+                            localctx, _startState, self.RULE_expression
+                        )
                         self.state = 1156
                         if not self.precpred(self._ctx, 12):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 12)")
+
+                            raise FailedPredicateException(
+                                self, "self.precpred(self._ctx, 12)"
+                            )
                         self.state = 1157
                         localctx.bop = self._input.LT(1)
                         _la = self._input.LA(1)
-                        if not(_la==JavaLabeledParser.EQUAL or _la==JavaLabeledParser.NOTEQUAL):
+                        if not (
+                            _la == JavaLabeledParser.EQUAL
+                            or _la == JavaLabeledParser.NOTEQUAL
+                        ):
                             localctx.bop = self._errHandler.recoverInline(self)
                         else:
                             self._errHandler.reportMatch(self)
@@ -8510,12 +9862,22 @@ class JavaLabeledParser ( Parser ):
                         pass
 
                     elif la_ == 6:
-                        localctx = JavaLabeledParser.Expression15Context(self, JavaLabeledParser.ExpressionContext(self, _parentctx, _parentState))
-                        self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
+                        localctx = JavaLabeledParser.Expression15Context(
+                            self,
+                            JavaLabeledParser.ExpressionContext(
+                                self, _parentctx, _parentState
+                            ),
+                        )
+                        self.pushNewRecursionContext(
+                            localctx, _startState, self.RULE_expression
+                        )
                         self.state = 1159
                         if not self.precpred(self._ctx, 11):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 11)")
+
+                            raise FailedPredicateException(
+                                self, "self.precpred(self._ctx, 11)"
+                            )
                         self.state = 1160
                         localctx.bop = self.match(JavaLabeledParser.BITAND)
                         self.state = 1161
@@ -8523,12 +9885,22 @@ class JavaLabeledParser ( Parser ):
                         pass
 
                     elif la_ == 7:
-                        localctx = JavaLabeledParser.Expression16Context(self, JavaLabeledParser.ExpressionContext(self, _parentctx, _parentState))
-                        self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
+                        localctx = JavaLabeledParser.Expression16Context(
+                            self,
+                            JavaLabeledParser.ExpressionContext(
+                                self, _parentctx, _parentState
+                            ),
+                        )
+                        self.pushNewRecursionContext(
+                            localctx, _startState, self.RULE_expression
+                        )
                         self.state = 1162
                         if not self.precpred(self._ctx, 10):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 10)")
+
+                            raise FailedPredicateException(
+                                self, "self.precpred(self._ctx, 10)"
+                            )
                         self.state = 1163
                         localctx.bop = self.match(JavaLabeledParser.CARET)
                         self.state = 1164
@@ -8536,12 +9908,22 @@ class JavaLabeledParser ( Parser ):
                         pass
 
                     elif la_ == 8:
-                        localctx = JavaLabeledParser.Expression17Context(self, JavaLabeledParser.ExpressionContext(self, _parentctx, _parentState))
-                        self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
+                        localctx = JavaLabeledParser.Expression17Context(
+                            self,
+                            JavaLabeledParser.ExpressionContext(
+                                self, _parentctx, _parentState
+                            ),
+                        )
+                        self.pushNewRecursionContext(
+                            localctx, _startState, self.RULE_expression
+                        )
                         self.state = 1165
                         if not self.precpred(self._ctx, 9):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 9)")
+
+                            raise FailedPredicateException(
+                                self, "self.precpred(self._ctx, 9)"
+                            )
                         self.state = 1166
                         localctx.bop = self.match(JavaLabeledParser.BITOR)
                         self.state = 1167
@@ -8549,12 +9931,22 @@ class JavaLabeledParser ( Parser ):
                         pass
 
                     elif la_ == 9:
-                        localctx = JavaLabeledParser.Expression18Context(self, JavaLabeledParser.ExpressionContext(self, _parentctx, _parentState))
-                        self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
+                        localctx = JavaLabeledParser.Expression18Context(
+                            self,
+                            JavaLabeledParser.ExpressionContext(
+                                self, _parentctx, _parentState
+                            ),
+                        )
+                        self.pushNewRecursionContext(
+                            localctx, _startState, self.RULE_expression
+                        )
                         self.state = 1168
                         if not self.precpred(self._ctx, 8):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 8)")
+
+                            raise FailedPredicateException(
+                                self, "self.precpred(self._ctx, 8)"
+                            )
                         self.state = 1169
                         localctx.bop = self.match(JavaLabeledParser.AND)
                         self.state = 1170
@@ -8562,12 +9954,22 @@ class JavaLabeledParser ( Parser ):
                         pass
 
                     elif la_ == 10:
-                        localctx = JavaLabeledParser.Expression19Context(self, JavaLabeledParser.ExpressionContext(self, _parentctx, _parentState))
-                        self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
+                        localctx = JavaLabeledParser.Expression19Context(
+                            self,
+                            JavaLabeledParser.ExpressionContext(
+                                self, _parentctx, _parentState
+                            ),
+                        )
+                        self.pushNewRecursionContext(
+                            localctx, _startState, self.RULE_expression
+                        )
                         self.state = 1171
                         if not self.precpred(self._ctx, 7):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 7)")
+
+                            raise FailedPredicateException(
+                                self, "self.precpred(self._ctx, 7)"
+                            )
                         self.state = 1172
                         localctx.bop = self.match(JavaLabeledParser.OR)
                         self.state = 1173
@@ -8575,12 +9977,22 @@ class JavaLabeledParser ( Parser ):
                         pass
 
                     elif la_ == 11:
-                        localctx = JavaLabeledParser.Expression20Context(self, JavaLabeledParser.ExpressionContext(self, _parentctx, _parentState))
-                        self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
+                        localctx = JavaLabeledParser.Expression20Context(
+                            self,
+                            JavaLabeledParser.ExpressionContext(
+                                self, _parentctx, _parentState
+                            ),
+                        )
+                        self.pushNewRecursionContext(
+                            localctx, _startState, self.RULE_expression
+                        )
                         self.state = 1174
                         if not self.precpred(self._ctx, 6):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 6)")
+
+                            raise FailedPredicateException(
+                                self, "self.precpred(self._ctx, 6)"
+                            )
                         self.state = 1175
                         localctx.bop = self.match(JavaLabeledParser.QUESTION)
                         self.state = 1176
@@ -8592,16 +10004,48 @@ class JavaLabeledParser ( Parser ):
                         pass
 
                     elif la_ == 12:
-                        localctx = JavaLabeledParser.Expression21Context(self, JavaLabeledParser.ExpressionContext(self, _parentctx, _parentState))
-                        self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
+                        localctx = JavaLabeledParser.Expression21Context(
+                            self,
+                            JavaLabeledParser.ExpressionContext(
+                                self, _parentctx, _parentState
+                            ),
+                        )
+                        self.pushNewRecursionContext(
+                            localctx, _startState, self.RULE_expression
+                        )
                         self.state = 1180
                         if not self.precpred(self._ctx, 5):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 5)")
+
+                            raise FailedPredicateException(
+                                self, "self.precpred(self._ctx, 5)"
+                            )
                         self.state = 1181
                         localctx.bop = self._input.LT(1)
                         _la = self._input.LA(1)
-                        if not(((((_la - 70)) & ~0x3f) == 0 and ((1 << (_la - 70)) & ((1 << (JavaLabeledParser.ASSIGN - 70)) | (1 << (JavaLabeledParser.ADD_ASSIGN - 70)) | (1 << (JavaLabeledParser.SUB_ASSIGN - 70)) | (1 << (JavaLabeledParser.MUL_ASSIGN - 70)) | (1 << (JavaLabeledParser.DIV_ASSIGN - 70)) | (1 << (JavaLabeledParser.AND_ASSIGN - 70)) | (1 << (JavaLabeledParser.OR_ASSIGN - 70)) | (1 << (JavaLabeledParser.XOR_ASSIGN - 70)) | (1 << (JavaLabeledParser.MOD_ASSIGN - 70)) | (1 << (JavaLabeledParser.LSHIFT_ASSIGN - 70)) | (1 << (JavaLabeledParser.RSHIFT_ASSIGN - 70)) | (1 << (JavaLabeledParser.URSHIFT_ASSIGN - 70)))) != 0)):
+                        if not (
+                            (
+                                (((_la - 70)) & ~0x3F) == 0
+                                and (
+                                    (1 << (_la - 70))
+                                    & (
+                                        (1 << (JavaLabeledParser.ASSIGN - 70))
+                                        | (1 << (JavaLabeledParser.ADD_ASSIGN - 70))
+                                        | (1 << (JavaLabeledParser.SUB_ASSIGN - 70))
+                                        | (1 << (JavaLabeledParser.MUL_ASSIGN - 70))
+                                        | (1 << (JavaLabeledParser.DIV_ASSIGN - 70))
+                                        | (1 << (JavaLabeledParser.AND_ASSIGN - 70))
+                                        | (1 << (JavaLabeledParser.OR_ASSIGN - 70))
+                                        | (1 << (JavaLabeledParser.XOR_ASSIGN - 70))
+                                        | (1 << (JavaLabeledParser.MOD_ASSIGN - 70))
+                                        | (1 << (JavaLabeledParser.LSHIFT_ASSIGN - 70))
+                                        | (1 << (JavaLabeledParser.RSHIFT_ASSIGN - 70))
+                                        | (1 << (JavaLabeledParser.URSHIFT_ASSIGN - 70))
+                                    )
+                                )
+                                != 0
+                            )
+                        ):
                             localctx.bop = self._errHandler.recoverInline(self)
                         else:
                             self._errHandler.reportMatch(self)
@@ -8611,17 +10055,27 @@ class JavaLabeledParser ( Parser ):
                         pass
 
                     elif la_ == 13:
-                        localctx = JavaLabeledParser.Expression1Context(self, JavaLabeledParser.ExpressionContext(self, _parentctx, _parentState))
-                        self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
+                        localctx = JavaLabeledParser.Expression1Context(
+                            self,
+                            JavaLabeledParser.ExpressionContext(
+                                self, _parentctx, _parentState
+                            ),
+                        )
+                        self.pushNewRecursionContext(
+                            localctx, _startState, self.RULE_expression
+                        )
                         self.state = 1183
                         if not self.precpred(self._ctx, 25):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 25)")
+
+                            raise FailedPredicateException(
+                                self, "self.precpred(self._ctx, 25)"
+                            )
                         self.state = 1184
                         localctx.bop = self.match(JavaLabeledParser.DOT)
                         self.state = 1196
                         self._errHandler.sync(self)
-                        la_ = self._interp.adaptivePredict(self._input,141,self._ctx)
+                        la_ = self._interp.adaptivePredict(self._input, 141, self._ctx)
                         if la_ == 1:
                             self.state = 1185
                             self.match(JavaLabeledParser.IDENTIFIER)
@@ -8643,10 +10097,9 @@ class JavaLabeledParser ( Parser ):
                             self.state = 1190
                             self._errHandler.sync(self)
                             _la = self._input.LA(1)
-                            if _la==JavaLabeledParser.LT:
+                            if _la == JavaLabeledParser.LT:
                                 self.state = 1189
                                 self.nonWildcardTypeArguments()
-
 
                             self.state = 1192
                             self.innerCreator()
@@ -8664,16 +10117,25 @@ class JavaLabeledParser ( Parser ):
                             self.explicitGenericInvocation()
                             pass
 
-
                         pass
 
                     elif la_ == 14:
-                        localctx = JavaLabeledParser.Expression2Context(self, JavaLabeledParser.ExpressionContext(self, _parentctx, _parentState))
-                        self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
+                        localctx = JavaLabeledParser.Expression2Context(
+                            self,
+                            JavaLabeledParser.ExpressionContext(
+                                self, _parentctx, _parentState
+                            ),
+                        )
+                        self.pushNewRecursionContext(
+                            localctx, _startState, self.RULE_expression
+                        )
                         self.state = 1198
                         if not self.precpred(self._ctx, 24):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 24)")
+
+                            raise FailedPredicateException(
+                                self, "self.precpred(self._ctx, 24)"
+                            )
                         self.state = 1199
                         self.match(JavaLabeledParser.LBRACK)
                         self.state = 1200
@@ -8683,16 +10145,28 @@ class JavaLabeledParser ( Parser ):
                         pass
 
                     elif la_ == 15:
-                        localctx = JavaLabeledParser.Expression6Context(self, JavaLabeledParser.ExpressionContext(self, _parentctx, _parentState))
-                        self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
+                        localctx = JavaLabeledParser.Expression6Context(
+                            self,
+                            JavaLabeledParser.ExpressionContext(
+                                self, _parentctx, _parentState
+                            ),
+                        )
+                        self.pushNewRecursionContext(
+                            localctx, _startState, self.RULE_expression
+                        )
                         self.state = 1203
                         if not self.precpred(self._ctx, 20):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 20)")
+
+                            raise FailedPredicateException(
+                                self, "self.precpred(self._ctx, 20)"
+                            )
                         self.state = 1204
                         localctx.postfix = self._input.LT(1)
                         _la = self._input.LA(1)
-                        if not(_la==JavaLabeledParser.INC or _la==JavaLabeledParser.DEC):
+                        if not (
+                            _la == JavaLabeledParser.INC or _la == JavaLabeledParser.DEC
+                        ):
                             localctx.postfix = self._errHandler.recoverInline(self)
                         else:
                             self._errHandler.reportMatch(self)
@@ -8700,12 +10174,22 @@ class JavaLabeledParser ( Parser ):
                         pass
 
                     elif la_ == 16:
-                        localctx = JavaLabeledParser.Expression13Context(self, JavaLabeledParser.ExpressionContext(self, _parentctx, _parentState))
-                        self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
+                        localctx = JavaLabeledParser.Expression13Context(
+                            self,
+                            JavaLabeledParser.ExpressionContext(
+                                self, _parentctx, _parentState
+                            ),
+                        )
+                        self.pushNewRecursionContext(
+                            localctx, _startState, self.RULE_expression
+                        )
                         self.state = 1205
                         if not self.precpred(self._ctx, 13):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 13)")
+
+                            raise FailedPredicateException(
+                                self, "self.precpred(self._ctx, 13)"
+                            )
                         self.state = 1206
                         localctx.bop = self.match(JavaLabeledParser.INSTANCEOF)
                         self.state = 1207
@@ -8713,30 +10197,38 @@ class JavaLabeledParser ( Parser ):
                         pass
 
                     elif la_ == 17:
-                        localctx = JavaLabeledParser.Expression23Context(self, JavaLabeledParser.ExpressionContext(self, _parentctx, _parentState))
-                        self.pushNewRecursionContext(localctx, _startState, self.RULE_expression)
+                        localctx = JavaLabeledParser.Expression23Context(
+                            self,
+                            JavaLabeledParser.ExpressionContext(
+                                self, _parentctx, _parentState
+                            ),
+                        )
+                        self.pushNewRecursionContext(
+                            localctx, _startState, self.RULE_expression
+                        )
                         self.state = 1208
                         if not self.precpred(self._ctx, 3):
                             from antlr4.error.Errors import FailedPredicateException
-                            raise FailedPredicateException(self, "self.precpred(self._ctx, 3)")
+
+                            raise FailedPredicateException(
+                                self, "self.precpred(self._ctx, 3)"
+                            )
                         self.state = 1209
                         self.match(JavaLabeledParser.COLONCOLON)
                         self.state = 1211
                         self._errHandler.sync(self)
                         _la = self._input.LA(1)
-                        if _la==JavaLabeledParser.LT:
+                        if _la == JavaLabeledParser.LT:
                             self.state = 1210
                             self.typeArguments()
-
 
                         self.state = 1213
                         self.match(JavaLabeledParser.IDENTIFIER)
                         pass
 
-             
                 self.state = 1218
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,144,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input, 144, self._ctx)
 
         except RecognitionException as re:
             localctx.exception = re
@@ -8746,34 +10238,34 @@ class JavaLabeledParser ( Parser ):
             self.unrollRecursionContexts(_parentctx)
         return localctx
 
-
     class LambdaExpressionContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def lambdaParameters(self):
-            return self.getTypedRuleContext(JavaLabeledParser.LambdaParametersContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.LambdaParametersContext, 0
+            )
 
         def ARROW(self):
             return self.getToken(JavaLabeledParser.ARROW, 0)
 
         def lambdaBody(self):
-            return self.getTypedRuleContext(JavaLabeledParser.LambdaBodyContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.LambdaBodyContext, 0)
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_lambdaExpression
 
-
-
-
     def lambdaExpression(self):
 
-        localctx = JavaLabeledParser.LambdaExpressionContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.LambdaExpressionContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 168, self.RULE_lambdaExpression)
         try:
             self.enterOuterAlt(localctx, 1)
@@ -8791,81 +10283,85 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class LambdaParametersContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_lambdaParameters
 
-     
-        def copyFrom(self, ctx:ParserRuleContext):
+        def copyFrom(self, ctx: ParserRuleContext):
             super().copyFrom(ctx)
 
-
-
     class LambdaParameters0Context(LambdaParametersContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.LambdaParametersContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.LambdaParametersContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def IDENTIFIER(self):
             return self.getToken(JavaLabeledParser.IDENTIFIER, 0)
 
-
     class LambdaParameters1Context(LambdaParametersContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.LambdaParametersContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.LambdaParametersContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def LPAREN(self):
             return self.getToken(JavaLabeledParser.LPAREN, 0)
+
         def RPAREN(self):
             return self.getToken(JavaLabeledParser.RPAREN, 0)
+
         def formalParameterList(self):
-            return self.getTypedRuleContext(JavaLabeledParser.FormalParameterListContext,0)
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.FormalParameterListContext, 0
+            )
 
     class LambdaParameters2Context(LambdaParametersContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.LambdaParametersContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.LambdaParametersContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def LPAREN(self):
             return self.getToken(JavaLabeledParser.LPAREN, 0)
-        def IDENTIFIER(self, i:int=None):
+
+        def IDENTIFIER(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.IDENTIFIER)
             else:
                 return self.getToken(JavaLabeledParser.IDENTIFIER, i)
+
         def RPAREN(self):
             return self.getToken(JavaLabeledParser.RPAREN, 0)
-        def COMMA(self, i:int=None):
+
+        def COMMA(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.COMMA)
             else:
                 return self.getToken(JavaLabeledParser.COMMA, i)
 
-
-
     def lambdaParameters(self):
 
-        localctx = JavaLabeledParser.LambdaParametersContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.LambdaParametersContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 170, self.RULE_lambdaParameters)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.state = 1239
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,147,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 147, self._ctx)
             if la_ == 1:
                 localctx = JavaLabeledParser.LambdaParameters0Context(self, localctx)
                 self.enterOuterAlt(localctx, 1)
@@ -8881,10 +10377,30 @@ class JavaLabeledParser ( Parser ):
                 self.state = 1226
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << JavaLabeledParser.BOOLEAN) | (1 << JavaLabeledParser.BYTE) | (1 << JavaLabeledParser.CHAR) | (1 << JavaLabeledParser.DOUBLE) | (1 << JavaLabeledParser.FINAL) | (1 << JavaLabeledParser.FLOAT) | (1 << JavaLabeledParser.INT) | (1 << JavaLabeledParser.LONG) | (1 << JavaLabeledParser.SHORT))) != 0) or _la==JavaLabeledParser.AT or _la==JavaLabeledParser.IDENTIFIER:
+                if (
+                    (
+                        ((_la) & ~0x3F) == 0
+                        and (
+                            (1 << _la)
+                            & (
+                                (1 << JavaLabeledParser.BOOLEAN)
+                                | (1 << JavaLabeledParser.BYTE)
+                                | (1 << JavaLabeledParser.CHAR)
+                                | (1 << JavaLabeledParser.DOUBLE)
+                                | (1 << JavaLabeledParser.FINAL)
+                                | (1 << JavaLabeledParser.FLOAT)
+                                | (1 << JavaLabeledParser.INT)
+                                | (1 << JavaLabeledParser.LONG)
+                                | (1 << JavaLabeledParser.SHORT)
+                            )
+                        )
+                        != 0
+                    )
+                    or _la == JavaLabeledParser.AT
+                    or _la == JavaLabeledParser.IDENTIFIER
+                ):
                     self.state = 1225
                     self.formalParameterList()
-
 
                 self.state = 1228
                 self.match(JavaLabeledParser.RPAREN)
@@ -8900,7 +10416,7 @@ class JavaLabeledParser ( Parser ):
                 self.state = 1235
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                while _la==JavaLabeledParser.COMMA:
+                while _la == JavaLabeledParser.COMMA:
                     self.state = 1231
                     self.match(JavaLabeledParser.COMMA)
                     self.state = 1232
@@ -8913,7 +10429,6 @@ class JavaLabeledParser ( Parser ):
                 self.match(JavaLabeledParser.RPAREN)
                 pass
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -8922,46 +10437,40 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class LambdaBodyContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_lambdaBody
 
-     
-        def copyFrom(self, ctx:ParserRuleContext):
+        def copyFrom(self, ctx: ParserRuleContext):
             super().copyFrom(ctx)
 
-
-
     class LambdaBody0Context(LambdaBodyContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.LambdaBodyContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.LambdaBodyContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def expression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, 0)
 
     class LambdaBody1Context(LambdaBodyContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.LambdaBodyContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.LambdaBodyContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def block(self):
-            return self.getTypedRuleContext(JavaLabeledParser.BlockContext,0)
-
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.BlockContext, 0)
 
     def lambdaBody(self):
 
@@ -8971,7 +10480,40 @@ class JavaLabeledParser ( Parser ):
             self.state = 1243
             self._errHandler.sync(self)
             token = self._input.LA(1)
-            if token in [JavaLabeledParser.BOOLEAN, JavaLabeledParser.BYTE, JavaLabeledParser.CHAR, JavaLabeledParser.DOUBLE, JavaLabeledParser.FLOAT, JavaLabeledParser.INT, JavaLabeledParser.LONG, JavaLabeledParser.NEW, JavaLabeledParser.SHORT, JavaLabeledParser.SUPER, JavaLabeledParser.THIS, JavaLabeledParser.VOID, JavaLabeledParser.DECIMAL_LITERAL, JavaLabeledParser.HEX_LITERAL, JavaLabeledParser.OCT_LITERAL, JavaLabeledParser.BINARY_LITERAL, JavaLabeledParser.FLOAT_LITERAL, JavaLabeledParser.HEX_FLOAT_LITERAL, JavaLabeledParser.BOOL_LITERAL, JavaLabeledParser.CHAR_LITERAL, JavaLabeledParser.STRING_LITERAL, JavaLabeledParser.NULL_LITERAL, JavaLabeledParser.LPAREN, JavaLabeledParser.LT, JavaLabeledParser.BANG, JavaLabeledParser.TILDE, JavaLabeledParser.INC, JavaLabeledParser.DEC, JavaLabeledParser.ADD, JavaLabeledParser.SUB, JavaLabeledParser.AT, JavaLabeledParser.IDENTIFIER]:
+            if token in [
+                JavaLabeledParser.BOOLEAN,
+                JavaLabeledParser.BYTE,
+                JavaLabeledParser.CHAR,
+                JavaLabeledParser.DOUBLE,
+                JavaLabeledParser.FLOAT,
+                JavaLabeledParser.INT,
+                JavaLabeledParser.LONG,
+                JavaLabeledParser.NEW,
+                JavaLabeledParser.SHORT,
+                JavaLabeledParser.SUPER,
+                JavaLabeledParser.THIS,
+                JavaLabeledParser.VOID,
+                JavaLabeledParser.DECIMAL_LITERAL,
+                JavaLabeledParser.HEX_LITERAL,
+                JavaLabeledParser.OCT_LITERAL,
+                JavaLabeledParser.BINARY_LITERAL,
+                JavaLabeledParser.FLOAT_LITERAL,
+                JavaLabeledParser.HEX_FLOAT_LITERAL,
+                JavaLabeledParser.BOOL_LITERAL,
+                JavaLabeledParser.CHAR_LITERAL,
+                JavaLabeledParser.STRING_LITERAL,
+                JavaLabeledParser.NULL_LITERAL,
+                JavaLabeledParser.LPAREN,
+                JavaLabeledParser.LT,
+                JavaLabeledParser.BANG,
+                JavaLabeledParser.TILDE,
+                JavaLabeledParser.INC,
+                JavaLabeledParser.DEC,
+                JavaLabeledParser.ADD,
+                JavaLabeledParser.SUB,
+                JavaLabeledParser.AT,
+                JavaLabeledParser.IDENTIFIER,
+            ]:
                 localctx = JavaLabeledParser.LambdaBody0Context(self, localctx)
                 self.enterOuterAlt(localctx, 1)
                 self.state = 1241
@@ -8994,114 +10536,115 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class PrimaryContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_primary
 
-     
-        def copyFrom(self, ctx:ParserRuleContext):
+        def copyFrom(self, ctx: ParserRuleContext):
             super().copyFrom(ctx)
 
-
-
     class Primary6Context(PrimaryContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.PrimaryContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.PrimaryContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def nonWildcardTypeArguments(self):
-            return self.getTypedRuleContext(JavaLabeledParser.NonWildcardTypeArgumentsContext,0)
+            return self.getTypedRuleContext(
+                JavaLabeledParser.NonWildcardTypeArgumentsContext, 0
+            )
 
         def explicitGenericInvocationSuffix(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExplicitGenericInvocationSuffixContext,0)
+            return self.getTypedRuleContext(
+                JavaLabeledParser.ExplicitGenericInvocationSuffixContext, 0
+            )
 
         def THIS(self):
             return self.getToken(JavaLabeledParser.THIS, 0)
+
         def arguments(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ArgumentsContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.ArgumentsContext, 0)
 
     class Primary2Context(PrimaryContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.PrimaryContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.PrimaryContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def SUPER(self):
             return self.getToken(JavaLabeledParser.SUPER, 0)
 
-
     class Primary3Context(PrimaryContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.PrimaryContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.PrimaryContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def literal(self):
-            return self.getTypedRuleContext(JavaLabeledParser.LiteralContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.LiteralContext, 0)
 
     class Primary4Context(PrimaryContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.PrimaryContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.PrimaryContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def IDENTIFIER(self):
             return self.getToken(JavaLabeledParser.IDENTIFIER, 0)
 
-
     class Primary5Context(PrimaryContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.PrimaryContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.PrimaryContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def typeTypeOrVoid(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeOrVoidContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.TypeTypeOrVoidContext, 0)
 
         def DOT(self):
             return self.getToken(JavaLabeledParser.DOT, 0)
+
         def CLASS(self):
             return self.getToken(JavaLabeledParser.CLASS, 0)
 
-
     class Primary0Context(PrimaryContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.PrimaryContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.PrimaryContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def LPAREN(self):
             return self.getToken(JavaLabeledParser.LPAREN, 0)
+
         def expression(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, 0)
 
         def RPAREN(self):
             return self.getToken(JavaLabeledParser.RPAREN, 0)
 
-
     class Primary1Context(PrimaryContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.PrimaryContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.PrimaryContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def THIS(self):
             return self.getToken(JavaLabeledParser.THIS, 0)
-
-
 
     def primary(self):
 
@@ -9110,7 +10653,7 @@ class JavaLabeledParser ( Parser ):
         try:
             self.state = 1263
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,150,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 150, self._ctx)
             if la_ == 1:
                 localctx = JavaLabeledParser.Primary0Context(self, localctx)
                 self.enterOuterAlt(localctx, 1)
@@ -9184,7 +10727,6 @@ class JavaLabeledParser ( Parser ):
 
                 pass
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -9193,11 +10735,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ClassTypeContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -9205,66 +10748,60 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.IDENTIFIER, 0)
 
         def classOrInterfaceType(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ClassOrInterfaceTypeContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.ClassOrInterfaceTypeContext, 0
+            )
 
         def DOT(self):
             return self.getToken(JavaLabeledParser.DOT, 0)
 
-        def annotation(self, i:int=None):
+        def annotation(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.AnnotationContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext,i)
-
+                return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext, i)
 
         def typeArguments(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeArgumentsContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.TypeArgumentsContext, 0)
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_classType
-
-
-
 
     def classType(self):
 
         localctx = JavaLabeledParser.ClassTypeContext(self, self._ctx, self.state)
         self.enterRule(localctx, 176, self.RULE_classType)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1268
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,151,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 151, self._ctx)
             if la_ == 1:
                 self.state = 1265
                 self.classOrInterfaceType()
                 self.state = 1266
                 self.match(JavaLabeledParser.DOT)
 
-
             self.state = 1273
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,152,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
+            _alt = self._interp.adaptivePredict(self._input, 152, self._ctx)
+            while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                if _alt == 1:
                     self.state = 1270
-                    self.annotation() 
+                    self.annotation()
                 self.state = 1275
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,152,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input, 152, self._ctx)
 
             self.state = 1276
             self.match(JavaLabeledParser.IDENTIFIER)
             self.state = 1278
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==JavaLabeledParser.LT:
+            if _la == JavaLabeledParser.LT:
                 self.state = 1277
                 self.typeArguments()
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -9274,58 +10811,60 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class CreatorContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_creator
 
-     
-        def copyFrom(self, ctx:ParserRuleContext):
+        def copyFrom(self, ctx: ParserRuleContext):
             super().copyFrom(ctx)
 
-
-
     class Creator1Context(CreatorContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.CreatorContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.CreatorContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def createdName(self):
-            return self.getTypedRuleContext(JavaLabeledParser.CreatedNameContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.CreatedNameContext, 0)
 
         def arrayCreatorRest(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ArrayCreatorRestContext,0)
+            return self.getTypedRuleContext(
+                JavaLabeledParser.ArrayCreatorRestContext, 0
+            )
 
         def classCreatorRest(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ClassCreatorRestContext,0)
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.ClassCreatorRestContext, 0
+            )
 
     class Creator0Context(CreatorContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.CreatorContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.CreatorContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def nonWildcardTypeArguments(self):
-            return self.getTypedRuleContext(JavaLabeledParser.NonWildcardTypeArgumentsContext,0)
+            return self.getTypedRuleContext(
+                JavaLabeledParser.NonWildcardTypeArgumentsContext, 0
+            )
 
         def createdName(self):
-            return self.getTypedRuleContext(JavaLabeledParser.CreatedNameContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.CreatedNameContext, 0)
 
         def classCreatorRest(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ClassCreatorRestContext,0)
-
-
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.ClassCreatorRestContext, 0
+            )
 
     def creator(self):
 
@@ -9345,7 +10884,17 @@ class JavaLabeledParser ( Parser ):
                 self.state = 1282
                 self.classCreatorRest()
                 pass
-            elif token in [JavaLabeledParser.BOOLEAN, JavaLabeledParser.BYTE, JavaLabeledParser.CHAR, JavaLabeledParser.DOUBLE, JavaLabeledParser.FLOAT, JavaLabeledParser.INT, JavaLabeledParser.LONG, JavaLabeledParser.SHORT, JavaLabeledParser.IDENTIFIER]:
+            elif token in [
+                JavaLabeledParser.BOOLEAN,
+                JavaLabeledParser.BYTE,
+                JavaLabeledParser.CHAR,
+                JavaLabeledParser.DOUBLE,
+                JavaLabeledParser.FLOAT,
+                JavaLabeledParser.INT,
+                JavaLabeledParser.LONG,
+                JavaLabeledParser.SHORT,
+                JavaLabeledParser.IDENTIFIER,
+            ]:
                 localctx = JavaLabeledParser.Creator1Context(self, localctx)
                 self.enterOuterAlt(localctx, 2)
                 self.state = 1284
@@ -9376,65 +10925,65 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class CreatedNameContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_createdName
 
-     
-        def copyFrom(self, ctx:ParserRuleContext):
+        def copyFrom(self, ctx: ParserRuleContext):
             super().copyFrom(ctx)
 
-
-
     class CreatedName0Context(CreatedNameContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.CreatedNameContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.CreatedNameContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
-        def IDENTIFIER(self, i:int=None):
+        def IDENTIFIER(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.IDENTIFIER)
             else:
                 return self.getToken(JavaLabeledParser.IDENTIFIER, i)
-        def typeArgumentsOrDiamond(self, i:int=None):
-            if i is None:
-                return self.getTypedRuleContexts(JavaLabeledParser.TypeArgumentsOrDiamondContext)
-            else:
-                return self.getTypedRuleContext(JavaLabeledParser.TypeArgumentsOrDiamondContext,i)
 
-        def DOT(self, i:int=None):
+        def typeArgumentsOrDiamond(self, i: int = None):
+            if i is None:
+                return self.getTypedRuleContexts(
+                    JavaLabeledParser.TypeArgumentsOrDiamondContext
+                )
+            else:
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.TypeArgumentsOrDiamondContext, i
+                )
+
+        def DOT(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.DOT)
             else:
                 return self.getToken(JavaLabeledParser.DOT, i)
 
-
     class CreatedName1Context(CreatedNameContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.CreatedNameContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.CreatedNameContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def primitiveType(self):
-            return self.getTypedRuleContext(JavaLabeledParser.PrimitiveTypeContext,0)
-
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.PrimitiveTypeContext, 0)
 
     def createdName(self):
 
         localctx = JavaLabeledParser.CreatedNameContext(self, self._ctx, self.state)
         self.enterRule(localctx, 180, self.RULE_createdName)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.state = 1306
             self._errHandler.sync(self)
@@ -9447,15 +10996,14 @@ class JavaLabeledParser ( Parser ):
                 self.state = 1293
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                if _la==JavaLabeledParser.LT:
+                if _la == JavaLabeledParser.LT:
                     self.state = 1292
                     self.typeArgumentsOrDiamond()
-
 
                 self.state = 1302
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                while _la==JavaLabeledParser.DOT:
+                while _la == JavaLabeledParser.DOT:
                     self.state = 1295
                     self.match(JavaLabeledParser.DOT)
                     self.state = 1296
@@ -9463,17 +11011,25 @@ class JavaLabeledParser ( Parser ):
                     self.state = 1298
                     self._errHandler.sync(self)
                     _la = self._input.LA(1)
-                    if _la==JavaLabeledParser.LT:
+                    if _la == JavaLabeledParser.LT:
                         self.state = 1297
                         self.typeArgumentsOrDiamond()
-
 
                     self.state = 1304
                     self._errHandler.sync(self)
                     _la = self._input.LA(1)
 
                 pass
-            elif token in [JavaLabeledParser.BOOLEAN, JavaLabeledParser.BYTE, JavaLabeledParser.CHAR, JavaLabeledParser.DOUBLE, JavaLabeledParser.FLOAT, JavaLabeledParser.INT, JavaLabeledParser.LONG, JavaLabeledParser.SHORT]:
+            elif token in [
+                JavaLabeledParser.BOOLEAN,
+                JavaLabeledParser.BYTE,
+                JavaLabeledParser.CHAR,
+                JavaLabeledParser.DOUBLE,
+                JavaLabeledParser.FLOAT,
+                JavaLabeledParser.INT,
+                JavaLabeledParser.LONG,
+                JavaLabeledParser.SHORT,
+            ]:
                 localctx = JavaLabeledParser.CreatedName1Context(self, localctx)
                 self.enterOuterAlt(localctx, 2)
                 self.state = 1305
@@ -9490,11 +11046,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class InnerCreatorContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -9502,24 +11059,23 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.IDENTIFIER, 0)
 
         def classCreatorRest(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ClassCreatorRestContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.ClassCreatorRestContext, 0
+            )
 
         def nonWildcardTypeArgumentsOrDiamond(self):
-            return self.getTypedRuleContext(JavaLabeledParser.NonWildcardTypeArgumentsOrDiamondContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.NonWildcardTypeArgumentsOrDiamondContext, 0
+            )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_innerCreator
-
-
-
 
     def innerCreator(self):
 
         localctx = JavaLabeledParser.InnerCreatorContext(self, self._ctx, self.state)
         self.enterRule(localctx, 182, self.RULE_innerCreator)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1308
@@ -9527,10 +11083,9 @@ class JavaLabeledParser ( Parser ):
             self.state = 1310
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if _la==JavaLabeledParser.LT:
+            if _la == JavaLabeledParser.LT:
                 self.state = 1309
                 self.nonWildcardTypeArgumentsOrDiamond()
-
 
             self.state = 1312
             self.classCreatorRest()
@@ -9542,48 +11097,48 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ArrayCreatorRestContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def LBRACK(self, i:int=None):
+        def LBRACK(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.LBRACK)
             else:
                 return self.getToken(JavaLabeledParser.LBRACK, i)
 
-        def RBRACK(self, i:int=None):
+        def RBRACK(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.RBRACK)
             else:
                 return self.getToken(JavaLabeledParser.RBRACK, i)
 
         def arrayInitializer(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ArrayInitializerContext,0)
+            return self.getTypedRuleContext(
+                JavaLabeledParser.ArrayInitializerContext, 0
+            )
 
-
-        def expression(self, i:int=None):
+        def expression(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.ExpressionContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext,i)
-
+                return self.getTypedRuleContext(JavaLabeledParser.ExpressionContext, i)
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_arrayCreatorRest
 
-
-
-
     def arrayCreatorRest(self):
 
-        localctx = JavaLabeledParser.ArrayCreatorRestContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.ArrayCreatorRestContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 184, self.RULE_arrayCreatorRest)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1314
@@ -9597,7 +11152,7 @@ class JavaLabeledParser ( Parser ):
                 self.state = 1320
                 self._errHandler.sync(self)
                 _la = self._input.LA(1)
-                while _la==JavaLabeledParser.LBRACK:
+                while _la == JavaLabeledParser.LBRACK:
                     self.state = 1316
                     self.match(JavaLabeledParser.LBRACK)
                     self.state = 1317
@@ -9609,38 +11164,71 @@ class JavaLabeledParser ( Parser ):
                 self.state = 1323
                 self.arrayInitializer()
                 pass
-            elif token in [JavaLabeledParser.BOOLEAN, JavaLabeledParser.BYTE, JavaLabeledParser.CHAR, JavaLabeledParser.DOUBLE, JavaLabeledParser.FLOAT, JavaLabeledParser.INT, JavaLabeledParser.LONG, JavaLabeledParser.NEW, JavaLabeledParser.SHORT, JavaLabeledParser.SUPER, JavaLabeledParser.THIS, JavaLabeledParser.VOID, JavaLabeledParser.DECIMAL_LITERAL, JavaLabeledParser.HEX_LITERAL, JavaLabeledParser.OCT_LITERAL, JavaLabeledParser.BINARY_LITERAL, JavaLabeledParser.FLOAT_LITERAL, JavaLabeledParser.HEX_FLOAT_LITERAL, JavaLabeledParser.BOOL_LITERAL, JavaLabeledParser.CHAR_LITERAL, JavaLabeledParser.STRING_LITERAL, JavaLabeledParser.NULL_LITERAL, JavaLabeledParser.LPAREN, JavaLabeledParser.LT, JavaLabeledParser.BANG, JavaLabeledParser.TILDE, JavaLabeledParser.INC, JavaLabeledParser.DEC, JavaLabeledParser.ADD, JavaLabeledParser.SUB, JavaLabeledParser.AT, JavaLabeledParser.IDENTIFIER]:
+            elif token in [
+                JavaLabeledParser.BOOLEAN,
+                JavaLabeledParser.BYTE,
+                JavaLabeledParser.CHAR,
+                JavaLabeledParser.DOUBLE,
+                JavaLabeledParser.FLOAT,
+                JavaLabeledParser.INT,
+                JavaLabeledParser.LONG,
+                JavaLabeledParser.NEW,
+                JavaLabeledParser.SHORT,
+                JavaLabeledParser.SUPER,
+                JavaLabeledParser.THIS,
+                JavaLabeledParser.VOID,
+                JavaLabeledParser.DECIMAL_LITERAL,
+                JavaLabeledParser.HEX_LITERAL,
+                JavaLabeledParser.OCT_LITERAL,
+                JavaLabeledParser.BINARY_LITERAL,
+                JavaLabeledParser.FLOAT_LITERAL,
+                JavaLabeledParser.HEX_FLOAT_LITERAL,
+                JavaLabeledParser.BOOL_LITERAL,
+                JavaLabeledParser.CHAR_LITERAL,
+                JavaLabeledParser.STRING_LITERAL,
+                JavaLabeledParser.NULL_LITERAL,
+                JavaLabeledParser.LPAREN,
+                JavaLabeledParser.LT,
+                JavaLabeledParser.BANG,
+                JavaLabeledParser.TILDE,
+                JavaLabeledParser.INC,
+                JavaLabeledParser.DEC,
+                JavaLabeledParser.ADD,
+                JavaLabeledParser.SUB,
+                JavaLabeledParser.AT,
+                JavaLabeledParser.IDENTIFIER,
+            ]:
                 self.state = 1324
                 self.expression(0)
                 self.state = 1325
                 self.match(JavaLabeledParser.RBRACK)
                 self.state = 1332
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,162,self._ctx)
-                while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                    if _alt==1:
+                _alt = self._interp.adaptivePredict(self._input, 162, self._ctx)
+                while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                    if _alt == 1:
                         self.state = 1326
                         self.match(JavaLabeledParser.LBRACK)
                         self.state = 1327
                         self.expression(0)
                         self.state = 1328
-                        self.match(JavaLabeledParser.RBRACK) 
+                        self.match(JavaLabeledParser.RBRACK)
                     self.state = 1334
                     self._errHandler.sync(self)
-                    _alt = self._interp.adaptivePredict(self._input,162,self._ctx)
+                    _alt = self._interp.adaptivePredict(self._input, 162, self._ctx)
 
                 self.state = 1339
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,163,self._ctx)
-                while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                    if _alt==1:
+                _alt = self._interp.adaptivePredict(self._input, 163, self._ctx)
+                while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                    if _alt == 1:
                         self.state = 1335
                         self.match(JavaLabeledParser.LBRACK)
                         self.state = 1336
-                        self.match(JavaLabeledParser.RBRACK) 
+                        self.match(JavaLabeledParser.RBRACK)
                     self.state = 1341
                     self._errHandler.sync(self)
-                    _alt = self._interp.adaptivePredict(self._input,163,self._ctx)
+                    _alt = self._interp.adaptivePredict(self._input, 163, self._ctx)
 
                 pass
             else:
@@ -9654,31 +11242,29 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ClassCreatorRestContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def arguments(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ArgumentsContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.ArgumentsContext, 0)
 
         def classBody(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ClassBodyContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.ClassBodyContext, 0)
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_classCreatorRest
 
-
-
-
     def classCreatorRest(self):
 
-        localctx = JavaLabeledParser.ClassCreatorRestContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.ClassCreatorRestContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 186, self.RULE_classCreatorRest)
         try:
             self.enterOuterAlt(localctx, 1)
@@ -9686,11 +11272,10 @@ class JavaLabeledParser ( Parser ):
             self.arguments()
             self.state = 1346
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,165,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 165, self._ctx)
             if la_ == 1:
                 self.state = 1345
                 self.classBody()
-
 
         except RecognitionException as re:
             localctx.exception = re
@@ -9700,31 +11285,33 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ExplicitGenericInvocationContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def nonWildcardTypeArguments(self):
-            return self.getTypedRuleContext(JavaLabeledParser.NonWildcardTypeArgumentsContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.NonWildcardTypeArgumentsContext, 0
+            )
 
         def explicitGenericInvocationSuffix(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExplicitGenericInvocationSuffixContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.ExplicitGenericInvocationSuffixContext, 0
+            )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_explicitGenericInvocation
 
-
-
-
     def explicitGenericInvocation(self):
 
-        localctx = JavaLabeledParser.ExplicitGenericInvocationContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.ExplicitGenericInvocationContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 188, self.RULE_explicitGenericInvocation)
         try:
             self.enterOuterAlt(localctx, 1)
@@ -9740,11 +11327,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class TypeArgumentsOrDiamondContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -9755,23 +11343,21 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.GT, 0)
 
         def typeArguments(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeArgumentsContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.TypeArgumentsContext, 0)
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_typeArgumentsOrDiamond
 
-
-
-
     def typeArgumentsOrDiamond(self):
 
-        localctx = JavaLabeledParser.TypeArgumentsOrDiamondContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.TypeArgumentsOrDiamondContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 190, self.RULE_typeArgumentsOrDiamond)
         try:
             self.state = 1354
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,166,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 166, self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 1351
@@ -9786,7 +11372,6 @@ class JavaLabeledParser ( Parser ):
                 self.typeArguments()
                 pass
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -9795,11 +11380,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class NonWildcardTypeArgumentsOrDiamondContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -9810,23 +11396,23 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.GT, 0)
 
         def nonWildcardTypeArguments(self):
-            return self.getTypedRuleContext(JavaLabeledParser.NonWildcardTypeArgumentsContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.NonWildcardTypeArgumentsContext, 0
+            )
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_nonWildcardTypeArgumentsOrDiamond
 
-
-
-
     def nonWildcardTypeArgumentsOrDiamond(self):
 
-        localctx = JavaLabeledParser.NonWildcardTypeArgumentsOrDiamondContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.NonWildcardTypeArgumentsOrDiamondContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 192, self.RULE_nonWildcardTypeArgumentsOrDiamond)
         try:
             self.state = 1359
             self._errHandler.sync(self)
-            la_ = self._interp.adaptivePredict(self._input,167,self._ctx)
+            la_ = self._interp.adaptivePredict(self._input, 167, self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
                 self.state = 1356
@@ -9841,7 +11427,6 @@ class JavaLabeledParser ( Parser ):
                 self.nonWildcardTypeArguments()
                 pass
 
-
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -9850,11 +11435,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class NonWildcardTypeArgumentsContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -9862,8 +11448,7 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.LT, 0)
 
         def typeList(self):
-            return self.getTypedRuleContext(JavaLabeledParser.TypeListContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.TypeListContext, 0)
 
         def GT(self):
             return self.getToken(JavaLabeledParser.GT, 0)
@@ -9871,12 +11456,11 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_nonWildcardTypeArguments
 
-
-
-
     def nonWildcardTypeArguments(self):
 
-        localctx = JavaLabeledParser.NonWildcardTypeArgumentsContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.NonWildcardTypeArgumentsContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 194, self.RULE_nonWildcardTypeArguments)
         try:
             self.enterOuterAlt(localctx, 1)
@@ -9894,22 +11478,22 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class TypeListContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
-        def typeType(self, i:int=None):
+        def typeType(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.TypeTypeContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext,i)
+                return self.getTypedRuleContext(JavaLabeledParser.TypeTypeContext, i)
 
-
-        def COMMA(self, i:int=None):
+        def COMMA(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.COMMA)
             else:
@@ -9918,14 +11502,11 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_typeList
 
-
-
-
     def typeList(self):
 
         localctx = JavaLabeledParser.TypeListContext(self, self._ctx, self.state)
         self.enterRule(localctx, 196, self.RULE_typeList)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1365
@@ -9933,7 +11514,7 @@ class JavaLabeledParser ( Parser ):
             self.state = 1370
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==JavaLabeledParser.COMMA:
+            while _la == JavaLabeledParser.COMMA:
                 self.state = 1366
                 self.match(JavaLabeledParser.COMMA)
                 self.state = 1367
@@ -9950,36 +11531,36 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class TypeTypeContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def classOrInterfaceType(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ClassOrInterfaceTypeContext,0)
-
+            return self.getTypedRuleContext(
+                JavaLabeledParser.ClassOrInterfaceTypeContext, 0
+            )
 
         def primitiveType(self):
-            return self.getTypedRuleContext(JavaLabeledParser.PrimitiveTypeContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.PrimitiveTypeContext, 0)
 
-
-        def annotation(self, i:int=None):
+        def annotation(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.AnnotationContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext,i)
+                return self.getTypedRuleContext(JavaLabeledParser.AnnotationContext, i)
 
-
-        def LBRACK(self, i:int=None):
+        def LBRACK(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.LBRACK)
             else:
                 return self.getToken(JavaLabeledParser.LBRACK, i)
 
-        def RBRACK(self, i:int=None):
+        def RBRACK(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.RBRACK)
             else:
@@ -9988,26 +11569,23 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_typeType
 
-
-
-
     def typeType(self):
 
         localctx = JavaLabeledParser.TypeTypeContext(self, self._ctx, self.state)
         self.enterRule(localctx, 198, self.RULE_typeType)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1376
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,169,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
+            _alt = self._interp.adaptivePredict(self._input, 169, self._ctx)
+            while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                if _alt == 1:
                     self.state = 1373
-                    self.annotation() 
+                    self.annotation()
                 self.state = 1378
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,169,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input, 169, self._ctx)
 
             self.state = 1381
             self._errHandler.sync(self)
@@ -10016,7 +11594,16 @@ class JavaLabeledParser ( Parser ):
                 self.state = 1379
                 self.classOrInterfaceType()
                 pass
-            elif token in [JavaLabeledParser.BOOLEAN, JavaLabeledParser.BYTE, JavaLabeledParser.CHAR, JavaLabeledParser.DOUBLE, JavaLabeledParser.FLOAT, JavaLabeledParser.INT, JavaLabeledParser.LONG, JavaLabeledParser.SHORT]:
+            elif token in [
+                JavaLabeledParser.BOOLEAN,
+                JavaLabeledParser.BYTE,
+                JavaLabeledParser.CHAR,
+                JavaLabeledParser.DOUBLE,
+                JavaLabeledParser.FLOAT,
+                JavaLabeledParser.INT,
+                JavaLabeledParser.LONG,
+                JavaLabeledParser.SHORT,
+            ]:
                 self.state = 1380
                 self.primitiveType()
                 pass
@@ -10025,13 +11612,16 @@ class JavaLabeledParser ( Parser ):
 
             self.state = 1393
             self._errHandler.sync(self)
-            _alt = self._interp.adaptivePredict(self._input,172,self._ctx)
-            while _alt!=2 and _alt!=ATN.INVALID_ALT_NUMBER:
-                if _alt==1:
+            _alt = self._interp.adaptivePredict(self._input, 172, self._ctx)
+            while _alt != 2 and _alt != ATN.INVALID_ALT_NUMBER:
+                if _alt == 1:
                     self.state = 1386
                     self._errHandler.sync(self)
                     _la = self._input.LA(1)
-                    while _la==JavaLabeledParser.AT or _la==JavaLabeledParser.IDENTIFIER:
+                    while (
+                        _la == JavaLabeledParser.AT
+                        or _la == JavaLabeledParser.IDENTIFIER
+                    ):
                         self.state = 1383
                         self.annotation()
                         self.state = 1388
@@ -10041,10 +11631,10 @@ class JavaLabeledParser ( Parser ):
                     self.state = 1389
                     self.match(JavaLabeledParser.LBRACK)
                     self.state = 1390
-                    self.match(JavaLabeledParser.RBRACK) 
+                    self.match(JavaLabeledParser.RBRACK)
                 self.state = 1395
                 self._errHandler.sync(self)
-                _alt = self._interp.adaptivePredict(self._input,172,self._ctx)
+                _alt = self._interp.adaptivePredict(self._input, 172, self._ctx)
 
         except RecognitionException as re:
             localctx.exception = re
@@ -10054,11 +11644,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class PrimitiveTypeContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -10089,19 +11680,34 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_primitiveType
 
-
-
-
     def primitiveType(self):
 
         localctx = JavaLabeledParser.PrimitiveTypeContext(self, self._ctx, self.state)
         self.enterRule(localctx, 200, self.RULE_primitiveType)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1396
             _la = self._input.LA(1)
-            if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << JavaLabeledParser.BOOLEAN) | (1 << JavaLabeledParser.BYTE) | (1 << JavaLabeledParser.CHAR) | (1 << JavaLabeledParser.DOUBLE) | (1 << JavaLabeledParser.FLOAT) | (1 << JavaLabeledParser.INT) | (1 << JavaLabeledParser.LONG) | (1 << JavaLabeledParser.SHORT))) != 0)):
+            if not (
+                (
+                    ((_la) & ~0x3F) == 0
+                    and (
+                        (1 << _la)
+                        & (
+                            (1 << JavaLabeledParser.BOOLEAN)
+                            | (1 << JavaLabeledParser.BYTE)
+                            | (1 << JavaLabeledParser.CHAR)
+                            | (1 << JavaLabeledParser.DOUBLE)
+                            | (1 << JavaLabeledParser.FLOAT)
+                            | (1 << JavaLabeledParser.INT)
+                            | (1 << JavaLabeledParser.LONG)
+                            | (1 << JavaLabeledParser.SHORT)
+                        )
+                    )
+                    != 0
+                )
+            ):
                 self._errHandler.recoverInline(self)
             else:
                 self._errHandler.reportMatch(self)
@@ -10114,28 +11720,30 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class TypeArgumentsContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
         def LT(self):
             return self.getToken(JavaLabeledParser.LT, 0)
 
-        def typeArgument(self, i:int=None):
+        def typeArgument(self, i: int = None):
             if i is None:
                 return self.getTypedRuleContexts(JavaLabeledParser.TypeArgumentContext)
             else:
-                return self.getTypedRuleContext(JavaLabeledParser.TypeArgumentContext,i)
-
+                return self.getTypedRuleContext(
+                    JavaLabeledParser.TypeArgumentContext, i
+                )
 
         def GT(self):
             return self.getToken(JavaLabeledParser.GT, 0)
 
-        def COMMA(self, i:int=None):
+        def COMMA(self, i: int = None):
             if i is None:
                 return self.getTokens(JavaLabeledParser.COMMA)
             else:
@@ -10144,14 +11752,11 @@ class JavaLabeledParser ( Parser ):
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_typeArguments
 
-
-
-
     def typeArguments(self):
 
         localctx = JavaLabeledParser.TypeArgumentsContext(self, self._ctx, self.state)
         self.enterRule(localctx, 202, self.RULE_typeArguments)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1398
@@ -10161,7 +11766,7 @@ class JavaLabeledParser ( Parser ):
             self.state = 1404
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            while _la==JavaLabeledParser.COMMA:
+            while _la == JavaLabeledParser.COMMA:
                 self.state = 1400
                 self.match(JavaLabeledParser.COMMA)
                 self.state = 1401
@@ -10180,50 +11785,46 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class SuperSuffixContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_superSuffix
 
-     
-        def copyFrom(self, ctx:ParserRuleContext):
+        def copyFrom(self, ctx: ParserRuleContext):
             super().copyFrom(ctx)
 
-
-
     class SuperSuffix1Context(SuperSuffixContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.SuperSuffixContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.SuperSuffixContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def DOT(self):
             return self.getToken(JavaLabeledParser.DOT, 0)
+
         def IDENTIFIER(self):
             return self.getToken(JavaLabeledParser.IDENTIFIER, 0)
+
         def arguments(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ArgumentsContext,0)
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.ArgumentsContext, 0)
 
     class SuperSuffix0Context(SuperSuffixContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.SuperSuffixContext
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.SuperSuffixContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def arguments(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ArgumentsContext,0)
-
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.ArgumentsContext, 0)
 
     def superSuffix(self):
 
@@ -10248,11 +11849,10 @@ class JavaLabeledParser ( Parser ):
                 self.match(JavaLabeledParser.IDENTIFIER)
                 self.state = 1413
                 self._errHandler.sync(self)
-                la_ = self._interp.adaptivePredict(self._input,174,self._ctx)
+                la_ = self._interp.adaptivePredict(self._input, 174, self._ctx)
                 if la_ == 1:
                     self.state = 1412
                     self.arguments()
-
 
                 pass
             else:
@@ -10266,61 +11866,65 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ExplicitGenericInvocationSuffixContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
-
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_explicitGenericInvocationSuffix
 
-     
-        def copyFrom(self, ctx:ParserRuleContext):
+        def copyFrom(self, ctx: ParserRuleContext):
             super().copyFrom(ctx)
 
-
-
-    class ExplicitGenericInvocationSuffix0Context(ExplicitGenericInvocationSuffixContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExplicitGenericInvocationSuffixContext
+    class ExplicitGenericInvocationSuffix0Context(
+        ExplicitGenericInvocationSuffixContext
+    ):
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExplicitGenericInvocationSuffixContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def SUPER(self):
             return self.getToken(JavaLabeledParser.SUPER, 0)
+
         def superSuffix(self):
-            return self.getTypedRuleContext(JavaLabeledParser.SuperSuffixContext,0)
+            return self.getTypedRuleContext(JavaLabeledParser.SuperSuffixContext, 0)
 
-
-
-    class ExplicitGenericInvocationSuffix1Context(ExplicitGenericInvocationSuffixContext):
-
-        def __init__(self, parser, ctx:ParserRuleContext): # actually a JavaLabeledParser.ExplicitGenericInvocationSuffixContext
+    class ExplicitGenericInvocationSuffix1Context(
+        ExplicitGenericInvocationSuffixContext
+    ):
+        def __init__(
+            self, parser, ctx: ParserRuleContext
+        ):  # actually a JavaLabeledParser.ExplicitGenericInvocationSuffixContext
             super().__init__(parser)
             self.copyFrom(ctx)
 
         def IDENTIFIER(self):
             return self.getToken(JavaLabeledParser.IDENTIFIER, 0)
+
         def arguments(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ArgumentsContext,0)
-
-
-
+            return self.getTypedRuleContext(JavaLabeledParser.ArgumentsContext, 0)
 
     def explicitGenericInvocationSuffix(self):
 
-        localctx = JavaLabeledParser.ExplicitGenericInvocationSuffixContext(self, self._ctx, self.state)
+        localctx = JavaLabeledParser.ExplicitGenericInvocationSuffixContext(
+            self, self._ctx, self.state
+        )
         self.enterRule(localctx, 206, self.RULE_explicitGenericInvocationSuffix)
         try:
             self.state = 1421
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [JavaLabeledParser.SUPER]:
-                localctx = JavaLabeledParser.ExplicitGenericInvocationSuffix0Context(self, localctx)
+                localctx = JavaLabeledParser.ExplicitGenericInvocationSuffix0Context(
+                    self, localctx
+                )
                 self.enterOuterAlt(localctx, 1)
                 self.state = 1417
                 self.match(JavaLabeledParser.SUPER)
@@ -10328,7 +11932,9 @@ class JavaLabeledParser ( Parser ):
                 self.superSuffix()
                 pass
             elif token in [JavaLabeledParser.IDENTIFIER]:
-                localctx = JavaLabeledParser.ExplicitGenericInvocationSuffix1Context(self, localctx)
+                localctx = JavaLabeledParser.ExplicitGenericInvocationSuffix1Context(
+                    self, localctx
+                )
                 self.enterOuterAlt(localctx, 2)
                 self.state = 1419
                 self.match(JavaLabeledParser.IDENTIFIER)
@@ -10346,11 +11952,12 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
     class ArgumentsContext(ParserRuleContext):
-        __slots__ = 'parser'
+        __slots__ = "parser"
 
-        def __init__(self, parser, parent:ParserRuleContext=None, invokingState:int=-1):
+        def __init__(
+            self, parser, parent: ParserRuleContext = None, invokingState: int = -1
+        ):
             super().__init__(parent, invokingState)
             self.parser = parser
 
@@ -10361,20 +11968,16 @@ class JavaLabeledParser ( Parser ):
             return self.getToken(JavaLabeledParser.RPAREN, 0)
 
         def expressionList(self):
-            return self.getTypedRuleContext(JavaLabeledParser.ExpressionListContext,0)
-
+            return self.getTypedRuleContext(JavaLabeledParser.ExpressionListContext, 0)
 
         def getRuleIndex(self):
             return JavaLabeledParser.RULE_arguments
-
-
-
 
     def arguments(self):
 
         localctx = JavaLabeledParser.ArgumentsContext(self, self._ctx, self.state)
         self.enterRule(localctx, 208, self.RULE_arguments)
-        self._la = 0 # Token type
+        self._la = 0  # Token type
         try:
             self.enterOuterAlt(localctx, 1)
             self.state = 1423
@@ -10382,10 +11985,57 @@ class JavaLabeledParser ( Parser ):
             self.state = 1425
             self._errHandler.sync(self)
             _la = self._input.LA(1)
-            if (((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << JavaLabeledParser.BOOLEAN) | (1 << JavaLabeledParser.BYTE) | (1 << JavaLabeledParser.CHAR) | (1 << JavaLabeledParser.DOUBLE) | (1 << JavaLabeledParser.FLOAT) | (1 << JavaLabeledParser.INT) | (1 << JavaLabeledParser.LONG) | (1 << JavaLabeledParser.NEW) | (1 << JavaLabeledParser.SHORT) | (1 << JavaLabeledParser.SUPER) | (1 << JavaLabeledParser.THIS) | (1 << JavaLabeledParser.VOID) | (1 << JavaLabeledParser.DECIMAL_LITERAL) | (1 << JavaLabeledParser.HEX_LITERAL) | (1 << JavaLabeledParser.OCT_LITERAL) | (1 << JavaLabeledParser.BINARY_LITERAL) | (1 << JavaLabeledParser.FLOAT_LITERAL) | (1 << JavaLabeledParser.HEX_FLOAT_LITERAL) | (1 << JavaLabeledParser.BOOL_LITERAL) | (1 << JavaLabeledParser.CHAR_LITERAL) | (1 << JavaLabeledParser.STRING_LITERAL) | (1 << JavaLabeledParser.NULL_LITERAL) | (1 << JavaLabeledParser.LPAREN))) != 0) or ((((_la - 72)) & ~0x3f) == 0 and ((1 << (_la - 72)) & ((1 << (JavaLabeledParser.LT - 72)) | (1 << (JavaLabeledParser.BANG - 72)) | (1 << (JavaLabeledParser.TILDE - 72)) | (1 << (JavaLabeledParser.INC - 72)) | (1 << (JavaLabeledParser.DEC - 72)) | (1 << (JavaLabeledParser.ADD - 72)) | (1 << (JavaLabeledParser.SUB - 72)) | (1 << (JavaLabeledParser.AT - 72)) | (1 << (JavaLabeledParser.IDENTIFIER - 72)))) != 0):
+            if (
+                ((_la) & ~0x3F) == 0
+                and (
+                    (1 << _la)
+                    & (
+                        (1 << JavaLabeledParser.BOOLEAN)
+                        | (1 << JavaLabeledParser.BYTE)
+                        | (1 << JavaLabeledParser.CHAR)
+                        | (1 << JavaLabeledParser.DOUBLE)
+                        | (1 << JavaLabeledParser.FLOAT)
+                        | (1 << JavaLabeledParser.INT)
+                        | (1 << JavaLabeledParser.LONG)
+                        | (1 << JavaLabeledParser.NEW)
+                        | (1 << JavaLabeledParser.SHORT)
+                        | (1 << JavaLabeledParser.SUPER)
+                        | (1 << JavaLabeledParser.THIS)
+                        | (1 << JavaLabeledParser.VOID)
+                        | (1 << JavaLabeledParser.DECIMAL_LITERAL)
+                        | (1 << JavaLabeledParser.HEX_LITERAL)
+                        | (1 << JavaLabeledParser.OCT_LITERAL)
+                        | (1 << JavaLabeledParser.BINARY_LITERAL)
+                        | (1 << JavaLabeledParser.FLOAT_LITERAL)
+                        | (1 << JavaLabeledParser.HEX_FLOAT_LITERAL)
+                        | (1 << JavaLabeledParser.BOOL_LITERAL)
+                        | (1 << JavaLabeledParser.CHAR_LITERAL)
+                        | (1 << JavaLabeledParser.STRING_LITERAL)
+                        | (1 << JavaLabeledParser.NULL_LITERAL)
+                        | (1 << JavaLabeledParser.LPAREN)
+                    )
+                )
+                != 0
+            ) or (
+                (((_la - 72)) & ~0x3F) == 0
+                and (
+                    (1 << (_la - 72))
+                    & (
+                        (1 << (JavaLabeledParser.LT - 72))
+                        | (1 << (JavaLabeledParser.BANG - 72))
+                        | (1 << (JavaLabeledParser.TILDE - 72))
+                        | (1 << (JavaLabeledParser.INC - 72))
+                        | (1 << (JavaLabeledParser.DEC - 72))
+                        | (1 << (JavaLabeledParser.ADD - 72))
+                        | (1 << (JavaLabeledParser.SUB - 72))
+                        | (1 << (JavaLabeledParser.AT - 72))
+                        | (1 << (JavaLabeledParser.IDENTIFIER - 72))
+                    )
+                )
+                != 0
+            ):
                 self.state = 1424
                 self.expressionList()
-
 
             self.state = 1427
             self.match(JavaLabeledParser.RPAREN)
@@ -10397,9 +12047,7 @@ class JavaLabeledParser ( Parser ):
             self.exitRule()
         return localctx
 
-
-
-    def sempred(self, localctx:RuleContext, ruleIndex:int, predIndex:int):
+    def sempred(self, localctx: RuleContext, ruleIndex: int, predIndex: int):
         if self._predicates == None:
             self._predicates = dict()
         self._predicates[83] = self.expression_sempred
@@ -10409,75 +12057,54 @@ class JavaLabeledParser ( Parser ):
         else:
             return pred(localctx, predIndex)
 
-    def expression_sempred(self, localctx:ExpressionContext, predIndex:int):
-            if predIndex == 0:
-                return self.precpred(self._ctx, 17)
-         
+    def expression_sempred(self, localctx: ExpressionContext, predIndex: int):
+        if predIndex == 0:
+            return self.precpred(self._ctx, 17)
 
-            if predIndex == 1:
-                return self.precpred(self._ctx, 16)
-         
+        if predIndex == 1:
+            return self.precpred(self._ctx, 16)
 
-            if predIndex == 2:
-                return self.precpred(self._ctx, 15)
-         
+        if predIndex == 2:
+            return self.precpred(self._ctx, 15)
 
-            if predIndex == 3:
-                return self.precpred(self._ctx, 14)
-         
+        if predIndex == 3:
+            return self.precpred(self._ctx, 14)
 
-            if predIndex == 4:
-                return self.precpred(self._ctx, 12)
-         
+        if predIndex == 4:
+            return self.precpred(self._ctx, 12)
 
-            if predIndex == 5:
-                return self.precpred(self._ctx, 11)
-         
+        if predIndex == 5:
+            return self.precpred(self._ctx, 11)
 
-            if predIndex == 6:
-                return self.precpred(self._ctx, 10)
-         
+        if predIndex == 6:
+            return self.precpred(self._ctx, 10)
 
-            if predIndex == 7:
-                return self.precpred(self._ctx, 9)
-         
+        if predIndex == 7:
+            return self.precpred(self._ctx, 9)
 
-            if predIndex == 8:
-                return self.precpred(self._ctx, 8)
-         
+        if predIndex == 8:
+            return self.precpred(self._ctx, 8)
 
-            if predIndex == 9:
-                return self.precpred(self._ctx, 7)
-         
+        if predIndex == 9:
+            return self.precpred(self._ctx, 7)
 
-            if predIndex == 10:
-                return self.precpred(self._ctx, 6)
-         
+        if predIndex == 10:
+            return self.precpred(self._ctx, 6)
 
-            if predIndex == 11:
-                return self.precpred(self._ctx, 5)
-         
+        if predIndex == 11:
+            return self.precpred(self._ctx, 5)
 
-            if predIndex == 12:
-                return self.precpred(self._ctx, 25)
-         
+        if predIndex == 12:
+            return self.precpred(self._ctx, 25)
 
-            if predIndex == 13:
-                return self.precpred(self._ctx, 24)
-         
+        if predIndex == 13:
+            return self.precpred(self._ctx, 24)
 
-            if predIndex == 14:
-                return self.precpred(self._ctx, 20)
-         
+        if predIndex == 14:
+            return self.precpred(self._ctx, 20)
 
-            if predIndex == 15:
-                return self.precpred(self._ctx, 13)
-         
+        if predIndex == 15:
+            return self.precpred(self._ctx, 13)
 
-            if predIndex == 16:
-                return self.precpred(self._ctx, 3)
-         
-
-
-
-
+        if predIndex == 16:
+            return self.precpred(self._ctx, 3)

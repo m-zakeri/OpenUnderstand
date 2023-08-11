@@ -1,4 +1,5 @@
 import oudb.api as und
+
 from oudb.fill import fill
 from understand.main import runner
 from os import path, getcwd
@@ -27,12 +28,13 @@ from extract_class_api import ExtractClassAPI
 # print(len(classes))
 
 
-und.create_db(dbname="/home/y/Desktop/iust/Openundertand_testing_api/udb_projects/xerces2-j.und", project_dir="/home/y/Desktop/iust/Openundertand_testing_api/projects_bench/xerces2-j")
+und.create_db(
+    dbname="/home/y/Desktop/iust/Openundertand_testing_api/udb_projects/xerces2-j.und",
+    project_dir="/home/y/Desktop/iust/Openundertand_testing_api/projects_bench/xerces2-j",
+)
 
 # test Extract class
 
-eca = ExtractClassAPI(
-    udb_path="xerces2-j.oudb"
-)
+eca = ExtractClassAPI(udb_path="xerces2-j.oudb")
 
 eca.get_source_class_map()

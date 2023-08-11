@@ -6,8 +6,9 @@ import os
 # by generator 1.147
 
 from oudb.models import *
-
+from peewee import fn
 from dataclasses import dataclass
+from functools import reduce
 
 """
 This is the python interface to Understand databases.
@@ -353,18 +354,26 @@ class Db:
         should be a language-specific entity filter string. The database
         must be open or a UnderstandError will be thrown.
         """
+
         all_ents = []
 
         if kindstring is None:
             query = EntityModel.select()
         else:
             # TODO: Complete this later
+            kindstrings = kindstring.split(" ")
             query = EntityModel.select()
-
+            conditions = []
+            for item in kindstrings:
+                kinds = KindModel.select().where(KindModel._name.contains(item))
+                conditions.append(EntityModel._kind.in_(kinds))
+            if conditions:
+                query = query.where(reduce(lambda a, b: a | b, conditions)).where(
+                    reduce(lambda a, b: a & b, conditions)
+                )
         for ent in query:
             my_ent = Ent(**ent.__dict__.get("__data__"))
             all_ents.append(my_ent)
-
         return all_ents
 
     def ent_from_id(self, id: int):  # real signature unknown; restored from __doc__
@@ -832,11 +841,18 @@ class Ent:
         """
         query = ReferenceModel.select().where(ReferenceModel._scope == self._id)
         if refkindstring:
+            # if KindModel._name.__dict__.get("_name") == refkindstring:
             kinds = KindModel.select().where(
                 (KindModel.is_ent_kind == False)
                 & (KindModel._name.contains(refkindstring))
             )
+            for q in query:
+                print(q.__dict__.get("__data__"))
+            for k in kinds:
+                print(k.__dict__.get("__data__"))
             query = query.where(ReferenceModel._kind.in_(kinds))
+            if query.count() > 0:
+                print("Yes")
 
         if entkindstring:
             kinds = KindModel.select().where(

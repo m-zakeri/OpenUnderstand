@@ -146,7 +146,7 @@ class Project:
                 _scope=ent,
             )
 
-    def addSetInitRefs(self, d, file_ent):
+    def addSetInitRefs(self, d, file_ent, stream:str = ""):
         for type_tuple in d:
             par = EntityModel.get(_name=type_tuple[7])
 
@@ -271,6 +271,7 @@ class Project:
                 _ent=scope,
                 _scope=ent,
             )
+
 
     def addDefineRefs(self, ref_dicts, file_ent):
         for ref_dict in ref_dicts:
@@ -664,7 +665,7 @@ class Project:
                     overrideword = x[0]
                     if overrideword not in classes:
                         ent = EntityModel.get_or_create(
-                            _kind="Unknown Method",
+                            _kind=32,
                             _name=overrideword[1],
                             _parent=file_ent,
                             _longname=overrideword,
@@ -770,6 +771,10 @@ class Project:
             result_str = result_str.replace("Member", "").strip()
         return result_str
 
+    def check_and_create_record(self, name, kind):
+        existing_record = EntityModel.select().where(EntityModel._name == name).first()
+        return not (existing_record and existing_record._kind == kind)
+
     def add_defined_entities(self, entities, entity_type, package_name, file_path):
         for entity_key, entity_values in entities.items():
             is_constructor = False
@@ -804,6 +809,7 @@ class Project:
                 entity_type, entity_values, file_path, package_name
             )
 
+
             created_entity, _ = EntityModel.get_or_create(
                 _kind_id=kind_id,
                 _name=model_name,
@@ -826,7 +832,6 @@ class Project:
                 _ent_id=model_parent._id,
                 _scope_id=created_entity._id,
             )
-
             ReferenceModel.get_or_create(
                 _kind_id=KindModel.get_or_none(_name="Java Definein")._id,
                 _file_id=reference_file._id,
@@ -927,9 +932,9 @@ class Project:
 
                         else:
                             kw = key.split(".")
-                            keykind = "Unknown Class"
+                            keykind = 84
                             ent = EntityModel.get_or_create(
-                                _kind="Unknown Class",
+                                _kind=keykind,
                                 _name=kw[-1],
                                 _parent=file_ent,
                                 _longname=key,
