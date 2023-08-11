@@ -24,17 +24,14 @@ class ExtractClassAPI:
             class_fields = []
             class_methods = []
             for ref in c.refs("define", "variable"):
-                print(ref)
                 class_fields.append(ref.ent())
             for ref in c.refs("define", "method"):
-                print(ref)
                 class_methods.append(ref.ent())
-            print("cm : ", class_methods)
-            print("cf : ", class_fields)
-            # moved_fields = ([ent.simplename() for ent in class_fields],)
-            # moved_methods = ([ent.simplename() for ent in class_methods],)
-            #
-            # field_usages = []
+            moved_fields = ([ent.simplename() for ent in class_fields],)
+            moved_methods = ([ent.simplename() for ent in class_methods],)
+            print(moved_methods)
+            print(moved_methods)
+            field_usages = []
             # for field in moved_fields:
             #     # print(f"{source_class}.{field}")
             #     for ent in _db.lookup(f"{source_class}.{field}"):

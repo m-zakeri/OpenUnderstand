@@ -839,36 +839,47 @@ class Ent:
         true, only the first matching reference to each unique entity is
         returned
         """
-        query = ReferenceModel.select().where(ReferenceModel._scope == self._id)
-        if refkindstring:
-            # if KindModel._name.__dict__.get("_name") == refkindstring:
-            kinds = KindModel.select().where(
-                (KindModel.is_ent_kind == False)
-                & (KindModel._name.contains(refkindstring))
-            )
-            for q in query:
-                print(q.__dict__.get("__data__"))
-            for k in kinds:
-                print(k.__dict__.get("__data__"))
-            query = query.where(ReferenceModel._kind.in_(kinds))
-            if query.count() > 0:
-                print("Yes")
-
-        if entkindstring:
-            kinds = KindModel.select().where(
-                (KindModel.is_ent_kind == True)
-                & (KindModel._name.contains(entkindstring))
-            )
-            ents = EntityModel.select().where(EntityModel._kind.in_(kinds))
-            query = query.where(ReferenceModel._ent.in_(ents))
+        # TODO : check nested references
+        mlist = [j.replace(" ", "") for j in refkindstring.split(",")]
         references = []
+        for item in mlist:
+            query = ReferenceModel.select().where(ReferenceModel._scope == self._id)
+            if item:
+                kinds = KindModel.select().where(
+                    (KindModel.is_ent_kind == False)
+                    & (KindModel._name.contains(item))
+                )
 
-        for ref in query:
-            references.append(Ref(**ref.__dict__.get("__data__")))
+                if len(mlist) > 1:
+                    print(kinds.count())
+                    for k in kinds:
+                        print("kin : ", k._name)
+                        print(k._id)
+                    q = ReferenceModel.select().where(ReferenceModel._kind.in_(kinds))
+                    for it in query:
+                        # print("it : ", it._kind)
+                        if str(it._kind) != "Java Define":
+                            print("X :", it._kind)
+                            print("X :", "Java Define")
+
+                query = query.where(ReferenceModel._kind.in_(kinds))
+                # if len(mlist) > 1:
+                    # print(query.count())
+
+            if entkindstring:
+                kinds = KindModel.select().where(
+                    (KindModel.is_ent_kind == True)
+                    & (KindModel._name.contains(entkindstring))
+                )
+                ents = EntityModel.select().where(EntityModel._kind.in_(kinds))
+                query = query.where(ReferenceModel._ent.in_(ents))
+
+
+            for ref in query:
+                references.append(Ref(**ref.__dict__.get("__data__")))
 
         if unique:
             references = references[:1]
-
         return references
 
     def relname(self):  # real signature unknown; restored from __doc__
