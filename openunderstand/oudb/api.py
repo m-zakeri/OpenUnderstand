@@ -6,9 +6,9 @@ import os
 # by generator 1.147
 
 from oudb.models import *
-from peewee import fn
 from dataclasses import dataclass
 from functools import reduce
+from openunderstand.understand.main import process_file
 
 """
 This is the python interface to Understand databases.
@@ -230,6 +230,14 @@ PUNCTUATION = "Punctuation"
 STRING = "String"
 WHITESPACE = "Whitespace"
 
+import os
+import git
+from oudb.models import EntityModel, ReferenceModel
+
+def update_db(repo_path: str, branch:str = "origin/master"):
+    for file in [file for file in git.Repo(repo_path).git.diff(branch, name_only=True).split("\n") if file.endswith(".java")]:
+        process_file(file_address=file)
+
 
 def create_db(dbname, project_dir: str, project_name=None):
 
@@ -267,7 +275,6 @@ def open(dbname):  # real signature unknown; restored from __doc__
       DBUnableOpen         - database is unreadable or does not exist
       NoApiLicense         - Understand license required
     """
-    print(dbname)
     if not os.path.isfile(dbname):
         raise UnderstandError()
 
@@ -437,6 +444,7 @@ class Db:
         query = query.where(
             (EntityModel._name.contains(name)) | (EntityModel._longname.contains(name))
         )
+
         for ent in query:
             ents.append(Ent(**ent.__dict__.get("__data__")))
         return ents

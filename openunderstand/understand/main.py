@@ -1,6 +1,6 @@
 from understand.project import Project
 from understand.listeners_and_parsers import ListenersAndParsers
-from multiprocessing import Process, cpu_count, Pool
+from multiprocessing import cpu_count, Pool
 
 
 def process_file(file_address):
