@@ -23,9 +23,9 @@ class DeclareAndDeclareinListener(JavaParserLabeledListener):
     #Todo: Implementing the ANTLR listener pass for Java Call and Java Callby reference kind
 
     """
+
     def __init__(self):
         self.declare = []
-
 
     def enterCompilationUnit(self, ctx: JavaParserLabeled.CompilationUnitContext):
         if not ctx.packageDeclaration():  # unnamed package

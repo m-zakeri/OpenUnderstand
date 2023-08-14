@@ -3,6 +3,7 @@ from analysis_passes.DotRef_DorRefBy import DotRef_DotRefBy
 from analysis_passes.callNonDynamic_callNonDynamicby import (
     CallNonDynamicAndCallNonDynamicBy,
 )
+
 # from analysis_passes.define_definein import DefineListener
 from analysis_passes.define_and_definin_g6 import DefineListener
 from analysis_passes.modify_modifyby import ModifyListener
@@ -99,8 +100,7 @@ class ListenersAndParsers:
                 file_address,
             )
             p.add_defined_entities(
-                listener.formal_parameters, "parameter", package_name,
-                file_address
+                listener.formal_parameters, "parameter", package_name, file_address
             )
             self.logger.info("define success ")
         except Exception as e:

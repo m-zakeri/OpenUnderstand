@@ -234,8 +234,13 @@ import os
 import git
 from oudb.models import EntityModel, ReferenceModel
 
-def update_db(repo_path: str, branch:str = "origin/master"):
-    for file in [file for file in git.Repo(repo_path).git.diff(branch, name_only=True).split("\n") if file.endswith(".java")]:
+
+def update_db(repo_path: str = "", branch: str = "origin/master"):
+    for file in [
+        file
+        for file in git.Repo(repo_path).git.diff(branch, name_only=True).split("\n")
+        if file.endswith(".java")
+    ]:
         process_file(file_address=file)
 
 
@@ -854,8 +859,7 @@ class Ent:
             query = ReferenceModel.select().where(ReferenceModel._scope == self._id)
             if item:
                 kinds = KindModel.select().where(
-                    (KindModel.is_ent_kind == False)
-                    & (KindModel._name.contains(item))
+                    (KindModel.is_ent_kind == False) & (KindModel._name.contains(item))
                 )
 
                 if len(mlist) > 1:
@@ -872,7 +876,7 @@ class Ent:
 
                 query = query.where(ReferenceModel._kind.in_(kinds))
                 # if len(mlist) > 1:
-                    # print(query.count())
+                # print(query.count())
 
             if entkindstring:
                 kinds = KindModel.select().where(
@@ -881,7 +885,6 @@ class Ent:
                 )
                 ents = EntityModel.select().where(EntityModel._kind.in_(kinds))
                 query = query.where(ReferenceModel._ent.in_(ents))
-
 
             for ref in query:
                 references.append(Ref(**ref.__dict__.get("__data__")))

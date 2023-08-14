@@ -16,6 +16,7 @@ from utils.utilities import setup_logger
 #     path_project="/home/y/Desktop/iust/JSON-java"
 # )
 from pathlib import Path
+
 _db = und.open(dbname="json.oudb")
 classes = _db.ents("class")
 print(len(classes))

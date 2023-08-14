@@ -19,8 +19,6 @@ class Project:
     def __init__(self):
         self.tree = None
 
-
-
     @staticmethod
     def listToString(s):
         """a method to find projects path dynamically"""
@@ -105,7 +103,7 @@ class Project:
                 _ent=scope,
             )
 
-    def addTypeRefs(self, d_type, file_ent, stream:str = ""):
+    def addTypeRefs(self, d_type, file_ent, stream: str = ""):
         for type_tuple in d_type["typedBy"]:
             ent, h_c1 = EntityModel.get_or_create(
                 _kind=224,
@@ -146,7 +144,7 @@ class Project:
                 _scope=ent,
             )
 
-    def addSetInitRefs(self, d, file_ent, stream:str = ""):
+    def addSetInitRefs(self, d, file_ent, stream: str = ""):
         for type_tuple in d:
             par = EntityModel.get(_name=type_tuple[7])
 
@@ -189,7 +187,7 @@ class Project:
             )
             print("Set Init Added!")
 
-    def addSetRefs(self, d, file_ent, stream:str = ""):
+    def addSetRefs(self, d, file_ent, stream: str = ""):
 
         for type_tuple in d:
             par = EntityModel.get(_name=type_tuple[7])
@@ -231,7 +229,7 @@ class Project:
                 _scope=ent,
             )
 
-    def addUseRefs(self, d_use, file_ent, stream:str = ""):
+    def addUseRefs(self, d_use, file_ent, stream: str = ""):
         for use_tuple in d_use:
             ent, h_c1 = EntityModel.get_or_create(
                 _kind=226,
@@ -272,7 +270,6 @@ class Project:
                 _scope=ent,
             )
 
-
     def addDefineRefs(self, ref_dicts, file_ent):
         for ref_dict in ref_dicts:
             if ref_dict["scope"] is None:  # the scope is the file
@@ -309,7 +306,6 @@ class Project:
     def addImplementOrImplementByRefs(self, ref_dicts, file_ent, file_address):
         pass
 
-
     def add_create_and_createby_reference(self, ref_dicts, file_address, file_ent):
         for ref_dict in ref_dicts:
             scope = EntityModel.get_or_create(
@@ -323,7 +319,9 @@ class Project:
                 _longname=ref_dict["scope_longname"],
                 _contents=ref_dict["scope_contents"],
             )[0]
-            ent = self.getImplementEntity(ref_dict["type_ent_longname"], file_address, file_ent)
+            ent = self.getImplementEntity(
+                ref_dict["type_ent_longname"], file_address, file_ent
+            )
             implement_ref = ReferenceModel.get_or_create(
                 _kind=188,
                 _file=file_ent,
@@ -354,7 +352,9 @@ class Project:
                 _longname=ref_dict["scope_longname"],
                 _contents=ref_dict["scope_contents"],
             )[0]
-            ent = self.getImplementEntity(ref_dict["type_ent_longname"], file_address, file_ent)
+            ent = self.getImplementEntity(
+                ref_dict["type_ent_longname"], file_address, file_ent
+            )
             extend_ref = ReferenceModel.get_or_create(
                 _kind=178,
                 _file=file_ent,
@@ -385,7 +385,9 @@ class Project:
                 _longname=ref_dict["scope_longname"],
                 _contents=ref_dict["scope_contents"],
             )[0]
-            ent = self.getImplementEntity(ref_dict["type_ent_longname"], file_address, file_ent)
+            ent = self.getImplementEntity(
+                ref_dict["type_ent_longname"], file_address, file_ent
+            )
             call_ref = ReferenceModel.get_or_create(
                 _kind=172,
                 _file=file_ent,
@@ -442,7 +444,9 @@ class Project:
                 _longname=ref_dict["scope_longname"],
                 _contents=ref_dict["scope_contents"],
             )[0]
-            ent = self.getImplementEntity(ref_dict["type_ent_longname"], file_address, file_ent)
+            ent = self.getImplementEntity(
+                ref_dict["type_ent_longname"], file_address, file_ent
+            )
             call_ref = ReferenceModel.get_or_create(
                 _kind=170,
                 _file=file_ent,
@@ -808,7 +812,6 @@ class Project:
             model_parent = self.define_parent(
                 entity_type, entity_values, file_path, package_name
             )
-
 
             created_entity, _ = EntityModel.get_or_create(
                 _kind_id=kind_id,
