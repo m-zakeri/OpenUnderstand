@@ -1,8 +1,10 @@
 peewee==3.14.4
-antlr4-python3-runtime==4.9.2
+antlr4-python3-runtime==4.9.1
 dataclasses
 python-dotenv==0.20.0
 openpyxl==3.0.10
 pandas
 pybind11
 invoke
+speedy-antlr-tool==1.1
+GitPython
