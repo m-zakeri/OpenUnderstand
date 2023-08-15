@@ -42,8 +42,8 @@ setuptools.setup(
         "": [
             "*.csv",
             "*.xlsx",
+            "oudb/*txt"
         ],
-        "openunderstand": ["oudb/java_ent_kinds.txt", "oudb/java_ref_kinds.txt"],
     },
     exclude_package_data={"": ["README.md"]},
     python_requires=">=3.8",
@@ -56,6 +56,8 @@ setuptools.setup(
         "pyparsing>=2.4.7",
         "python-dateutil>=2.8.2",
         "regex>=2021.7.6",
-        "GitPython==3.1.32",
+        "GitPython>=3.1.32",
+        "pybind11>=2.11.1",
+        "speedy-antlr-tool>=1.1.0"
     ],
 )
