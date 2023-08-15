@@ -96,7 +96,7 @@ def append_entities_with_understand(udb_path: str):
 def append_references_with_understand(udb_path: str):
     # TODO: Implement this method!
     try:
-        from openunderstand import understand as und
+        from openunderstand import ounderstand as und
     except ImportError:
         print("Understand Python API is not installed correctly.")
 

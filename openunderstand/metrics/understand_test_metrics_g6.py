@@ -1,5 +1,5 @@
 """
-The script is used to test the definition of Understand and Open-understand references kinds
+The script is used to test the definition of Understand and Open-ounderstand references kinds
 
 """
 
@@ -66,7 +66,7 @@ try:
 except ImportError:
     import understand as und
 
-    print("Can not import understand")
+    print("Can not import ounderstand")
 
 
 def test_open_understand():

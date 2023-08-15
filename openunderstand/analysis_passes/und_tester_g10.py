@@ -1,4 +1,4 @@
-from openunderstand import understand as und
+from openunderstand import ounderstand as und
 from analysis_passes.g10_import_importby import get_project_info
 
 PRJ_INDEX = 0

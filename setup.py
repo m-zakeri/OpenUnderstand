@@ -56,5 +56,6 @@ setuptools.setup(
         "pyparsing>=2.4.7",
         "python-dateutil>=2.8.2",
         "regex>=2021.7.6",
+        "GitPython==3.1.32",
     ],
 )

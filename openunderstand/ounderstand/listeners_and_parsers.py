@@ -15,8 +15,8 @@ from analysis_passes.entity_manager_g11 import (
 from analysis_passes.use_useby import UseAndUseByListener
 from analysis_passes.type_typedby import TypedAndTypedByListener
 from analysis_passes.set_setby import SetAndSetByListener
-from understand.override_overrideby__G12 import overridelistener
-from understand.couple_coupleby__G12 import CoupleAndCoupleBy
+from ounderstand.override_overrideby__G12 import overridelistener
+from ounderstand.couple_coupleby__G12 import CoupleAndCoupleBy
 from analysis_passes.create_createby_g9 import CreateAndCreateBy
 from analysis_passes.declare_declarein import DeclareAndDeclareinListener
 from utils.utilities import setup_logger, timer_decorator

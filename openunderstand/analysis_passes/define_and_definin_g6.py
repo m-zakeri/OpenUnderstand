@@ -1,12 +1,9 @@
 import os
 
 from antlr4 import *
-from oudb.api import open
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from oudb.api import create_db, open as db_open
-from oudb.fill import fill as db_fill
 from oudb.models import KindModel, EntityModel, ReferenceModel
 
 
@@ -67,11 +64,6 @@ def extract_all_kind(prefixes, type_entity, is_constructor) -> str:
     return result_str
 
 
-DB_PATH = r"C:\Users\ASUS\Desktop\term_4002\Compiler\project\phase2\OpenUnderstand\benchmark2_database.oudb"
-PROJECT_PATH = r"C:\Users\ASUS\Desktop\term_4002\Compiler\project\phase2\OpenUnderstand\benchmark\alaryCalculator-master"
-PROJECT_NAME = "SalaryCalculator-master"
-
-
 class Project:
     def __init__(self, db_name, project_dir, project_name=None):
         self.db_name = db_name
@@ -80,17 +72,12 @@ class Project:
         self.file_paths = []
         self.file_names = []
 
-    def init_db(self):
-        # create_db(self.db_name, self.project_dir, self.project_name)
-        # db_fill()
-        db_open(self.db_name)
-
     def get_java_files(self):
         for dir_path, _, file_names in os.walk(self.project_dir):
             for file in file_names:
                 if ".java" in str(file):
                     path = os.path.join(dir_path, file)
-                    path = path.replace("/", "\\")
+                    # path = path.replace("/", "\\")
                     path = os.path.abspath(path)
                     self.file_paths.append(path)
                     self.file_names.append(file)
@@ -532,49 +519,49 @@ def add_defined_entities(entities, entity_type, package_name, file_path):
         )
 
 
-def main():
-    open("../../benchmark2_database.oudb")
-    files = []
-
-    # get files names
-    for ent_model in EntityModel.select():
-        if ent_model._kind_id == 1:
-            files.append(ent_model._longname)
-
-    for file_path in files:
-        try:
-            tree = get_parse_tree(file_path)
-            walker = ParseTreeWalker()
-            define_listener = DefineListener()
-            walker.walk(define_listener, tree)
-            package_name = define_listener.package["package_name"]
-            add_entity_package(define_listener.package, file_path)
-            add_defined_entities(
-                define_listener.classes, "class", package_name, file_path
-            )
-            add_defined_entities(
-                define_listener.interfaces, "interface", package_name, file_path
-            )
-            add_defined_entities(
-                define_listener.fields, "variable", package_name, file_path
-            )
-            add_defined_entities(
-                define_listener.methods, "method", package_name, file_path
-            )
-            add_defined_entities(
-                define_listener.local_variables,
-                "local variable",
-                package_name,
-                file_path,
-            )
-            add_defined_entities(
-                define_listener.formal_parameters, "parameter", package_name, file_path
-            )
-        except Exception as e:
-            print(e)
-            print("some exception happened")
-            continue
-
-
-if __name__ == "__main__":
-    main()
+# def main():
+#     open("../../benchmark2_database.oudb")
+#     files = []
+#
+#     # get files names
+#     for ent_model in EntityModel.select():
+#         if ent_model._kind_id == 1:
+#             files.append(ent_model._longname)
+#
+#     for file_path in files:
+#         try:
+#             tree = get_parse_tree(file_path)
+#             walker = ParseTreeWalker()
+#             define_listener = DefineListener()
+#             walker.walk(define_listener, tree)
+#             package_name = define_listener.package["package_name"]
+#             add_entity_package(define_listener.package, file_path)
+#             add_defined_entities(
+#                 define_listener.classes, "class", package_name, file_path
+#             )
+#             add_defined_entities(
+#                 define_listener.interfaces, "interface", package_name, file_path
+#             )
+#             add_defined_entities(
+#                 define_listener.fields, "variable", package_name, file_path
+#             )
+#             add_defined_entities(
+#                 define_listener.methods, "method", package_name, file_path
+#             )
+#             add_defined_entities(
+#                 define_listener.local_variables,
+#                 "local variable",
+#                 package_name,
+#                 file_path,
+#             )
+#             add_defined_entities(
+#                 define_listener.formal_parameters, "parameter", package_name, file_path
+#             )
+#         except Exception as e:
+#             print(e)
+#             print("some exception happened")
+#             continue
+#
+#
+# if __name__ == "__main__":
+#     main()

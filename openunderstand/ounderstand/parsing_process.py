@@ -1,6 +1,22 @@
-from understand.project import Project
-from understand.listeners_and_parsers import ListenersAndParsers
-from multiprocessing import cpu_count, Pool
+from ounderstand.project import Project
+from ounderstand.listeners_and_parsers import ListenersAndParsers
+import os
+from utils.utilities import setup_config
+from fnmatch import fnmatch
+
+
+def get_files(dirName: str = ""):
+    listOfFile = os.listdir(dirName)
+    allFiles = list()
+    for entry in listOfFile:
+        # Create full path
+        fullPath = os.path.join(dirName, entry)
+        if os.path.isdir(fullPath):
+            allFiles = allFiles + get_files(fullPath)
+        # checks whether the fullPath content is a .java or not
+        elif fnmatch(fullPath, "*.java"):
+            allFiles.append(fullPath)
+    return allFiles
 
 
 def process_file(file_address):
@@ -31,12 +47,3 @@ def process_file(file_address):
     )
     for listener in listeners:
         listener(file_address=file_address, p=p, file_ent=file_ent, tree=tree)
-
-
-def runner(path_project: str = ""):
-    project = Project()
-    files = project.getListOfFiles(path_project)
-    with Pool(cpu_count()) as pool:
-        pool.map_async(process_file, files)
-        pool.close()
-        pool.join()

@@ -5,9 +5,9 @@ from oudb.models import EntityModel, ReferenceModel
 
 
 try:
-    from openunderstand import understand as und
+    from openunderstand import ounderstand as und
 except ImportError:
-    print("Can not import understand")
+    print("Can not import ounderstand")
 # E:\2\OpenUnderstand\benchmark\calculator_app\calculator_app.und
 db = und.open(
     r"E:/comppppppp/OpenUnderstand/benchmark/calculator_app/calculator_app/calculator_app.und"

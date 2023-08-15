@@ -22,6 +22,12 @@ def timer_decorator(logger):
     return decorator
 
 
+def setup_config():
+    config = configparser.ConfigParser()
+    config.read("config.ini")
+    return config
+
+
 def setup_logger():
     # Read configurations from config.ini file
     config = configparser.ConfigParser()

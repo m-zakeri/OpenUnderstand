@@ -1,5 +1,5 @@
 """
-The script is used to test the definition of Understand and Open-understand references kinds
+The script is used to test the definition of Understand and Open-ounderstand references kinds
 
 """
 
@@ -67,9 +67,9 @@ UDB_PATH = os.path.join(UDB_ROOT_DIR, BENCHMARKS["UDB"][BENCHMARK_INDEX]).replac
 )
 
 try:
-    from openunderstand import understand as und
+    from openunderstand import ounderstand as und
 except ImportError:
-    print("Can not import understand")
+    print("Can not import ounderstand")
 
 
 def test_open_understand():
@@ -85,7 +85,7 @@ def test_understand_kinds():
     for ent in db.ents("Java Class ~Unknown ~Unresolved"):
         # Example for metrics computation
         print(ent.longname())
-        # With understand API
+        # With ounderstand API
         public_methods1 = ent.metric(["CountDeclMethodPublic"]).get(
             "CountDeclMethodPublic", 0
         )
