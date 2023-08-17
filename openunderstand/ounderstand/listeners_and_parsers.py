@@ -22,14 +22,12 @@ from analysis_passes.declare_declarein import DeclareAndDeclareinListener
 from utils.utilities import setup_logger, timer_decorator
 import os
 
-logger = setup_logger()
-
 
 class ListenersAndParsers:
     def __init__(self):
-        self.logger = logger
+        self.logger = setup_logger()
 
-    @timer_decorator(logger)
+    @timer_decorator()
     def parser(self, file_address, p):
         try:
             parse_tree = p.Parse(file_address)
@@ -45,11 +43,11 @@ class ListenersAndParsers:
             )
             return None, None, None
 
-    @timer_decorator(logger)
+    @timer_decorator()
     def entity_gen(self, file_address, parse_tree):
         return EntityGenerator(file_address, parse_tree)
 
-    @timer_decorator(logger)
+    @timer_decorator()
     def type_listener(self, tree, file_ent, file_address, p):
         try:
             listener = TypedAndTypedByListener()
@@ -61,7 +59,7 @@ class ListenersAndParsers:
                 "An Error occurred in file type refs :" + file_address + "\n" + str(e)
             )
 
-    @timer_decorator(logger)
+    @timer_decorator()
     def create_listener(self, tree, file_ent, file_address, p):
         try:
             #  create refs TODO: fix NOT NULL constraint failed: entitymodel._kind_id
@@ -74,7 +72,7 @@ class ListenersAndParsers:
                 "An Error occurred in file create refs :" + file_address + "\n" + str(e)
             )
 
-    @timer_decorator(logger)
+    @timer_decorator()
     def define_listener(self, tree, file_ent, file_address, p):
         try:
             listener = DefineListener()
@@ -111,7 +109,7 @@ class ListenersAndParsers:
                 + str(e)
             )
 
-    @timer_decorator(logger)
+    @timer_decorator()
     def declare_listener(self, tree, file_ent, file_address, p):
         try:
             # declare
@@ -120,18 +118,18 @@ class ListenersAndParsers:
             p.addDeclareRefs(listener.declare, file_ent)
             self.logger.info("declare success ")
         except Exception as e:
-            logger.error(
+            self.logger.error(
                 "An Error occurred for reference declare in file:"
                 + file_address
                 + "\n"
                 + str(e)
             )
 
-    @timer_decorator(logger)
+    @timer_decorator()
     def modify_listener(self, parse_tree, entity_generator, file_address, p):
         try:
             # modify TODO : FIX modify error not found
-            listener = ModifyListener(entity_generator, logger)
+            listener = ModifyListener(entity_generator)
             p.Walk(listener, parse_tree)
             p.add_modify_and_modifyby_reference(listener.modify)
             self.logger.info("modify success ")
@@ -143,7 +141,7 @@ class ListenersAndParsers:
                 + str(e)
             )
 
-    @timer_decorator(logger)
+    @timer_decorator()
     def override_listener(self, tree, file_ent, file_address, p):
         classesx = {}
         extendedlist = []
@@ -166,7 +164,7 @@ class ListenersAndParsers:
                 + str(e)
             )
 
-    @timer_decorator(logger)
+    @timer_decorator()
     def couple_listener(self, tree, file_ent, file_address, p):
         classescoupleby = {}
         couple = []
@@ -188,7 +186,7 @@ class ListenersAndParsers:
                 + str(e)
             )
 
-    @timer_decorator(logger)
+    @timer_decorator()
     def throws_listener(self, tree, file_ent, file_address, p):
         try:
             # Throws
@@ -200,11 +198,11 @@ class ListenersAndParsers:
             )
             self.logger.info("Throws success ")
         except Exception as e:
-            logger.error(
+            self.logger.error(
                 "An Error occurred in throws in file :" + file_address + "\n" + str(e)
             )
 
-    @timer_decorator(logger)
+    @timer_decorator()
     def dotref_listener(self, tree, file_ent, file_address, p):
         try:
             # dot ref TODO:  'ClassBodyDeclaration1Context' object has no attribute 'modifier'
@@ -219,7 +217,7 @@ class ListenersAndParsers:
                 "An Error occurred in dotref in file :" + file_address + "\n" + str(e)
             )
 
-    @timer_decorator(logger)
+    @timer_decorator()
     def setby_listener(self, tree, file_ent, file_address, p, stream: str = ""):
         try:
             # set ref
@@ -232,7 +230,7 @@ class ListenersAndParsers:
                 "An Error occurred in set ref in file :" + file_address + "\n" + str(e)
             )
 
-    @timer_decorator(logger)
+    @timer_decorator()
     def useby_listener(self, tree, file_ent, file_address, p, stream: str = ""):
         try:
             # use ref
@@ -245,7 +243,7 @@ class ListenersAndParsers:
                 "An Error occurred in use ref in file :" + file_address + "\n" + str(e)
             )
 
-    @timer_decorator(logger)
+    @timer_decorator()
     def callby_listener(self, tree, file_ent, file_address, p):
         try:
             # call ref TODO: fix 'Statement6Context' object has no attribute 'expression'

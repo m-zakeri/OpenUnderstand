@@ -33,22 +33,23 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
+    entry_points={
+        "console_scripts": [
+            "openunderstand = ounderstand.openunderstand:parse_arguments",
+        ],
+    },
     package_dir={"": "openunderstand"},
     packages=setuptools.find_packages(
         where="openunderstand",
     ),
     include_package_data=True,
     package_data={
-        "": [
-            "*.csv",
-            "*.xlsx",
-            "oudb/*txt"
-        ],
+        "": ["*.csv", "*.xlsx", "*.txt"],
     },
     exclude_package_data={"": ["README.md"]},
     python_requires=">=3.8",
     install_requires=[
-        "antlr4-python3-runtime>=4.9.2",
+        "antlr4-python3-runtime==4.9.1",
         "peewee>=3.14.4",
         "decorator>=4.4.2",
         "networkx>=2.5.1",
@@ -58,6 +59,6 @@ setuptools.setup(
         "regex>=2021.7.6",
         "GitPython>=3.1.32",
         "pybind11>=2.11.1",
-        "speedy-antlr-tool>=1.1.0"
+        "speedy-antlr-tool>=1.1.0",
     ],
 )

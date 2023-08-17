@@ -4,9 +4,10 @@ import configparser
 from os.path import basename
 
 
-def timer_decorator(logger):
+def timer_decorator():
     def decorator(func):
         def wrapper(self, *args, **kwargs):
+            logger = setup_logger()
             start_time = time.time()
             file_address = kwargs.get("file_address")
             result = func(self, *args, **kwargs)

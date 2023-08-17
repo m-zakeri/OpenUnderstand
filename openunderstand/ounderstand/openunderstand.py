@@ -71,6 +71,7 @@ def parse_arguments() -> None:
         engine_core=engine_core,
         log_address=log_address,
     )
+    start_parsing()
 
 
 def start_parsing(
@@ -101,8 +102,10 @@ def start_parsing(
     try:
         config = configparser.ConfigParser()
         config.read("config.ini")
-    except :
-        raise Exception("please init all input values of start_parsing() function or run command line cli openunderstand \n - >> this error occur because of config.ini not exist")
+    except:
+        raise Exception(
+            "please init all input values of start_parsing() function or run command line cli openunderstand \n - >> this error occur because of config.ini not exist"
+        )
     create_db(
         dbname=config["DEFAULT"]["db_name"],
         project_dir=config["DEFAULT"]["repo_address"],
@@ -114,4 +117,3 @@ def start_parsing(
 
 if __name__ == "__main__":
     parse_arguments()
-    start_parsing()

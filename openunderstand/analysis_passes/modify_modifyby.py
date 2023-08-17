@@ -4,7 +4,7 @@ from analysis_passes.entity_manager_g11 import get_created_entity_longname
 
 
 class ModifyListener(JavaParserLabeledListener):
-    def __init__(self, entity_manager_object, logger):
+    def __init__(self, entity_manager_object):
         self.entity_manager = entity_manager_object
         self.package = ""
         self._class = ""
@@ -12,7 +12,6 @@ class ModifyListener(JavaParserLabeledListener):
         self.name = ""
         self.enter_modify = False
         self.modify = []
-        self.log = logger
 
     # package
     def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
