@@ -92,3 +92,6 @@ If an argument is not provided, the following default values will be used:
 3.Set the log address to "/path/to/log/file.log":
 
     python cli.py -l /path/to/log/file.log
+
+### BUILDING
+    python3 setup.py sdist bdist_wheel
