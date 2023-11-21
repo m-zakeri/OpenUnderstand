@@ -339,6 +339,26 @@ class Project:
                 _scope=ent,
             )
 
+    def add_references_extend_implicit_couple(
+        self, importing_ent, imported_ent, cls_data
+    ):
+        ref, _ = ReferenceModel.get_or_create(
+            _kind=KindModel.get_or_none(_name="Java Extend Couple Implicit")._id,
+            _file_id=importing_ent._id,
+            _line=cls_data.line,
+            _column=cls_data.column,
+            _ent_id=imported_ent._id,
+            _scope_id=importing_ent._id,
+        )
+        inverse_ref, _ = ReferenceModel.get_or_create(
+            _kind=KindModel.get_or_none(_name="Java Extend Coupleby Implicit")._id,
+            _file_id=importing_ent._id,
+            _line=cls_data.line,
+            _column=cls_data.column,
+            _ent_id=importing_ent._id,
+            _scope_id=imported_ent._id,
+        )
+
     def addExtendCoupleOrExtendCoupleByRefs(self, ref_dicts, file_ent, file_address):
         for ref_dict in ref_dicts:
             scope = EntityModel.get_or_create(

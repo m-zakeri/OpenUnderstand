@@ -5,33 +5,33 @@ import configparser
 
 
 def save_config(
-    repo_address: str, db_address: str, db_name: str, engine_core: str, log_address: str
+    repo_address: str,
+    db_address: str,
+    db_name: str,
+    log_address: str,
+    engine_core: str = "Python",
 ) -> None:
     config = configparser.ConfigParser()
-    config["DEFAULT"] = {
-        "repo_address": repo_address,
-        "db_address": db_address,
-        "db_name": db_name,
-        "engine_address": engine_core,
-    }
-    config["Logging"] = {"filename": log_address, "level": "DEBUG"}
+    config.read("config.ini")
 
-    if os.path.isfile("config.ini"):
-        existing_config = configparser.ConfigParser()
-        existing_config.read("config.ini")
+    # Update or create the 'DEFAULT' section
+    if not config.has_section("Config"):
+        config.add_section("Config")
 
-        for section in config.sections():
-            for attr, value in config[section].items():
-                if value is not None and attr in existing_config[section]:
-                    existing_config[section][attr] = value
+    config.set("Config", "repo_address", repo_address)
+    config.set("Config", "db_address", db_address)
+    config.set("Config", "db_name", db_name)
+    config.set("Config", "engine_core", engine_core)
 
-        with open("config.ini", "w") as configfile:
-            existing_config.write(configfile)
-            configfile.close()
-    else:
-        with open("config.ini", "w") as configfile:
-            config.write(configfile)
-            configfile.close()
+    # Update or create the 'Logging' section
+    if not config.has_section("Logging"):
+        config.add_section("Logging")
+
+    config.set("Logging", "filename", log_address)
+    config.set("Logging", "level", "DEBUG")
+
+    with open("config.ini", "w") as configfile:
+        config.write(configfile)
 
 
 def parse_arguments() -> None:
@@ -107,12 +107,12 @@ def start_parsing(
             "please init all input values of start_parsing() function or run command line cli openunderstand \n - >> this error occur because of config.ini not exist"
         )
     create_db(
-        dbname=config["DEFAULT"]["db_name"],
-        project_dir=config["DEFAULT"]["repo_address"],
-        db_path=config["DEFAULT"]["db_address"],
+        dbname=config["Config"]["db_name"],
+        project_dir=config["Config"]["repo_address"],
+        db_path=config["Config"]["db_address"],
     )
-    fill(udb_path=config["DEFAULT"]["db_address"])
-    runner(path_project=config["DEFAULT"]["repo_address"])
+    fill(udb_path=config["Config"]["db_address"])
+    runner(path_project=config["Config"]["repo_address"])
 
 
 if __name__ == "__main__":

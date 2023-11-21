@@ -19,6 +19,8 @@ from ounderstand.override_overrideby__G12 import overridelistener
 from ounderstand.couple_coupleby__G12 import CoupleAndCoupleBy
 from analysis_passes.create_createby_g9 import CreateAndCreateBy
 from analysis_passes.declare_declarein import DeclareAndDeclareinListener
+from analysis_passes.extend_listener_g6 import ExtendListener
+from analysis_passes.extendcouple_extendcoupleby import ExtendCoupleAndExtendCoupleBy
 from utils.utilities import setup_logger, timer_decorator
 import os
 
@@ -46,6 +48,38 @@ class ListenersAndParsers:
     @timer_decorator()
     def entity_gen(self, file_address, parse_tree):
         return EntityGenerator(file_address, parse_tree)
+
+    @timer_decorator()
+    def extend_coupled_listener(self, tree, file_ent, file_address, p):
+        try:
+            listener = ExtendCoupleAndExtendCoupleBy()
+            p.Walk(listener, tree)
+            p.addExtendCoupleOrExtendCoupleByRefs(
+                listener.implement, file_ent, file_address
+            )
+            self.logger.info("extends coupled refs success ")
+        except Exception as e:
+            self.logger.error(
+                "An Error occurred in file extends coupled refs :"
+                + file_address
+                + "\n"
+                + str(e)
+            )
+
+    @timer_decorator()
+    def extend_listener(self, tree, file_ent, file_address, p):
+        try:
+            listener = ExtendListener()
+            p.Walk(listener, tree)
+            p.addTypeRefs(listener.get_refers, file_ent)
+            self.logger.info("extends refs success ")
+        except Exception as e:
+            self.logger.error(
+                "An Error occurred in file extends refs :"
+                + file_address
+                + "\n"
+                + str(e)
+            )
 
     @timer_decorator()
     def type_listener(self, tree, file_ent, file_address, p):

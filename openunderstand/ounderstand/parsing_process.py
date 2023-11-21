@@ -38,6 +38,7 @@ def process_file(file_address):
         lap.setby_listener,
         lap.dotref_listener,
         lap.throws_listener,
+        lap.extend_coupled_listener,
     ]
     lap.modify_listener(
         entity_generator=entity_generator,

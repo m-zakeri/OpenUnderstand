@@ -9,7 +9,7 @@ from oudb.models import *
 from dataclasses import dataclass
 from functools import reduce
 from ounderstand.parsing_process import process_file
-
+from metrics.count_decl_method_all import count_decl_method_all
 
 """
 This is the python interface to Understand databases.
@@ -450,7 +450,7 @@ class Db:
         query = EntityModel.select()
         if kindstring:
             kinds = KindModel.select().where(KindModel._name.contains(kindstring))
-            query = query.where(EntityModel._kind.in_(kinds))
+            query = query.where(EntityModel._kind(kinds))
         query = query.where(
             (EntityModel._name.contains(name)) | (EntityModel._longname.contains(name))
         )
@@ -749,7 +749,7 @@ class Ent:
         """
         return str(self._longname)
 
-    def metric(self, metriclist):  # real signature unknown; restored from __doc__
+    def metric(self, metric_list: list = None) -> dict:  # real signature unknown; restored from __doc__
         """
         ent.metric(metriclist) -> dict key=string value=metricvalue
 
@@ -758,7 +758,14 @@ class Ent:
         Metric list must be a tuple or list containing the names of metrics
         as strings. If the metric is not available, it's value will be None.
         """
-        return {}
+        metrics = {}
+        for item in metric_list:
+            if item not in self.metrics():
+                raise ValueError(f"metric {item} is not in metric list")
+        for item in metric_list:
+            if item == "CountDeclMethodAll":
+                metrics.update({"CountDeclMethodAll": count_decl_method_all(self)})
+        return metrics
 
     def metrics(self):  # real signature unknown; restored from __doc__
         """
@@ -766,7 +773,8 @@ class Ent:
 
         Return a list of metric names defined for the entity.
         """
-        return []
+
+        return ["CountDeclMethodAll"]
 
     def name(self):  # real signature unknown; restored from __doc__
         """
