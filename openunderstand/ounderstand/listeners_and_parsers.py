@@ -21,6 +21,7 @@ from analysis_passes.create_createby_g9 import CreateAndCreateBy
 from analysis_passes.declare_declarein import DeclareAndDeclareinListener
 from analysis_passes.extend_listener_g6 import ExtendListener
 from analysis_passes.extendcouple_extendcoupleby import ExtendCoupleAndExtendCoupleBy
+from analysis_passes.variable_listener_g11 import VariableListener
 from utils.utilities import setup_logger, timer_decorator
 import os
 
@@ -48,6 +49,26 @@ class ListenersAndParsers:
     @timer_decorator()
     def entity_gen(self, file_address, parse_tree):
         return EntityGenerator(file_address, parse_tree)
+
+    @timer_decorator()
+    def variable_listener(self, tree, file_ent, file_address, p):
+        try:
+            listener = VariableListener()
+            p.Walk(listener, tree)
+            for item in listener.var:
+                print("item var : ", item)
+                self.entity_gen(file_address=file_address, parse_tree=tree).get_or_create_variable_entity(res_dict=item)
+            for item in listener.var_const:
+                print("item var const : ", item)
+                self.entity_gen(file_address=file_address, parse_tree=tree).get_or_create_variable_entity(res_dict=item)
+            self.logger.info("variable refs success ")
+        except Exception as e:
+            self.logger.error(
+                "An Error occurred in file variable refs :"
+                + file_address
+                + "\n"
+                + str(e)
+            )
 
     @timer_decorator()
     def extend_coupled_listener(self, tree, file_ent, file_address, p):

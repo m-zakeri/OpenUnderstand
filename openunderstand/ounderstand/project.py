@@ -799,6 +799,7 @@ class Project:
         existing_record = EntityModel.select().where(EntityModel._name == name).first()
         return not (existing_record and existing_record._kind == kind)
 
+
     def add_defined_entities(self, entities, entity_type, package_name, file_path):
         for entity_key, entity_values in entities.items():
             is_constructor = False
