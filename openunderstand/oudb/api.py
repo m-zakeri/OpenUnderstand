@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from functools import reduce
 from ounderstand.parsing_process import process_file
 from metrics.count_decl_method_all import count_decl_method_all
+from metrics.count_decl_class_variable import declare_class_variables
 
 """
 This is the python interface to Understand databases.
@@ -765,6 +766,10 @@ class Ent:
         for item in metric_list:
             if item == "CountDeclMethodAll":
                 metrics.update({"CountDeclMethodAll": count_decl_method_all(self)})
+            elif item == "CountDeclClassVariable":
+                metrics.update(
+                    {"CountDeclClassVariable": declare_class_variables(self)})
+
         return metrics
 
     def metrics(self):  # real signature unknown; restored from __doc__
@@ -774,7 +779,7 @@ class Ent:
         Return a list of metric names defined for the entity.
         """
 
-        return ["CountDeclMethodAll"]
+        return ["CountDeclMethodAll", "CountDeclClassVariable"]
 
     def name(self):  # real signature unknown; restored from __doc__
         """

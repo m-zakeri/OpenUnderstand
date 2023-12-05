@@ -21,8 +21,9 @@ from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 class VariableListener(JavaParserLabeledListener):
     """A listener class for detecting variables"""
 
-    def __init__(self, entity_manager_object):
-        self.entity_manager = entity_manager_object
+    # def __init__(self, entity_manager_object):
+    def __init__(self):
+        # self.entity_manager = entity_manager_object
         self.package = ""
         self._class = ""
         self._method = ""
@@ -31,6 +32,8 @@ class VariableListener(JavaParserLabeledListener):
         self.type = None
         self.modifiers = []
         self.value = None
+        self.var = []
+        self.var_const = []
 
     # package
     def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
@@ -153,7 +156,8 @@ class VariableListener(JavaParserLabeledListener):
             "modifiers": self.modifiers,
             "value": self.value,
         }
-        self.entity_manager.get_or_create_variable_entity(res)
+        self.var_const.append(res)
+        # self.entity_manager.get_or_create_variable_entity(res)
         # print(self.modifiers, self.package, self.parent, self.type, ctx.IDENTIFIER().getText())
 
     # variable
@@ -168,5 +172,6 @@ class VariableListener(JavaParserLabeledListener):
             "modifiers": self.modifiers,
             "value": self.value,
         }
-        self.entity_manager.get_or_create_variable_entity(res)
+        self.var.append(res)
+        # self.entity_manager.get_or_create_variable_entity(res)
         # print(self.modifiers, self.package, self.parent, self.type, ctx.IDENTIFIER().getText())
