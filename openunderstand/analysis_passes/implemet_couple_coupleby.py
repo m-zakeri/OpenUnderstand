@@ -249,8 +249,8 @@ class Project:
     def imported_entity_factory(self, cls_data: ClassTypeData):
         parent_entity: EntityModel = get_parent(cls_data.file_path)
         kindModel = KindModel.get_or_none(_name=getNameEntity(cls_data.get_prefixes()))
-        if kindModel is None:
-            print(getNameEntity(cls_data.get_prefixes()))
+        # if kindModel is None:
+        #     print(getNameEntity(cls_data.get_prefixes()))
         implemented_class_entity, _ = EntityModel.get_or_create(
             _kind=kindModel._id,
             _parent=parent_entity._id,

@@ -35,7 +35,6 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
     ):
 
         if scope_name is not None and type_ent_longname is not None:
-            print("Couple", [scope_name, type_ent_longname, line, col])
             self.couples.append(
                 {
                     "scope_kind": scope_kind,

@@ -55,6 +55,3 @@ for ent in db.ents():
         #        "\n" ,"ref.ent().parent  =", ref.ent().parent() ,"\n" ,"ref.ent().type  =",
         #        ref.ent().type() ,"\n" ,"ref.ent().value  =",
         # ref.ent().value(),"\n" )
-
-
-print("hello test")

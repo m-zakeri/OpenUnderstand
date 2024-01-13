@@ -245,68 +245,68 @@ class Project:
         return True
 
 
-if __name__ == "__main__":
-    project_index = 5
-    project_list = [
-        "calculator_app",  # 0
-        "JSON",  # 1
-        "testing_legacy_code",  # 2
-        "105_freemind",  # 3
-        "ganttproject",  # 4
-        "jfreechart",  # 5
-        "jhotdraw-develop",  # 6
-        "jvlt-1.3.2",  # 7
-        "xerces2j",  # 8
-    ]
-
-    p = Project()
-    create_db(
-        f"../../databases/{project_list[project_index]}.db",
-        project_dir="../../benchmark",
-    )
-    main()
-    db = db_open(f"../../databases/{project_list[project_index]}.db")
-    path = f"C:\Compiler\OpenUnderstand\\benchmark\\{project_list[project_index]}"
-    java_files = p.getListOfFiles(path)
-    n = 1
-
-    for file_address in java_files:
-        try:
-            file_ent = p.getFileEntity(file_address)
-            tree = p.Parse(file_address)
-        except Exception as e:
-            print("An Error occurred in file:" + file_address + "\n" + str(e))
-            continue
-        try:
-            # create
-            listener = CreateAndCreateBy()
-            listener.create = []
-            p.Walk(listener, tree)
-            p.addCreateRefs(listener.create, file_ent, file_address)
-            entity_file_longname = "is_built_in"
-            for files in listener.create:
-                entity_file_name = files["potential_refent"].split(".")[-1] + ".java"
-                for file in java_files:
-                    if entity_file_name in file:
-                        entity_file_longname = file
-                        break
-                print(f'1. refname: "Create", inverse ref name: "Java Createby"')
-                print(
-                    f'2. ref.scope(entity performing reference)\t: "{files["scopelongname"]}", kind: "{" ".join(files["scopemodifiers"]).title()} {files["parent_type"]}"'
-                )
-                print(
-                    f"3. ref.entity(entity being referenced)\t\t: {entity_file_longname}"
-                )
-                print(
-                    f'4. location the reference occurred: "{file_address}", line: {files["line"]}'
-                )
-                print(n)
-                print(f"")
-                n = n + 1
-        except Exception as e:
-            print(
-                "An Error occurred for reference create in file:"
-                + file_address
-                + "\n"
-                + str(e)
-            )
+# if __name__ == "__main__":
+#     project_index = 5
+#     project_list = [
+#         "calculator_app",  # 0
+#         "JSON",  # 1
+#         "testing_legacy_code",  # 2
+#         "105_freemind",  # 3
+#         "ganttproject",  # 4
+#         "jfreechart",  # 5
+#         "jhotdraw-develop",  # 6
+#         "jvlt-1.3.2",  # 7
+#         "xerces2j",  # 8
+#     ]
+#
+#     p = Project()
+#     create_db(
+#         f"../../databases/{project_list[project_index]}.db",
+#         project_dir="../../benchmark",
+#     )
+#     main()
+#     db = db_open(f"../../databases/{project_list[project_index]}.db")
+#     path = f"C:\Compiler\OpenUnderstand\\benchmark\\{project_list[project_index]}"
+#     java_files = p.getListOfFiles(path)
+#     n = 1
+#
+#     for file_address in java_files:
+#         try:
+#             file_ent = p.getFileEntity(file_address)
+#             tree = p.Parse(file_address)
+#         except Exception as e:
+#             print("An Error occurred in file:" + file_address + "\n" + str(e))
+#             continue
+#         try:
+#             # create
+#             listener = CreateAndCreateBy()
+#             listener.create = []
+#             p.Walk(listener, tree)
+#             p.addCreateRefs(listener.create, file_ent, file_address)
+#             entity_file_longname = "is_built_in"
+#             for files in listener.create:
+#                 entity_file_name = files["potential_refent"].split(".")[-1] + ".java"
+#                 for file in java_files:
+#                     if entity_file_name in file:
+#                         entity_file_longname = file
+#                         break
+#                 print(f'1. refname: "Create", inverse ref name: "Java Createby"')
+#                 print(
+#                     f'2. ref.scope(entity performing reference)\t: "{files["scopelongname"]}", kind: "{" ".join(files["scopemodifiers"]).title()} {files["parent_type"]}"'
+#                 )
+#                 print(
+#                     f"3. ref.entity(entity being referenced)\t\t: {entity_file_longname}"
+#                 )
+#                 print(
+#                     f'4. location the reference occurred: "{file_address}", line: {files["line"]}'
+#                 )
+#                 print(n)
+#                 print(f"")
+#                 n = n + 1
+#         except Exception as e:
+#             print(
+#                 "An Error occurred for reference create in file:"
+#                 + file_address
+#                 + "\n"
+#                 + str(e)
+#             )

@@ -95,7 +95,7 @@ class ImportListenerDemand(JavaParserLabeledListener):
                     "name": self.name,
                 }
             )
-            print(ctx.getText())
+
 
 
 class ClassEntityListener(JavaParserLabeledListener):

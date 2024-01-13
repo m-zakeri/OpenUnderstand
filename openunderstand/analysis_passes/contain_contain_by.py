@@ -31,7 +31,6 @@ class ContainAndContainBy(JavaParserLabeledListener):
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         name = ctx.IDENTIFIER().getText()
-        print(ctx.IDENTIFIER().getText())
         [line, col] = str(ctx.start).split(",")[3].split(":")  # line, column
         col = col[:-1]
         scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
@@ -79,4 +78,3 @@ class ContainAndContainBy(JavaParserLabeledListener):
                 "value": None,
             }
         )
-        print(self.contain)

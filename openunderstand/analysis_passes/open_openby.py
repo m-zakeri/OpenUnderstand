@@ -281,7 +281,6 @@ def get_kind_name(prefixes, kind):
 
     s = f"Java {p_static} {p_abstract} {p_generic} {kind} {p_type} {p_visibility} {p_member}"
     s = " ".join(s.split())
-    print(s)
     return s
 
 

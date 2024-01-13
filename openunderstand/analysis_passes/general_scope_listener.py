@@ -48,7 +48,6 @@ class GeneralScopeListener(JavaParserLabeledListener):
         self.non_primitive_field_type = None
 
         self.in_method_declaration = False
-        print(self.abspath)
 
     def fill_all_classes_repo(self):
         for classname in self.classes_repo:
@@ -494,7 +493,3 @@ def main():
                 for spec in call.keys():
                     print(spec, ":", call[spec])
                 print("--------------------")
-
-
-if __name__ == "__main__":
-    main()
