@@ -3,6 +3,16 @@ from analysis_passes.DotRef_DorRefBy import DotRef_DotRefBy
 from analysis_passes.callNonDynamic_callNonDynamicby import (
     CallNonDynamicAndCallNonDynamicBy,
 )
+from analysis_passes.call_callby import CallAndCallBy
+
+from analysis_passes.cast_cast_by import CastAndCastBy, implementListener
+from analysis_passes.contain_contain_by import ContainAndContainBy
+from analysis_passes.extends_implicit_couple_coupleby import (
+    PackageImportListener,
+    DSCmetric,
+)
+from analysis_passes.import_importby_g10_2 import ImportListener, ImportedEntityListener
+from analysis_passes.import_demand_g9 import ImportListenerDemand
 
 # from analysis_passes.define_definein import DefineListener
 from analysis_passes.define_and_definin_g6 import DefineListener
@@ -22,8 +32,14 @@ from analysis_passes.declare_declarein import DeclareAndDeclareinListener
 from analysis_passes.extend_listener_g6 import ExtendListener
 from analysis_passes.extendcouple_extendcoupleby import ExtendCoupleAndExtendCoupleBy
 from analysis_passes.variable_listener_g11 import VariableListener
+from analysis_passes.open_openby import OpenListener
+from analysis_passes.usemodule_usemoduleby_g11 import (
+    UseModuleUseModuleByListener
+)
 from utils.utilities import setup_logger, timer_decorator
 import os
+from utils.utilities import ClassTypeData
+from pathlib import Path
 
 
 class ListenersAndParsers:
@@ -57,10 +73,14 @@ class ListenersAndParsers:
             p.Walk(listener, tree)
             for item in listener.var:
                 print("item var : ", item)
-                self.entity_gen(file_address=file_address, parse_tree=tree).get_or_create_variable_entity(res_dict=item)
+                self.entity_gen(
+                    file_address=file_address, parse_tree=tree
+                ).get_or_create_variable_entity(res_dict=item)
             for item in listener.var_const:
                 print("item var const : ", item)
-                self.entity_gen(file_address=file_address, parse_tree=tree).get_or_create_variable_entity(res_dict=item)
+                self.entity_gen(
+                    file_address=file_address, parse_tree=tree
+                ).get_or_create_variable_entity(res_dict=item)
             self.logger.info("variable refs success ")
         except Exception as e:
             self.logger.error(
@@ -301,13 +321,148 @@ class ListenersAndParsers:
     @timer_decorator()
     def callby_listener(self, tree, file_ent, file_address, p):
         try:
-            # call ref TODO: fix 'Statement6Context' object has no attribute 'expression'
-            # call ref TODO: fix 'NoneType' object has no attribute 'blockStatement'
-            listener = CallNonDynamicAndCallNonDynamicBy()
+            listener = CallAndCallBy(
+                file_full_path=file_address,
+                class_parents={},
+                available_class_fields=None,
+                available_class_methods=None,
+                available_package_classes=None,
+            )
             p.Walk(listener, tree)
             p.addCallOrCallByRefs(listener.implement, file_ent, file_address)
             self.logger.info("call ref success ")
         except Exception as e:
             self.logger.error(
                 "An Error occurred in call ref in file :" + file_address + "\n" + str(e)
+            )
+
+    @timer_decorator()
+    def callbyNonDynamic_listener(self, tree, file_ent, file_address, p):
+        try:
+            # call ref TODO: fix 'Statement6Context' object has no attribute 'expression'
+            # call ref TODO: fix 'NoneType' object has no attribute 'blockStatement'
+            listener = CallNonDynamicAndCallNonDynamicBy()
+            p.Walk(listener, tree)
+            p.addCallNonDynamicOrCallNonDynamicByRefs(
+                listener.implement, file_ent, file_address
+            )
+            self.logger.info("call non dynamic ref success ")
+        except Exception as e:
+            self.logger.error(
+                "An Error occurred in call non dynamic ref in file :"
+                + file_address
+                + "\n"
+                + str(e)
+            )
+
+    @timer_decorator()
+    def cast_by_listener(self, tree, file_ent, file_address, p):
+        try:
+            imp = implementListener()
+            p.Walk(imp, tree)
+            listener = CastAndCastBy(imp.classes)
+            p.Walk(listener, tree)
+            p.add_cast_by(listener.cast, file_ent, file_address)
+            self.logger.info("cast success ")
+        except Exception as e:
+            self.logger.error(
+                "An Error occurred in cast in file :" + file_address + "\n" + str(e)
+            )
+
+    @timer_decorator()
+    def contain_in_listener(self, tree, file_ent, file_address, p):
+        try:
+            listener = ContainAndContainBy()
+            p.Walk(listener, tree)
+            p.add_contain_in(listener.contain, file_ent, file_address)
+            self.logger.info("contain success ")
+        except Exception as e:
+            self.logger.error(
+                "An Error occurred in contain in file :" + file_address + "\n" + str(e)
+            )
+
+    @timer_decorator()
+    def extend_implict_listener(self, tree, file_ent, file_address, p):
+        try:
+            package_import_listener = PackageImportListener()
+            p.Walk(package_import_listener, tree)
+            my_listener = DSCmetric(package_import_listener.package_name)
+            p.Walk(my_listener, tree)
+            c = ClassTypeData()
+            c.set_file_path(file_address)
+            imported_entity, importing_entity = p.add_imported_entity_factory(c)
+            p.add_references(imported_entity, importing_entity, c)
+            self.logger.info("extend implict success ")
+        except Exception as e:
+            self.logger.error(
+                "An Error occurred in extend implict in file :"
+                + file_address
+                + "\n"
+                + str(e)
+            )
+
+    @timer_decorator()
+    def import_demand_listener(self, tree, file_ent, file_address, p):
+        try:
+            listener = ImportListenerDemand(file_address)
+            p.Walk(listener, tree)
+            p.add_import_demand(listener.repository, file_address)
+            self.logger.info("import demand success ")
+        except Exception as e:
+            self.logger.error(
+                "An Error occurred in import demand in file :"
+                + file_address
+                + "\n"
+                + str(e)
+            )
+
+    @timer_decorator()
+    def import_listener(self, tree, file_ent, file_address, p):
+        try:
+            listener = ImportListener(file_address)
+            p.Walk(listener, tree)
+            listener_import = ImportedEntityListener(name=Path(file_address).stem)
+            for i in listener.repository:
+                imported_entity = p.add_imported_entity(
+                    i, file_address, listener_import
+                )
+                p.add_references_import(file_ent, imported_entity, i)
+            self.logger.info("import success ")
+        except Exception as e:
+            self.logger.error(
+                "An Error occurred in import in file :" + file_address + "\n" + str(e)
+            )
+
+    @timer_decorator()
+    def open_by_listener(self, tree, file_ent, file_address, p):
+        try:
+            listener = OpenListener(file_address)
+            p.Walk(listener, tree)
+            for i in listener.repository:
+                imported_entity = p.add_opened_entity(i)
+                p.add_references_opend(file_ent, imported_entity, i)
+            self.logger.info("open by success ")
+        except Exception as e:
+            self.logger.error(
+                "An Error occurred in open by in file :" + file_address + "\n" + str(e)
+            )
+
+    @timer_decorator()
+    def use_module_listener(self, tree, file_ent, file_address, p):
+        try:
+            listener = UseModuleUseModuleByListener()
+            p.Walk(listener, tree)
+            p.add_use_module_reference(
+                use_module=listener.useModules,
+                unknown_module=listener.useUnknownModules,
+                unresolved_module=listener.useUnresolvedModules,
+                file_address=file_address,
+            )
+            self.logger.info("use module by success ")
+        except Exception as e:
+            self.logger.error(
+                "An Error occurred in use module by in file :"
+                + file_address
+                + "\n"
+                + str(e)
             )

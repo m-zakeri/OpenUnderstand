@@ -1,14 +1,12 @@
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 import analysis_passes.class_properties as class_properties
-from oudb.api import open as db_open, create_db
-from oudb.models import KindModel, EntityModel, ReferenceModel
-from oudb.fill import main
 
 
 class ContainAndContainBy(JavaParserLabeledListener):
-    contain = []
-    packageInfo = []
+    def __init__(self):
+        self.contain = []
+        self.packageInfo = []
 
     def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
         self.packageInfo = []

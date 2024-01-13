@@ -1,9 +1,6 @@
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 import analysis_passes.class_properties as class_properties
-from oudb.api import open as db_open, create_db
-from oudb.models import KindModel, EntityModel, ReferenceModel
-from oudb.fill import main
 
 
 class ClassEntities:
@@ -19,10 +16,10 @@ class ClassEntities:
 
 
 class implementListener(JavaParserLabeledListener):
-    classes = []
-
-    def __init__(self, classes):
-        self.classes = classes
+    def __init__(
+        self,
+    ):
+        self.classes = []
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         name = ctx.IDENTIFIER().getText()
@@ -49,6 +46,7 @@ class CastAndCastBy(JavaParserLabeledListener):
 
     def __init__(self, classes):
         self.classes = classes
+        self.cast = []
         self.c_name = ""
         self.c_longname = ""
         self.c_parent = ""
@@ -106,6 +104,7 @@ class CastAndCastBy(JavaParserLabeledListener):
                             "p_modifier": ent.modifiers,
                             "line": line,
                             "col": col,
+                            "ent": ent,
                         }
                     )
 

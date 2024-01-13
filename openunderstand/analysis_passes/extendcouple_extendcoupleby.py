@@ -20,6 +20,7 @@ class ExtendCoupleAndExtendCoupleBy(JavaParserLabeledListener):
     """
     #Todo: Implementing the ANTLR listener pass for Java Call and Java Callby reference kind
     """
+
     def __init__(self):
         self.implement = []
 

@@ -750,7 +750,9 @@ class Ent:
         """
         return str(self._longname)
 
-    def metric(self, metric_list: list = None) -> dict:  # real signature unknown; restored from __doc__
+    def metric(
+        self, metric_list: list = None
+    ) -> dict:  # real signature unknown; restored from __doc__
         """
         ent.metric(metriclist) -> dict key=string value=metricvalue
 
@@ -768,7 +770,8 @@ class Ent:
                 metrics.update({"CountDeclMethodAll": count_decl_method_all(self)})
             elif item == "CountDeclClassVariable":
                 metrics.update(
-                    {"CountDeclClassVariable": declare_class_variables(self)})
+                    {"CountDeclClassVariable": declare_class_variables(self)}
+                )
 
         return metrics
 

@@ -1,6 +1,7 @@
 import sys
 from os import getcwd
 from os.path import join
+
 sys.path.append(join(getcwd(), "openunderstand"))
 sys.path.append(join(getcwd(), "openunderstand", "oudb"))
 sys.path.append(join(getcwd(), "openunderstand", "utils"))
@@ -12,5 +13,5 @@ start_parsing(
     db_address=getcwd(),
     db_name="mydb.udb",
     engine_core="Python3",
-    log_address=join(getcwd(), "a.log")
+    log_address=join(getcwd(), "a.log"),
 )

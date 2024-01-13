@@ -1,10 +1,9 @@
 from oudb.models import EntityModel, KindModel, ReferenceModel
 
+
 def declare_class_variables(ent_model=None) -> object:
     class_variables = {}
-    kinds = KindModel.select().where(
-        KindModel._name.contains("Variable")
-    )
+    kinds = KindModel.select().where(KindModel._name.contains("Variable"))
     for e in EntityModel.select().where(EntityModel._kind_id.in_(kinds)):
         print("ent_model.kind() : ", ent_model.kind())
         print("ent_model.name() : ", ent_model.name())

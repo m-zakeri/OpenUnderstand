@@ -1,11 +1,8 @@
 import os
 from antlr4 import *
-from pathlib import Path
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from oudb.fill import main as db_fill
-from oudb.api import create_db, open as db_open
 from oudb.models import KindModel, EntityModel, ReferenceModel
 
 PRJ_INDEX = 8
@@ -335,7 +332,3 @@ def main():
         for i in listener.repository:
             imported_entity = add_imported_entity(i, p.files)
             add_references(importing_entity, imported_entity, i)
-
-
-if __name__ == "__main__":
-    main()

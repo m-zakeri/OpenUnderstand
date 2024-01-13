@@ -12,6 +12,8 @@ from analysis_passes.g6_class_properties import (
     InterfacePropertiesListener,
 )
 
+from utils.utilities import ClassTypeData
+
 # from utils.antler_parser import _cpp_parse
 
 
@@ -54,7 +56,6 @@ class Project:
                 allFiles = allFiles + self.getListOfFiles(fullPath)
             elif fnmatch(fullPath, "*.java"):
                 allFiles.append(fullPath)
-
         return allFiles
 
     def getFileEntity(self, path: str = "", name: str = ""):
@@ -484,6 +485,322 @@ class Project:
                 _scope=ent,
             )
 
+    def add_cast_by(self, ref_dicts, file_ent, file_address):
+        for ref_dict in ref_dicts:
+            cast = ReferenceModel.get_or_create(
+                _kind=174,
+                _file=file_address,
+                _line=ref_dict["line"],
+                _column=ref_dict["col"],
+                _scope=ref_dict["p_content"],
+                _ent=file_ent,
+            )
+            castby = ReferenceModel.get_or_create(
+                _kind=175,
+                _file=file_ent,
+                _line=ref_dict["line"],
+                _column=ref_dict["col"],
+                _scope=file_ent,
+                _ent=ref_dict["p_content"],
+            )
+
+    def add_contain_in(self, ref_dicts, file_ent, file_address):
+        for ref_dict in ref_dicts:
+            contain = ReferenceModel.get_or_create(
+                _kind=176,
+                _file=file_address,
+                _line=ref_dict["line"],
+                _column=ref_dict["col"],
+                _scope=ref_dict["content"],
+                _ent=file_ent,
+            )
+
+            containin = ReferenceModel.get_or_create(
+                _kind=177,
+                _file=file_address,
+                _line=ref_dict["line"],
+                _column=ref_dict["col"],
+                _scope=ref_dict["parent"],
+                _ent=file_ent,
+            )
+
+    def get_parent(self, parent_file_path) -> EntityModel:
+        return EntityModel.get_or_none(_longname=parent_file_path)
+
+    def getNameEntity(self, prefixes) -> str:
+        pattern_static = ""
+        pattern_generic = ""
+        pattern_abstract = ""
+        pattern_visibility = " Default"
+        if "static" in prefixes:
+            pattern_static = " Static"
+        if "generic" in prefixes:
+            pattern_generic = " Generic"
+        if "abstract" in prefixes:
+            pattern_abstract = " Abstract"
+        elif "final" in prefixes:
+            pattern_abstract = " Final"
+        if "private" in prefixes:
+            pattern_visibility = " Private"
+        elif "public" in prefixes:
+            pattern_visibility = " Public"
+        elif "protected" in prefixes:
+            pattern_visibility = " Protected"
+
+        result_str = "Java{0}{1}{2} Class Type{3} Member".format(
+            pattern_static, pattern_abstract, pattern_generic, pattern_visibility
+        )
+        return result_str
+
+    def get_imported_entity(self, import_entity_listener):
+        prefixes = ""
+        kind = ""
+        for branch in import_entity_listener.branches:
+            if type(branch) == JavaParserLabeled.ClassDeclarationContext:
+                kind = "Class"
+                break
+            elif type(branch) == JavaParserLabeled.InterfaceDeclarationContext:
+                kind = "Interface"
+                break
+            elif type(branch) == JavaParserLabeled.EnumDeclarationContext:
+                kind = "Enum Class"
+                break
+            prefixes += branch.getText() + " "
+        return prefixes, import_entity_listener.body, kind
+
+    def get_parent_import(self, parent_file_name, files):
+        file_names, file_paths = zip(*files)
+        parent_file_index = file_names.index(parent_file_name)
+        parent_file_path = file_paths[parent_file_index]
+        parent_entity = EntityModel.get_or_none(
+            _kind=1,  # Java File
+            _name=parent_file_name,
+            _longname=parent_file_path,
+        )
+        return parent_entity, parent_file_path
+
+    def get_kind_name(self, prefixes, kind):
+        p_static = ""
+        p_abstract = ""
+        p_generic = ""
+        p_type = "Type"
+        p_visibility = "Default"
+        p_member = "Member"
+
+        if "static" in prefixes:
+            p_static = "Static"
+
+        if "generic" in prefixes:
+            p_generic = "Generic"
+
+        if "abstract" in prefixes:
+            p_abstract = "Abstract"
+        elif "final" in prefixes:
+            p_abstract = "Final"
+
+        if "private" in prefixes:
+            p_visibility = "Private"
+        elif "public" in prefixes:
+            p_visibility = "Public"
+        elif "protected" in prefixes:
+            p_visibility = "Protected"
+
+        if kind == "Interface":
+            p_member = ""
+
+        if kind == "Method":
+            p_type = ""
+
+        s = f"Java {p_static} {p_abstract} {p_generic} {kind} {p_type} {p_visibility} {p_member}"
+        s = " ".join(s.split())
+        return s
+
+    def get_kind_name_opened(self, prefixes, kind):
+        p_static = ""
+        p_abstract = ""
+        p_generic = ""
+        p_type = "Type"
+        p_visibility = "Default"
+        p_member = "Member"
+
+        if "static" in prefixes:
+            p_static = "Static"
+
+        if "generic" in prefixes:
+            p_generic = "Generic"
+
+        if "abstract" in prefixes:
+            p_abstract = "Abstract"
+        elif "final" in prefixes:
+            p_abstract = "Final"
+
+        if "private" in prefixes:
+            p_visibility = "Private"
+        elif "public" in prefixes:
+            p_visibility = "Public"
+        elif "protected" in prefixes:
+            p_visibility = "Protected"
+
+        if kind == "Interface":
+            p_member = ""
+            p_static = ""
+
+        if kind == "Method":
+            p_type = ""
+
+        s = f"Java {p_static} {p_abstract} {p_generic} {kind} {p_type} {p_visibility} {p_member}"
+        s = " ".join(s.split())
+        print(s)
+        return s
+
+    def add_opened_entity(self, entity):
+        entity_kind = self.get_kind_name_opened(entity["longname"], entity["kind"])
+        imported_entity, _ = EntityModel.get_or_create(
+            _kind=KindModel.get_or_none(_name=entity_kind).get_id(),
+            # _parent=parent_entity.get_id(),
+            _parent=None,
+            _name=entity["name"],
+            _longname=entity["longname"],
+            _contents=entity["body"],
+        )
+        return imported_entity
+
+    def add_references_opend(self, importing_ent, imported_ent, ref_dict):
+        ref, _ = ReferenceModel.get_or_create(
+            _kind=234,  # Java Open
+            _file=importing_ent.get_id(),
+            _line=ref_dict["line"],
+            _column=ref_dict["column"],
+            _ent=imported_ent.get_id(),
+            _scope=importing_ent.get_id(),
+        )
+        inverse_ref, _ = ReferenceModel.get_or_create(
+            _kind=235,  # Java OpenBy
+            _file=importing_ent.get_id(),
+            _line=ref_dict["line"],
+            _column=ref_dict["column"],
+            _ent=importing_ent.get_id(),
+            _scope=imported_ent.get_id(),
+        )
+
+    def add_references_import(self, importing_ent, imported_ent, ref_dict):
+        ref, _ = ReferenceModel.get_or_create(
+            _kind=206,  # Java Import
+            _file=importing_ent.get_id(),
+            _line=ref_dict["line"],
+            _column=ref_dict["column"],
+            _ent=imported_ent.get_id(),
+            _scope=importing_ent.get_id(),
+        )
+        inverse_ref, _ = ReferenceModel.get_or_create(
+            _kind=207,  # Java Importby
+            _file=importing_ent.get_id(),
+            _line=ref_dict["line"],
+            _column=ref_dict["column"],
+            _ent=importing_ent.get_id(),
+            _scope=imported_ent.get_id(),
+        )
+
+        print(f"1. ref name: Java Import")
+        print(
+            f"2. ref scope: {importing_ent._longname} || kind: {KindModel.get_or_none(_id=importing_ent._kind)._name}"
+        )
+        print(
+            f"3. ref ent: {imported_ent._longname} || kind: {KindModel.get_or_none(_id=imported_ent._kind)._name}"
+        )
+        print(
+            f'4. file location: {EntityModel.get_or_none(_id=importing_ent.get_id())} || line: {ref_dict["line"]}'
+        )
+        print("-" * 25)
+
+    def add_imported_entity(self, i, files, import_entity_listener):
+        if i["is_built_in"]:
+            imported_entity, _ = EntityModel.get_or_create(
+                _kind=84,  # Java Unknown Class Type Member
+                _parent=None,
+                _name=i["imported_class_name"],
+                _longname=i["imported_class_longname"],
+            )
+        else:
+            parent_entity, parent_file_path = self.get_parent_import(
+                i["imported_class_file_name"], files
+            )
+            prefixes, class_body, kind = self.get_imported_entity(
+                import_entity_listener=import_entity_listener
+            )
+            entity_kind = self.get_kind_name(prefixes, kind)
+            imported_entity, _ = EntityModel.get_or_create(
+                _kind=KindModel.get_or_none(_name=entity_kind).get_id(),
+                _parent=parent_entity.get_id(),
+                _name=i["imported_class_name"],
+                _longname=i["imported_class_longname"],
+                _contents=class_body,
+            )
+        return imported_entity
+
+    def add_import_demand(self, ents, file_path):
+        for i in ents:
+            ent, _ = EntityModel.get_or_create(
+                _kind=1,
+                _parent="None",
+                _name=i["name"],
+                _longname=i["longname"],
+                _contents=FileStream(file_path, encoding="utf-8"),
+            )
+
+            ReferenceModel.get_or_create(
+                _kind=204,
+                _file=file_path,
+                _line=i["line"],
+                _column=i["col"],
+                _ent=ent.get_id(),
+                _scope=file_path,
+            )
+
+    def add_references(self, importing_ent, imported_ent, cls_data: ClassTypeData):
+        ref, _ = ReferenceModel.get_or_create(
+            _kind=KindModel.get_or_none(_name="Java Extend Couple Implicit")._id,
+            _file_id=importing_ent._id,
+            _line=cls_data.line,
+            _column=cls_data.column,
+            _ent_id=imported_ent._id,
+            _scope_id=importing_ent._id,
+        )
+        inverse_ref, _ = ReferenceModel.get_or_create(
+            _kind=KindModel.get_or_none(_name="Java Extend Coupleby Implicit")._id,
+            _file_id=importing_ent._id,
+            _line=cls_data.line,
+            _column=cls_data.column,
+            _ent_id=importing_ent._id,
+            _scope_id=imported_ent._id,
+        )
+
+    def add_imported_entity_factory(self, cls_data: ClassTypeData):
+        parent_entity: EntityModel = self.get_parent(cls_data.file_path)
+        kindModel = KindModel.get_or_none(
+            _name=self.getNameEntity(cls_data.get_prefixes())
+        )
+        if kindModel is None:
+            print(self.getNameEntity(cls_data.get_prefixes()))
+        extend_implicit_entity, _ = EntityModel.get_or_create(
+            _kind=kindModel._id,
+            _parent=parent_entity._id,
+            _name=cls_data.get_name(),
+            _type=cls_data.get_type(),
+            _longname=cls_data.get_long_name(),
+            _contents=cls_data.get_contents(),
+        )
+        entity_kind_object = 84
+        java_lang_entity, _ = EntityModel.get_or_create(
+            _kind=entity_kind_object,
+            _parent=None,
+            _name="Object",
+            _type=None,
+            _longname=cls_data.parentClass,
+            _contents="",
+        )
+        return extend_implicit_entity, java_lang_entity
+
     def addCreateRefs(self, ref_dicts, file_ent, file_address):
 
         for ref_dict in ref_dicts:
@@ -585,7 +902,7 @@ class Project:
         return ent[0]
 
     def getInterfaceEntity(
-        self, interface_longname, file_address
+        self, interface_longname, file_address, file_ent
     ):  # can't be of unknown kind!
         props = self.getInterfaceProperties(interface_longname, file_address)
         if not props:
@@ -602,7 +919,7 @@ class Project:
         return ent[0]
 
     def getImplementEntity(self, longname, file_address, file_ent):
-        ent = self.getInterfaceEntity(longname, file_address)
+        ent = self.getInterfaceEntity(longname, file_address, file_ent)
         if not ent:
             ent = self.getClassEntity(longname, file_address, file_ent)
         return ent
@@ -795,10 +1112,52 @@ class Project:
             result_str = result_str.replace("Member", "").strip()
         return result_str
 
+    def add_use_module_reference(
+        self,
+        use_module: list = None,
+        unknown_module: list = None,
+        unresolved_module: list = None,
+        file_address: str = "",
+    ) -> None:
+        for item in unknown_module:
+            ReferenceModel.get_or_create(
+                _kind_id=KindModel.get_or_none(_name="Java Unknown Module")._id,
+                _file_id=file_address,
+                _line=item["line"],
+                _column=item["col"],
+                _ent_id=item["ent"],
+                _scope_id=item["scope"],
+            )
+        for item in unresolved_module:
+            ReferenceModel.get_or_create(
+                _kind_id=KindModel.get_or_none(_name="Java Unresolved Module")._id,
+                _file_id=file_address,
+                _line=item["line"],
+                _column=item["col"],
+                _ent_id=item["ent"],
+                _scope_id=item["scope"],
+            )
+        for item in use_module:
+            ReferenceModel.get_or_create(
+                _kind_id=KindModel.get_or_none(_name="Java ModuleUse")._id,
+                _file_id=file_address,
+                _line=item["line"],
+                _column=item["col"],
+                _ent_id=item["ent"],
+                _scope_id=item["scope"],
+            )
+            ReferenceModel.get_or_create(
+                _kind_id=KindModel.get_or_none(_name="Java ModuleUseby")._id,
+                _file_id=file_address,
+                _line=item["line"],
+                _column=item["col"],
+                _ent_id=item["scope"],
+                _scope_id=item["ent"],
+            )
+
     def check_and_create_record(self, name, kind):
         existing_record = EntityModel.select().where(EntityModel._name == name).first()
         return not (existing_record and existing_record._kind == kind)
-
 
     def add_defined_entities(self, entities, entity_type, package_name, file_path):
         for entity_key, entity_values in entities.items():

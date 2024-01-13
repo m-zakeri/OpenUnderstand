@@ -1,6 +1,7 @@
 import sys
 from os import getcwd
 from os.path import join
+
 sys.path.append(join(getcwd(), "openunderstand"))
 sys.path.append(join(getcwd(), "openunderstand", "oudb"))
 sys.path.append(join(getcwd(), "openunderstand", "utils"))
@@ -20,7 +21,9 @@ und_all_results = {}
 for ent in _db.ents("Class"):
     ent_name = ent.name()
     print(ent.metric(["CountDeclClassVariable"]))
-    all_methods = ent.metric(["CountDeclClassVariable"]).get("CountDeclClassVariable", 0)
+    all_methods = ent.metric(["CountDeclClassVariable"]).get(
+        "CountDeclClassVariable", 0
+    )
     und_all_results[ent_name] = all_methods
 
 print(und_all_results)

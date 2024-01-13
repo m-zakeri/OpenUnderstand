@@ -18,10 +18,11 @@ class UseModuleUseModuleByListener(JavaParserLabeledListener):
     #Todo: Implementing the ANTLR listener pass for Java Usemodule and Java Usemoduleby reference kind
     """
 
-    useModules = []
-    useUnknownModules = []
-    useUnresolvedModules = []
-    methods = []
+    def __init__(self):
+        self.useModules = []
+        self.useUnknownModules = []
+        self.useUnresolvedModules = []
+        self.methods = []
 
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         self.methods.append(ctx.IDENTIFIER().getText())

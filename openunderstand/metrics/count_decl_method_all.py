@@ -4,14 +4,13 @@ from utils.utilities import setup_logger
 
 logger = setup_logger()
 
-def count_decl_method_all(ent_model = None) -> int:
+
+def count_decl_method_all(ent_model=None) -> int:
     number_of_methods = 0
     class_methods = {}
     files = []
     extends_class_names = {}
-    kinds = KindModel.select().where(
-        KindModel._name.contains("Extend")
-    )
+    kinds = KindModel.select().where(KindModel._name.contains("Extend"))
     refs = ReferenceModel.select().where(ReferenceModel._kind_id.in_(kinds))
     for e in EntityModel.select().where(EntityModel._id.in_(refs)):
         extends_class_names.update({e._longname: e._name})
@@ -29,7 +28,9 @@ def count_decl_method_all(ent_model = None) -> int:
                 else:
                     class_methods[ent_model._parent._name] += 1
         except Exception as e:
-            logger.error(f"error to calculate count_decl_method_all metric in {ent_model._kind._name} kind")
+            logger.error(
+                f"error to calculate count_decl_method_all metric in {ent_model._kind._name} kind"
+            )
 
     for cm in class_methods:
         visited = []

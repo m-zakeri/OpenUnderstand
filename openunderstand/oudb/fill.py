@@ -8,11 +8,9 @@ from oudb.utils import get_entity_object_from_understand
 import pkg_resources
 
 
-def append_java_ent_kinds(
-    path_dir: str = ""
-):
+def append_java_ent_kinds(path_dir: str = ""):
     current_directory = os.path.abspath(os.path.dirname(__file__))
-    path_dir = os.path.join(current_directory,  'java_ent_kinds.txt')
+    path_dir = os.path.join(current_directory, "java_ent_kinds.txt")
     with open(path_dir, "r") as f:
         for line in f.readlines():
             if line.startswith("Java"):
@@ -29,12 +27,10 @@ def append_java_ref_kind(kind: str, inverse: str, ref: str) -> int:
     return ref_kind.save()
 
 
-def append_java_ref_kinds(
-    path_dir: str = ""
-):
+def append_java_ref_kinds(path_dir: str = ""):
     kind, inv_kind = "", ""
     current_directory = os.path.abspath(os.path.dirname(__file__))
-    path_dir = os.path.join(current_directory,  'java_ref_kinds.txt')
+    path_dir = os.path.join(current_directory, "java_ref_kinds.txt")
     with open(path_dir, "r") as f:
         for line in f.readlines():
             line = line.strip()

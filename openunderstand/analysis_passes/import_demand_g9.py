@@ -1,14 +1,9 @@
 import os
 from antlr4 import *
-from oudb.fill import main as db_fill
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from oudb.models import *
-from oudb.api import open as db_open, create_db, Kind
 from oudb.models import KindModel, EntityModel, ReferenceModel
-
-from oudb.fill import main
 
 PRJ_INDEX = 0
 REF_NAME = "import demand"
@@ -72,8 +67,8 @@ class Project:
                     # add_java_file_entity(path, file)
 
 
-class ImportListener(JavaParserLabeledListener):
-    def _init_(self, files):
+class ImportListenerDemand(JavaParserLabeledListener):
+    def __init__(self, files):
         self.names = []
         self.longnames = []
         self.is_unknown_class = []
@@ -104,7 +99,7 @@ class ImportListener(JavaParserLabeledListener):
 
 
 class ClassEntityListener(JavaParserLabeledListener):
-    def _init_(self):
+    def __init__(self):
         self.class_body = None
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
@@ -158,9 +153,3 @@ def main():
                 _scope=file_path,
             )
             n = n + 1
-
-
-if _name_ == "_main_":
-    create_db("../my.db", project_dir="..\benchmark")
-    main()
-db = db_open("../my.db")

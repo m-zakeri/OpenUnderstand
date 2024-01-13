@@ -5,25 +5,9 @@ from antlr4 import *
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from oudb.api import create_db, open as db_open
-from oudb.fill import main as db_fill
 from oudb.models import KindModel, EntityModel, ReferenceModel
 
 PRJ_INDEX = 4
-PROJECTS_NAME = [
-    "calculator_app",
-    "JSON",
-    "testing_legacy_code",
-    "jhotdraw-develop",
-    "xerces2j",
-    "jvlt-1.3.2",
-    "jfreechart",
-    "ganttproject",
-    "105_freemind",
-]
-DB_PATH = "../database/calculator_app.oudb"
-PROJECT_PATH = "../benchmark/ganttproject"
-PROJECT_NAME = "Sample App"
 
 
 class Singleton(type):
@@ -279,7 +263,3 @@ def main():
             classType.set_file_path(file_path)
             imported_entity, importing_entity = p.imported_entity_factory(classType)
             add_references(importing_entity, imported_entity, classType, file_path)
-
-
-if __name__ == "__main__":
-    main()
