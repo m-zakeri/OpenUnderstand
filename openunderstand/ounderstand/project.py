@@ -776,21 +776,51 @@ class Project:
         )
 
     def add_imported_entity_factory(self, cls_data: ClassTypeData):
+        print(
+            "extend_implicit_entity add_imported_entity_factory 0 ", cls_data.file_path
+        )
         parent_entity: EntityModel = self.get_parent(cls_data.file_path)
+        print("extend_implicit_entity add_imported_entity_factory 1 ")
         kindModel = KindModel.get_or_none(
             _name=self.getNameEntity(cls_data.get_prefixes())
         )
-        if kindModel is None:
-            print(self.getNameEntity(cls_data.get_prefixes()))
-        extend_implicit_entity, _ = EntityModel.get_or_create(
-            _kind=kindModel._id,
-            _parent=parent_entity._id,
-            _name=cls_data.get_name(),
-            _type=cls_data.get_type(),
-            _longname=cls_data.get_long_name(),
-            _contents=cls_data.get_contents(),
-        )
+        print("extend_implicit_entity add_imported_entity_factory 2 ")
+        extend_implicit_entity = None
+        if kindModel is not None:
+            print(
+                "extend_implicit_entity add_imported_entity_factory 2 ", kindModel._id
+            )
+            print(
+                "extend_implicit_entity add_imported_entity_factory 2 ",
+                cls_data.get_name(),
+            )
+            print(
+                "extend_implicit_entity add_imported_entity_factory 2 ",
+                cls_data.get_type(),
+            )
+            print(
+                "extend_implicit_entity add_imported_entity_factory 2 ",
+                cls_data.get_long_name(),
+            )
+            print(
+                "extend_implicit_entity add_imported_entity_factory 2 ",
+                cls_data.get_contents(),
+            )
+            extend_implicit_entity, _ = EntityModel.get_or_create(
+                _kind=kindModel._id,
+                _parent=parent_entity._id,
+                _name=cls_data.get_name(),
+                _type=cls_data.get_type(),
+                _longname=cls_data.get_long_name(),
+                _contents=cls_data.get_contents(),
+            )
+            print("extend_implicit_entity add_imported_entity_factory 4 ")
         entity_kind_object = 84
+        print("extend_implicit_entity add_imported_entity_factory 5 ")
+        print(
+            "extend_implicit_entity add_imported_entity_factory 5.4 ",
+            cls_data.parentClass,
+        )
         java_lang_entity, _ = EntityModel.get_or_create(
             _kind=entity_kind_object,
             _parent=None,
@@ -799,6 +829,7 @@ class Project:
             _longname=cls_data.parentClass,
             _contents="",
         )
+        print("extend_implicit_entity add_imported_entity_factory 6 ")
         return extend_implicit_entity, java_lang_entity
 
     def addCreateRefs(self, ref_dicts, file_ent, file_address):
@@ -943,49 +974,101 @@ class Project:
         return True
 
     def addoverridereference(self, classes, extendedfiles, file_ent):
-        for tuples in extendedfiles:
-            main = tuples[0]
-            fromx = tuples[1]
-            methodsmain = classes[main]
-            for x in methodsmain:
-                file = x["File"]
-                kindx = self.findKindWithKeywords(x["scope_kind"], x["scope_modifiers"])
-                if kindx is None:
-                    kindx = x["modifiersx"]
-                scope = EntityModel.get_or_create(
-                    _kind=kindx,
-                    _name=x["scope_name"],
-                    _parent=x["scope_parent"]
-                    if x["scope_parent"] is not None
-                    else file_ent,
-                    _longname=x["scope_longname"],
-                    _contents=x["scope_contents"],
-                    _type=x["Methodkind"],
-                )
-                methodname1 = x["MethodIs"]
+        try:
+            print("HERE extendedfiles")
+            for tuples in extendedfiles:
+                try:
+                    main = tuples[0]
+                    fromx = tuples[1]
+                    methodsmain = classes[main]
+                except Exception as e:
+                    print("ERROR 0 in addoverridereference : ", e)
+                print("HERE methodsmain")
+                for x in methodsmain:
+                    try:
+                        file = x["File"]
+                        kindx = self.findKindWithKeywords(
+                            x["scope_kind"], x["scope_modifiers"]
+                        )
+                        if kindx is None:
+                            kindx = x["modifiersx"]
+                        print("TEST OVERRIDE 0")
+                        scope = EntityModel.get_or_create(
+                            _kind=kindx,
+                            _name=x["scope_name"],
+                            _parent=x["scope_parent"]
+                            if x["scope_parent"] is not None
+                            else file_ent,
+                            _longname=x["scope_longname"],
+                            _contents=x["scope_contents"],
+                            _type=x["Methodkind"],
+                        )
+                        methodname1 = x["MethodIs"]
+                    except Exception as e:
+                        print("ERROR 1 in addoverridereference : ", e)
+                    print("HERE classes")
+                    if fromx in classes:
+                        try:
+                            mathodsfrom = classes[fromx]
+                        except Exception as e:
+                            print("ERROR 2 in addoverridereference : ", e)
+                        print("HERE mathodsfrom")
+                        for y in mathodsfrom:
+                            try:
+                                if y["MethodIs"] == methodname1:
+                                    fe = file_ent
+                                    kind = self.findKindWithKeywords(
+                                        y["scope_kind"], y["scope_modifiers"]
+                                    )
+                                    if kind is None:
+                                        kind = y["modifiersx"]
+                                    print("TEST OVERRIDE 3")
+                                    ent = EntityModel.get_or_create(
+                                        _kind=kind,
+                                        _name=y["scope_name"],
+                                        _parent=y["scope_parent"]
+                                        if y["scope_parent"] is not None
+                                        else fe,
+                                        _longname=y["scope_longname"],
+                                        _contents=y["scope_contents"],
+                                        _type=y["Methodkind"],
+                                    )
 
-                if fromx in classes:
-                    mathodsfrom = classes[fromx]
-                    for y in mathodsfrom:
+                                    override_ref = ReferenceModel.get_or_create(
+                                        _kind=211,
+                                        _file=file_ent,
+                                        _line=x["line"],
+                                        _column=x["col"],
+                                        _ent=ent[0],
+                                        _scope=scope[0],
+                                    )
+                                    print("TEST OVERRIDE 6 : ")
+                                    overrideBy_ref = ReferenceModel.get_or_create(
+                                        _kind=212,
+                                        _file=fe,
+                                        _line=y["line"],
+                                        _column=y["col"],
+                                        _ent=scope[0],
+                                        _scope=ent[0],
+                                    )
+                                    print("TEST OVERRIDE 7 : ")
+                            except Exception as e:
+                                print("ERROR 3 in addoverridereference : ", e)
+                    elif x["is_overrided"]:
+                        overrideword = list(x.values())
+                        classes = [
+                            list(i[0].values())[0]
+                            for i in [item for item in list(classes.values())]
+                        ]
+                        if overrideword[0] not in classes:
 
-                        if y["MethodIs"] == methodname1:
-                            fe = file_ent
-                            kind = self.findKindWithKeywords(
-                                y["scope_kind"], y["scope_modifiers"]
-                            )
-                            if kind is None:
-                                kind = y["modifiersx"]
                             ent = EntityModel.get_or_create(
-                                _kind=kind,
-                                _name=y["scope_name"],
-                                _parent=y["scope_parent"]
-                                if y["scope_parent"] is not None
-                                else fe,
-                                _longname=y["scope_longname"],
-                                _contents=y["scope_contents"],
-                                _type=y["Methodkind"],
+                                _kind=32,
+                                _name=overrideword[1],
+                                _parent=file_ent,
+                                _longname=overrideword,
+                                _contents="",
                             )
-
                             override_ref = ReferenceModel.get_or_create(
                                 _kind=211,
                                 _file=file_ent,
@@ -994,32 +1077,8 @@ class Project:
                                 _ent=ent[0],
                                 _scope=scope[0],
                             )
-                            overrideBy_ref = ReferenceModel.get_or_create(
-                                _kind=212,
-                                _file=fe,
-                                _line=y["line"],
-                                _column=y["col"],
-                                _ent=scope[0],
-                                _scope=ent[0],
-                            )
-                elif x["is_overrided"]:
-                    overrideword = x[0]
-                    if overrideword not in classes:
-                        ent = EntityModel.get_or_create(
-                            _kind=32,
-                            _name=overrideword[1],
-                            _parent=file_ent,
-                            _longname=overrideword,
-                            _contents="",
-                        )
-                        override_ref = ReferenceModel.get_or_create(
-                            _kind=211,
-                            _file=file_ent,
-                            _line=x["line"],
-                            _column=x["col"],
-                            _ent=ent[0],
-                            _scope=scope[0],
-                        )
+        except Exception as e:
+            print("ERROR 6 in addoverridereference : ", e)
 
     def get_parent_entity(self, file_path):
         return EntityModel.get_or_none(_longname=file_path)

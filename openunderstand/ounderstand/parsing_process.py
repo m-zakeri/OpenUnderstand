@@ -47,7 +47,7 @@ def process_file(file_address):
         lap.import_demand_listener,
         lap.import_listener,
         lap.open_by_listener,
-        lap.use_module_listener
+        lap.use_module_listener,
     ]
     lap.modify_listener(
         entity_generator=entity_generator,

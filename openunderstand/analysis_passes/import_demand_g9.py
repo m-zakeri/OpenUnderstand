@@ -97,7 +97,6 @@ class ImportListenerDemand(JavaParserLabeledListener):
             )
 
 
-
 class ClassEntityListener(JavaParserLabeledListener):
     def __init__(self):
         self.class_body = None

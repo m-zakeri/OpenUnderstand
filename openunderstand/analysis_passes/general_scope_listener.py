@@ -50,139 +50,189 @@ class GeneralScopeListener(JavaParserLabeledListener):
         self.in_method_declaration = False
 
     def fill_all_classes_repo(self):
-        for classname in self.classes_repo:
-            self.all_classes_repo.add(classname)
-        for classname in self.available_imported_classes:
-            self.all_classes_repo.add(classname)
+        try:
+            for classname in self.classes_repo:
+                self.all_classes_repo.add(classname)
+            for classname in self.available_imported_classes:
+                self.all_classes_repo.add(classname)
+        except Exception as e:
+            print("ERROR fill_all_classes_repo : ", e)
 
     def fill_class_parents(self):
-        for classname in self.class_parents.keys():
-            self.class_parents[classname] = self.get_fullname(
-                self.class_parents[classname]
-            )
+        try:
+            for classname in self.class_parents.keys():
+                self.class_parents[classname] = self.get_fullname(
+                    self.class_parents[classname]
+                )
+        except Exception as e:
+            print("ERROR fill_class_parents : ", e)
 
     def add_unknown_package(self):
-        if self.current_package is None:
-            target_name = self.UNKNOWN_PACKAGE + "," + self.abspath
-            if target_name in self.init_info[0]:
-                self.current_package = target_name
-            self.classes_repo = self.init_info[0][self.current_package]
+        try:
+            if self.current_package is None:
+                target_name = self.UNKNOWN_PACKAGE + "," + self.abspath
+                if target_name in self.init_info[0]:
+                    self.current_package = target_name
+                self.classes_repo = self.init_info[0][self.current_package]
+        except Exception as e:
+            print("ERROR add_unknown_package : ", e)
 
     def add_class_methods(self):
-        for classname in self.all_classes_repo:
-            if classname in self.init_info[1].keys():
-                self.class_methods_repo[classname] = self.init_info[1][classname]
+        try:
+            for classname in self.all_classes_repo:
+                if classname in self.init_info[1].keys():
+                    self.class_methods_repo[classname] = self.init_info[1][classname]
+        except Exception as e:
+            print("ERROR add_class_methods : ", e)
 
     def add_class_fields(self):
-        for classname in self.all_classes_repo:
-            if classname in self.init_info[2].keys():
-                self.class_fields_repo[classname] = self.init_info[2][classname]
-                if classname not in self.class_fields_repo.keys():
-                    self.class_fields_repo[classname] = []
-                for i in range(len(self.class_fields_repo[classname])):
-                    typename = self.class_fields_repo[classname][i]["tp"]
-                    self.class_fields_repo[classname][i] = {
-                        "tp": self.get_fullname(typename),
-                        "name": self.class_fields_repo[classname][i]["name"],
-                    }
+        try:
+            for classname in self.all_classes_repo:
+                if classname in self.init_info[2].keys():
+                    self.class_fields_repo[classname] = self.init_info[2][classname]
+                    if classname not in self.class_fields_repo.keys():
+                        self.class_fields_repo[classname] = []
+                    for i in range(len(self.class_fields_repo[classname])):
+                        typename = self.class_fields_repo[classname][i]["tp"]
+                        self.class_fields_repo[classname][i] = {
+                            "tp": self.get_fullname(typename),
+                            "name": self.class_fields_repo[classname][i]["name"],
+                        }
+        except Exception as e:
+            print("ERROR add_class_fields : ", e)
 
     def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
-        package_text = ctx.getText()
-        package_name = package_text[
-            package_text.find("package") + 7 : package_text.find(";")
-        ]
-        self.scope_stack[0].append(package_name)
-        self.current_package = package_name
-        self.classes_repo = self.init_info[0][package_name]
-        self.current_long_name = package_name
+        try:
+            package_text = ctx.getText()
+            package_name = package_text[
+                package_text.find("package") + 7 : package_text.find(";")
+            ]
+            self.scope_stack[0].append(package_name)
+            self.current_package = package_name
+            self.classes_repo = self.init_info[0][package_name]
+            self.current_long_name = package_name
+        except Exception as e:
+            print("ERROR enterPackageDeclaration : ", e)
 
     def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
-        import_text = ctx.getText()
-        imported_entity = import_text[
-            import_text.find("import") + 6 : import_text.find(";")
-        ]
-        index = imported_entity.rfind(".")
-        package_prefix = imported_entity[:index]
-        if import_text[index + 1 :] == "*":
-            for classname in self.init_info[0][package_prefix]:
-                self.available_imported_classes.add(classname)
-        else:
-            self.available_imported_classes.add(imported_entity)
+        try:
+            import_text = ctx.getText()
+            imported_entity = import_text[
+                import_text.find("import") + 6 : import_text.find(";")
+            ]
+            index = imported_entity.rfind(".")
+            package_prefix = imported_entity[:index]
+            if import_text[index + 1 :] == "*":
+                for classname in self.init_info[0][package_prefix]:
+                    self.available_imported_classes.add(classname)
+            else:
+                self.available_imported_classes.add(imported_entity)
+        except Exception as e:
+            print("ERROR enterImportDeclaration : ", e)
 
     def enterFormalParameters(self, ctx: JavaParserLabeled.FormalParametersContext):
-        if self.in_method_declaration:
-            params_text = ctx.getText()
-            self.scope_stack[len(self.scope_stack) - 1]["params"] = params_text[1:-1]
-        self.in_method_declaration = False
+        try:
+            if self.in_method_declaration:
+                params_text = ctx.getText()
+                self.scope_stack[len(self.scope_stack) - 1]["params"] = params_text[
+                    1:-1
+                ]
+            self.in_method_declaration = False
+        except Exception as e:
+            print("ERROR enterFormalParameters : ", e)
 
     # push method entity_id to scope_stack
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
-        method_name = str(ctx.IDENTIFIER())
-        new_scope_info = {
-            "tp": "method",
-            "name": self.current_long_name + "." + method_name,
-            "params": ctx.formalParameters().getText()[1:-1],
-        }
-        self.scope_stack.append(new_scope_info)
-        self.in_method_declaration = True
+        try:
+            method_name = str(ctx.IDENTIFIER())
+            new_scope_info = {
+                "tp": "method",
+                "name": self.current_long_name + "." + method_name,
+                "params": ctx.formalParameters().getText()[1:-1],
+            }
+            self.scope_stack.append(new_scope_info)
+            self.in_method_declaration = True
+        except Exception as e:
+            print("ERROR enterMethodDeclaration : ", e)
 
     def enterFieldDeclaration(self, ctx: JavaParserLabeled.FieldDeclarationContext):
-        self.in_field_declaration = True
+        try:
+            self.in_field_declaration = True
+        except Exception as e:
+            print("ERROR enterFieldDeclaration : ", e)
 
     def exitFieldDeclaration(self, ctx: JavaParserLabeled.FieldDeclarationContext):
-        self.in_field_declaration = False
-        self.is_field_non_primitive_type = False
-        self.non_primitive_field_type = None
+        try:
+            self.in_field_declaration = False
+            self.is_field_non_primitive_type = False
+            self.non_primitive_field_type = None
+        except Exception as e:
+            print("ERROR exitFieldDeclaration : ", e)
 
     def enterClassOrInterfaceType(
         self, ctx: JavaParserLabeled.ClassOrInterfaceTypeContext
     ):
-        if type(ctx.parentCtx) is JavaParserLabeled.TypeTypeContext:
-            if self.in_field_declaration:
-                self.is_field_non_primitive_type = True
-                self.non_primitive_field_type = ctx.getText()
-            elif self.in_class_declaration:
-                self.is_child_class = True
-                self.parent_class_type = ctx.getText()
+        try:
+            if type(ctx.parentCtx) is JavaParserLabeled.TypeTypeContext:
+                if self.in_field_declaration:
+                    self.is_field_non_primitive_type = True
+                    self.non_primitive_field_type = ctx.getText()
+                elif self.in_class_declaration:
+                    self.is_child_class = True
+                    self.parent_class_type = ctx.getText()
+        except Exception as e:
+            print("ERROR enterClassOrInterfaceType : ", e)
 
     def enterTypeDeclaration(self, ctx: JavaParserLabeled.TypeDeclarationContext):
-        self.add_unknown_package()
-        for info in self.init_info[0]:
-            self.classes_repo.extend(self.init_info[0][info])
-        self.fill_all_classes_repo()
-        self.add_class_methods()
-        self.add_class_fields()
-        self.fill_class_parents()
+        try:
+            self.add_unknown_package()
+            for info in self.init_info[0]:
+                self.classes_repo.extend(self.init_info[0][info])
+            self.fill_all_classes_repo()
+            self.add_class_methods()
+            self.add_class_fields()
+            self.fill_class_parents()
+        except Exception as e:
+            print("ERROR enterTypeDeclaration : ", e)
 
     # push class entity_id to scope_stack
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
-        self.in_class_declaration = True
-        class_name = str(ctx.IDENTIFIER())
-        self.current_long_name = (
-            self.current_long_name + "." + class_name
-            if self.current_long_name != ""
-            else class_name
-        )
-        self.current_class_name = self.current_long_name
+        try:
+            self.in_class_declaration = True
+            class_name = str(ctx.IDENTIFIER())
+            self.current_long_name = (
+                self.current_long_name + "." + class_name
+                if self.current_long_name != ""
+                else class_name
+            )
+            self.current_class_name = self.current_long_name
+        except Exception as e:
+            print("ERROR enterClassDeclaration : ", e)
 
     def enterClassBody(self, ctx: JavaParserLabeled.ClassBodyContext):
-        self.in_class_declaration = False
-        self.is_child_class = False
-        self.parent_class_type = None
+        try:
+            self.in_class_declaration = False
+            self.is_child_class = False
+            self.parent_class_type = None
+        except Exception as e:
+            print("ERROR enterClassBody : ", e)
 
     # for classes
     def get_fullname(self, name):
-        if name in self.available_imported_classes:
+        try:
+            if name in self.available_imported_classes:
+                return name
+            if name in self.classes_repo:
+                return name
+            for imported_class in self.available_imported_classes:
+                if imported_class.endswith("." + name):
+                    return imported_class
+            for infile_class in self.classes_repo:
+                if infile_class.endswith("." + name):
+                    return infile_class
             return name
-        if name in self.classes_repo:
-            return name
-        for imported_class in self.available_imported_classes:
-            if imported_class.endswith("." + name):
-                return imported_class
-        for infile_class in self.classes_repo:
-            if infile_class.endswith("." + name):
-                return infile_class
-        return name
+        except Exception as e:
+            print("ERROR get_fullname : ", e)
 
 
 class InitializerListener(JavaParserLabeledListener):

@@ -33,12 +33,9 @@ from analysis_passes.extend_listener_g6 import ExtendListener
 from analysis_passes.extendcouple_extendcoupleby import ExtendCoupleAndExtendCoupleBy
 from analysis_passes.variable_listener_g11 import VariableListener
 from analysis_passes.open_openby import OpenListener
-from analysis_passes.usemodule_usemoduleby_g11 import (
-    UseModuleUseModuleByListener
-)
+from analysis_passes.usemodule_usemoduleby_g11 import UseModuleUseModuleByListener
 from utils.utilities import setup_logger, timer_decorator
 import os
-from utils.utilities import ClassTypeData
 from pathlib import Path
 
 
@@ -72,12 +69,10 @@ class ListenersAndParsers:
             listener = VariableListener()
             p.Walk(listener, tree)
             for item in listener.var:
-                print("item var : ", item)
                 self.entity_gen(
                     file_address=file_address, parse_tree=tree
                 ).get_or_create_variable_entity(res_dict=item)
             for item in listener.var_const:
-                print("item var const : ", item)
                 self.entity_gen(
                     file_address=file_address, parse_tree=tree
                 ).get_or_create_variable_entity(res_dict=item)
@@ -218,14 +213,8 @@ class ListenersAndParsers:
 
     @timer_decorator()
     def override_listener(self, tree, file_ent, file_address, p):
-        classesx = {}
-        extendedlist = []
         try:
             listener = overridelistener()
-            listener.extendedtoentity = {}
-            listener.set_dictionary(classesx)
-            listener.set_file(file_address)
-            listener.set_list(extendedlist)
             p.Walk(listener, tree)
             classesx = listener.get_classes
             extendedlist = listener.get_extendeds
@@ -266,7 +255,6 @@ class ListenersAndParsers:
         try:
             # Throws
             listener = Throws_TrowsBy()
-            listener.implement = []
             p.Walk(listener, tree)
             p.addThrows_TrowsByRefs(
                 listener.implement, file_ent, file_address, 236, 237, True
@@ -384,14 +372,24 @@ class ListenersAndParsers:
     @timer_decorator()
     def extend_implict_listener(self, tree, file_ent, file_address, p):
         try:
+            print("extend_implict_listener 0 ", file_address)
             package_import_listener = PackageImportListener()
+            print("extend_implict_listener 2 ")
             p.Walk(package_import_listener, tree)
+            print("extend_implict_listener 3 ")
             my_listener = DSCmetric(package_import_listener.package_name)
+            print("extend_implict_listener 4 ")
             p.Walk(my_listener, tree)
-            c = ClassTypeData()
-            c.set_file_path(file_address)
-            imported_entity, importing_entity = p.add_imported_entity_factory(c)
-            p.add_references(imported_entity, importing_entity, c)
+            print("extend_implict_listener 5 ")
+            # c = ClassTypeData()
+            print("extend_implict_listener 6 ")
+            # c.set_file_path(file_address)
+            print("extend_implict_listener 7 ")
+            for item in my_listener.dbHandler.classTypes:
+                imported_entity, importing_entity = p.add_imported_entity_factory(item)
+                print("extend_implict_listener 8 ")
+                p.add_references(imported_entity, importing_entity, item)
+                print("extend_implict_listener 9 ")
             self.logger.info("extend implict success ")
         except Exception as e:
             self.logger.error(

@@ -80,7 +80,6 @@ class CastAndCastBy(JavaParserLabeledListener):
                 self.c_content = ent.content
                 self.c_modifiers = ent.modifiers
 
-
         for ent in self.classes:
             if self.c_name != "":
                 if ent.name == parent:
@@ -103,4 +102,3 @@ class CastAndCastBy(JavaParserLabeledListener):
                             "ent": ent,
                         }
                     )
-
