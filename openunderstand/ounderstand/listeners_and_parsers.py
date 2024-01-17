@@ -209,7 +209,9 @@ class ListenersAndParsers:
                 "An Error occurred for reference modify in file:"
                 + file_address
                 + "\n"
-                + str(e) + "\n" + traceback.format_exc()
+                + str(e)
+                + "\n"
+                + traceback.format_exc()
             )
 
     @timer_decorator()
@@ -263,7 +265,12 @@ class ListenersAndParsers:
             self.logger.info("Throws success ")
         except Exception as e:
             self.logger.error(
-                "An Error occurred in throws in file :" + file_address + "\n" + str(e) + "\n" + traceback.format_exc()
+                "An Error occurred in throws in file :"
+                + file_address
+                + "\n"
+                + str(e)
+                + "\n"
+                + traceback.format_exc()
             )
 
     @timer_decorator()
@@ -445,7 +452,9 @@ class ListenersAndParsers:
                 "An Error occurred in use module by in file :"
                 + file_address
                 + "\n"
-                + str(e) + "\n"+traceback.format_exc()
+                + str(e)
+                + "\n"
+                + traceback.format_exc()
             )
 
     @timer_decorator()

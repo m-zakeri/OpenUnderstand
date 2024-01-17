@@ -36,7 +36,7 @@ class UseModuleUseModuleByListener(JavaParserLabeledListener):
                 "name": ctx.children[1].IDENTIFIER()[0].getText(),
                 "line": line_col[0],
                 "col": line_col[1],
-                "package": ""
+                "package": "",
             }
         )
         self.useUnresolvedModules.append(
@@ -46,7 +46,7 @@ class UseModuleUseModuleByListener(JavaParserLabeledListener):
                 "name": ctx.children[1].IDENTIFIER()[0].getText(),
                 "line": line_col[0],
                 "col": line_col[1],
-                "package": ""
+                "package": "",
             }
         )
 
@@ -60,7 +60,7 @@ class UseModuleUseModuleByListener(JavaParserLabeledListener):
                     "name": ctx.getChild(1).IDENTIFIER()[2].getText(),
                     "line": 1,
                     "col": 1,
-                    "package": ctx.getText()
+                    "package": ctx.getText(),
                 }
             )
             self.useUnresolvedModules.append(
@@ -70,6 +70,6 @@ class UseModuleUseModuleByListener(JavaParserLabeledListener):
                     "name": ctx.getChild(1).IDENTIFIER()[2].getText(),
                     "line": 1,
                     "col": 1,
-                    "package": ctx.getText()
+                    "package": ctx.getText(),
                 }
             )

@@ -56,7 +56,11 @@ class ModifyListener(JavaParserLabeledListener):
         try:
             parent = parents[-1][1]
             name = (
-                ctx.expression().getText().replace("this", "").replace(".", "").lstrip("_")
+                ctx.expression()
+                .getText()
+                .replace("this", "")
+                .replace(".", "")
+                .lstrip("_")
             )
 
             longname = self.package + "." + self.parent + "." + name
@@ -69,7 +73,7 @@ class ModifyListener(JavaParserLabeledListener):
                     "column": col.replace("]", ""),
                     "ent": longname,
                     "scope": parent[0],
-                    "modifiers": None
+                    "modifiers": None,
                 }
             )
         except Exception as e:
@@ -99,7 +103,7 @@ class ModifyListener(JavaParserLabeledListener):
                     "column": col.replace("]", ""),
                     "ent": longname,
                     "scope": parent[0],
-                    "modifiers":None
+                    "modifiers": None,
                 }
             )
 
@@ -133,7 +137,7 @@ class ModifyListener(JavaParserLabeledListener):
                     "column": col.replace("]", ""),
                     "ent": longname,
                     "scope": parent[0],
-                    "modifiers":None
+                    "modifiers": None,
                 }
             )
 
