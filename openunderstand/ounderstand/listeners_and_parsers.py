@@ -37,6 +37,7 @@ from analysis_passes.usemodule_usemoduleby_g11 import UseModuleUseModuleByListen
 from utils.utilities import setup_logger, timer_decorator
 import os
 from pathlib import Path
+import traceback
 
 
 class ListenersAndParsers:
@@ -208,7 +209,7 @@ class ListenersAndParsers:
                 "An Error occurred for reference modify in file:"
                 + file_address
                 + "\n"
-                + str(e)
+                + str(e) + "\n" + traceback.format_exc()
             )
 
     @timer_decorator()
@@ -262,7 +263,7 @@ class ListenersAndParsers:
             self.logger.info("Throws success ")
         except Exception as e:
             self.logger.error(
-                "An Error occurred in throws in file :" + file_address + "\n" + str(e)
+                "An Error occurred in throws in file :" + file_address + "\n" + str(e) + "\n" + traceback.format_exc()
             )
 
     @timer_decorator()
@@ -366,30 +367,26 @@ class ListenersAndParsers:
             self.logger.info("contain success ")
         except Exception as e:
             self.logger.error(
-                "An Error occurred in contain in file :" + file_address + "\n" + str(e)
+                "An Error occurred in contain in file :"
+                + file_address
+                + "\n"
+                + str(e)
+                + "\n"
+                + traceback.format_exc()
             )
 
     @timer_decorator()
     def extend_implict_listener(self, tree, file_ent, file_address, p):
         try:
-            print("extend_implict_listener 0 ", file_address)
             package_import_listener = PackageImportListener()
-            print("extend_implict_listener 2 ")
             p.Walk(package_import_listener, tree)
-            print("extend_implict_listener 3 ")
             my_listener = DSCmetric(package_import_listener.package_name)
-            print("extend_implict_listener 4 ")
             p.Walk(my_listener, tree)
-            print("extend_implict_listener 5 ")
             # c = ClassTypeData()
-            print("extend_implict_listener 6 ")
             # c.set_file_path(file_address)
-            print("extend_implict_listener 7 ")
             for item in my_listener.dbHandler.classTypes:
                 imported_entity, importing_entity = p.add_imported_entity_factory(item)
-                print("extend_implict_listener 8 ")
                 p.add_references(imported_entity, importing_entity, item)
-                print("extend_implict_listener 9 ")
             self.logger.info("extend implict success ")
         except Exception as e:
             self.logger.error(
@@ -432,20 +429,6 @@ class ListenersAndParsers:
             )
 
     @timer_decorator()
-    def open_by_listener(self, tree, file_ent, file_address, p):
-        try:
-            listener = OpenListener(file_address)
-            p.Walk(listener, tree)
-            for i in listener.repository:
-                imported_entity = p.add_opened_entity(i)
-                p.add_references_opend(file_ent, imported_entity, i)
-            self.logger.info("open by success ")
-        except Exception as e:
-            self.logger.error(
-                "An Error occurred in open by in file :" + file_address + "\n" + str(e)
-            )
-
-    @timer_decorator()
     def use_module_listener(self, tree, file_ent, file_address, p):
         try:
             listener = UseModuleUseModuleByListener()
@@ -462,5 +445,19 @@ class ListenersAndParsers:
                 "An Error occurred in use module by in file :"
                 + file_address
                 + "\n"
-                + str(e)
+                + str(e) + "\n"+traceback.format_exc()
+            )
+
+    @timer_decorator()
+    def open_by_listener(self, tree, file_ent, file_address, p):
+        try:
+            listener = OpenListener(file_address)
+            p.Walk(listener, tree)
+            for i in listener.repository:
+                imported_entity = p.add_opened_entity(i)
+                p.add_references_opend(file_ent, imported_entity, i)
+            self.logger.info("open by success ")
+        except Exception as e:
+            self.logger.error(
+                "An Error occurred in open by in file :" + file_address + "\n" + str(e)
             )

@@ -208,8 +208,6 @@ class CallAndCallBy(JavaParserLabeledListener):
                 # current_scope_spec['tp'] is guaranteed to be 'method'
                 # because we are in local variable declaration
                 if type(current_scope_spec) is list:
-                    print("E 0 ", current_scope_spec)
-                    print("E 0 ", len(current_scope_spec))
                     current_scope_spec = current_scope_spec[0]
                 try:
                     if (
@@ -510,8 +508,6 @@ class CallAndCallBy(JavaParserLabeledListener):
         try:
             for method in self.local_method_variables:
                 for var in self.local_method_variables[method]:
-                    print("W : ", var)
-                    print("W : ", type(var))
                     if var_name == var["name"]:
                         return var
             return var_name

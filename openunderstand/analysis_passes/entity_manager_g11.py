@@ -55,6 +55,7 @@ def get_created_entity_id(parent_id):
 
 def get_all_files():
     methods = []
+
     for ent in EntityModel.select().where(EntityModel._kind_id == 1):
         methods.append(ent._contents)
     return methods
@@ -166,17 +167,20 @@ class EntityGenerator:
                 )
                 parent_entity_contents = EntityGenerator.extract_original_text(entity)
                 props = self.getClassProperties(parent_entity_longname)
-                parent_entity_kind = self.findKindWithKeywords(
-                    "Class", props["modifiers"]
-                )
-                class_ent = EntityModel.get_or_create(
-                    _kind=parent_entity_kind,
-                    _parent=parent_entity_parent,
-                    _name=parent_entity_name,
-                    _longname=parent_entity_longname,
-                    _contents=parent_entity_contents,
-                )
-                result_entities.append((parent_entity_kind, class_ent))
+                try:
+                    parent_entity_kind = self.findKindWithKeywords(
+                        "Class", props["modifiers"]
+                    )
+                    class_ent = EntityModel.get_or_create(
+                        _kind=parent_entity_kind,
+                        _parent=parent_entity_parent,
+                        _name=parent_entity_name,
+                        _longname=parent_entity_longname,
+                        _contents=parent_entity_contents,
+                    )
+                    result_entities.append((parent_entity_kind, class_ent))
+                except Exception as e:
+                    print("ERROR in entity manager g 11 line 183 :", e)
             if type(entity).__name__ == "InterfaceDeclarationContext":
                 parent_entity_name = entity.IDENTIFIER().getText()
                 parent_entity_longname = (

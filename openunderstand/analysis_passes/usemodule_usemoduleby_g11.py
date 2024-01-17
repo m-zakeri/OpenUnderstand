@@ -15,7 +15,7 @@ from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 
 class UseModuleUseModuleByListener(JavaParserLabeledListener):
     """
-    #Todo: Implementing the ANTLR listener pass for Java Usemodule and Java Usemoduleby reference kind
+    Todo: Implementing the ANTLR listener pass for Java Usemodule and Java Usemoduleby reference kind
     """
 
     def __init__(self):
@@ -31,20 +31,22 @@ class UseModuleUseModuleByListener(JavaParserLabeledListener):
         line_col = str(ctx.start).split(",")[3][:-1].split(":")
         self.useModules.append(
             {
-                "scope": None,
-                "ent": None,
+                "scope": "",
+                "ent": "",
                 "name": ctx.children[1].IDENTIFIER()[0].getText(),
                 "line": line_col[0],
                 "col": line_col[1],
+                "package": ""
             }
         )
         self.useUnresolvedModules.append(
             {
-                "scope": None,
-                "ent": None,
+                "scope": "",
+                "ent": "",
                 "name": ctx.children[1].IDENTIFIER()[0].getText(),
                 "line": line_col[0],
                 "col": line_col[1],
+                "package": ""
             }
         )
 
@@ -58,6 +60,7 @@ class UseModuleUseModuleByListener(JavaParserLabeledListener):
                     "name": ctx.getChild(1).IDENTIFIER()[2].getText(),
                     "line": 1,
                     "col": 1,
+                    "package": ctx.getText()
                 }
             )
             self.useUnresolvedModules.append(
@@ -67,5 +70,6 @@ class UseModuleUseModuleByListener(JavaParserLabeledListener):
                     "name": ctx.getChild(1).IDENTIFIER()[2].getText(),
                     "line": 1,
                     "col": 1,
+                    "package": ctx.getText()
                 }
             )

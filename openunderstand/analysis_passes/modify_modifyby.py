@@ -70,6 +70,7 @@ class ModifyListener(JavaParserLabeledListener):
                 "column": col.replace("]", ""),
                 "ent": longname,
                 "scope": parent[0],
+                "modifiers": None
             }
         )
 
@@ -97,6 +98,7 @@ class ModifyListener(JavaParserLabeledListener):
                     "column": col.replace("]", ""),
                     "ent": longname,
                     "scope": parent[0],
+                    "modifiers":None
                 }
             )
 
@@ -130,6 +132,7 @@ class ModifyListener(JavaParserLabeledListener):
                     "column": col.replace("]", ""),
                     "ent": longname,
                     "scope": parent[0],
+                    "modifiers":None
                 }
             )
 

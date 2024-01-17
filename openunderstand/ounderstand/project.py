@@ -506,13 +506,27 @@ class Project:
 
     def add_contain_in(self, ref_dicts, file_ent, file_address):
         for ref_dict in ref_dicts:
+            scope = EntityModel.get_or_create(
+                _kind=self.findKindWithKeywords(
+                    ref_dict["kind"], ref_dict["modifiers"]
+                ),
+                _name=ref_dict["name"],
+                _parent=ref_dict["parent"]
+                if ref_dict["parent"] is not None
+                else file_ent,
+                _longname=ref_dict["longname"],
+                _contents=ref_dict["content"],
+            )[0]
+            ent = self.getImplementEntity(
+                ref_dict["package_type"], file_address, file_ent
+            )
             contain = ReferenceModel.get_or_create(
                 _kind=176,
                 _file=file_address,
                 _line=ref_dict["line"],
                 _column=ref_dict["col"],
-                _scope=ref_dict["content"],
-                _ent=file_ent,
+                _scope=ent,
+                _ent=scope,
             )
 
             containin = ReferenceModel.get_or_create(
@@ -520,8 +534,8 @@ class Project:
                 _file=file_address,
                 _line=ref_dict["line"],
                 _column=ref_dict["col"],
-                _scope=ref_dict["parent"],
-                _ent=file_ent,
+                _scope=scope,
+                _ent=ent,
             )
 
     def get_parent(self, parent_file_path) -> EntityModel:
@@ -1140,7 +1154,6 @@ class Project:
     def extract_all_kind(self, prefixes, type_entity, is_constructor) -> str:
         if is_constructor:
             return self.extract_is_constructor(prefixes)
-
         pattern_static = ""
         pattern_generic = ""
         pattern_abstract = ""
@@ -1178,28 +1191,52 @@ class Project:
         unresolved_module: list = None,
         file_address: str = "",
     ) -> None:
+        file_entity = self.get_parent_entity(file_address)
+
         for item in unknown_module:
+            created_entity, _ = EntityModel.get_or_create(
+                _kind_id=KindModel.get_or_none(_name="Java Module")._id,
+                _parent_id=file_entity._id,
+                _name=item["name"].split(".")[-1],
+                _longname=item["package"],
+                _contents="",
+            )
+
             ReferenceModel.get_or_create(
                 _kind_id=KindModel.get_or_none(_name="Java Unknown Module")._id,
-                _file_id=file_address,
+                _file_id=file_entity._id,
                 _line=item["line"],
                 _column=item["col"],
                 _ent_id=item["ent"],
                 _scope_id=item["scope"],
             )
         for item in unresolved_module:
+            created_entity, _ = EntityModel.get_or_create(
+                _kind_id=KindModel.get_or_none(_name="Java Module")._id,
+                _parent_id=file_entity._id,
+                _name=item["name"].split(".")[-1],
+                _longname=item["package"],
+                _contents="",
+            )
             ReferenceModel.get_or_create(
                 _kind_id=KindModel.get_or_none(_name="Java Unresolved Module")._id,
-                _file_id=file_address,
+                _file_id=file_entity._id,
                 _line=item["line"],
                 _column=item["col"],
                 _ent_id=item["ent"],
                 _scope_id=item["scope"],
             )
         for item in use_module:
+            created_entity, _ = EntityModel.get_or_create(
+                _kind_id=KindModel.get_or_none(_name="Java Module")._id,
+                _parent_id=file_entity._id,
+                _name=item["name"].split(".")[-1],
+                _longname=item["package"],
+                _contents="",
+            )
             ReferenceModel.get_or_create(
                 _kind_id=KindModel.get_or_none(_name="Java ModuleUse")._id,
-                _file_id=file_address,
+                _file_id=file_entity._id,
                 _line=item["line"],
                 _column=item["col"],
                 _ent_id=item["ent"],
@@ -1207,7 +1244,7 @@ class Project:
             )
             ReferenceModel.get_or_create(
                 _kind_id=KindModel.get_or_none(_name="Java ModuleUseby")._id,
-                _file_id=file_address,
+                _file_id=file_entity._id,
                 _line=item["line"],
                 _column=item["col"],
                 _ent_id=item["scope"],
@@ -1284,7 +1321,7 @@ class Project:
             )
 
     def getThrowEntity(self, longname, file_address, file_ent):
-        ent = self.getInterfaceEntity(longname, file_address)
+        ent = self.getInterfaceEntity(longname, file_address, file_ent)
         if not ent:
             ent = self.getClassEntity(longname, file_address, file_ent)
         return ent

@@ -4,9 +4,9 @@ import analysis_passes.class_properties as class_properties
 
 
 class Throws_TrowsBy(JavaParserLabeledListener):
-
     def __init__(self):
         self.implement = []
+
     def findmethodreturntype(self, c):
         parents = ""
         context = ""
@@ -33,8 +33,6 @@ class Throws_TrowsBy(JavaParserLabeledListener):
             if x.classOrInterfaceModifier():
                 modifiers.append(x.classOrInterfaceModifier().getText())
         return modifiers
-
-
 
     # def enterClassDeclaration(self, ctx:JavaParserLabeled.ClassDeclarationContext):
     #     if ctx.IMPLEMENTS():

@@ -24,7 +24,7 @@ class ContainAndContainBy(JavaParserLabeledListener):
                 "kind": "Package",
                 "contents": "",
                 "parent": None,
-                "type": None,
+                "type": "Package",
                 "value": None,
             }
         )
@@ -74,7 +74,7 @@ class ContainAndContainBy(JavaParserLabeledListener):
                 "col": col,
                 "modifiers": modifiers,
                 "content": content,
-                "type": None,
+                "type": "Class",
                 "value": None,
             }
         )

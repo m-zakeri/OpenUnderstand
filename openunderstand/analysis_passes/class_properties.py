@@ -15,8 +15,9 @@ from antlr4 import *
 
 
 class ClassPropertiesListener(JavaParserLabeledListener):
-    class_longname = []
-    class_properties = None
+    def __init__(self):
+        self.class_longname = []
+        self.class_properties = None
 
     def checkParents(self, c):
         return set(ClassPropertiesListener.findParents(c)) & set(
