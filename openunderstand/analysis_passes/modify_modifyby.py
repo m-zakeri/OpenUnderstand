@@ -53,26 +53,27 @@ class ModifyListener(JavaParserLabeledListener):
         [line, col] = str(ctx.start).split(",")[3].split(":")
 
         parents = self.entity_manager.get_or_create_parent_entities(ctx)
+        try:
+            parent = parents[-1][1]
+            name = (
+                ctx.expression().getText().replace("this", "").replace(".", "").lstrip("_")
+            )
 
-        parent = parents[-1][1]
+            longname = self.package + "." + self.parent + "." + name
 
-        name = (
-            ctx.expression().getText().replace("this", "").replace(".", "").lstrip("_")
-        )
-
-        longname = self.package + "." + self.parent + "." + name
-
-        self.modify.append(
-            {
-                "kind": 208,
-                "file": self.entity_manager.file_ent,
-                "line": line,
-                "column": col.replace("]", ""),
-                "ent": longname,
-                "scope": parent[0],
-                "modifiers": None
-            }
-        )
+            self.modify.append(
+                {
+                    "kind": 208,
+                    "file": self.entity_manager.file_ent,
+                    "line": line,
+                    "column": col.replace("]", ""),
+                    "ent": longname,
+                    "scope": parent[0],
+                    "modifiers": None
+                }
+            )
+        except Exception as e:
+            print("ERROR in  modify_modifyby.py line 76 : ", e)
 
     def enterExpression7(self, ctx: JavaParserLabeled.Expression7Context):
 
