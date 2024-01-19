@@ -8,7 +8,7 @@ This module find all OpenUnderstand call and callby references in a Java project
 
 """
 
-__author__ = ""
+__author__ = "AminHZ Dev"
 __version__ = "0.1.0"
 
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener

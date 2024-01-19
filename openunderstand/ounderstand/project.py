@@ -715,18 +715,6 @@ class Project:
             _scope=imported_ent.get_id(),
         )
 
-        print(f"1. ref name: Java Import")
-        print(
-            f"2. ref scope: {importing_ent._longname} || kind: {KindModel.get_or_none(_id=importing_ent._kind)._name}"
-        )
-        print(
-            f"3. ref ent: {imported_ent._longname} || kind: {KindModel.get_or_none(_id=imported_ent._kind)._name}"
-        )
-        print(
-            f'4. file location: {EntityModel.get_or_none(_id=importing_ent.get_id())} || line: {ref_dict["line"]}'
-        )
-        print("-" * 25)
-
     def add_imported_entity(self, i, files, import_entity_listener):
         if i["is_built_in"]:
             imported_entity, _ = EntityModel.get_or_create(
@@ -790,36 +778,12 @@ class Project:
         )
 
     def add_imported_entity_factory(self, cls_data: ClassTypeData):
-        print(
-            "extend_implicit_entity add_imported_entity_factory 0 ", cls_data.file_path
-        )
         parent_entity: EntityModel = self.get_parent(cls_data.file_path)
-        print("extend_implicit_entity add_imported_entity_factory 1 ")
         kindModel = KindModel.get_or_none(
             _name=self.getNameEntity(cls_data.get_prefixes())
         )
-        print("extend_implicit_entity add_imported_entity_factory 2 ")
         extend_implicit_entity = None
         if kindModel is not None:
-            print(
-                "extend_implicit_entity add_imported_entity_factory 2 ", kindModel._id
-            )
-            print(
-                "extend_implicit_entity add_imported_entity_factory 2 ",
-                cls_data.get_name(),
-            )
-            print(
-                "extend_implicit_entity add_imported_entity_factory 2 ",
-                cls_data.get_type(),
-            )
-            print(
-                "extend_implicit_entity add_imported_entity_factory 2 ",
-                cls_data.get_long_name(),
-            )
-            print(
-                "extend_implicit_entity add_imported_entity_factory 2 ",
-                cls_data.get_contents(),
-            )
             extend_implicit_entity, _ = EntityModel.get_or_create(
                 _kind=kindModel._id,
                 _parent=parent_entity._id,
@@ -828,13 +792,7 @@ class Project:
                 _longname=cls_data.get_long_name(),
                 _contents=cls_data.get_contents(),
             )
-            print("extend_implicit_entity add_imported_entity_factory 4 ")
         entity_kind_object = 84
-        print("extend_implicit_entity add_imported_entity_factory 5 ")
-        print(
-            "extend_implicit_entity add_imported_entity_factory 5.4 ",
-            cls_data.parentClass,
-        )
         java_lang_entity, _ = EntityModel.get_or_create(
             _kind=entity_kind_object,
             _parent=None,
@@ -843,45 +801,47 @@ class Project:
             _longname=cls_data.parentClass,
             _contents="",
         )
-        print("extend_implicit_entity add_imported_entity_factory 6 ")
         return extend_implicit_entity, java_lang_entity
 
     def addCreateRefs(self, ref_dicts, file_ent, file_address):
 
         for ref_dict in ref_dicts:
+            try:
+                scope = EntityModel.get_or_create(
+                    _kind=self.findKindWithKeywords("Method", ref_dict["scopemodifiers"]),
+                    _name=ref_dict["scopename"],
+                    _type=ref_dict["scopereturntype"],
+                    _parent=ref_dict["scope_parent"]
+                    if ref_dict["scope_parent"] is not None
+                    else file_ent,
+                    _longname=ref_dict["scopelongname"],
+                    _contents=["scopecontent"],
+                )[0]
 
-            scope = EntityModel.get_or_create(
-                _kind=self.findKindWithKeywords("Method", ref_dict["scopemodifiers"]),
-                _name=ref_dict["scopename"],
-                _type=ref_dict["scopereturntype"],
-                _parent=ref_dict["scope_parent"]
-                if ref_dict["scope_parent"] is not None
-                else file_ent,
-                _longname=ref_dict["scopelongname"],
-                _contents=["scopecontent"],
-            )[0]
+                ent = self.getCreatedClassEntity(
+                    ref_dict["refent"], ref_dict["potential_refent"], file_address, file_ent
+                )
 
-            ent = self.getCreatedClassEntity(
-                ref_dict["refent"], ref_dict["potential_refent"], file_address, file_ent
-            )
+                Create = ReferenceModel.get_or_create(
+                    _kind=190,
+                    _file=file_ent,
+                    _line=ref_dict["line"],
+                    _column=ref_dict["col"],
+                    _scope=scope,
+                    _ent=ent,
+                )
 
-            Create = ReferenceModel.get_or_create(
-                _kind=190,
-                _file=file_ent,
-                _line=ref_dict["line"],
-                _column=ref_dict["col"],
-                _scope=scope,
-                _ent=ent,
-            )
-
-            Createby = ReferenceModel.get_or_create(
-                _kind=191,
-                _file=file_ent,
-                _line=ref_dict["line"],
-                _column=ref_dict["col"],
-                _scope=ent,
-                _ent=scope,
-            )
+                Createby = ReferenceModel.get_or_create(
+                    _kind=191,
+                    _file=file_ent,
+                    _line=ref_dict["line"],
+                    _column=ref_dict["col"],
+                    _scope=ent,
+                    _ent=scope,
+                )
+            except Exception as e:
+                print("ERROR in project.py function addCreateRefs ")
+                print("error message : ",e)
 
     def getPackageEntity(self, file_ent, name, longname):
         # package kind id: 72
@@ -989,7 +949,6 @@ class Project:
 
     def addoverridereference(self, classes, extendedfiles, file_ent):
         try:
-            print("HERE extendedfiles")
             for tuples in extendedfiles:
                 try:
                     main = tuples[0]
@@ -997,7 +956,6 @@ class Project:
                     methodsmain = classes[main]
                 except Exception as e:
                     print("ERROR 0 in addoverridereference : ", e)
-                print("HERE methodsmain")
                 for x in methodsmain:
                     try:
                         file = x["File"]
@@ -1006,7 +964,6 @@ class Project:
                         )
                         if kindx is None:
                             kindx = x["modifiersx"]
-                        print("TEST OVERRIDE 0")
                         scope = EntityModel.get_or_create(
                             _kind=kindx,
                             _name=x["scope_name"],
@@ -1020,13 +977,11 @@ class Project:
                         methodname1 = x["MethodIs"]
                     except Exception as e:
                         print("ERROR 1 in addoverridereference : ", e)
-                    print("HERE classes")
                     if fromx in classes:
                         try:
                             mathodsfrom = classes[fromx]
                         except Exception as e:
                             print("ERROR 2 in addoverridereference : ", e)
-                        print("HERE mathodsfrom")
                         for y in mathodsfrom:
                             try:
                                 if y["MethodIs"] == methodname1:
@@ -1036,7 +991,6 @@ class Project:
                                     )
                                     if kind is None:
                                         kind = y["modifiersx"]
-                                    print("TEST OVERRIDE 3")
                                     ent = EntityModel.get_or_create(
                                         _kind=kind,
                                         _name=y["scope_name"],
@@ -1056,7 +1010,6 @@ class Project:
                                         _ent=ent[0],
                                         _scope=scope[0],
                                     )
-                                    print("TEST OVERRIDE 6 : ")
                                     overrideBy_ref = ReferenceModel.get_or_create(
                                         _kind=212,
                                         _file=fe,
@@ -1065,7 +1018,6 @@ class Project:
                                         _ent=scope[0],
                                         _scope=ent[0],
                                     )
-                                    print("TEST OVERRIDE 7 : ")
                             except Exception as e:
                                 print("ERROR 3 in addoverridereference : ", e)
                     elif x["is_overrided"]:
@@ -1192,7 +1144,6 @@ class Project:
         file_address: str = "",
     ) -> None:
         file_entity = self.get_parent_entity(file_address)
-
         for item in unknown_module:
             created_entity, _ = EntityModel.get_or_create(
                 _kind_id=KindModel.get_or_none(_name="Java Module")._id,
@@ -1369,60 +1320,69 @@ class Project:
     def addcouplereference(self, classes, couples, file_ent):
         keykind = ""
         for c in couples:
-
-            scope = EntityModel.get_or_create(
-                _kind=self.findKindWithKeywords(c["scope_kind"], c["scope_modifiers"]),
-                _name=c["scope_name"],
-                _parent=c["scope_parent"]
-                if c["scope_parent"] is not None
-                else file_ent,
-                _longname=c["scope_longname"],
-                _contents=c["scope_contents"],
-            )
-            if "type_ent_longname" in c:
-                keylist = c["type_ent_longname"]
-                if len(keylist) != 0:
-                    for key in keylist:
-                        if key in classes:
-                            c1 = classes[key]
-                            file_ent2 = file_ent
-                            keykind = self.findKindWithKeywords(
-                                c1["scope_kind"], c1["scope_modifiers"]
-                            )
-                            ent = EntityModel.get_or_create(
-                                _kind=self.findKindWithKeywords(
+            try:
+                scope = EntityModel.get_or_create(
+                    _kind=self.findKindWithKeywords(c["scope_kind"], c["scope_modifiers"]),
+                    _name=c["scope_name"],
+                    _parent=c["scope_parent"]
+                    if c["scope_parent"] is not None
+                    else file_ent,
+                    _longname=c["scope_longname"],
+                    _contents=c["scope_contents"],
+                )
+                if "type_ent_longname" in c:
+                    print("ERROR M : 4 ")
+                    keylist = c["type_ent_longname"]
+                    if len(keylist) != 0:
+                        for key in keylist:
+                            if key in classes:
+                                c1 = classes[key]
+                                file_ent2 = file_ent
+                                keykind = self.findKindWithKeywords(
                                     c1["scope_kind"], c1["scope_modifiers"]
-                                ),
-                                _name=c1["scope_name"],
-                                _parent=c1["scope_parent"]
-                                if c1["scope_parent"] is not None
-                                else file_ent2,
-                                _longname=c1["scope_longname"],
-                                _contents=c1["scope_contents"],
-                            )
-                            CoupleBy_ref = ReferenceModel.get_or_create(
-                                _kind=180,
-                                _file=file_ent2,
+                                )
+                                ent = EntityModel.get_or_create(
+                                    _kind=self.findKindWithKeywords(
+                                        c1["scope_kind"], c1["scope_modifiers"]
+                                    ),
+                                    _name=c1["scope_name"],
+                                    _parent=c1["scope_parent"]
+                                    if c1["scope_parent"] is not None
+                                    else file_ent2,
+                                    _longname=c1["scope_longname"],
+                                    _contents=c1["scope_contents"],
+                                )
+                                CoupleBy_ref = ReferenceModel.get_or_create(
+                                    _kind=180,
+                                    _file=file_ent2,
+                                    _line=c["line"],
+                                    _column=c["col"],
+                                    _ent=scope[0],
+                                    _scope=ent[0],
+                                )
+
+                            else:
+                                kw = key.split(".")
+                                keykind = 84
+                                ent = EntityModel.get_or_create(
+                                    _kind=keykind,
+                                    _name=kw[-1],
+                                    _parent=file_ent,
+                                    _longname=key,
+                                )
+                            Couple_ref = ReferenceModel.get_or_create(
+                                _kind=179,
+                                _file=file_ent,
                                 _line=c["line"],
                                 _column=c["col"],
-                                _ent=scope[0],
-                                _scope=ent[0],
+                                _ent=ent[0],
+                                _scope=scope[0],
                             )
 
-                        else:
-                            kw = key.split(".")
-                            keykind = 84
-                            ent = EntityModel.get_or_create(
-                                _kind=keykind,
-                                _name=kw[-1],
-                                _parent=file_ent,
-                                _longname=key,
-                            )
-                        Couple_ref = ReferenceModel.get_or_create(
-                            _kind=179,
-                            _file=file_ent,
-                            _line=c["line"],
-                            _column=c["col"],
-                            _ent=ent[0],
-                            _scope=scope[0],
-                        )
+            except Exception as e:
+                print(e)
+                print("ERROR M : 0 ", c["scope_kind"])
+                print("ERROR M : 1 ", c["scope_modifiers"])
+                print("ERROR M : 3 ", self.findKindWithKeywords(c["scope_kind"],
+                                                                c[
+                                                                    "scope_modifiers"]))

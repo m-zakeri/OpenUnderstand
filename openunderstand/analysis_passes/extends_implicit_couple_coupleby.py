@@ -89,52 +89,30 @@ class DSCmetric(JavaParserLabeledListener):
         return json_output
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
-        print("import 0")
 
         def check_generic_class():
-            print("import 1")
             for child in ctx.children:
                 if isinstance(child, JavaParserLabeled.TypeParametersContext):
-                    print("import 2")
                     return True
-            print("import 3")
             return False
 
-        print("import 4")
         if ctx.EXTENDS():
-            print("import 5")
             return
-        print("import 6")
         prefix_list = []
-        print("import 7")
         for child in ctx.parentCtx.children:
-            print("import 8")
             if type(child) == JavaParserLabeled.ClassDeclarationContext:
-                print("import 9")
                 break
-            print("import 10 ", child.getText())
             prefix_list.append(child.getText())
-        print("import 11")
         if check_generic_class():
-            print("import 12")
             prefix_list.append("generic")
-        print("import 13")
         data = ClassTypeData()
-        print("import 14")
         data.set_child_class(ctx)
-        print("import 15")
         data.set_parent_class("java.lang.Object")
-        print("import 16")
         data.set_column(0)
-        print("import 17")
         data.set_prefixes(prefix_list=prefix_list)
-        print("import 18")
         data.set_package_name(self.package_name)
-        print("import 19")
         data.set_line(ctx.start.line)
-        print("import 20")
         self.dbHandler.put(data)
-        print("import 21")
 
 
 class PackageImportListener(JavaParserLabeledListener):
@@ -143,19 +121,13 @@ class PackageImportListener(JavaParserLabeledListener):
         self.imported_libraries = []
 
     def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
-        print("import 22")
         self.package_name = ctx.getText().replace("package", "").replace(";", "")
-        print("import 23")
 
     def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
-        print("import 24")
         parsed_import = ctx.getText().replace("import", "").replace(";", "")
-        print("import 25")
         if parsed_import[:4] == "java":
-            print("import 26")
             self.imported_libraries.append(parsed_import)
-            print("import 27")
-        print("import 28")
+
 
 
 def getNameEntity(prefixes) -> str:

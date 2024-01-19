@@ -200,9 +200,4 @@ def main():
     walker = ParseTreeWalker()
     walker.walk(listener, tree)
     print("imports", listener.Imports)
-
     print(listener.get_classes)
-
-
-if __name__ == "__main__":
-    main()

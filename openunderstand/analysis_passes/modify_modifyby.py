@@ -84,28 +84,30 @@ class ModifyListener(JavaParserLabeledListener):
         [line, col] = str(ctx.start).split(",")[3].split(":")
 
         parents = self.entity_manager.get_or_create_parent_entities(ctx)
+        try:
+            parent = parents[-1][1]
 
-        parent = parents[-1][1]
-
-        name = (
-            ctx.expression().getText().replace("this", "").replace(".", "").lstrip("_")
-        )
-
-        longname = self.package + "." + self.parent + "." + name
-
-        if name not in ["1", "2", "3", "4", "5", "6", "7", "8", "9"]:
-
-            self.modify.append(
-                {
-                    "kind": 208,
-                    "file": self.entity_manager.file_ent,
-                    "line": line,
-                    "column": col.replace("]", ""),
-                    "ent": longname,
-                    "scope": parent[0],
-                    "modifiers": None,
-                }
+            name = (
+                ctx.expression().getText().replace("this", "").replace(".", "").lstrip("_")
             )
+
+            longname = self.package + "." + self.parent + "." + name
+
+            if name not in ["1", "2", "3", "4", "5", "6", "7", "8", "9"]:
+
+                self.modify.append(
+                    {
+                        "kind": 208,
+                        "file": self.entity_manager.file_ent,
+                        "line": line,
+                        "column": col.replace("]", ""),
+                        "ent": longname,
+                        "scope": parent[0],
+                        "modifiers": None,
+                    }
+                )
+        except Exception as e:
+            print("ERROR at modify_modifyby.py in analysis passes at line  110 : ", e)
 
     def enterExpression21(self, ctx: JavaParserLabeled.Expression21Context):
 
@@ -126,20 +128,22 @@ class ModifyListener(JavaParserLabeledListener):
             [line, col] = str(ctx.start).split(",")[3].split(":")
 
             parents = self.entity_manager.get_or_create_parent_entities(ctx)
+            try:
+                parent = parents[-1][1]
 
-            parent = parents[-1][1]
-
-            self.modify.append(
-                {
-                    "kind": 208,
-                    "file": self.entity_manager.file_ent,
-                    "line": line,
-                    "column": col.replace("]", ""),
-                    "ent": longname,
-                    "scope": parent[0],
-                    "modifiers": None,
-                }
-            )
+                self.modify.append(
+                    {
+                        "kind": 208,
+                        "file": self.entity_manager.file_ent,
+                        "line": line,
+                        "column": col.replace("]", ""),
+                        "ent": longname,
+                        "scope": parent[0],
+                        "modifiers": None,
+                    }
+                )
+            except Exception as e:
+                print("ERROR at modify_modifyby.py in analysis passes at line  146 : ", e)
 
     def exitExpression6(self, ctx: JavaParserLabeled.Expression6Context):
 

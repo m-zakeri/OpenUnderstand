@@ -772,17 +772,20 @@ class Ent:
                 metrics.update(
                     {"CountDeclClassVariable": declare_class_variables(self)}
                 )
+            elif item == "AvgCyclomatic":
+                metrics.update(
+                    {"CountDeclClassVariable": declare_class_variables(self)}
+                )
 
         return metrics
 
     def metrics(self):  # real signature unknown; restored from __doc__
         """
         ent.metrics() -> list of strings
-
         Return a list of metric names defined for the entity.
         """
 
-        return ["CountDeclMethodAll", "CountDeclClassVariable"]
+        return ["CountDeclMethodAll", "CountDeclClassVariable", "AvgCyclomatic"]
 
     def name(self):  # real signature unknown; restored from __doc__
         """
@@ -857,18 +860,13 @@ class Ent:
     ):  # real signature unknown; restored from __doc__
         """
         ent.refs([refkindstring [,entkindstring [,unique]]]) -> list of ounderstand.Ref
-
         Return a list of references.
-
         The optional paramter refkindstring (string) should be a language-
-        specific reference filter string. If it is not given, all references
-         are returned.
-
+        specific reference filter string. If it is not given, all references are returned.
         The optional paramter entkindstring (string) should be a language-
         specific entity filter string that specifies what kind of referenced
         entities should be returned. If it is not given, all references to
         any kind of entity are returned.
-
         The optional parameter unique (bool) is false by default. If it is
         true, only the first matching reference to each unique entity is
         returned
@@ -882,7 +880,6 @@ class Ent:
                 kinds = KindModel.select().where(
                     (KindModel.is_ent_kind == False) & (KindModel._name.contains(item))
                 )
-
                 if len(mlist) > 1:
                     print(kinds.count())
                     for k in kinds:
@@ -909,7 +906,6 @@ class Ent:
 
             for ref in query:
                 references.append(Ref(**ref.__dict__.get("__data__")))
-
         if unique:
             references = references[:1]
         return references

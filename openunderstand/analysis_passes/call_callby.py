@@ -1,11 +1,7 @@
 """
 ## Description
 This module find all OpenUnderstand call and callby references in a Java project
-
-
 ## References
-
-
 """
 
 
@@ -17,7 +13,7 @@ from analysis_passes.general_scope_listener import GeneralScopeListener
 
 class CallAndCallBy(JavaParserLabeledListener):
     """
-    #Todo: Implementing the ANTLR listener pass for Java Call and Java Callby reference kind
+    Todo: Implementing the ANTLR listener pass for Java Call and Java Callby reference kind
     """
 
     def __init__(
@@ -28,11 +24,8 @@ class CallAndCallBy(JavaParserLabeledListener):
         available_class_fields,
         class_parents,
     ):
+        self.class_fields_repo = None
         self.scope_stack = [[file_full_path]]
-        # The dict has a key corresponding to the
-        # entity_id of the reference owner entity
-        # each key maps to an array of referenced entities
-        # according to their entity id
         self.class_methods_repo = {}
         self.class_parents = class_parents
         self.available_imported_classes = set()
@@ -279,8 +272,6 @@ class CallAndCallBy(JavaParserLabeledListener):
                         self.current_class_name, callee
                     )
                     if callee_spec is None:
-                        # if caller is neither field nor variable
-                        # it's a class name
                         callee_spec = {"tp": self.get_fullname(callee), "name": None}
                         # find method fullname
                         # and fill self.call_dict
@@ -378,29 +369,13 @@ class CallAndCallBy(JavaParserLabeledListener):
         self, ctx, callee, arg_list, arg_count, token
     ):
         try:
-            print("h0")
             callee = callee[callee.index(".") + 1 :]
-            print("h1")
             callee_spec = self.which_local_variable(callee)
-            print("h2")
             if callee_spec is None:
-                print("h3")
                 callee_spec = self.which_class_field(self.current_class_name, callee)
                 # this condition shouldn't really be satisfied
-                print("h4")
                 if callee_spec is None:
-                    print("h5")
                     callee_spec = {"tp": self.get_fullname(callee), "name": None}
-            # print(callee_spec)
-            # print(type(callee_spec))
-            # print("h6", callee_spec["tp"])
-            # print("h6", type(callee_spec["tp"]))
-            # print("h6", str(ctx.IDENTIFIER()))
-            # print("h6", type(str(ctx.IDENTIFIER())))
-            # print("h6", arg_list)
-            # print("h6", type(arg_list))
-            # print("h6", arg_count)
-            # print("h6", type(arg_count))
             try:
                 method_fullname = self.which_method(
                     callee_spec["tp"], str(ctx.IDENTIFIER()), arg_list, arg_count
@@ -409,21 +384,14 @@ class CallAndCallBy(JavaParserLabeledListener):
                 method_fullname = self.which_method(
                     callee_spec, str(ctx.IDENTIFIER()), arg_list, arg_count
                 )
-            print("h7")
             key = (method_fullname[0]["name"], method_fullname[0]["params"])
-            print("h8")
             is_inherited_method = True if method_fullname[1] == "parent" else False
-            print("h9")
             if is_inherited_method:
-                print("h10")
                 self.fill_non_dynamic_call_dict(
                     key, token.line, token.column, self.current_class_name
                 )
-                print("h11")
             else:
-                print("h12")
                 self.fill_call_dict(key, token.line, token.column)
-                print("h13")
         except Exception as e:
             print("ERROR handle_this_dot_or_super_dot_callee : ", e)
 
@@ -471,7 +439,6 @@ class CallAndCallBy(JavaParserLabeledListener):
             self.call_dict[key].append(
                 {
                     "file": self.abspath,
-                    # caller scope
                     "scope": self.scope_stack[len(self.scope_stack) - 1],
                     "called_through_child": None,
                     "line": line,
@@ -480,10 +447,6 @@ class CallAndCallBy(JavaParserLabeledListener):
             )
         except Exception as e:
             print("ERROR fill_call_dict : ", e)
-
-    # checks if the given field belongs to the current class
-    # or a surrounding class
-    # or a parent class
     def which_class_field(self, class_long_name, field_name):
         try:
             for classname in self.class_fields_repo:

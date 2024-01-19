@@ -3,8 +3,8 @@ from analysis_passes.DotRef_DorRefBy import DotRef_DotRefBy
 from analysis_passes.callNonDynamic_callNonDynamicby import (
     CallNonDynamicAndCallNonDynamicBy,
 )
-from analysis_passes.call_callby import CallAndCallBy
 
+from analysis_passes.call_callby import CallAndCallBy
 from analysis_passes.cast_cast_by import CastAndCastBy, implementListener
 from analysis_passes.contain_contain_by import ContainAndContainBy
 from analysis_passes.extends_implicit_couple_coupleby import (
@@ -22,6 +22,7 @@ from analysis_passes.entity_manager_g11 import (
     FileEntityManager,
     get_created_entity,
 )
+
 from analysis_passes.use_useby import UseAndUseByListener
 from analysis_passes.type_typedby import TypedAndTypedByListener
 from analysis_passes.set_setby import SetAndSetByListener
@@ -83,7 +84,7 @@ class ListenersAndParsers:
                 "An Error occurred in file variable refs :"
                 + file_address
                 + "\n"
-                + str(e)
+                + str(e) + "\n" + traceback.format_exc()
             )
 
     @timer_decorator()
@@ -133,7 +134,6 @@ class ListenersAndParsers:
     @timer_decorator()
     def create_listener(self, tree, file_ent, file_address, p):
         try:
-            #  create refs TODO: fix NOT NULL constraint failed: entitymodel._kind_id
             listener = CreateAndCreateBy()
             p.Walk(listener, tree)
             p.addCreateRefs(listener.create, file_ent, file_address)
@@ -199,7 +199,6 @@ class ListenersAndParsers:
     @timer_decorator()
     def modify_listener(self, parse_tree, entity_generator, file_address, p):
         try:
-            # modify TODO : FIX modify error not found
             listener = ModifyListener(entity_generator)
             p.Walk(listener, parse_tree)
             p.add_modify_and_modifyby_reference(listener.modify)
@@ -250,7 +249,7 @@ class ListenersAndParsers:
                 "An Error occurred in couple reference in file :"
                 + file_address
                 + "\n"
-                + str(e)
+                + str(e) + "\n" + traceback.format_exc()
             )
 
     @timer_decorator()
@@ -276,7 +275,6 @@ class ListenersAndParsers:
     @timer_decorator()
     def dotref_listener(self, tree, file_ent, file_address, p):
         try:
-            # dot ref TODO:  'ClassBodyDeclaration1Context' object has no attribute 'modifier'
             listener = DotRef_DotRefBy()
             p.Walk(listener, tree)
             p.addThrows_TrowsByRefs(
@@ -335,8 +333,6 @@ class ListenersAndParsers:
     @timer_decorator()
     def callbyNonDynamic_listener(self, tree, file_ent, file_address, p):
         try:
-            # call ref TODO: fix 'Statement6Context' object has no attribute 'expression'
-            # call ref TODO: fix 'NoneType' object has no attribute 'blockStatement'
             listener = CallNonDynamicAndCallNonDynamicBy()
             p.Walk(listener, tree)
             p.addCallNonDynamicOrCallNonDynamicByRefs(
@@ -348,7 +344,7 @@ class ListenersAndParsers:
                 "An Error occurred in call non dynamic ref in file :"
                 + file_address
                 + "\n"
-                + str(e)
+                + str(e) +"\n" + traceback.format_exc()
             )
 
     @timer_decorator()

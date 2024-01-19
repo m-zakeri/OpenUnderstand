@@ -33,6 +33,7 @@ from analysis_passes.class_properties import (
     ClassPropertiesListener,
     InterfacePropertiesListener,
 )
+from oudb.models import KindModel
 
 # Constants
 FILE_KIND_ID = 1
@@ -92,21 +93,26 @@ class EntityGenerator:
         _name = res_dict["name"]
         modifiers = res_dict["modifiers"]
         # print(modifiers)
-        _kind = self.get_variable_kind(modifiers) if modifiers is not None else 168
+        # _kind = self.get_variable_kind(modifiers) if modifiers is not None else 168
+        _kind = self.get_variable_kind(modifiers) if modifiers is not None else KindModel().get(_name="Java Unknown Variable Member")
+        if _kind is None:
+            _kind = KindModel().get(_name="Java Unknown Variable Member")
         _type = res_dict["type"]
         _value = res_dict["value"]
         # print(res_dict['parent_longname'])
+        variable_entity = None
         _parent = EntityModel.get_or_none(_longname=res_dict["parent_longname"])
-        _longname = _parent._longname + "." + _name
-        variable_entity, _ = EntityModel.get_or_create(
-            _kind=_kind,
-            _parent=_parent,
-            _name=_name,
-            _value=_value,
-            _longname=_longname,
-            _type=_type,
-            _contents="",
-        )
+        if _parent is not None:
+            _longname = _parent._longname + "." + _name
+            variable_entity, _ = EntityModel.get_or_create(
+                _kind=_kind,
+                _parent=_parent,
+                _name=_name,
+                _value=_value,
+                _longname=_longname,
+                _type=_type,
+                _contents="",
+            )
         return variable_entity
 
     def get_or_create_parent_entities(self, ctx):

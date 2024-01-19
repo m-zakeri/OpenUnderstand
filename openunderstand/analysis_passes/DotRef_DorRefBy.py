@@ -28,11 +28,12 @@ class DotRef_DotRefBy(JavaParserLabeledListener):
 
     def findmethodacess(self, c):
         parents = ""
-        modifiers = []
         current = c
+        modifiers = []
         while current is not None:
             if "ClassBodyDeclaration" in type(current.parentCtx).__name__:
-                parents = current.parentCtx.modifier()
+                if hasattr(current.parentCtx, 'modifier'):
+                    parents = current.parentCtx.modifier()
                 break
             current = current.parentCtx
         for x in parents:

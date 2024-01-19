@@ -58,7 +58,9 @@ class CallNonDynamicAndCallNonDynamicBy(JavaParserLabeledListener):
                         bb = bb()
                         self.dfs(bb, cls, context, extendedBy)
                 else:
-                    exp = statement.expression()
+                    exp = statement
+                    if hasattr(statement, "expression"):
+                        exp = statement.expression()
                     exp2 = getattr(exp, "expression", None)
                     if exp2 is not None:
                         exp2 = exp2()

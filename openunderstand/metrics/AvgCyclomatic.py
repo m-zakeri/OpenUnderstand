@@ -1,11 +1,10 @@
 import os
 from antlr4 import *
 from setuptools import glob
-
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-
+from openunderstand.ounderstand.listeners_and_parsers import ListenersAndParsers
 import argparse
 
 
@@ -130,3 +129,8 @@ class CyclomaticListener(JavaParserLabeledListener):
             self.dict[self.name] = self.avg
         except:
             pass
+
+lp = ListenersAndParsers()
+
+def avg_cyclomatic():
+    lp.parser()

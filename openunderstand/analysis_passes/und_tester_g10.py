@@ -18,6 +18,3 @@ def test_understand_kinds():
             print(f"4. file location: {ref.file().longname()} || line: {ref.line()}")
             print("-" * 25)
 
-
-if __name__ == "__main__":
-    test_understand_kinds()
