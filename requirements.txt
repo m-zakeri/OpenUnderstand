@@ -5,3 +5,5 @@ openpyxl==3.0.10
 packaging==23.1
 peewee==3.14.4
 pybind11==2.11.1
+javalang
+tabulate

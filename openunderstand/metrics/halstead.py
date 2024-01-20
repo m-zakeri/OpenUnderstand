@@ -1,6 +1,3 @@
-import argparse
-import os.path
-import sys
 from javalang import tokenizer
 from tabulate import tabulate
 import math

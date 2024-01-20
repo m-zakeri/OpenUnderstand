@@ -1,9 +1,10 @@
-from antlr4 import *
-
-from gen.javaLabeled.JavaLexer import JavaLexer
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from gen.javaLabeled.JavaLexer import JavaLexer
+from ounderstand.project import Project
+from antlr4 import *
 from analysis_passes import class_properties
+
 
 
 def countParents(ctx):
@@ -144,7 +145,6 @@ class EssentialMetricListener(JavaParserLabeledListener):
             + "."
             + ctx.IDENTIFIER().getText()
         )
-        print("methode", longname, self.count_essential_metric)
         self.methods[longname] = self.count_essential_metric
         self.method_entered = False
         self.count_essential_metric = 1
@@ -165,23 +165,12 @@ class EssentialMetricListener(JavaParserLabeledListener):
         if len(list_of_val) != 0:
             max_val = max(list_of_val)
         self.classes[longname] = max_val
-
-
-def get_parse_tree(file_path):
-    file = FileStream(file_path)
-    lexer = JavaLexer(file)
+def essential(ent_model=None):
+    p = Project()
+    listener = EssentialMetricListener()
+    lexer = JavaLexer(InputStream(ent_model.contents()))
     tokens = CommonTokenStream(lexer)
     parser = JavaParserLabeled(tokens)
-    return parser.compilationUnit()
-
-
-def main():
-    path = r"C:\Users\Asus Vivobook\PycharmProjects\pythonProject\benchmark\calculator_app\src\com\calculator\app\display\print_fail.java"
-    tree = get_parse_tree(path)
-    listener = EssentialMetricListener(" ")
-    walker = ParseTreeWalker()
-    walker.walk(listener, tree)
-
-
-if __name__ == "__main__":
-    main()
+    return_tree = parser.compilationUnit()
+    p.Walk(reference_listener=listener, parse_tree=return_tree)
+    return listener.count_essential_metric

@@ -14,8 +14,8 @@ __credits__ = [
 __license__ = "GPL"
 __version__ = "1.0.0"
 
+from ounderstand.project import Project
 from antlr4 import *
-
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
@@ -210,11 +210,12 @@ class KnotsMetricListener(JavaParserLabeledListener):
             if ctx.IDENTIFIER().getText() == self.method._name:
                 self.method_entered = False
 
-
-if __name__ == "__main__":
-    create_db("../../benchmark2_database.oudb", project_dir="..\..\benchmark")
-    db = db_open("../../benchmark2_database.oudb")
-    # try:
-    konts_manager = EssentialMetric("com.calculator.app.display.print_success.main")
-    # except Exception as e:
-    # print("Error:", e)
+def knot(ent_model=None):
+    p = Project()
+    listener = KnotsMetricListener()
+    lexer = JavaLexer(InputStream(ent_model.contents()))
+    tokens = CommonTokenStream(lexer)
+    parser = JavaParserLabeled(tokens)
+    return_tree = parser.compilationUnit()
+    p.Walk(reference_listener=listener, parse_tree=return_tree)
+    return listener.count_essential_metric

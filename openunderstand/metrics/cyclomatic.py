@@ -1,9 +1,10 @@
+from ounderstand.project import Project
 from collections import Counter
 from antlr4 import *
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from utils_g10 import Project, get_project_info, get_parse_tree
-from utils_g10 import report_metric, get_method_prefixes
+from utils_g10 import get_method_prefixes
+from gen.javaLabeled.JavaLexer import JavaLexer
 
 PRJ_INDEX = 2
 METRIC_NAME = "Cyclomatic"
@@ -204,26 +205,20 @@ class CyclomaticListener(JavaParserLabeledListener):
             self.update_repository(ctx)
 
 
-def main():
-    info = get_project_info(PRJ_INDEX)
-    p = Project(info["PROJECT_PATH"], info["PROJECT_NAME"])
-    p.get_java_files()
-
-    walker = ParseTreeWalker()
-    cyclomatic_listener = CyclomaticListener()
-
+def cyclomatic(ent_model):
+    p = Project()
+    listener = CyclomaticListener()
+    lexer = JavaLexer(InputStream(ent_model.contents()))
+    tokens = CommonTokenStream(lexer)
+    parser = JavaParserLabeled(tokens)
+    return_tree = parser.compilationUnit()
+    p.Walk(reference_listener=listener, parse_tree=return_tree)
+    cyclomatic_listener = listener
     cyclomatic_list = []
     ent_kind_set = set()
-
-    for file_name, file_path in p.files:
-        tree = get_parse_tree(file_path)
-        walker.walk(cyclomatic_listener, tree)
-
     cyclomatic_counter = Counter(cyclomatic_listener.repository)
-
     for ctx in cyclomatic_counter:
         cyclomatic = cyclomatic_counter[ctx]
-
         if type(ctx).__name__ == "EnumDeclarationContext":
             cyclomatic_list.extend(make_enum_scope())
         else:
@@ -231,14 +226,4 @@ def main():
             cyclomatic_obj["val"] = cyclomatic
             cyclomatic_list.append(cyclomatic_obj)
             ent_kind_set.add(cyclomatic_obj["kind"])
-
-    report_metric(
-        cyclomatic_listener.project_cyclomatic,
-        ent_kind_set,
-        cyclomatic_list,
-        METRIC_NAME,
-    )
-
-
-if __name__ == "__main__":
-    main()
+    return cyclomatic_listener.project_cyclomatic

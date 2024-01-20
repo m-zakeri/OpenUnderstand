@@ -1,6 +1,8 @@
-from antlr4 import *
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from gen.javaLabeled.JavaLexer import JavaLexer
+from ounderstand.project import Project
+from antlr4 import *
 from analysis_passes import class_properties
 
 
@@ -14,7 +16,7 @@ def countParents(ctx):
 
 
 class CyclomaticStrictListener(JavaParserLabeledListener):
-    def __init__(self, class_):
+    def __init__(self):
         self.method_count_Cyclomatic = 1
         self.method_long_name = ""
         self.file = ""
@@ -23,7 +25,7 @@ class CyclomaticStrictListener(JavaParserLabeledListener):
         self.enter_class = False
         self.method_long_names = {}
         self.packagename = ""
-        self.class_name = class_
+        self.class_name = None
         self.max_value = 0
         self.classes = {}
 
@@ -151,3 +153,12 @@ class CyclomaticStrictListener(JavaParserLabeledListener):
 # add and or counter
 # interfaces
 # complete essential
+def cyclomatic_strict(ent_model=None):
+    p = Project()
+    listener = CyclomaticStrictListener()
+    lexer = JavaLexer(InputStream(ent_model.contents()))
+    tokens = CommonTokenStream(lexer)
+    parser = JavaParserLabeled(tokens)
+    return_tree = parser.compilationUnit()
+    p.Walk(reference_listener=listener, parse_tree=return_tree)
+    return listener.method_count_Cyclomatic
