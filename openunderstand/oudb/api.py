@@ -884,24 +884,24 @@ class Ent:
         """
         # TODO : check nested references
         mlist = [j.replace(" ", "") for j in refkindstring.split(",")]
-        references = []
+        refs = []
         for item in mlist:
             query = ReferenceModel.select().where(ReferenceModel._scope == self._id)
             if item:
                 kinds = KindModel.select().where(
                     (KindModel.is_ent_kind == False) & (KindModel._name.contains(item))
                 )
-                if len(mlist) > 1:
-                    print(kinds.count())
-                    for k in kinds:
-                        print("kin : ", k._name)
-                        print(k._id)
-                    q = ReferenceModel.select().where(ReferenceModel._kind.in_(kinds))
-                    for it in query:
-                        # print("it : ", it._kind)
-                        if str(it._kind) != "Java Define":
-                            print("X :", it._kind)
-                            print("X :", "Java Define")
+                # if len(mlist) > 1:
+                #     print(kinds.count())
+                #     for k in kinds:
+                #         print("kin : ", k._name)
+                #         print(k._id)
+                #     q = ReferenceModel.select().where(ReferenceModel._kind.in_(kinds))
+                #     for it in query:
+                #         # print("it : ", it._kind)
+                #         if str(it._kind) != "Java Define":
+                #             print("X :", it._kind)
+                #             print("X :", "Java Define")
 
                 query = query.where(ReferenceModel._kind.in_(kinds))
                 # if len(mlist) > 1:
@@ -916,7 +916,12 @@ class Ent:
                 query = query.where(ReferenceModel._ent.in_(ents))
 
             for ref in query:
-                references.append(Ref(**ref.__dict__.get("__data__")))
+                refs.append(Ref(**ref.__dict__.get("__data__")))
+        # Remove duplicates from 'refs' and store unique references in 'references' list
+        references = []
+        for ref in refs:
+            if ref not in references:
+                references.append(ref)
         if unique:
             references = references[:1]
         return references
