@@ -1,8 +1,4 @@
 from oudb.models import EntityModel, KindModel, ReferenceModel
-from utils.utilities import setup_logger
-
-
-logger = setup_logger()
 
 
 def count_decl_method_all(ent_model=None) -> int:
@@ -18,7 +14,6 @@ def count_decl_method_all(ent_model=None) -> int:
         files.append(ent_model._longname)
     if "Class" in ent_model.kind().name():
         class_methods[ent_model._name] = 0
-        # get class methods number
     for ent_model in EntityModel.select():
         try:
             if "Method" in ent_model._kind._name:
@@ -28,7 +23,7 @@ def count_decl_method_all(ent_model=None) -> int:
                 else:
                     class_methods[ent_model._parent._name] += 1
         except Exception as e:
-            logger.error(
+            print(
                 f"error to calculate count_decl_method_all metric in {ent_model._kind._name} kind"
             )
 

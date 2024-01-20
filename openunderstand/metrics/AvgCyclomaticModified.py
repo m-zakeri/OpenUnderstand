@@ -1,12 +1,8 @@
-import os
-from antlr4 import *
-from setuptools import glob
-
-from gen.javaLabeled.JavaLexer import JavaLexer
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-
-import argparse
+from antlr4 import *
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from gen.javaLabeled.JavaLexer import JavaLexer
+from ounderstand.project import Project
 
 
 class CyclomaticModifiedListener(JavaParserLabeledListener):
@@ -125,3 +121,14 @@ class CyclomaticModifiedListener(JavaParserLabeledListener):
             self.dict[self.name] = self.avg
         except:
             pass
+
+
+def avg_cyclomatic_modified(ent_model=None):
+    p = Project()
+    listener = CyclomaticModifiedListener()
+    lexer = JavaLexer(InputStream(ent_model.contents()))
+    tokens = CommonTokenStream(lexer)
+    parser = JavaParserLabeled(tokens)
+    return_tree = parser.compilationUnit()
+    p.Walk(reference_listener=listener, parse_tree=return_tree)
+    return listener.count

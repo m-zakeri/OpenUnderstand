@@ -89,7 +89,6 @@ class DSCmetric(JavaParserLabeledListener):
         return json_output
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
-
         def check_generic_class():
             for child in ctx.children:
                 if isinstance(child, JavaParserLabeled.TypeParametersContext):
@@ -127,7 +126,6 @@ class PackageImportListener(JavaParserLabeledListener):
         parsed_import = ctx.getText().replace("import", "").replace(";", "")
         if parsed_import[:4] == "java":
             self.imported_libraries.append(parsed_import)
-
 
 
 def getNameEntity(prefixes) -> str:

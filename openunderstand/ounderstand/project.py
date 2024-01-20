@@ -808,7 +808,9 @@ class Project:
         for ref_dict in ref_dicts:
             try:
                 scope = EntityModel.get_or_create(
-                    _kind=self.findKindWithKeywords("Method", ref_dict["scopemodifiers"]),
+                    _kind=self.findKindWithKeywords(
+                        "Method", ref_dict["scopemodifiers"]
+                    ),
                     _name=ref_dict["scopename"],
                     _type=ref_dict["scopereturntype"],
                     _parent=ref_dict["scope_parent"]
@@ -819,7 +821,10 @@ class Project:
                 )[0]
 
                 ent = self.getCreatedClassEntity(
-                    ref_dict["refent"], ref_dict["potential_refent"], file_address, file_ent
+                    ref_dict["refent"],
+                    ref_dict["potential_refent"],
+                    file_address,
+                    file_ent,
                 )
 
                 Create = ReferenceModel.get_or_create(
@@ -841,7 +846,7 @@ class Project:
                 )
             except Exception as e:
                 print("ERROR in project.py function addCreateRefs ")
-                print("error message : ",e)
+                print("error message : ", e)
 
     def getPackageEntity(self, file_ent, name, longname):
         # package kind id: 72
@@ -1322,7 +1327,9 @@ class Project:
         for c in couples:
             try:
                 scope = EntityModel.get_or_create(
-                    _kind=self.findKindWithKeywords(c["scope_kind"], c["scope_modifiers"]),
+                    _kind=self.findKindWithKeywords(
+                        c["scope_kind"], c["scope_modifiers"]
+                    ),
                     _name=c["scope_name"],
                     _parent=c["scope_parent"]
                     if c["scope_parent"] is not None
@@ -1383,6 +1390,7 @@ class Project:
                 print(e)
                 print("ERROR M : 0 ", c["scope_kind"])
                 print("ERROR M : 1 ", c["scope_modifiers"])
-                print("ERROR M : 3 ", self.findKindWithKeywords(c["scope_kind"],
-                                                                c[
-                                                                    "scope_modifiers"]))
+                print(
+                    "ERROR M : 3 ",
+                    self.findKindWithKeywords(c["scope_kind"], c["scope_modifiers"]),
+                )

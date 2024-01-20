@@ -16,6 +16,6 @@ und_all_results = {}
 for ent in _db.ents("Class"):
     ent_name = ent.name()
     print(ent_name)
-    print(ent.metric(["AvgCyclomatic"]))
-    all_methods = ent.metric(["AvgCyclomatic"]).get("AvgCyclomatic", 0)
+    print(ent.metric(["CountDeclClassMethod"]))
+    all_methods = ent.metric(["CountDeclClassMethod"]).get("CountDeclClassMethod", 0)
     und_all_results[ent_name] = all_methods

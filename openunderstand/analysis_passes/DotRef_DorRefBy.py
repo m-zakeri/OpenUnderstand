@@ -32,7 +32,7 @@ class DotRef_DotRefBy(JavaParserLabeledListener):
         modifiers = []
         while current is not None:
             if "ClassBodyDeclaration" in type(current.parentCtx).__name__:
-                if hasattr(current.parentCtx, 'modifier'):
+                if hasattr(current.parentCtx, "modifier"):
                     parents = current.parentCtx.modifier()
                 break
             current = current.parentCtx

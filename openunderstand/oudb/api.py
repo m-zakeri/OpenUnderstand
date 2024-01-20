@@ -1,16 +1,14 @@
-import os
-
-# encoding: utf-8
-# module ounderstand calls itself understandAPI
-# from D:\program files\SciTools\bin\pc-win64\Python\ounderstand.pyd
-# by generator 1.147
-
 from oudb.models import *
 from dataclasses import dataclass
 from functools import reduce
 from ounderstand.parsing_process import process_file
 from metrics.count_decl_method_all import count_decl_method_all
 from metrics.count_decl_class_variable import declare_class_variables
+from metrics.AvgCyclomatic import avg_cyclomatic
+from metrics.AvgCyclomaticModified import avg_cyclomatic_modified
+from metrics.AvgCyclomaticStrict import avg_cyclomatic_strict
+from metrics.AvgEssential import avg_essential
+from metrics.count_decl_class_method import declare_method_count
 
 """
 This is the python interface to Understand databases.
@@ -373,7 +371,7 @@ class Db:
         must be open or a UnderstandError will be thrown.
         """
 
-        all_ents = []
+        all_ents = set()
 
         if kindstring is None:
             query = EntityModel.select()
@@ -391,7 +389,7 @@ class Db:
                 )
         for ent in query:
             my_ent = Ent(**ent.__dict__.get("__data__"))
-            all_ents.append(my_ent)
+            all_ents.add(my_ent)
         return all_ents
 
     def ent_from_id(self, id: int):  # real signature unknown; restored from __doc__
@@ -773,10 +771,15 @@ class Ent:
                     {"CountDeclClassVariable": declare_class_variables(self)}
                 )
             elif item == "AvgCyclomatic":
-                metrics.update(
-                    {"CountDeclClassVariable": declare_class_variables(self)}
-                )
-
+                metrics.update({"AvgCyclomatic": avg_cyclomatic(self)})
+            elif item == "AvgCyclomaticModified":
+                metrics.update({"AvgCyclomaticModified": avg_cyclomatic_modified(self)})
+            elif item == "AvgCyclomaticStrict":
+                metrics.update({"AvgCyclomaticStrict": avg_cyclomatic_strict(self)})
+            elif item == "AvgEssential":
+                metrics.update({"AvgEssential": avg_essential(self)})
+            elif item == "CountDeclClassMethod":
+                metrics.update({"CountDeclClassMethod": declare_method_count(self)})
         return metrics
 
     def metrics(self):  # real signature unknown; restored from __doc__
@@ -785,7 +788,15 @@ class Ent:
         Return a list of metric names defined for the entity.
         """
 
-        return ["CountDeclMethodAll", "CountDeclClassVariable", "AvgCyclomatic"]
+        return [
+            "CountDeclMethodAll",
+            "CountDeclClassVariable",
+            "AvgCyclomatic",
+            "AvgCyclomaticModified",
+            "AvgCyclomaticStrict",
+            "AvgEssential",
+            "CountDeclClassMethod"
+        ]
 
     def name(self):  # real signature unknown; restored from __doc__
         """

@@ -88,7 +88,11 @@ class ModifyListener(JavaParserLabeledListener):
             parent = parents[-1][1]
 
             name = (
-                ctx.expression().getText().replace("this", "").replace(".", "").lstrip("_")
+                ctx.expression()
+                .getText()
+                .replace("this", "")
+                .replace(".", "")
+                .lstrip("_")
             )
 
             longname = self.package + "." + self.parent + "." + name
@@ -143,7 +147,9 @@ class ModifyListener(JavaParserLabeledListener):
                     }
                 )
             except Exception as e:
-                print("ERROR at modify_modifyby.py in analysis passes at line  146 : ", e)
+                print(
+                    "ERROR at modify_modifyby.py in analysis passes at line  146 : ", e
+                )
 
     def exitExpression6(self, ctx: JavaParserLabeled.Expression6Context):
 

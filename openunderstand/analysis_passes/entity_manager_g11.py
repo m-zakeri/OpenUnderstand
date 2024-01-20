@@ -94,7 +94,11 @@ class EntityGenerator:
         modifiers = res_dict["modifiers"]
         # print(modifiers)
         # _kind = self.get_variable_kind(modifiers) if modifiers is not None else 168
-        _kind = self.get_variable_kind(modifiers) if modifiers is not None else KindModel().get(_name="Java Unknown Variable Member")
+        _kind = (
+            self.get_variable_kind(modifiers)
+            if modifiers is not None
+            else KindModel().get(_name="Java Unknown Variable Member")
+        )
         if _kind is None:
             _kind = KindModel().get(_name="Java Unknown Variable Member")
         _type = res_dict["type"]

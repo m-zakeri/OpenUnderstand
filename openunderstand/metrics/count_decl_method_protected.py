@@ -18,7 +18,3 @@ def count_decl_method_protected(db_path):
             else:
                 class_methods[ent_model._parent._name] += 1
     return class_methods
-
-
-if __name__ == "__main__":
-    print(count_decl_method_protected("../../benchmark2_database.oudb"))

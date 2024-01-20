@@ -1,5 +1,3 @@
-from define_and_definein import *
-
 
 def reach_file(ent_model):
     tmp = ent_model
@@ -9,7 +7,6 @@ def reach_file(ent_model):
 
 
 def declare_executable_unit():
-    main()
     executable_unit = {}
     for ent_model in EntityModel.select():
         if "Method" in ent_model._kind._name:

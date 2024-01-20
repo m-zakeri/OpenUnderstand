@@ -17,4 +17,3 @@ def test_understand_kinds():
             print(f"3. ref ent: {ref.ent().longname()} || kind: {ref.ent().kind()}")
             print(f"4. file location: {ref.file().longname()} || line: {ref.line()}")
             print("-" * 25)
-

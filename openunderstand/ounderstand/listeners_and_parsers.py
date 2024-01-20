@@ -61,7 +61,7 @@ class ListenersAndParsers:
             )
             return None, None, None
 
-    @timer_decorator()
+    @timer_decoraadtor()
     def entity_gen(self, file_address, parse_tree):
         return EntityGenerator(file_address, parse_tree)
 
@@ -84,7 +84,9 @@ class ListenersAndParsers:
                 "An Error occurred in file variable refs :"
                 + file_address
                 + "\n"
-                + str(e) + "\n" + traceback.format_exc()
+                + str(e)
+                + "\n"
+                + traceback.format_exc()
             )
 
     @timer_decorator()
@@ -249,7 +251,9 @@ class ListenersAndParsers:
                 "An Error occurred in couple reference in file :"
                 + file_address
                 + "\n"
-                + str(e) + "\n" + traceback.format_exc()
+                + str(e)
+                + "\n"
+                + traceback.format_exc()
             )
 
     @timer_decorator()
@@ -344,7 +348,9 @@ class ListenersAndParsers:
                 "An Error occurred in call non dynamic ref in file :"
                 + file_address
                 + "\n"
-                + str(e) +"\n" + traceback.format_exc()
+                + str(e)
+                + "\n"
+                + traceback.format_exc()
             )
 
     @timer_decorator()

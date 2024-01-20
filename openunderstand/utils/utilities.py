@@ -71,16 +71,22 @@ def timer_decorator():
     return decorator
 
 
+import os
+
+
 def setup_config():
     config = configparser.ConfigParser()
-    config.read("config.ini")
+    config.read(
+        os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), "..", "..", "config.ini"
+        )
+    )
     return config
 
 
 def setup_logger():
     # Read configurations from config.ini file
-    config = configparser.ConfigParser()
-    config.read("config.ini")
+    config = setup_config()
 
     # Create logger object
     logger = logging.getLogger(__name__)
