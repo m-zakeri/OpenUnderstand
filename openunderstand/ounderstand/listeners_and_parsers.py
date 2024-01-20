@@ -61,7 +61,7 @@ class ListenersAndParsers:
             )
             return None, None, None
 
-    @timer_decoraadtor()
+    @timer_decorator()
     def entity_gen(self, file_address, parse_tree):
         return EntityGenerator(file_address, parse_tree)
 
