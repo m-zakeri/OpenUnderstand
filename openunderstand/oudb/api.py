@@ -1,3 +1,4 @@
+from peewee import fn
 from oudb.models import *
 from dataclasses import dataclass
 from functools import reduce
@@ -889,7 +890,7 @@ class Ent:
             query = ReferenceModel.select().where(ReferenceModel._scope == self._id)
             if item:
                 kinds = KindModel.select().where(
-                    (KindModel.is_ent_kind == False) & (KindModel._name.contains(item))
+                    (KindModel.is_ent_kind == False) & (fn.Lower(KindModel._name) == (f"Java {item}").lower())
                 )
                 # if len(mlist) > 1:
                 #     print(kinds.count())
