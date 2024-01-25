@@ -10,6 +10,36 @@ from metrics.AvgCyclomaticModified import avg_cyclomatic_modified
 from metrics.AvgCyclomaticStrict import avg_cyclomatic_strict
 from metrics.AvgEssential import avg_essential
 from metrics.count_decl_class_method import declare_method_count
+from openunderstand.metrics.RatioCommentToCode import get_ratio_comment_to_code
+from openunderstand.metrics.PercentLackOfCohesionModified import (
+    get_percent_lack_of_cohesion_modified,
+)
+from openunderstand.metrics.PercentLackOfCohesion import get_percent_lack_of_cohesion
+from openunderstand.metrics.sum_cyclomatic_modified import get_sum_cyclomatic_modified
+from openunderstand.metrics.sum_cyclomatic_strict import get_sum_cyclomatic_strict
+from openunderstand.metrics.sumOfCyclomatics import get_sum_of_cyclomatics
+from openunderstand.metrics.count_decl_method_private import count_decl_method_private
+from openunderstand.metrics.count_decl_file import declare_file
+from openunderstand.metrics.sum_essentials import get_sum_essentials
+from openunderstand.metrics.count_decl_executable_unit import declare_executable_unit
+from openunderstand.metrics.min_max_essential_knots import min_max_essential_knots
+from openunderstand.metrics.namm import get_namm
+from openunderstand.metrics.MaxCalculator_G12 import max_cyclomatic
+from openunderstand.metrics.MaxCalculator_G12 import max_essential
+from openunderstand.metrics.MaxCalculator_G12 import max_cyclomatic_modified
+from openunderstand.metrics.MaxCalculator_G12 import max_cyclomatic_stricts
+from openunderstand.metrics.max_nesting import MaxNesting
+from openunderstand.metrics.max_inheritance import FindAllInheritances
+from openunderstand.metrics.knots_inheritance_nesting import get_knot_inheritance_nested
+from openunderstand.metrics.knots_inheritance_nesting import get_max_inheritance
+from openunderstand.metrics.Lineofcode import get_line_of_codes
+from openunderstand.metrics.G11_knots import knot
+from openunderstand.metrics.count_stmt_exe import statement_counter_exe
+from openunderstand.metrics.cyclomatic import cyclomatic
+from openunderstand.metrics.CyclomaticStrict_G12 import cyclomatic_strict
+from openunderstand.metrics.Essential_G12 import essential
+from openunderstand.metrics.CyclomaticModified_G12 import cyclomatic_modified
+
 
 """
 This is the python interface to Understand databases.
@@ -781,6 +811,166 @@ class Ent:
                 metrics.update({"AvgEssential": avg_essential(self)})
             elif item == "CountDeclClassMethod":
                 metrics.update({"CountDeclClassMethod": declare_method_count(self)})
+            elif item == "AvgLine":
+                raise NotImplementedError("metric AvgLine is not implemented")
+            elif item == "AvgLineBlank":
+                raise NotImplementedError("metric AvgLineBlank is not implemented")
+            elif item == "AvgLineCode":
+                raise NotImplementedError("metric AvgLineCode is not implemented")
+            elif item == "AvgLineComment":
+                raise NotImplementedError("metric AvgLineComment is not implemented")
+            elif item == "CountClassBase":
+                raise NotImplementedError("metric CountClassBase is not implemented")
+            elif item == "CountClassCoupled":
+                raise NotImplementedError("metric CountClassCoupled is not implemented")
+            elif item == "CountClassCoupledModified":
+                raise NotImplementedError(
+                    "metric CountClassCoupledModified is not implemented"
+                )
+            elif item == "CountClassDerived":
+                raise NotImplementedError("metric CountClassDerived is not implemented")
+            elif item == "CountDeclClass":
+                raise NotImplementedError("metric CountDeclClass is not implemented")
+            elif item == "CountDeclFile":
+                raise NotImplementedError("metric CountDeclFile is not implemented")
+            elif item == "CountDeclClassMethod":
+                raise NotImplementedError(
+                    "metric CountDeclClassMethod is not implemented"
+                )
+            elif item == "CountDeclExecutableUnit":
+                raise NotImplementedError(
+                    "metric CountDeclExecutableUnit is not implemented"
+                )
+            elif item == "CountDeclFunction":
+                raise NotImplementedError("metric CountDeclFunction is not implemented")
+            elif item == "CountDeclInstanceMethod":
+                raise NotImplementedError(
+                    "metric CountDeclInstanceMethod is not implemented"
+                )
+            elif item == "CountDeclInstanceVariable":
+                raise NotImplementedError(
+                    "metric CountDeclInstanceVariable is not implemented"
+                )
+            elif item == "CountDeclInstanceVariablePrivate":
+                raise NotImplementedError(
+                    "metric CountDeclInstanceVariablePrivate is not implemented"
+                )
+            elif item == "CountDeclInstanceVariableProtected":
+                raise NotImplementedError(
+                    "metric CountDeclInstanceVariableProtected is not implemented"
+                )
+            elif item == "CountDeclInstanceVariablePublic":
+                raise NotImplementedError(
+                    "metric CountDeclInstanceVariablePublic is not implemented"
+                )
+            elif item == "CountDeclMethod":
+                raise NotImplementedError("metric CountDeclMethod is not implemented")
+            elif item == "CountDeclMethodAll":
+                raise NotImplementedError(
+                    "metric CountDeclMethodAll is not implemented"
+                )
+            elif item == "CountDeclMethodDefault":
+                raise NotImplementedError(
+                    "metric CountDeclMethodDefault is not implemented"
+                )
+            elif item == "CountDeclMethodProtected":
+                raise NotImplementedError(
+                    "metric CountDeclMethodProtected is not implemented"
+                )
+            elif item == "CountDeclMethodPrivate":
+                raise NotImplementedError(
+                    "metric CountDeclMethodPrivate is not implemented"
+                )
+            elif item == "CountDeclMethodPublic":
+                raise NotImplementedError(
+                    "metric CountDeclMethodPublic is not implementd"
+                )
+            elif item == "CountInput":
+                raise NotImplementedError("metric CountInput is not implemented")
+            elif item == "CountLine":
+                raise NotImplementedError("metric CountLine is not implemented")
+            elif item == "CountLineBlank":
+                raise NotImplementedError("metric CountLineBlank is not implemented")
+            elif item == "CountLineCode":
+                raise NotImplementedError("metric CountLineCode is not implemented")
+            elif item == "CountLineCodeDecl":
+                raise NotImplementedError("metric CountLineCodeDecl is not implemented")
+            elif item == "CountLineCodeExe":
+                raise NotImplementedError("metric CountLineCodeExe is not implemented")
+            elif item == "CountLineComment":
+                raise NotImplementedError("metric CountLineComment is not implemented")
+            elif item == "CountOutput":
+                raise NotImplementedError("metric CountOutput is not implemented")
+            elif item == "CountPath":
+                raise NotImplementedError("metric CountPath is not implemented")
+            elif item == "CountPathLog":
+                raise NotImplementedError("metric CountPathLog is not implemented")
+            elif item == "CountSemicolon":
+                raise NotImplementedError("metric CountSemicolon not implemented")
+            elif item == "CountStmt":
+                raise NotImplementedError("metric CountStmt is not implemented")
+            elif item == "CountStmtDecl":
+                raise NotImplementedError("metric CountStmtDecl is not implemented")
+            elif item == "CountStmtExe":
+                raise NotImplementedError("metric CountStmtExe is not implemented")
+            elif item == "Cyclomatic":
+                raise NotImplementedError("metric Cyclomatic is not implemented")
+            elif item == "CyclomaticModified":
+                raise NotImplementedError(
+                    "metric CyclomaticModified is not implemented"
+                )
+            elif item == "Essential":
+                raise NotImplementedError("metric Essential is not implemented")
+            elif item == "CyclomaticStrict":
+                raise NotImplementedError("metric CyclomaticStrict is not implemented")
+            elif item == "Knots":
+                raise NotImplementedError("metric Knots is not implemented")
+            elif item == "MaxCyclomatic":
+                raise NotImplementedError("metric MaxCyclomatic is not implemented")
+            elif item == "MaxCyclomaticModified":
+                raise NotImplementedError(
+                    "metric MaxCyclomaticModified is not implemented"
+                )
+            elif item == "MaxCyclomaticStrict":
+                raise NotImplementedError(
+                    "metric MaxCyclomaticStrict is not implemented"
+                )
+            elif item == "MaxEssential":
+                raise NotImplementedError("metric MaxEssential is not implemented")
+            elif item == "MaxEssentialKnots":
+                raise NotImplementedError("metric MaxEssentialKnots is not implemented")
+            elif item == "MaxInheritanceTree":
+                raise NotImplementedError(
+                    "metric MaxInheritanceTree is not implemented"
+                )
+            elif item == "MaxNesting":
+                raise NotImplementedError("metric MaxNesting is not implemented")
+            elif item == "MinEssentialKnots":
+                raise NotImplementedError("metric MinEssentialKnots is not implemented")
+            elif item == "PercentLackOfCohesion":
+                raise NotImplementedError(
+                    "metric PercentLackOfCohesion is not implemented"
+                )
+            elif item == "PercentLackOfCohesionModified":
+                raise NotImplementedError(
+                    "metric PercentLackOfCohesionModified is not implemented"
+                )
+            elif item == "RatioCommentToCode":
+                raise NotImplementedError(
+                    "metric RatioCommentToCode is not implemented"
+                )
+            elif item == "SumCyclomatic":
+                raise NotImplementedError("metric SumCyclomatic is not implemented")
+            elif item == "SumCyclomaticModified":
+                raise NotImplementedError(
+                    "metric SumCyclomaticModified is not implemented"
+                )
+            elif item == "SumCyclomaticStrict":
+                raise NotImplementedError(
+                    "metric SumCyclomaticStrict is not implemented"
+                )
+            elif item == "SumEssential":
+                raise NotImplementedError("metric SumEssential is not implemented")
         return metrics
 
     def metrics(self):  # real signature unknown; restored from __doc__
@@ -797,6 +987,63 @@ class Ent:
             "AvgCyclomaticStrict",
             "AvgEssential",
             "CountDeclClassMethod",
+            "AvgLine",
+            "AvgLineBlank",
+            "AvgLineCode",
+            "AvgLineComment",
+            "CountClassBase",
+            "CountClassCoupled",
+            "CountClassCoupledModified",
+            "CountClassDerived",
+            "CountDeclClass",
+            "CountDeclClassMethod",
+            "CountDeclExecutableUnit",
+            "CountDeclFile",
+            "CountDeclFunction",
+            "CountDeclInstanceMethod",
+            "CountDeclInstanceVariable",
+            "CountDeclInstanceVariablePrivate",
+            "CountDeclInstanceVariableProtected",
+            "CountDeclInstanceVariablePublic",
+            "CountDeclMethod",
+            "CountDeclMethodAll",
+            "CountDeclMethodDefault",
+            "CountDeclMethodPrivate",
+            "CountDeclMethodProtected",
+            "CountDeclMethodPublic" "CountInput",
+            "CountLine",
+            "CountLineBlank",
+            "CountLineCode",
+            "CountLineCodeDecl",
+            "CountLineCodeExe",
+            "CountLineComment",
+            "CountOutput",
+            "CountPath",
+            "CountPathLog",
+            "CountSemicolon",
+            "CountStmt",
+            "CountStmtDecl",
+            "CountStmtExe",
+            "Cyclomatic",
+            "CyclomaticModified",
+            "CyclomaticStrict",
+            "Essential",
+            "Knots",
+            "MaxCyclomatic",
+            "MaxCyclomaticModified",
+            "MaxCyclomaticStrict",
+            "MaxEssential",
+            "MaxEssentialKnots",
+            "MaxInheritanceTree",
+            "MaxNesting",
+            "MinEssentialKnots",
+            "PercentLackOfCohesion",
+            "PercentLackOfCohesionModified",
+            "RatioCommentToCode",
+            "SumCyclomatic",
+            "SumCyclomaticModified",
+            "SumCyclomaticStrict",
+            "SumEssential",
         ]
 
     def name(self):  # real signature unknown; restored from __doc__
