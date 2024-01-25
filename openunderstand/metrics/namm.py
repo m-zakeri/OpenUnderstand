@@ -71,13 +71,15 @@ class NAMMListener(JavaParserLabeledListener):
                 self.Mutator_num += 1
 
 
-if __name__ == "__main__":
-    create_db("../../benchmark2_database.oudb", project_dir="..\..\benchmark")
-    db = db_open("../../benchmark2_database.oudb")
 
+
+
+def get_namm(ent_model=None, type_namm:str = "Mutator_num")->int:
+    """
+    type: Accessor_num or Mutator_num
+    """
     # enter file name here
-    entity_longname = None
-
+    entity_longname = ent_model.longname()
     files = []
     if entity_longname is None:
         for ent in EntityModel.select().where(EntityModel._kind_id == 1):
@@ -103,7 +105,6 @@ if __name__ == "__main__":
         tokens = CommonTokenStream(lexer)
         parser = JavaParserLabeled(tokens)
         parse_tree = parser.compilationUnit()
-
         walker = ParseTreeWalker()
         walker.walk(listener=listener, t=parse_tree)
-    print(listener.get_NAMM)
+    return listener.get_NAMM[type_namm]

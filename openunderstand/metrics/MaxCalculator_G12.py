@@ -1,7 +1,6 @@
 from antlr4 import *
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from oudb.api import open as db_open, create_db
 from oudb.models import EntityModel
 import os
 from fnmatch import fnmatch
@@ -53,8 +52,12 @@ class MaxCyclomatic:
     def return_max(self):
         return self.maxvalue
 
-    def calculate_classes_value(self, file_path):
-        tree = get_parse_tree(file_path)
+    def calculate_classes_value(self, input:str = ""):
+        content = InputStream(input)
+        lexer = JavaLexer(content)
+        tokens = CommonTokenStream(lexer)
+        parser = JavaParserLabeled(tokens)
+        tree = parser.compilationUnit()
         walker = ParseTreeWalker()
         walker.walk(self.listener, tree)
         return self.listener.get_classes, self.listener.get_packagename
@@ -73,9 +76,9 @@ class MaxCyclomatic:
         else:
             return "the class is not in package"
 
-    def MaxFile(self, file):
+    def MaxFile(self, content:str=""):
 
-        tuple_ = self.calculate_classes_value(file)
+        tuple_ = self.calculate_classes_value(content)
         package = tuple_[1]
         classes = tuple_[0]
         values = classes.values()
@@ -92,26 +95,23 @@ class MaxCyclomatic:
             if max_value > prev_val:
                 self.packages[package] = max_value
 
-        print(f"in file {file} : {max_value}")
         return package, max_value
 
     def return_all_class_maxes(self, classes, file_path):
         for cls in classes:
             self.MaxClass(cls, file_path)
 
-    def return_package_max(self, my_files, projectname):
-
-        for file in my_files:
-            try:
-                v = self.MaxFile(file)
-                package = v[0]
-                max_v = v[1]
-                if self.maxvalue < max_v:
-                    self.maxvalue = max_v
-                print("class information:")
-                self.return_all_class_maxes(self.files[file][0], file)
-            except Exception as e:
-                print("Error", e)
+    def return_package_max(self, content:str = "")->int:
+        try:
+            v = self.MaxFile(content=content)
+            package = v[0]
+            max_v = v[1]
+            if self.maxvalue < max_v:
+                self.maxvalue = max_v
+            print("class information:")
+            self.return_all_class_maxes(self.files[file][0], file)
+        except Exception as e:
+            print("Error", e)
 
         print("package information:")
         package = sorted(self.packages)
@@ -123,8 +123,6 @@ class MaxCyclomatic:
         max_val = 0
         if len(list_values) != 0:
             max_val = max(list_values)
-
-        print(f"the max value of project {projectname} is {max_val}")
 
         return self.maxvalue
 
@@ -189,31 +187,26 @@ class MaxValue:
 
 
 def run_with_database(path_):
-    create_db("../../benchmark2_database.oudb", project_dir="..\..\benchmark")
-    db_open("../../benchmark2_database.oudb")
-    files_ = getListOfFiles(path_)
     max_cyclomatic_ = MaxValue()
     max_cyclomatic_.max_project_value(files_, "calculator_Project")
 
 
-if __name__ == "__main__":
-    path = (
-        r"C:\Users\Asus Vivobook\PycharmProjects\pythonProject\benchmark\calculator_app"
-    )
-    Cyclomatic_listener = CyclomaticListener("")
-    CyclomaticModified_listener = CyclomaticModifiedListener("")
-    CyclomaticStrict_listener = CyclomaticStrictListener("")
-    Essential_listener = EssentialMetricListener(" ")
-    files = getListOfFiles(path)
-    max_cyclomatic = MaxCyclomatic(Cyclomatic_listener)
-    max_cyclomaticModified = MaxCyclomatic(CyclomaticModified_listener)
-    max_cyclomaticStrict = MaxCyclomatic(CyclomaticStrict_listener)
-    max_essential = MaxCyclomatic(Essential_listener)
-    # The main result for MaxCyclomatic
-    max_cyclomatic.return_package_max(files, "calculator_app")
-    print("*" * 50)
-    max_cyclomaticModified.return_package_max(files, "calculator_app")
-    print("*" * 50)
-    max_cyclomaticStrict.return_package_max(files, "calculator_app")
-    print("*" * 50)
-    max_essential.return_package_max(files, "calculator_app")
+def max_cyclomatic_modified(ent_model=None)->int:
+    Cyclomatic_listener = CyclomaticModifiedListener(ent_model.contents())
+    max_cyclomatic_ = MaxCyclomatic(Cyclomatic_listener)
+    return max_cyclomatic_.return_package_max(content=ent_model.contents())
+
+def max_cyclomatic_stricts(ent_model=None)->int:
+    Cyclomatic_listener = CyclomaticStrictListener(ent_model.contents())
+    max_cyclomatic_ = MaxCyclomatic(Cyclomatic_listener)
+    return max_cyclomatic_.return_package_max(content=ent_model.contents())
+
+def max_essential(ent_model=None)->int:
+    Cyclomatic_listener = EssentialMetricListener(ent_model.contents())
+    max_cyclomatic_ = MaxCyclomatic(Cyclomatic_listener)
+    return max_cyclomatic_.return_package_max(content=ent_model.contents())
+
+def max_cyclomatic(ent_model=None)->int:
+    Cyclomatic_listener = CyclomaticListener(ent_model.contents())
+    max_cyclomatic_ = MaxCyclomatic(Cyclomatic_listener)
+    return max_cyclomatic_.return_package_max(content=ent_model.contents())

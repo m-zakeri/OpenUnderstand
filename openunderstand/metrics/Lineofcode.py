@@ -13,10 +13,8 @@ def stringify(dict):
 
 
 class LineOfCode(JavaParserLabeledListener):
-    def __init__(self, file_address):
-        self.file_address = file_address
-        file_stream = FileStream(self.file_address)
-        self.tokens = JavaLexer(file_stream).getAllTokens()
+    def __init__(self, ent_model=None):
+        self.tokens = JavaLexer(InputStream(ent_model.contents())).getAllTokens()
         self.method_countLineExec = []
         self.method_countLineCode = []
         self.method_countLineComment = []
@@ -203,3 +201,6 @@ class LineOfCode(JavaParserLabeledListener):
                         counter += 1
                         break
         return counter
+
+def get_line_of_codes(ent_model=None):
+    return LineOfCode(ent_model)

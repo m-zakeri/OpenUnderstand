@@ -139,15 +139,3 @@ def get_parse_tree(file_path):
     return parser.compilationUnit()
 
 
-def main():
-    path2 = r"C:\Users\Asus Vivobook\PycharmProjects\pythonProject\benchmark\calculator_app\src\com\calculator\app\display\print_fail.java"
-    path3 = r"C:\Users\Asus Vivobook\PycharmProjects\pythonProject\benchmark\ganttproject\biz.ganttproject.core\src\main\java\biz\ganttproject\core\calendar\GPCalendarBase.java"
-    path = r"C:\Users\Asus Vivobook\PycharmProjects\pythonProject\benchmark\ganttproject\ganttproject\src\main\java\net\sourceforge\ganttproject\gui\scrolling\ScrollingManager.java.java"
-    tree = get_parse_tree(path)
-    listener = CyclomaticListener("")
-    walker = ParseTreeWalker()
-    walker.walk(listener, tree)
-
-
-if __name__ == "__main__":
-    main()
