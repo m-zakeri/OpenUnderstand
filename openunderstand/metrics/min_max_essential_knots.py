@@ -4,6 +4,7 @@ from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from ounderstand.project import Project
 
+
 class MinEssentialKnots(JavaParserLabeledListener):
     def __init__(self):
         self.stack = []

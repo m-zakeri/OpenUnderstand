@@ -71,10 +71,7 @@ class NAMMListener(JavaParserLabeledListener):
                 self.Mutator_num += 1
 
 
-
-
-
-def get_namm(ent_model=None, type_namm:str = "Mutator_num")->int:
+def get_namm(ent_model=None, type_namm: str = "Mutator_num") -> int:
     """
     type: Accessor_num or Mutator_num
     """

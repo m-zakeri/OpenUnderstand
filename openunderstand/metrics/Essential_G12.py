@@ -6,7 +6,6 @@ from antlr4 import *
 from analysis_passes import class_properties
 
 
-
 def countParents(ctx):
     scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
     if len(scope_parents) == 1:
@@ -165,6 +164,8 @@ class EssentialMetricListener(JavaParserLabeledListener):
         if len(list_of_val) != 0:
             max_val = max(list_of_val)
         self.classes[longname] = max_val
+
+
 def essential(ent_model=None):
     p = Project()
     listener = EssentialMetricListener()

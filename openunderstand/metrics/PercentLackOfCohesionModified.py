@@ -125,4 +125,3 @@ def get_percent_lack_of_cohesion_modified(ent_model=None):
     except:
         avg = 0
     return (1 - avg) * 100
-

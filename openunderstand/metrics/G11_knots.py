@@ -210,6 +210,7 @@ class KnotsMetricListener(JavaParserLabeledListener):
             if ctx.IDENTIFIER().getText() == self.method._name:
                 self.method_entered = False
 
+
 def knot(ent_model=None):
     p = Project()
     listener = KnotsMetricListener()

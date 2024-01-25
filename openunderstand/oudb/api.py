@@ -796,7 +796,7 @@ class Ent:
             "AvgCyclomaticModified",
             "AvgCyclomaticStrict",
             "AvgEssential",
-            "CountDeclClassMethod"
+            "CountDeclClassMethod",
         ]
 
     def name(self):  # real signature unknown; restored from __doc__
@@ -890,7 +890,8 @@ class Ent:
             query = ReferenceModel.select().where(ReferenceModel._scope == self._id)
             if item:
                 kinds = KindModel.select().where(
-                    (KindModel.is_ent_kind == False) & (fn.Lower(KindModel._name) == (f"Java {item}").lower())
+                    (KindModel.is_ent_kind == False)
+                    & (fn.Lower(KindModel._name) == (f"Java {item}").lower())
                 )
                 # if len(mlist) > 1:
                 #     print(kinds.count())

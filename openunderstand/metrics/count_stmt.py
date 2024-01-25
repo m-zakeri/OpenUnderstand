@@ -6,6 +6,7 @@ from ounderstand.project import Project
 
 from utils_g10 import get_keys
 
+
 class StatementListener(JavaParserLabeledListener):
     def __init__(self):
         self.repository = {}
@@ -83,6 +84,7 @@ class StatementListener(JavaParserLabeledListener):
                 new_dict[key] += increment
                 self.repository.update(new_dict)
 
+
 def statement_counter(ent_model=None):
     p = Project()
     listener = StatementListener()
@@ -92,4 +94,3 @@ def statement_counter(ent_model=None):
     return_tree = parser.compilationUnit()
     p.Walk(reference_listener=listener, parse_tree=return_tree)
     return listener.counter
-

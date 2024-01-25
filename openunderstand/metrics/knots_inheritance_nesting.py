@@ -67,7 +67,6 @@ def get_knot_inheritance_nested(ent_model=None):
     for c in class_names:
         classes.update({c: []})
 
-
     inputfile = InputStream(ent_model.contents(), encoding="utf8")
     # then we must use lexer
     lex = JavaLexer(inputfile)
@@ -87,7 +86,6 @@ def get_knot_inheritance_nested(ent_model=None):
         max_inheritances.update({key: get_max_inheritance(classes, key)})
 
     print(f"Class Name = {max_inheritances}")
-
 
     inputfile = FileStream(ent_model.contents(), encoding="utf8")
     # then we must use lexer

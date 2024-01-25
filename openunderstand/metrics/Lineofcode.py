@@ -202,5 +202,6 @@ class LineOfCode(JavaParserLabeledListener):
                         break
         return counter
 
+
 def get_line_of_codes(ent_model=None):
     return LineOfCode(ent_model)

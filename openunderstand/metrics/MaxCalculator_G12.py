@@ -52,7 +52,7 @@ class MaxCyclomatic:
     def return_max(self):
         return self.maxvalue
 
-    def calculate_classes_value(self, input:str = ""):
+    def calculate_classes_value(self, input: str = ""):
         content = InputStream(input)
         lexer = JavaLexer(content)
         tokens = CommonTokenStream(lexer)
@@ -76,7 +76,7 @@ class MaxCyclomatic:
         else:
             return "the class is not in package"
 
-    def MaxFile(self, content:str=""):
+    def MaxFile(self, content: str = ""):
 
         tuple_ = self.calculate_classes_value(content)
         package = tuple_[1]
@@ -101,7 +101,7 @@ class MaxCyclomatic:
         for cls in classes:
             self.MaxClass(cls, file_path)
 
-    def return_package_max(self, content:str = "")->int:
+    def return_package_max(self, content: str = "") -> int:
         try:
             v = self.MaxFile(content=content)
             package = v[0]
@@ -191,22 +191,25 @@ def run_with_database(path_):
     max_cyclomatic_.max_project_value(files_, "calculator_Project")
 
 
-def max_cyclomatic_modified(ent_model=None)->int:
+def max_cyclomatic_modified(ent_model=None) -> int:
     Cyclomatic_listener = CyclomaticModifiedListener(ent_model.contents())
     max_cyclomatic_ = MaxCyclomatic(Cyclomatic_listener)
     return max_cyclomatic_.return_package_max(content=ent_model.contents())
 
-def max_cyclomatic_stricts(ent_model=None)->int:
+
+def max_cyclomatic_stricts(ent_model=None) -> int:
     Cyclomatic_listener = CyclomaticStrictListener(ent_model.contents())
     max_cyclomatic_ = MaxCyclomatic(Cyclomatic_listener)
     return max_cyclomatic_.return_package_max(content=ent_model.contents())
 
-def max_essential(ent_model=None)->int:
+
+def max_essential(ent_model=None) -> int:
     Cyclomatic_listener = EssentialMetricListener(ent_model.contents())
     max_cyclomatic_ = MaxCyclomatic(Cyclomatic_listener)
     return max_cyclomatic_.return_package_max(content=ent_model.contents())
 
-def max_cyclomatic(ent_model=None)->int:
+
+def max_cyclomatic(ent_model=None) -> int:
     Cyclomatic_listener = CyclomaticListener(ent_model.contents())
     max_cyclomatic_ = MaxCyclomatic(Cyclomatic_listener)
     return max_cyclomatic_.return_package_max(content=ent_model.contents())

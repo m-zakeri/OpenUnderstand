@@ -131,6 +131,7 @@ class CyclomaticModifiedListener(JavaParserLabeledListener):
         )
         self.classes[longname] = self.max_value
 
+
 def cyclomatic_modified(ent_model=None):
     p = Project()
     listener = CyclomaticModifiedListener()

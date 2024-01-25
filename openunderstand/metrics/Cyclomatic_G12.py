@@ -137,5 +137,3 @@ def get_parse_tree(file_path):
     tokens = CommonTokenStream(lexer)
     parser = JavaParserLabeled(tokens)
     return parser.compilationUnit()
-
-

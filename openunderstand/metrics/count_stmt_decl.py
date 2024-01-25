@@ -62,6 +62,7 @@ class StatementListener(JavaParserLabeledListener):
                 new_dict[key] += increment
                 self.repository.update(new_dict)
 
+
 def statement_counter_delc(ent_model=None):
     p = Project()
     listener = StatementListener()
