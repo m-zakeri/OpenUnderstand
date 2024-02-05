@@ -10,35 +10,36 @@ from metrics.AvgCyclomaticModified import avg_cyclomatic_modified
 from metrics.AvgCyclomaticStrict import avg_cyclomatic_strict
 from metrics.AvgEssential import avg_essential
 from metrics.count_decl_class_method import declare_method_count
-from openunderstand.metrics.RatioCommentToCode import get_ratio_comment_to_code
-from openunderstand.metrics.PercentLackOfCohesionModified import (
+
+from metrics.RatioCommentToCode import get_ratio_comment_to_code
+from metrics.PercentLackOfCohesionModified import (
     get_percent_lack_of_cohesion_modified,
 )
-from openunderstand.metrics.PercentLackOfCohesion import get_percent_lack_of_cohesion
-from openunderstand.metrics.sum_cyclomatic_modified import get_sum_cyclomatic_modified
-from openunderstand.metrics.sum_cyclomatic_strict import get_sum_cyclomatic_strict
-from openunderstand.metrics.sumOfCyclomatics import get_sum_of_cyclomatics
-from openunderstand.metrics.count_decl_method_private import count_decl_method_private
-from openunderstand.metrics.count_decl_file import declare_file
-from openunderstand.metrics.sum_essentials import get_sum_essentials
-from openunderstand.metrics.count_decl_executable_unit import declare_executable_unit
-from openunderstand.metrics.min_max_essential_knots import min_max_essential_knots
-from openunderstand.metrics.namm import get_namm
-from openunderstand.metrics.MaxCalculator_G12 import max_cyclomatic
-from openunderstand.metrics.MaxCalculator_G12 import max_essential
-from openunderstand.metrics.MaxCalculator_G12 import max_cyclomatic_modified
-from openunderstand.metrics.MaxCalculator_G12 import max_cyclomatic_stricts
-from openunderstand.metrics.max_nesting import MaxNesting
-from openunderstand.metrics.max_inheritance import FindAllInheritances
-from openunderstand.metrics.knots_inheritance_nesting import get_knot_inheritance_nested
-from openunderstand.metrics.knots_inheritance_nesting import get_max_inheritance
-from openunderstand.metrics.Lineofcode import get_line_of_codes
-from openunderstand.metrics.G11_knots import knot
-from openunderstand.metrics.count_stmt_exe import statement_counter_exe
-from openunderstand.metrics.cyclomatic import cyclomatic
-from openunderstand.metrics.CyclomaticStrict_G12 import cyclomatic_strict
-from openunderstand.metrics.Essential_G12 import essential
-from openunderstand.metrics.CyclomaticModified_G12 import cyclomatic_modified
+from metrics.PercentLackOfCohesion import get_percent_lack_of_cohesion
+from metrics.sum_cyclomatic_modified import get_sum_cyclomatic_modified
+from metrics.sum_cyclomatic_strict import get_sum_cyclomatic_strict
+from metrics.sumOfCyclomatics import get_sum_of_cyclomatics
+from metrics.count_decl_method_private import count_decl_method_private
+from metrics.count_decl_file import declare_file
+from metrics.sum_essentials import get_sum_essentials
+from metrics.count_decl_executable_unit import declare_executable_unit
+from metrics.min_max_essential_knots import min_max_essential_knots
+from metrics.namm import get_namm
+from metrics.MaxCalculator_G12 import max_cyclomatic
+from metrics.MaxCalculator_G12 import max_essential
+from metrics.MaxCalculator_G12 import max_cyclomatic_modified
+from metrics.MaxCalculator_G12 import max_cyclomatic_stricts
+from metrics.max_nesting import MaxNesting
+from metrics.max_inheritance import FindAllInheritances
+from metrics.knots_inheritance_nesting import get_knot_inheritance_nested
+from metrics.knots_inheritance_nesting import get_max_inheritance
+from metrics.Lineofcode import get_line_of_codes
+from metrics.G11_knots import knot
+from metrics.count_stmt_exe import statement_counter_exe
+from metrics.cyclomatic import cyclomatic
+from metrics.CyclomaticStrict_G12 import cyclomatic_strict
+from metrics.Essential_G12 import essential
+from metrics.CyclomaticModified_G12 import cyclomatic_modified
 
 
 """
@@ -962,10 +963,9 @@ class Ent:
             elif item == "SumCyclomatic":
                 raise NotImplementedError("metric SumCyclomatic is not implemented")
             elif item == "SumCyclomaticModified":
-                raise NotImplementedError(
-                    "metric SumCyclomaticModified is not implemented"
-                )
+                metrics.update({"SumCyclomaticModified": get_sum_cyclomatic_modified(self)})
             elif item == "SumCyclomaticStrict":
+
                 raise NotImplementedError(
                     "metric SumCyclomaticStrict is not implemented"
                 )
