@@ -34,4 +34,7 @@ def get_ratio_comment_to_code(ent_model=None) -> float:
                 last_line = lexer.line
         current_line = lexer.line
         token = lexer.nextToken()
-    return comments / code
+    if code > 0:
+        return comments / code
+    else:
+        return 0
