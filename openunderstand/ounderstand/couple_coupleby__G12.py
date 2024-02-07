@@ -4,9 +4,6 @@ from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from analysis_passes import class_properties
 
-DB_PATH = "../../database/calculator_app.oudb"
-PROJECT_PATH = "../../benchmarks_projects/calculator_app"
-PROJECT_NAME = "Calculator App"
 
 
 class CoupleAndCoupleBy(JavaParserLabeledListener):
@@ -182,22 +179,3 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
     # def enterFormalParameter(self, ctx:JavaParserLabeled.FormalParameterContext):
     #     self.couplebyrefrences.pop()
     #     #fieldparametersarenotclasses
-
-
-def get_parse_tree(file_path):
-    file = FileStream(file_path)
-    lexer = JavaLexer(file)
-    tokens = CommonTokenStream(lexer)
-    parser = JavaParserLabeled(tokens)
-    return parser.compilationUnit()
-
-
-def main():
-
-    path = r"C:\Users\Asus\PycharmProjects\pythonProject1\benchmark\calculator_app\src\com\calculator\app\init\Main.java"
-    tree = get_parse_tree(path)
-    listener = CoupleAndCoupleBy()
-    walker = ParseTreeWalker()
-    walker.walk(listener, tree)
-    print("imports", listener.Imports)
-    print(listener.get_classes)

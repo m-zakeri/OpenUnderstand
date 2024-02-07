@@ -1166,8 +1166,8 @@ class Ent:
             query = ReferenceModel.select().where(ReferenceModel._scope == self._id)
             if item:
                 kinds = KindModel.select().where(
-                    (KindModel.is_ent_kind == False)
-                    & (fn.Lower(KindModel._name) == (f"Java {item}").lower())
+                    (KindModel.is_ent_kind == False) & (KindModel._name.contains(item))
+                    # & (fn.Lower(KindModel._name) == (f"Java {item}").lower())
                 )
                 # if len(mlist) > 1:
                 #     print(kinds.count())
