@@ -3,8 +3,7 @@
 __author__ = "Navid Mousavizadeh, Amir Mohammad Sohrabi, Sara Younesi, Deniz Ahmadi"
 __copyright__ = "Copyright 2022, The OpenUnderstand Project, Iran University of Science and technology"
 __credits__ = [
-    "AminHZ"
-    "Dr.Parsa",
+    "AminHZ" "Dr.Parsa",
     "Dr.Zakeri",
     "Mehdi Razavi",
     "Navid Mousavizadeh",
@@ -25,7 +24,6 @@ from analysis_passes.entity_manager_g11 import (
     get_all_files,
     get_created_entity_id,
 )
-
 
 
 class AntlrHandler:

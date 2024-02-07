@@ -10,16 +10,21 @@ from metrics.AvgCyclomaticModified import avg_cyclomatic_modified
 from metrics.AvgCyclomaticStrict import avg_cyclomatic_strict
 from metrics.AvgEssential import avg_essential
 from metrics.count_decl_class_method import declare_method_count
-
 from metrics.RatioCommentToCode import get_ratio_comment_to_code
 from metrics.PercentLackOfCohesionModified import (
     get_percent_lack_of_cohesion_modified,
 )
+from metrics.count_stmt import statement_counter
+from metrics.count_stmt_decl import statement_counter_delc
 from metrics.PercentLackOfCohesion import get_percent_lack_of_cohesion
 from metrics.sum_cyclomatic_modified import get_sum_cyclomatic_modified
 from metrics.sum_cyclomatic_strict import get_sum_cyclomatic_strict
 from metrics.sumOfCyclomatics import get_sum_of_cyclomatics
 from metrics.count_decl_method_private import count_decl_method_private
+from metrics.count_decl_method_protected import (
+    count_decl_method_protected,
+)
+from metrics.count_decl_method_default import count_decl_method_default
 from metrics.count_decl_file import declare_file
 from metrics.sum_essentials import get_sum_essentials
 from metrics.count_decl_executable_unit import declare_executable_unit
@@ -33,14 +38,13 @@ from metrics.max_nesting import MaxNesting
 from metrics.max_inheritance import FindAllInheritances
 from metrics.knots_inheritance_nesting import get_knot_inheritance_nested
 from metrics.knots_inheritance_nesting import get_max_inheritance
-from metrics.Lineofcode import get_line_of_codes
-from metrics.G11_knots import knot
+from openunderstand.metrics.Lineofcode import get_line_of_codes
 from metrics.count_stmt_exe import statement_counter_exe
 from metrics.cyclomatic import cyclomatic
 from metrics.CyclomaticStrict_G12 import cyclomatic_strict
 from metrics.Essential_G12 import essential
 from metrics.CyclomaticModified_G12 import cyclomatic_modified
-
+from metrics.G11_knots import knot
 
 """
 This is the python interface to Understand databases.
@@ -833,14 +837,14 @@ class Ent:
             elif item == "CountDeclClass":
                 raise NotImplementedError("metric CountDeclClass is not implemented")
             elif item == "CountDeclFile":
-                raise NotImplementedError("metric CountDeclFile is not implemented")
+                metrics.update({"CountDeclFile": declare_file(self)})
             elif item == "CountDeclClassMethod":
                 raise NotImplementedError(
                     "metric CountDeclClassMethod is not implemented"
                 )
             elif item == "CountDeclExecutableUnit":
-                raise NotImplementedError(
-                    "metric CountDeclExecutableUnit is not implemented"
+                metrics.update(
+                    {"CountDeclExecutableUnit": declare_executable_unit(self)}
                 )
             elif item == "CountDeclFunction":
                 raise NotImplementedError("metric CountDeclFunction is not implemented")
@@ -867,20 +871,18 @@ class Ent:
             elif item == "CountDeclMethod":
                 raise NotImplementedError("metric CountDeclMethod is not implemented")
             elif item == "CountDeclMethodAll":
-                raise NotImplementedError(
-                    "metric CountDeclMethodAll is not implemented"
-                )
+                metrics.update({"CountDeclMethodAll": count_decl_method_all(self)})
             elif item == "CountDeclMethodDefault":
-                raise NotImplementedError(
-                    "metric CountDeclMethodDefault is not implemented"
+                metrics.update(
+                    {"CountDeclMethodDefault": count_decl_method_default(self)}
                 )
             elif item == "CountDeclMethodProtected":
-                raise NotImplementedError(
-                    "metric CountDeclMethodProtected is not implemented"
+                metrics.update(
+                    {"CountDeclMethodProtected": count_decl_method_protected(self)}
                 )
             elif item == "CountDeclMethodPrivate":
-                raise NotImplementedError(
-                    "metric CountDeclMethodPrivate is not implemented"
+                metrics.update(
+                    {"CountDeclMethodPrivate": count_decl_method_private(self)}
                 )
             elif item == "CountDeclMethodPublic":
                 raise NotImplementedError(
@@ -893,13 +895,43 @@ class Ent:
             elif item == "CountLineBlank":
                 raise NotImplementedError("metric CountLineBlank is not implemented")
             elif item == "CountLineCode":
-                raise NotImplementedError("metric CountLineCode is not implemented")
+                # check for number of line method objects
+                metrics.update(
+                    {
+                        "CountLineCode": sum(
+                            get_line_of_codes(self).class_countLineCode
+                        )
+                        + sum(get_line_of_codes(self).method_countLineCode)
+                    }
+                )
             elif item == "CountLineCodeDecl":
-                raise NotImplementedError("metric CountLineCodeDecl is not implemented")
+                metrics.update(
+                    {
+                        "CountLineCodeDecl": sum(
+                            get_line_of_codes(self).class_countLineDecl
+                        )
+                        + sum(get_line_of_codes(self).method_countLineDecl)
+                    }
+                )
             elif item == "CountLineCodeExe":
-                raise NotImplementedError("metric CountLineCodeExe is not implemented")
+                # check for number of line method objects
+                metrics.update(
+                    {
+                        "CountLineCodeExe": sum(
+                            get_line_of_codes(self).class_countLineExec
+                        )
+                        + sum(get_line_of_codes(self).method_countLineExec)
+                    }
+                )
             elif item == "CountLineComment":
-                raise NotImplementedError("metric CountLineComment is not implemented")
+                metrics.update(
+                    {
+                        "CountLineComment": sum(
+                            get_line_of_codes(self).class_countLineComment
+                        )
+                        + sum(get_line_of_codes(self).method_countLineComment)
+                    }
+                )
             elif item == "CountOutput":
                 raise NotImplementedError("metric CountOutput is not implemented")
             elif item == "CountPath":
@@ -909,68 +941,65 @@ class Ent:
             elif item == "CountSemicolon":
                 raise NotImplementedError("metric CountSemicolon not implemented")
             elif item == "CountStmt":
-                raise NotImplementedError("metric CountStmt is not implemented")
+                metrics.update({"CountStmt": statement_counter(self)})
             elif item == "CountStmtDecl":
-                raise NotImplementedError("metric CountStmtDecl is not implemented")
+                metrics.update({"CountStmtDecl": statement_counter_delc(self)})
             elif item == "CountStmtExe":
-                raise NotImplementedError("metric CountStmtExe is not implemented")
+                metrics.update({"CountStmtExe": statement_counter_exe(self)})
             elif item == "Cyclomatic":
-                raise NotImplementedError("metric Cyclomatic is not implemented")
+                metrics.update({"Cyclomatic": cyclomatic(self)})
             elif item == "CyclomaticModified":
-                raise NotImplementedError(
-                    "metric CyclomaticModified is not implemented"
-                )
+                metrics.update({"CyclomaticModified": cyclomatic_modified(self)})
             elif item == "Essential":
-                raise NotImplementedError("metric Essential is not implemented")
+                metrics.update({"Essential": essential(self)})
             elif item == "CyclomaticStrict":
-                raise NotImplementedError("metric CyclomaticStrict is not implemented")
+                metrics.update({"CyclomaticStrict": cyclomatic_strict(self)})
             elif item == "Knots":
-                raise NotImplementedError("metric Knots is not implemented")
+                metrics.update({"Knots": knot(self)})
             elif item == "MaxCyclomatic":
-                raise NotImplementedError("metric MaxCyclomatic is not implemented")
+                metrics.update({"MaxCyclomatic": max_cyclomatic(self)})
             elif item == "MaxCyclomaticModified":
-                raise NotImplementedError(
-                    "metric MaxCyclomaticModified is not implemented"
-                )
+                metrics.update({"MaxCyclomaticModified": max_cyclomatic_modified(self)})
             elif item == "MaxCyclomaticStrict":
-                raise NotImplementedError(
-                    "metric MaxCyclomaticStrict is not implemented"
-                )
+                metrics.update({"MaxCyclomaticStrict": max_cyclomatic_stricts(self)})
             elif item == "MaxEssential":
-                raise NotImplementedError("metric MaxEssential is not implemented")
+                metrics.update({"MaxEssential": max_essential(self)})
             elif item == "MaxEssentialKnots":
-                raise NotImplementedError("metric MaxEssentialKnots is not implemented")
-            elif item == "MaxInheritanceTree":
-                raise NotImplementedError(
-                    "metric MaxInheritanceTree is not implemented"
+                metrics.update(
+                    {"MaxEssentialKnots": min_max_essential_knots(self, False)}
                 )
+            elif item == "MaxInheritanceTree":
+                metrics.update({"MaxInheritanceTree": get_max_inheritance(self)})
             elif item == "MaxNesting":
-                raise NotImplementedError("metric MaxNesting is not implemented")
+                metrics.update({"MaxNesting": MaxNesting(self)})
             elif item == "MinEssentialKnots":
-                raise NotImplementedError("metric MinEssentialKnots is not implemented")
+                metrics.update(
+                    {"MinEssentialKnots": min_max_essential_knots(self, True)}
+                )
             elif item == "PercentLackOfCohesion":
-                raise NotImplementedError(
-                    "metric PercentLackOfCohesion is not implemented"
+                metrics.update(
+                    {"PercentLackOfCohesion": get_percent_lack_of_cohesion(self)}
                 )
             elif item == "PercentLackOfCohesionModified":
-                raise NotImplementedError(
-                    "metric PercentLackOfCohesionModified is not implemented"
+                metrics.update(
+                    {
+                        "PercentLackOfCohesionModified": get_percent_lack_of_cohesion_modified(
+                            self
+                        )
+                    }
                 )
             elif item == "RatioCommentToCode":
-                raise NotImplementedError(
-                    "metric RatioCommentToCode is not implemented"
-                )
+                metrics.update({"RatioCommentToCode": get_ratio_comment_to_code(self)})
             elif item == "SumCyclomatic":
-                raise NotImplementedError("metric SumCyclomatic is not implemented")
+                metrics.update({"SumCyclomatic": get_sum_of_cyclomatics(self)})
             elif item == "SumCyclomaticModified":
-                metrics.update({"SumCyclomaticModified": get_sum_cyclomatic_modified(self)})
-            elif item == "SumCyclomaticStrict":
-
-                raise NotImplementedError(
-                    "metric SumCyclomaticStrict is not implemented"
+                metrics.update(
+                    {"SumCyclomaticModified": get_sum_cyclomatic_modified(self)}
                 )
+            elif item == "SumCyclomaticStrict":
+                metrics.update({"SumCyclomaticStrict": get_sum_cyclomatic_strict(self)})
             elif item == "SumEssential":
-                raise NotImplementedError("metric SumEssential is not implemented")
+                metrics.update({"SumEssential": get_sum_essentials(self)})
         return metrics
 
     def metrics(self):  # real signature unknown; restored from __doc__
