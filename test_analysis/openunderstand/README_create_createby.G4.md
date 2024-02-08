@@ -2,7 +2,8 @@
 
 ## Overview
  
-The objective of my project is to implement a software to mimic the functionality of Create& Createby queries available in SciTools Understand software analysis toolbox. I have utilized ANTLRv4 and SQLite database to store the outcomes. For further information regarding Understand, database schemas, and terminology, you can refer to this [link](https://m-zakeri.github.io/OpenUnderstand/).
+The objective of my project is to implement a software
+to mimic the functionality of Create& Createby queries available in SciTools Understand software analysis toolbox. I have utilized ANTLRv4 and SQLite database to store the outcomes. For further information regarding Understand, database schemas, and terminology, you can refer to this [link](https://m-zakeri.github.io/OpenUnderstand/).
 
 ## `What changes did I make?`
 - I added new conditions to the Create and Createby file (fix the Create_Createby_g9.py) to be closer to the output of understand using Hierarchy and small test examples  like caclculator_app with checking them through the JavaParserLabeled.g4 file.  
@@ -12,24 +13,24 @@ The objective of my project is to implement a software to mimic the functionalit
 these are my output in Windows and Linux:
 - these show us line and longname 
 - before changes in windows:
-![00](https://github.com/zahrahabibolah/OpenUnderstand/blob/dev/test_analysis/00.png?raw=true)
+![00.png](..%2F00.png)
 
 - after changes in windows:
-![01](https://github.com/zahrahabibolah/OpenUnderstand/blob/dev/test_analysis/01.png?raw=true)
+![01.png](..%2F01.png)
  
-- before changes in linux:
-![02](https://github.com/zahrahabibolah/OpenUnderstand/blob/dev/test_analysis/photo_5917882626973221723_x.jpg?raw=true)
+before changes in linux:
 
-- the numbers show the line of the code that create ref appears and end of the output tells that Which line is seen only in openunderstand and which only in understand
+![photo_5917882626973221722_x (1).jpg](..%2Fphoto_5917882626973221722_x%20%281%29.jpg)
 
-- after (linux):
-![03](https://github.com/zahrahabibolah/OpenUnderstand/blob/dev/test_analysis/photo_5917882626973221722_x.jpg?raw=true)
+the numbers show the line of the code that create ref appears and end of the output tells that Which line is seen only in openunderstand and which only in understand
+after (linux):
+![photo_5917882626973221723_x (1).jpg](..%2Fphoto_5917882626973221723_x%20%281%29.jpg)
 
 
 - and these are kind and content in windows :
+- ![02 (1).png](..%2F02%20%281%29.png)
+![03 (1).png](..%2F03%20%281%29.png)
 
-![04](https://github.com/zahrahabibolah/OpenUnderstand/blob/dev/test_analysis/02.png?raw=true)
-![05](https://github.com/zahrahabibolah/OpenUnderstand/blob/dev/test_analysis/03.png?raw=true)
 ## read the output
 - First line numbers indicate all "create" references in openundrestand and undrestand
 - The output structure shows:
