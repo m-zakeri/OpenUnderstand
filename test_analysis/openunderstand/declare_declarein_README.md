@@ -9,9 +9,8 @@ I added new conditions to the Declare and Declarein file (fix the declare_declar
 these are my output:
 
 outputs in JSON project in benchmark:
-![Screenshot (148).png](Screenshot%20%28148%29.png)
-![Screenshot (150).png](Screenshot%20%28150%29.png)
-
+![Screenshot (148).png](..%2Fpictures%20for%20readme%2FScreenshot%20%28148%29.png)
+![Screenshot (150).png](..%2Fpictures%20for%20readme%2FScreenshot%20%28150%29.png)
 outputs in calculator_app project in benchmark:
-![Screenshot (185).png](Screenshot%20%28185%29.png)
-![Screenshot (186).png](Screenshot%20%28186%29.png)
+![Screenshot (185).png](..%2Fpictures%20for%20readme%2FScreenshot%20%28185%29.png)
+![Screenshot (186).png](..%2Fpictures%20for%20readme%2FScreenshot%20%28186%29.png)
