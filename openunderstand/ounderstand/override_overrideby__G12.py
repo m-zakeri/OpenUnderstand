@@ -219,14 +219,12 @@ class overridelistener(JavaParserLabeledListener):
         try:
             self.packageName = ctx.qualifiedName().getText()
         except Exception as e:
-            print("YO 9")
             print(e)
 
     def enterFieldDeclaration(self, ctx: JavaParserLabeled.FieldDeclarationContext):
         try:
             self.modifiers = []
         except Exception as e:
-            print("YO 10")
             print(e)
 
     def enterTypeTypeOrVoid(self, ctx: JavaParserLabeled.TypeTypeOrVoidContext):
