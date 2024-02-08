@@ -1160,7 +1160,8 @@ class Ent:
         returned
         """
         # TODO : check nested references
-        mlist = [j.replace(" ", "") for j in refkindstring.split(",")]
+        mlist = [j.strip() for j in refkindstring.split(",")]
+        # print(mlist)
         refs = []
         for item in mlist:
             query = ReferenceModel.select().where(ReferenceModel._scope == self._id)
