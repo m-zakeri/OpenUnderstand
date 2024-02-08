@@ -145,71 +145,29 @@ class Project:
                 _scope=ent,
             )
 
-    def addSetInitRefs(self, d, file_ent, stream: str = ""):
-        for type_tuple in d:
-            par = EntityModel.get(_name=type_tuple[7])
-
-            ent, h_c1 = EntityModel.get_or_create(
-                _kind=220,
-                _parent=par._id,
-                _name=type_tuple[0],
-                _longname=type_tuple[1],
-                _value=type_tuple[3],
-                _type=type_tuple[4],
-                _contents=stream,
-            )
-
-            scope, h_c2 = EntityModel.get_or_create(
-                _kind=221,
-                _parent=None,
-                _name=type_tuple[7],
-                _longname=type_tuple[1],
-                _value=None,
-                _type=None,
-                _contents=stream,
-            )
-            # 222: Java Set
-            set_ref = ReferenceModel.get_or_create(
-                _kind=220,
-                _file=scope,
-                _line=type_tuple[5],
-                _column=type_tuple[6],
-                _ent=ent,
-                _scope=scope,
-            )
-            # 223: Java Setby
-            setby_ref = ReferenceModel.get_or_create(
-                _kind=221,
-                _file=ent,
-                _line=type_tuple[5],
-                _column=type_tuple[6],
-                _ent=scope,
-                _scope=ent,
-            )
-            print("Set Init Added!")
-
     def addSetRefs(self, d, file_ent, stream: str = ""):
 
         for type_tuple in d:
             par = EntityModel.get(_name=type_tuple[7])
+            ss = str(type_tuple[1]).rfind(".")
             ent, h_c1 = EntityModel.get_or_create(
                 _kind=222,
                 _parent=par._id,
                 _name=type_tuple[0],
                 _longname=type_tuple[1],
                 _value=type_tuple[3],
-                _type=None,
-                _contents=stream,
+                _type=type_tuple[9],
+                _contents="",
             )
 
             scope, h_c2 = EntityModel.get_or_create(
                 _kind=223,
                 _parent=None,
-                _name=type_tuple[7],
-                _longname=type_tuple[1],
+                _name=type_tuple[10], # PROBLEM
+                _longname=str(type_tuple[1])[:ss],
                 _value=None,
-                _type=None,
-                _contents=stream,
+                _type=type_tuple[3],
+                _contents=type_tuple[8],
             )
             # 222: Java Set
             set_ref = ReferenceModel.get_or_create(
@@ -229,6 +187,92 @@ class Project:
                 _ent=scope,
                 _scope=ent,
             )
+
+    def addSetInitRefs(self, d, file_ent, stream: str = ""):
+        for type_tuple in d:
+            ss = str(type_tuple[1]).rfind(".")
+            par = EntityModel.get(_name=type_tuple[7])
+            ent, h_c1 = EntityModel.get_or_create(
+                _kind=218,
+                _parent=par._id,
+                _name=type_tuple[0],
+                _longname=type_tuple[1],
+                _value=type_tuple[3],
+                _type=type_tuple[8],
+                _contents="",
+            )
+
+            scope, h_c2 = EntityModel.get_or_create(
+                _kind=219,
+                _parent=None,
+                _name=type_tuple[10], # PROBLEM
+                _longname=str(type_tuple[1])[:ss],
+                _value=None,
+                _type=type_tuple[3],
+                _contents=type_tuple[9],
+            )
+            # 222: Java SetInit
+            set_init_ref = ReferenceModel.get_or_create(
+                _kind=218,
+                _file=scope,
+                _line=type_tuple[5],
+                _column=type_tuple[6],
+                _ent=ent,
+                _scope=scope,
+            )
+            # 223: Java SetInitby
+            setby_init_ref = ReferenceModel.get_or_create(
+                _kind=219,
+                _file=ent,
+                _line=type_tuple[5],
+                _column=type_tuple[6],
+                _ent=scope,
+                _scope=ent,
+            )
+
+    def addSetPartialRefs(self, d, file_ent, stream: str = ""):
+
+        for type_tuple in d:
+            ss = str(type_tuple[1]).rfind(".")
+            par = EntityModel.get(_name=type_tuple[7])
+            ent, h_c1 = EntityModel.get_or_create(
+                _kind=220,
+                _parent=par._id,
+                _name=type_tuple[0],
+                _longname=type_tuple[1],
+                _value=type_tuple[3],
+                _type=type_tuple[8],
+                _contents="",
+            )
+
+            scope, h_c2 = EntityModel.get_or_create(
+                _kind=221,
+                _parent=None,
+                _name=type_tuple[7], # PROBLEM
+                _longname=str(type_tuple[1])[:ss],
+                _value=None,
+                _type=type_tuple[3],
+                _contents=type_tuple[9],
+            )
+            # 222: Java Set Partial
+            set_partial_ref = ReferenceModel.get_or_create(
+                _kind=220,
+                _file=scope,
+                _line=type_tuple[4],
+                _column=type_tuple[5],
+                _ent=ent,
+                _scope=scope,
+            )
+            # 223: Java Setby Partial
+            setby_partial_ref = ReferenceModel.get_or_create(
+                _kind=221,
+                _file=ent,
+                _line=type_tuple[4],
+                _column=type_tuple[5],
+                _ent=scope,
+                _scope=ent,
+            )
+            print("kkkkkkkkk", par)
 
     def addUseRefs(self, d_use, file_ent, stream: str = ""):
         for use_tuple in d_use:
@@ -341,7 +385,7 @@ class Project:
             )
 
     def add_references_extend_implicit_couple(
-        self, importing_ent, imported_ent, cls_data
+            self, importing_ent, imported_ent, cls_data
     ):
         ref, _ = ReferenceModel.get_or_create(
             _kind=KindModel.get_or_none(_name="Java Extend Couple Implicit")._id,
@@ -451,7 +495,7 @@ class Project:
             )
 
     def addCallNonDynamicOrCallNonDynamicByRefs(
-        self, ref_dicts, file_ent, file_address
+            self, ref_dicts, file_ent, file_address
     ):
         for ref_dict in ref_dicts:
             scope = EntityModel.get_or_create(
@@ -881,7 +925,7 @@ class Project:
         return listener.interface_properties
 
     def getCreatedClassEntity(
-        self, class_longname, class_potential_longname, file_address, file_ent
+            self, class_longname, class_potential_longname, file_address, file_ent
     ):
         props = self.getClassProperties(class_potential_longname, file_address)
         if not props:
@@ -912,7 +956,7 @@ class Project:
         return ent[0]
 
     def getInterfaceEntity(
-        self, interface_longname, file_address, file_ent
+            self, interface_longname, file_address, file_ent
     ):  # can't be of unknown kind!
         props = self.getInterfaceProperties(interface_longname, file_address)
         if not props:
@@ -941,7 +985,7 @@ class Project:
         for kind in KindModel.select().where(KindModel._name.contains(type)):
             if self.checkModifiersInKind(modifiers, kind):
                 if not leastspecific_kind_selected or len(
-                    leastspecific_kind_selected._name
+                        leastspecific_kind_selected._name
                 ) > len(kind._name):
                     leastspecific_kind_selected = kind
         return leastspecific_kind_selected
@@ -1142,11 +1186,11 @@ class Project:
         return result_str
 
     def add_use_module_reference(
-        self,
-        use_module: list = None,
-        unknown_module: list = None,
-        unresolved_module: list = None,
-        file_address: str = "",
+            self,
+            use_module: list = None,
+            unknown_module: list = None,
+            unresolved_module: list = None,
+            file_address: str = "",
     ) -> None:
         file_entity = self.get_parent_entity(file_address)
         for item in unknown_module:

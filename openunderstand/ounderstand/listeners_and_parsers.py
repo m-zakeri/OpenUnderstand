@@ -26,6 +26,8 @@ from analysis_passes.entity_manager_g11 import (
 from analysis_passes.use_useby import UseAndUseByListener
 from analysis_passes.type_typedby import TypedAndTypedByListener
 from analysis_passes.set_setby import SetAndSetByListener
+from analysis_passes.setinit_setinitby import SetInitAndSetByInitListener
+from analysis_passes.setpartial_setpartialby import SetPartialAndSetByPartialListener
 from ounderstand.override_overrideby__G12 import overridelistener
 from ounderstand.couple_coupleby__G12 import CoupleAndCoupleBy
 from analysis_passes.create_createby_g9 import CreateAndCreateBy
@@ -297,10 +299,34 @@ class ListenersAndParsers:
             listener = SetAndSetByListener(file_address)
             p.Walk(listener, tree)
             p.addSetRefs(listener.setBy, file_ent, stream)
-            self.logger.info("set Ref success ")
+            self.logger.info("set Ref success")
         except Exception as e:
             self.logger.error(
                 "An Error occurred in set ref in file :" + file_address + "\n" + str(e)
+            )
+
+    def setinitby_listener(self, tree, file_ent, file_address, p, stream: str = ""):
+        try:
+            # setinit ref
+            listener = SetInitAndSetByInitListener(file_address)
+            p.Walk(listener, tree)
+            p.addSetInitRefs(listener.set_init_by, file_ent, stream)
+            self.logger.info("setInit Ref success ")
+        except Exception as e:
+            self.logger.error(
+                "An Error occurred in setInit ref in file :" + file_address + "\n" + str(e)
+            )
+
+    def setbypartialby_listener(self, tree, file_ent, file_address, p, stream: str = ""):
+        try:
+            # setinit ref
+            listener = SetPartialAndSetByPartialListener(file_address)
+            p.Walk(listener, tree)
+            p.addSetPartialRefs(listener.set_by_partial, file_ent, stream)
+            self.logger.info("set Partial Ref success ")
+        except Exception as e:
+            self.logger.error(
+                "An Error occurred in setInit ref in file :" + file_address + "\n" + str(e)
             )
 
     @timer_decorator()
