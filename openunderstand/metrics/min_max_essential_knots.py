@@ -185,7 +185,7 @@ class MinEssentialKnots(JavaParserLabeledListener):
         )
 
 
-def min_max_essential_knots(ent_model=None):
+def min_max_essential_knots(ent_model=None, enable: bool = True):
     p = Project()
     listener = MinEssentialKnots()
     lexer = JavaLexer(InputStream(ent_model.contents()))
@@ -193,4 +193,7 @@ def min_max_essential_knots(ent_model=None):
     parser = JavaParserLabeled(tokens)
     return_tree = parser.compilationUnit()
     p.Walk(reference_listener=listener, parse_tree=return_tree)
-    return listener.count
+    if enable:
+        return listener.method_counter
+    else:
+        return listener.method_maxEssentialKnots

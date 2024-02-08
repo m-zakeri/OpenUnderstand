@@ -3,7 +3,7 @@
 __author__ = "Navid Mousavizadeh, Amir Mohammad Sohrabi, Sara Younesi, Deniz Ahmadi"
 __copyright__ = "Copyright 2022, The OpenUnderstand Project, Iran University of Science and technology"
 __credits__ = [
-    "Dr.Parsa",
+    "AminHZ" "Dr.Parsa",
     "Dr.Zakeri",
     "Mehdi Razavi",
     "Navid Mousavizadeh",
@@ -19,12 +19,11 @@ from antlr4 import *
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from analysis_passes.entity_manager_G11 import (
+from analysis_passes.entity_manager_g11 import (
     get_created_entity_longname,
     get_all_files,
     get_created_entity_id,
 )
-from oudb.api import open as db_open, create_db
 
 
 class AntlrHandler:

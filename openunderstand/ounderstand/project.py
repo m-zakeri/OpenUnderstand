@@ -485,23 +485,38 @@ class Project:
                 _scope=ent,
             )
 
-    def add_cast_by(self, ref_dicts, file_ent, file_address):
-        for ref_dict in ref_dicts:
+    def add_cast_by(self, ref_dicts_all, file_ent, file_address):
+        for ref_dicts in ref_dicts_all:
+            scope = EntityModel.get_or_create(
+                _kind=self.findKindWithKeywords(
+                    ref_dicts["p_kind"], ref_dicts["p_modifier"]
+                ),
+                _name=ref_dicts["p_name"],
+                _parent=ref_dicts["p_parent"]
+                if ref_dicts["p_parent"] is not None
+                else file_ent,
+                _longname=ref_dicts["p_longname"],
+                _contents=ref_dicts["p_content"],
+            )[0]
+            ent = self.getImplementEntity(
+                ref_dicts["longname"], file_address, file_ent
+            )
+
             cast = ReferenceModel.get_or_create(
                 _kind=174,
-                _file=file_address,
-                _line=ref_dict["line"],
-                _column=ref_dict["col"],
-                _scope=ref_dict["p_content"],
-                _ent=file_ent,
+                _file=file_ent,
+                _line=ref_dicts["line"],
+                _column=ref_dicts["col"],
+                _scope=scope,
+                _ent=ent,
             )
             castby = ReferenceModel.get_or_create(
                 _kind=175,
                 _file=file_ent,
-                _line=ref_dict["line"],
-                _column=ref_dict["col"],
-                _scope=file_ent,
-                _ent=ref_dict["p_content"],
+                _line=ref_dicts["line"],
+                _column=ref_dicts["col"],
+                _scope=ent,
+                _ent=scope,
             )
 
     def add_contain_in(self, ref_dicts, file_ent, file_address):
@@ -522,7 +537,7 @@ class Project:
             )
             contain = ReferenceModel.get_or_create(
                 _kind=176,
-                _file=file_address,
+                _file=file_ent,
                 _line=ref_dict["line"],
                 _column=ref_dict["col"],
                 _scope=ent,
@@ -531,7 +546,7 @@ class Project:
 
             containin = ReferenceModel.get_or_create(
                 _kind=177,
-                _file=file_address,
+                _file=file_ent,
                 _line=ref_dict["line"],
                 _column=ref_dict["col"],
                 _scope=scope,

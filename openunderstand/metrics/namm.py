@@ -3,7 +3,6 @@ from oudb.models import EntityModel
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from oudb.api import open as db_open, create_db
 
 
 class NAMMListener(JavaParserLabeledListener):

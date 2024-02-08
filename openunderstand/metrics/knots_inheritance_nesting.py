@@ -1,10 +1,10 @@
 from antlr4 import *
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from max_inheritance import FindAllInheritances
-from max_inheritance import FindAllClasses
-from max_nesting import MaxNesting
-from min_max_essential_knots import MinEssentialKnots
+from metrics.max_inheritance import FindAllInheritances
+from metrics.max_inheritance import FindAllClasses
+from metrics.max_nesting import MaxNesting
+from metrics.min_max_essential_knots import MinEssentialKnots
 import os
 from fnmatch import fnmatch
 import argparse

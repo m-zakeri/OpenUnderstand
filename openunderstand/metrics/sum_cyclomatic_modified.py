@@ -45,10 +45,10 @@ class CyclomaticModifiedListener(JavaParserLabeledListener):
 def get_sum_cyclomatic_modified(ent_model=None):
     entity_longname = ent_model.longname()
 
-    files = {}
+    files = []
     if entity_longname is None:
         for ent in EntityModel.select().where(EntityModel._kind_id == 1):
-            files[ent._contents] = 0
+            files.append(ent._contents)
         listener = CyclomaticModifiedListener()
     else:
         # search in db
@@ -65,12 +65,12 @@ def get_sum_cyclomatic_modified(ent_model=None):
             listener = CyclomaticModifiedListener()
 
     for file_content in files:
-        file_stream = InputStream(file_content)
-        lexer = JavaLexer(file_stream)
-        tokens = CommonTokenStream(lexer)
-        parser = JavaParserLabeled(tokens)
-        parse_tree = parser.compilationUnit()
-
-        walker = ParseTreeWalker()
-        walker.walk(listener=listener, t=parse_tree)
+        if file_content is not None:
+            file_stream = InputStream(file_content)
+            lexer = JavaLexer(file_stream)
+            tokens = CommonTokenStream(lexer)
+            parser = JavaParserLabeled(tokens)
+            parse_tree = parser.compilationUnit()
+            walker = ParseTreeWalker()
+            walker.walk(listener=listener, t=parse_tree)
     return listener.get_sum_cyclomatic_modified

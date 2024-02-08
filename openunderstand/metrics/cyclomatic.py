@@ -3,7 +3,7 @@ from collections import Counter
 from antlr4 import *
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from utils_g10 import get_method_prefixes
+from metrics.utils_g10 import get_method_prefixes
 from gen.javaLabeled.JavaLexer import JavaLexer
 
 PRJ_INDEX = 2
