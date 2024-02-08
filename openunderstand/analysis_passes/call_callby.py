@@ -41,6 +41,8 @@ class CallAndCallBy(JavaParserLabeledListener):
         self.implement = []
         self.classes_repo = []
 
+
+
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         try:
             bodies = ctx.classBody().classBodyDeclaration()

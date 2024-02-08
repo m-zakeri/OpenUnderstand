@@ -641,16 +641,13 @@ class Project:
             prefixes += branch.getText() + " "
         return prefixes, import_entity_listener.body, kind
 
-    def get_parent_import(self, parent_file_name, files):
-        file_names, file_paths = zip(*files)
-        parent_file_index = file_names.index(parent_file_name)
-        parent_file_path = file_paths[parent_file_index]
-        parent_entity = EntityModel.get_or_none(
+    def get_parent_import(self, parent_file_name, file):
+        parent_entity, _ = EntityModel.get_or_create(
             _kind=1,  # Java File
             _name=parent_file_name,
-            _longname=parent_file_path,
+            _longname=file,
         )
-        return parent_entity, parent_file_path
+        return parent_entity, file
 
     def get_kind_name(self, prefixes, kind):
         p_static = ""
@@ -786,16 +783,12 @@ class Project:
             parent_entity, parent_file_path = self.get_parent_import(
                 i["imported_class_file_name"], files
             )
-            prefixes, class_body, kind = self.get_imported_entity(
-                import_entity_listener=import_entity_listener
-            )
-            entity_kind = self.get_kind_name(prefixes, kind)
             imported_entity, _ = EntityModel.get_or_create(
-                _kind=KindModel.get_or_none(_name=entity_kind).get_id(),
+                _kind=KindModel.get_or_none(_name="Java Import").get_id(),
                 _parent=parent_entity.get_id(),
                 _name=i["imported_class_name"],
                 _longname=i["imported_class_longname"],
-                _contents=class_body,
+                _contents="",
             )
         return imported_entity
 
