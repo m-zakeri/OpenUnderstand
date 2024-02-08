@@ -1,28 +1,7 @@
-# expression -> NEW creator
-
-
-"""
-## Description
-This module find all OpenUnderstand call and callby references in a Java project
-
-
-## References
-
-
-"""
-
-__author__ = "Shaghayegh Mobasher , Setayesh kouloubandi ,Parisa Alaie"
-__version__ = "0.1.0"
-
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+__author__ = "Ali Rasouli, G4"
 
 
 class DeclareAndDeclareinListener(JavaParserLabeledListener):
-    """
-    #Todo: Implementing the ANTLR listener pass for Java Call and Java Callby reference kind
-
-    """
 
     def __init__(self):
         self.declare = []
