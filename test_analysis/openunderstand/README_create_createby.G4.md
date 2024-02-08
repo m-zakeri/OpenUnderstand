@@ -13,23 +13,23 @@ to mimic the functionality of Create& Createby queries available in SciTools Und
 these are my output in Windows and Linux:
 - these show us line and longname 
 - before changes in windows:
-![00.png](..%2F00.png)
+![00.png](..%2Fpictures%20for%20readme%2F00.png)
 
 - after changes in windows:
-![01.png](..%2F01.png)
+![01.png](..%2Fpictures%20for%20readme%2F01.png)
  
 before changes in linux:
 
-![photo_5917882626973221722_x (1).jpg](..%2Fphoto_5917882626973221722_x%20%281%29.jpg)
+![photo_5917882626973221722_x (1).jpg](..%2Fpictures%20for%20readme%2Fphoto_5917882626973221722_x%20%281%29.jpg)
 
 the numbers show the line of the code that create ref appears and end of the output tells that Which line is seen only in openunderstand and which only in understand
 after (linux):
-![photo_5917882626973221723_x (1).jpg](..%2Fphoto_5917882626973221723_x%20%281%29.jpg)
+![photo_5917882626973221723_x (1).jpg](..%2Fpictures%20for%20readme%2Fphoto_5917882626973221723_x%20%281%29.jpg)
 
 
 - and these are kind and content in windows :
-- ![02 (1).png](..%2F02%20%281%29.png)
-![03 (1).png](..%2F03%20%281%29.png)
+![02 (1).png](..%2Fpictures%20for%20readme%2F02%20%281%29.png)
+- ![03 (1).png](..%2Fpictures%20for%20readme%2F03%20%281%29.png)
 
 ## read the output
 - First line numbers indicate all "create" references in openundrestand and undrestand
