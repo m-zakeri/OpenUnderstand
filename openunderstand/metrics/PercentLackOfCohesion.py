@@ -75,10 +75,9 @@ class UseAndUseByListener(JavaParserLabeledListener):
                     )
 
 
-def main(file):
+def get_percent_lack_of_cohesion(ent_model=None) -> int:
     # stream files
-    stream = FileStream(file, encoding="utf8")
-
+    stream = InputStream(ent_model.contents())
     # lex and tokenize
     lexer = JavaLexer(stream)
     token_string = CommonTokenStream(lexer)
@@ -108,8 +107,3 @@ def main(file):
     except:
         avg = 0
     return (1 - avg) * 100
-
-
-if __name__ == "__main__":
-    pass
-    # print(main('javapackage//c.java'))

@@ -90,24 +90,18 @@ def getListOfFiles(dirName):
     return allFiles
 
 
-if __name__ == "__main__":
-    classes = {}
-    class_names = []
-    path = "H:/OpenUnderstand/benchmark/jvlt-1.3.2"
+def get_sum_of_cyclomatics(ent_model=None):
+    # at first we should Stream text from input file
+    inputfile = InputStream(ent_model.contents())
+    # then we must use lexer
+    lex = JavaLexer(inputfile)
+    # then we should tokenize that
+    toked = CommonTokenStream(lex)
+    # at last we should parse tokenized
+    parsed = JavaParserLabeled(toked)
+    ptree = parsed.compilationUnit()
 
-    files = getListOfFiles(path)
-    for file_address in files:
-        # at first we should Stream text from input file
-        inputfile = FileStream(file_address, encoding="utf8")
-        # then we must use lexer
-        lex = JavaLexer(inputfile)
-        # then we should tokenize that
-        toked = CommonTokenStream(lex)
-        # at last we should parse tokenized
-        parsed = JavaParserLabeled(toked)
-        ptree = parsed.compilationUnit()
-
-        listener = Cyclomatics()
-        treewalker = ParseTreeWalker()
-        treewalker.walk(t=ptree, listener=listener)
-        print("Cyclomatics of ", file_address, ": ", listener.get_sum_cyclomatics())
+    listener = Cyclomatics()
+    treewalker = ParseTreeWalker()
+    treewalker.walk(t=ptree, listener=listener)
+    return listener.get_sum_cyclomatics()

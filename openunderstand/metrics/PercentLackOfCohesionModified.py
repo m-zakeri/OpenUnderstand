@@ -1,6 +1,5 @@
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from antlr4 import *
-import json
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 
@@ -99,8 +98,8 @@ class UseAndUseByListener(JavaParserLabeledListener):
                     )
 
 
-def main(file):
-    stream = FileStream(file, encoding="utf8")
+def get_percent_lack_of_cohesion_modified(ent_model=None):
+    stream = InputStream(ent_model.contents())
     lexer = JavaLexer(stream)
     token_string = CommonTokenStream(lexer)
     parser = JavaParserLabeled(token_string)
@@ -126,8 +125,3 @@ def main(file):
     except:
         avg = 0
     return (1 - avg) * 100
-
-
-if __name__ == "__main__":
-    pass
-    # print(main('javapackage//c.java'))

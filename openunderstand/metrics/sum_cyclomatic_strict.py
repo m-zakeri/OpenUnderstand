@@ -4,7 +4,6 @@ from gen.javaLabeled.JavaLexer import JavaLexer
 from oudb.models import EntityModel
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from oudb.api import open as db_open, create_db
 
 
 class CyclomaticStrictListener(JavaParserLabeledListener):
@@ -52,12 +51,10 @@ class CyclomaticStrictListener(JavaParserLabeledListener):
         self.sum += 1
 
 
-if __name__ == "__main__":
-    create_db("../../benchmark2_database.oudb", project_dir="..\..\benchmark")
-    db = db_open("../../benchmark2_database.oudb")
+def get_sum_cyclomatic_strict(ent_model=None):
 
     # enter file name here
-    entity_longname = None
+    entity_longname = ent_model.longname()
 
     files = []
     if entity_longname is None:
@@ -87,4 +84,4 @@ if __name__ == "__main__":
 
         walker = ParseTreeWalker()
         walker.walk(listener=listener, t=parse_tree)
-    print(listener.get_sum_cyclomatic_strict)
+    return listener.get_sum_cyclomatic_strict

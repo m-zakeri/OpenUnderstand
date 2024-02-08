@@ -2,9 +2,9 @@ from antlr4 import *
 from gen.javaLabeled.JavaLexer import JavaLexer
 
 
-def main(input_address):
+def get_ratio_comment_to_code(ent_model=None) -> float:
     # Stream file
-    file_stream = FileStream(r"" + input_address)
+    file_stream = InputStream(ent_model.contents())
     # lex and tokenize
     lexer = JavaLexer(file_stream)
     token = lexer.nextToken()
@@ -34,9 +34,7 @@ def main(input_address):
                 last_line = lexer.line
         current_line = lexer.line
         token = lexer.nextToken()
-    print(comments / code)
-
-
-if __name__ == "__main__":
-    pass
-    # main('.//javapackage//c.java')
+    if code > 0:
+        return comments / code
+    else:
+        return 0

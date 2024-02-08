@@ -3,7 +3,6 @@ from oudb.models import EntityModel
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from oudb.api import open as db_open, create_db
 
 
 class CyclomaticModifiedListener(JavaParserLabeledListener):
@@ -43,17 +42,13 @@ class CyclomaticModifiedListener(JavaParserLabeledListener):
         self.sum += 1
 
 
-if __name__ == "__main__":
-    create_db("../../benchmark2_database.oudb", project_dir="..\..\benchmark")
-    db = db_open("../../benchmark2_database.oudb")
+def get_sum_cyclomatic_modified(ent_model=None):
+    entity_longname = ent_model.longname()
 
-    # enter file name here
-    entity_longname = None
-
-    files = {}
+    files = []
     if entity_longname is None:
         for ent in EntityModel.select().where(EntityModel._kind_id == 1):
-            files[ent._contents] = 0
+            files.append(ent._contents)
         listener = CyclomaticModifiedListener()
     else:
         # search in db
@@ -70,12 +65,12 @@ if __name__ == "__main__":
             listener = CyclomaticModifiedListener()
 
     for file_content in files:
-        file_stream = InputStream(file_content)
-        lexer = JavaLexer(file_stream)
-        tokens = CommonTokenStream(lexer)
-        parser = JavaParserLabeled(tokens)
-        parse_tree = parser.compilationUnit()
-
-        walker = ParseTreeWalker()
-        walker.walk(listener=listener, t=parse_tree)
-    print(listener.get_sum_cyclomatic_modified)
+        if file_content is not None:
+            file_stream = InputStream(file_content)
+            lexer = JavaLexer(file_stream)
+            tokens = CommonTokenStream(lexer)
+            parser = JavaParserLabeled(tokens)
+            parse_tree = parser.compilationUnit()
+            walker = ParseTreeWalker()
+            walker.walk(listener=listener, t=parse_tree)
+    return listener.get_sum_cyclomatic_modified

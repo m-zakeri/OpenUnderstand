@@ -390,7 +390,7 @@ class ListenersAndParsers:
             self.logger.info("cast success ")
         except Exception as e:
             self.logger.error(
-                "An Error occurred in cast in file :" + file_address + "\n" + str(e)
+                "An Error occurred in cast in file :" + file_address + "\n" + str(e) + traceback.format_exc()
             )
 
     @timer_decorator()

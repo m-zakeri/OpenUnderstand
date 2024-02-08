@@ -3,7 +3,7 @@
 __author__ = "Navid Mousavizadeh, Amir Mohammad Sohrabi, Sara Younesi, Deniz Ahmadi"
 __copyright__ = "Copyright 2022, The OpenUnderstand Project, Iran University of Science and technology"
 __credits__ = [
-    "Dr.Parsa",
+    "AminHZ" "Dr.Parsa",
     "Dr.Zakeri",
     "Mehdi Razavi",
     "Navid Mousavizadeh",
@@ -14,17 +14,16 @@ __credits__ = [
 __license__ = "GPL"
 __version__ = "1.0.0"
 
+from ounderstand.project import Project
 from antlr4 import *
-
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from analysis_passes.entity_manager_G11 import (
+from analysis_passes.entity_manager_g11 import (
     get_created_entity_longname,
     get_all_files,
     get_created_entity_id,
 )
-from oudb.api import open as db_open, create_db
 
 
 class AntlrHandler:
@@ -211,10 +210,12 @@ class KnotsMetricListener(JavaParserLabeledListener):
                 self.method_entered = False
 
 
-if __name__ == "__main__":
-    create_db("../../benchmark2_database.oudb", project_dir="..\..\benchmark")
-    db = db_open("../../benchmark2_database.oudb")
-    # try:
-    konts_manager = EssentialMetric("com.calculator.app.display.print_success.main")
-    # except Exception as e:
-    # print("Error:", e)
+def knot(ent_model=None):
+    p = Project()
+    listener = KnotsMetricListener()
+    lexer = JavaLexer(InputStream(ent_model.contents()))
+    tokens = CommonTokenStream(lexer)
+    parser = JavaParserLabeled(tokens)
+    return_tree = parser.compilationUnit()
+    p.Walk(reference_listener=listener, parse_tree=return_tree)
+    return listener.count_essential_metric
