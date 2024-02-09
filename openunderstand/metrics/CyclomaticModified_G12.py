@@ -1,7 +1,9 @@
+from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from antlr4 import *
-from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from openunderstand.analysis_passes import class_properties
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from gen.javaLabeled.JavaLexer import JavaLexer
+from ounderstand.project import Project
+from analysis_passes import class_properties
 
 
 def countParents(ctx):
@@ -14,16 +16,16 @@ def countParents(ctx):
 
 
 class CyclomaticModifiedListener(JavaParserLabeledListener):
-    def __init__(self, class_):
+    def __init__(self):
         self.method_count_Cyclomatic = 1
-        self.method_long_name = ''
-        self.file = ''
+        self.method_long_name = ""
+        self.file = ""
         self.enter_method = False
         self.enter_block = False
         self.enter_class = False
         self.method_long_names = {}
-        self.packagename = ''
-        self.class_name = class_
+        self.packagename = ""
+        self.class_name = None
         self.max_value = 0
         self.classes = {}
 
@@ -53,7 +55,11 @@ class CyclomaticModifiedListener(JavaParserLabeledListener):
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
 
-        if self.class_name == ctx.IDENTIFIER().getText() or self.class_name == '' or self.class_name is None:
+        if (
+            self.class_name == ctx.IDENTIFIER().getText()
+            or self.class_name == ""
+            or self.class_name is None
+        ):
             self.enter_class = True
         self.max_value = 0
         self.classes = {}
@@ -87,8 +93,14 @@ class CyclomaticModifiedListener(JavaParserLabeledListener):
     # enter-case
 
     def exitMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
-        longname = self.packagename + '.' + countParents(ctx) + '.' + ctx.IDENTIFIER().getText()
-        print('method', longname, self.method_count_Cyclomatic)
+        longname = (
+            self.packagename
+            + "."
+            + countParents(ctx)
+            + "."
+            + ctx.IDENTIFIER().getText()
+        )
+        print("method", longname, self.method_count_Cyclomatic)
         self.method_long_names[longname] = self.method_count_Cyclomatic
 
         if self.max_value < self.method_count_Cyclomatic:
@@ -114,5 +126,18 @@ class CyclomaticModifiedListener(JavaParserLabeledListener):
             self.method_count_Cyclomatic += 1
 
     def exitClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
-        longname = self.packagename + '.' + countParents(ctx) + ctx.IDENTIFIER().getText()
+        longname = (
+            self.packagename + "." + countParents(ctx) + ctx.IDENTIFIER().getText()
+        )
         self.classes[longname] = self.max_value
+
+
+def cyclomatic_modified(ent_model=None):
+    p = Project()
+    listener = CyclomaticModifiedListener()
+    lexer = JavaLexer(InputStream(ent_model.contents()))
+    tokens = CommonTokenStream(lexer)
+    parser = JavaParserLabeled(tokens)
+    return_tree = parser.compilationUnit()
+    p.Walk(reference_listener=listener, parse_tree=return_tree)
+    return listener.method_count_Cyclomatic

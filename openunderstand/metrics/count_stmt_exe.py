@@ -1,22 +1,15 @@
-import os
-import sys
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from utils_g10 import get_keys, stmt_main
+from antlr4 import *
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from gen.javaLabeled.JavaLexer import JavaLexer
+from ounderstand.project import Project
 
-BASE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, BASE)
-
-
-PRJ_INDEX = 10
-METRIC_NAME = 'CountStmtExe'
-LAST_LOG = False
+from metrics.utils_g10 import get_keys
 
 
 class StatementListener(JavaParserLabeledListener):
-    def __init__(self, files):
+    def __init__(self):
         self.repository = {}
-        self.files = files
         self.counter = 0
 
     # return
@@ -39,7 +32,9 @@ class StatementListener(JavaParserLabeledListener):
     def enterStatement13(self, ctx: JavaParserLabeled.Statement13Context):
         self.update_repository(ctx, 1)
 
-    def enterAnnotationMethodOrConstantRest0(self, ctx: JavaParserLabeled.AnnotationMethodOrConstantRest0Context):
+    def enterAnnotationMethodOrConstantRest0(
+        self, ctx: JavaParserLabeled.AnnotationMethodOrConstantRest0Context
+    ):
         self.update_repository(ctx, 1)
 
     def update_repository(self, ctx, increment):
@@ -54,5 +49,12 @@ class StatementListener(JavaParserLabeledListener):
                 self.repository.update(new_dict)
 
 
-if __name__ == '__main__':
-    stmt_main(PRJ_INDEX, StatementListener, METRIC_NAME, LAST_LOG)
+def statement_counter_exe(ent_model=None):
+    p = Project()
+    listener = StatementListener()
+    lexer = JavaLexer(InputStream(ent_model.contents()))
+    tokens = CommonTokenStream(lexer)
+    parser = JavaParserLabeled(tokens)
+    return_tree = parser.compilationUnit()
+    p.Walk(reference_listener=listener, parse_tree=return_tree)
+    return listener.counter

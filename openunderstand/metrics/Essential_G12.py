@@ -1,9 +1,9 @@
+from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from gen.javaLabeled.JavaLexer import JavaLexer
+from ounderstand.project import Project
 from antlr4 import *
-
-from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
-from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from openunderstand.analysis_passes import class_properties
+from analysis_passes import class_properties
 
 
 def countParents(ctx):
@@ -26,7 +26,7 @@ class EssentialMetricListener(JavaParserLabeledListener):
         self.entered_switch = False
         self.methods = {}
         self.classes = {}
-        self.packagename = ''
+        self.packagename = ""
 
     @property
     def essential_metric(self):
@@ -133,12 +133,17 @@ class EssentialMetricListener(JavaParserLabeledListener):
 
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         if self.method is not None:
-            if self.method == ' ':
+            if self.method == " ":
                 self.method_entered = True
 
     def exitMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
-        longname = self.packagename + '.' + countParents(ctx) + '.' + ctx.IDENTIFIER().getText()
-        print('methode', longname, self.count_essential_metric)
+        longname = (
+            self.packagename
+            + "."
+            + countParents(ctx)
+            + "."
+            + ctx.IDENTIFIER().getText()
+        )
         self.methods[longname] = self.count_essential_metric
         self.method_entered = False
         self.count_essential_metric = 1
@@ -150,7 +155,9 @@ class EssentialMetricListener(JavaParserLabeledListener):
         self.methods = {}
 
     def exitClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
-        longname = self.packagename + '.' + countParents(ctx) + ctx.IDENTIFIER().getText()
+        longname = (
+            self.packagename + "." + countParents(ctx) + ctx.IDENTIFIER().getText()
+        )
         val = self.methods.values()
         list_of_val = list(val)
         max_val = 1
@@ -159,21 +166,12 @@ class EssentialMetricListener(JavaParserLabeledListener):
         self.classes[longname] = max_val
 
 
-def get_parse_tree(file_path):
-    file = FileStream(file_path)
-    lexer = JavaLexer(file)
+def essential(ent_model=None):
+    p = Project()
+    listener = EssentialMetricListener()
+    lexer = JavaLexer(InputStream(ent_model.contents()))
     tokens = CommonTokenStream(lexer)
     parser = JavaParserLabeled(tokens)
-    return parser.compilationUnit()
-
-
-def main():
-    path = r'C:\Users\Asus Vivobook\PycharmProjects\pythonProject\benchmark\calculator_app\src\com\calculator\app\display\print_fail.java'
-    tree = get_parse_tree(path)
-    listener = EssentialMetricListener(' ')
-    walker = ParseTreeWalker()
-    walker.walk(listener, tree)
-
-
-if __name__ == '__main__':
-    main()
+    return_tree = parser.compilationUnit()
+    p.Walk(reference_listener=listener, parse_tree=return_tree)
+    return listener.count_essential_metric

@@ -1,21 +1,17 @@
-
-
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-import openunderstand.analysis_passes.class_properties as class_properties
+from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+import analysis_passes.class_properties as class_properties
 
 
 class DotRef_DotRefBy(JavaParserLabeledListener):
     state = False
-    class_name =[]
+    class_name = []
 
-    def enterPackageDeclaration(self, ctx:JavaParserLabeled.PackageDeclarationContext):
+    def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
         all_pac = ctx.qualifiedName().IDENTIFIER()
         self.class_name.append(ctx.qualifiedName().getText())
-        if len(all_pac)>0:
+        if len(all_pac) > 0:
             self.state = True
-
-
 
     def findmethodreturntype(self, c):
         parents = ""
@@ -23,20 +19,21 @@ class DotRef_DotRefBy(JavaParserLabeledListener):
         current = c
         while current is not None:
             if type(current.parentCtx).__name__ == "MethodDeclarationContext":
-                parents=(current.parentCtx.typeTypeOrVoid().getText())
-                context=current.parentCtx.getText()
+                parents = current.parentCtx.typeTypeOrVoid().getText()
+                context = current.parentCtx.getText()
                 break
             current = current.parentCtx
 
-        return parents,context
+        return parents, context
 
     def findmethodacess(self, c):
         parents = ""
-        modifiers = []
         current = c
+        modifiers = []
         while current is not None:
             if "ClassBodyDeclaration" in type(current.parentCtx).__name__:
-                parents = (current.parentCtx.modifier())
+                if hasattr(current.parentCtx, "modifier"):
+                    parents = current.parentCtx.modifier()
                 break
             current = current.parentCtx
         for x in parents:
@@ -46,12 +43,10 @@ class DotRef_DotRefBy(JavaParserLabeledListener):
 
     implement = []
 
-    def enterClassDeclaration(self, ctx:JavaParserLabeled.ClassDeclarationContext):
+    def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         self.class_name.append(ctx.IDENTIFIER().getText())
 
-
-
-    def enterExpression1(self, ctx:JavaParserLabeled.Expression0Context):
+    def enterExpression1(self, ctx: JavaParserLabeled.Expression0Context):
 
         if ctx.DOT():
             if ctx.expression() and ("DOT" not in dir(ctx.expression())):
@@ -63,16 +58,29 @@ class DotRef_DotRefBy(JavaParserLabeledListener):
                 else:
                     refEntName = None
 
-                allrefs = class_properties.ClassPropertiesListener.findParents(ctx)  # self.findParents(ctx)
+                allrefs = class_properties.ClassPropertiesListener.findParents(
+                    ctx
+                )  # self.findParents(ctx)
                 refent = allrefs[-1]
                 if refEntName in self.class_name or refEntName is None:
                     entlongname = ".".join(allrefs)
                     [line, col] = str(ctx.start).split(",")[3].split(":")
 
-                    self.implement.append({"scopename": refent, "scopelongname": entlongname, "scopemodifiers": modifiers,
-                                        "scopereturntype": mothodedreturn, "scopecontent": methodcontext,
-                                        "line": line, "col": col[:-1], "refent": refEntName,
-                                        "scope_parent": allrefs[-2] if len(allrefs) > 2 else None,
-                                        "potential_refent": ".".join(
-                                            allrefs[:-1]) + "." + refEntName if refEntName else ""})
-
+                    self.implement.append(
+                        {
+                            "scopename": refent,
+                            "scopelongname": entlongname,
+                            "scopemodifiers": modifiers,
+                            "scopereturntype": mothodedreturn,
+                            "scopecontent": methodcontext,
+                            "line": line,
+                            "col": col[:-1],
+                            "refent": refEntName,
+                            "scope_parent": allrefs[-2] if len(allrefs) > 2 else None,
+                            "potential_refent": ".".join(allrefs[:-1])
+                            + "."
+                            + refEntName
+                            if refEntName
+                            else "",
+                        }
+                    )

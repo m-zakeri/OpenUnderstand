@@ -3,7 +3,7 @@ from oudb.models import EntityModel
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from oudb.api import open as db_open, create_db
+
 
 class EssentialListener(JavaParserLabeledListener):
     def __init__(self):
@@ -72,13 +72,9 @@ class EssentialListener(JavaParserLabeledListener):
                 self.layers[-1] += 1
 
 
-
-if __name__ == '__main__':
-    create_db("../../benchmark2_database.oudb", project_dir="..\..\benchmark")
-    db = db_open("../../benchmark2_database.oudb")
-
+def get_sum_essentials(ent_model=None):
     # enter file name here
-    entity_longname = None
+    entity_longname = ent_model.longname()
 
     files = []
     # method = None
@@ -109,4 +105,4 @@ if __name__ == '__main__':
 
         walker = ParseTreeWalker()
         walker.walk(listener=listener, t=parse_tree)
-    print(listener.get_sum_essential)
+    return listener.get_sum_essential

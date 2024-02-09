@@ -2,8 +2,15 @@
 
 __author__ = "Navid Mousavizadeh, Amir Mohammad Sohrabi, Sara Younesi, Deniz Ahmadi"
 __copyright__ = "Copyright 2022, The OpenUnderstand Project, Iran University of Science and technology"
-__credits__ = ["Dr.Parsa", "Dr.Zakeri", "Mehdi Razavi", "Navid Mousavizadeh", "Amir Mohammad Sohrabi", "Sara Younesi",
-               "Deniz Ahmadi"]
+__credits__ = [
+    "Dr.Parsa",
+    "Dr.Zakeri",
+    "Mehdi Razavi",
+    "Navid Mousavizadeh",
+    "Amir Mohammad Sohrabi",
+    "Sara Younesi",
+    "Deniz Ahmadi",
+]
 __license__ = "GPL"
 __version__ = "1.0.0"
 
@@ -12,7 +19,11 @@ from antlr4 import *
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from analysis_passes.entity_manager_G11 import get_created_entity_longname, get_all_files, get_created_entity_id
+from analysis_passes.entity_manager_G11 import (
+    get_created_entity_longname,
+    get_all_files,
+    get_created_entity_id,
+)
 from oudb.api import open as db_open, create_db
 
 
@@ -33,11 +44,11 @@ class AntlrHandler:
 
 
 class CyclomaticModifiedMetric:
-    def __init__(self, entity_longname='Project'):
+    def __init__(self, entity_longname="Project"):
         """get project or method entity and will calculate Cyclomatic Modified Metric of it."""
         self.files = []
         self.method = None
-        if entity_longname != 'Project':
+        if entity_longname != "Project":
             entity = get_created_entity_longname(entity_longname)
             if entity is None:
                 raise Exception("Couldn't find entity.")
@@ -76,7 +87,7 @@ class CyclomaticModifiedMetricListener(JavaParserLabeledListener):
             if self.method_entered:
                 self.count_cyclomatic_modified_metric += 1
         else:
-            
+
             self.count_cyclomatic_modified_metric += 1
 
     # enter while loop
@@ -85,7 +96,7 @@ class CyclomaticModifiedMetricListener(JavaParserLabeledListener):
             if self.method_entered:
                 self.count_cyclomatic_modified_metric += 1
         else:
-            
+
             self.count_cyclomatic_modified_metric += 1
 
     # enter for loop
@@ -94,7 +105,7 @@ class CyclomaticModifiedMetricListener(JavaParserLabeledListener):
             if self.method_entered:
                 self.count_cyclomatic_modified_metric += 1
         else:
-            
+
             self.count_cyclomatic_modified_metric += 1
 
     def enterExpression9(self, ctx: JavaParserLabeled.Expression9Context):
@@ -135,21 +146,27 @@ class CyclomaticModifiedMetricListener(JavaParserLabeledListener):
         else:
             self.count_cyclomatic_modified_metric += 1
 
-    def enterGenericMethodDeclaration(self, ctx: JavaParserLabeled.GenericMethodDeclarationContext):
+    def enterGenericMethodDeclaration(
+        self, ctx: JavaParserLabeled.GenericMethodDeclarationContext
+    ):
         if self.method is not None:
             if self.method_entered:
                 self.count_cyclomatic_modified_metric += 1
         else:
             self.count_cyclomatic_modified_metric += 1
 
-    def enterGenericConstructorDeclaration(self, ctx: JavaParserLabeled.GenericConstructorDeclarationContext):
+    def enterGenericConstructorDeclaration(
+        self, ctx: JavaParserLabeled.GenericConstructorDeclarationContext
+    ):
         if self.method is not None:
             if self.method_entered:
                 self.count_cyclomatic_modified_metric += 1
         else:
             self.count_cyclomatic_modified_metric += 1
 
-    def enterConstructorDeclaration(self, ctx: JavaParserLabeled.ConstructorDeclarationContext):
+    def enterConstructorDeclaration(
+        self, ctx: JavaParserLabeled.ConstructorDeclarationContext
+    ):
         if self.method is not None:
             if self.method_entered:
                 self.count_cyclomatic_modified_metric += 1
@@ -189,7 +206,7 @@ class CyclomaticModifiedMetricListener(JavaParserLabeledListener):
                 self.method_entered = False
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     create_db("../../benchmark2_database.oudb", project_dir="..\..\benchmark")
     db = db_open("../../benchmark2_database.oudb")
     try:

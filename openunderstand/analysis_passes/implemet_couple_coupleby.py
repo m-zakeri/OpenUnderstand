@@ -11,15 +11,15 @@ from oudb.models import KindModel, EntityModel, ReferenceModel
 
 PRJ_INDEX = 4
 PROJECTS_NAME = [
-    'calculator_app',
-    'JSON',
-    'testing_legacy_code',
-    'jhotdraw-develop',
-    'xerces2j',
-    'jvlt-1.3.2',
-    'jfreechart',
-    'ganttproject',
-    '105_freemind',
+    "calculator_app",
+    "JSON",
+    "testing_legacy_code",
+    "jhotdraw-develop",
+    "xerces2j",
+    "jvlt-1.3.2",
+    "jfreechart",
+    "ganttproject",
+    "105_freemind",
 ]
 DB_PATH = "../database/calculator_app.oudb"
 PROJECT_PATH = "../benchmark/ganttproject"
@@ -87,7 +87,7 @@ class ClassTypeData:
         for child in self.baseClass.children:
             if isinstance(child, JavaParserLabeled.TypeTypeContext):
                 result_str += child.getText() + ","
-        return result_str[:len(result_str) - 1]
+        return result_str[: len(result_str) - 1]
 
     def get_name(self) -> str:
         return str(self.childClass.IDENTIFIER())
@@ -105,10 +105,14 @@ class ClassTypeData:
         return self.baseClass.getText()
 
     def get_base_children(self):
-        return [child for child in self.baseClass.children if isinstance(child, JavaParserLabeled.TypeTypeContext)]
+        return [
+            child
+            for child in self.baseClass.children
+            if isinstance(child, JavaParserLabeled.TypeTypeContext)
+        ]
 
 
-class DataBaseHandler():
+class DataBaseHandler:
     def __init__(self):
         self.classTypes: list = []
 
@@ -131,9 +135,12 @@ class DSCmetric(JavaParserLabeledListener):
         return json_output
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
-
         def get_base_class() -> JavaParserLabeled.TypeListContext:
-            list_symbols = [child for child in ctx.children if isinstance(child, JavaParserLabeled.TypeListContext)]
+            list_symbols = [
+                child
+                for child in ctx.children
+                if isinstance(child, JavaParserLabeled.TypeListContext)
+            ]
 
             if list_symbols:
                 child: JavaParserLabeled.TypeListContext = list_symbols[0]
@@ -163,7 +170,9 @@ class DSCmetric(JavaParserLabeledListener):
         data.set_line(ctx.start.line)
         self.dbHandler.put(data)
 
-    def enterInterfaceDeclaration(self, ctx: JavaParserLabeled.InterfaceDeclarationContext):
+    def enterInterfaceDeclaration(
+        self, ctx: JavaParserLabeled.InterfaceDeclarationContext
+    ):
         pass
 
 
@@ -200,8 +209,9 @@ def getNameEntity(prefixes) -> str:
     elif "protected" in prefixes:
         pattern_visibility = " Protected"
 
-    result_str = "Java{0}{1}{2} Class Type{3} Member".format(pattern_static, pattern_abstract, pattern_generic,
-                                                             pattern_visibility)
+    result_str = "Java{0}{1}{2} Class Type{3} Member".format(
+        pattern_static, pattern_abstract, pattern_generic, pattern_visibility
+    )
     return result_str
 
 
@@ -229,7 +239,7 @@ class Project:
     def get_java_files(self):
         for dir_path, _, file_names in os.walk(self.project_dir):
             for file in file_names:
-                if '.java' in str(file):
+                if ".java" in str(file):
                     path = os.path.join(dir_path, file)
                     path = path.replace("/", "\\")
                     self.file_paths.append(path)
@@ -239,15 +249,15 @@ class Project:
     def imported_entity_factory(self, cls_data: ClassTypeData):
         parent_entity: EntityModel = get_parent(cls_data.file_path)
         kindModel = KindModel.get_or_none(_name=getNameEntity(cls_data.get_prefixes()))
-        if kindModel is None:
-            print(getNameEntity(cls_data.get_prefixes()))
+        # if kindModel is None:
+        #     print(getNameEntity(cls_data.get_prefixes()))
         implemented_class_entity, _ = EntityModel.get_or_create(
             _kind=kindModel._id,
             _parent=parent_entity._id,
             _name=cls_data.get_name(),
             _type=cls_data.get_type(),
             _longname=cls_data.get_long_name(),
-            _contents=cls_data.get_contents()
+            _contents=cls_data.get_contents(),
         )
         base_entity_class_list = []
         for base_class in cls_data.get_base_children():
@@ -257,7 +267,7 @@ class Project:
                 _name=base_class.getText(),
                 _type=None,
                 _longname=(cls_data.package_name + "." + base_class.getText()),
-                _contents=base_class.getText()
+                _contents=base_class.getText(),
             )
             base_entity_class_list.append(base_class_entity)
         return implemented_class_entity, base_entity_class_list
@@ -282,7 +292,9 @@ def add_java_file_entity(file_path, file_name):
     return obj
 
 
-def add_references(importing_ent_list, imported_ent, cls_data: ClassTypeData, file_path):
+def add_references(
+    importing_ent_list, imported_ent, cls_data: ClassTypeData, file_path
+):
     for importing_ent in importing_ent_list:
         ref, _ = ReferenceModel.get_or_create(
             _kind=KindModel.get_or_none(_name="Java Extend Couple Implicit")._id,
@@ -324,5 +336,5 @@ def main():
             add_references(base_entity_list, imported_entity, classType, file_path)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

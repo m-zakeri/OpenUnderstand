@@ -3,18 +3,17 @@ from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 
 
 class TypedAndTypedByListener(JavaParserLabeledListener):
-    def __init__(self, file_name):
-        self.file_name = file_name
+    def __init__(self):
         self.package_name = ""
         self.typedBy = []
 
     @property
     def get_type(self):
         d = {}
-        d['typedBy'] = self.typedBy
+        d["typedBy"] = self.typedBy
         return d
 
-    def enterPackageDeclaration(self, ctx:JavaParserLabeled.PackageDeclarationContext):
+    def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
         self.package_name = ctx.getText().replace("package", "").replace(";", "")
 
     def enterFieldDeclaration(self, ctx: JavaParserLabeled.FieldDeclarationContext):
@@ -28,7 +27,17 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
         name_line = ctx_name.IDENTIFIER().symbol.line
         name_column = ctx_name.IDENTIFIER().symbol.column
 
-        self.typedBy.append((ctx_name.getText(), ctx_type.getText(), name_line, name_column, type_line, type_column, self.package_name))
+        self.typedBy.append(
+            (
+                ctx_name.getText(),
+                ctx_type.getText(),
+                name_line,
+                name_column,
+                type_line,
+                type_column,
+                self.package_name,
+            )
+        )
 
     # khode enum
     def enterEnumDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
@@ -40,8 +49,17 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
         name_line = ctx_name.symbol.line
         name_column = ctx_name.symbol.column
 
-        self.typedBy.append((ctx.IDENTIFIER().getText(), ctx_type.getText(),
-                            name_line, name_column, type_line, type_column, self.package_name))
+        self.typedBy.append(
+            (
+                ctx.IDENTIFIER().getText(),
+                ctx_type.getText(),
+                name_line,
+                name_column,
+                type_line,
+                type_column,
+                self.package_name,
+            )
+        )
 
     # type haye enum
     def enterEnumConstant(self, ctx: JavaParserLabeled.EnumConstantContext):
@@ -55,8 +73,17 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
         name_line = pctx.IDENTIFIER().symbol.line
         name_column = pctx.IDENTIFIER().symbol.column
 
-        self.typedBy.append((pctx.IDENTIFIER().getText(), ctx.getText(),
-                            name_line, name_column, type_line, type_column, self.package_name))
+        self.typedBy.append(
+            (
+                pctx.IDENTIFIER().getText(),
+                ctx.getText(),
+                name_line,
+                name_column,
+                type_line,
+                type_column,
+                self.package_name,
+            )
+        )
 
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         # method types
@@ -74,8 +101,17 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
             name_line = ctx.IDENTIFIER().symbol.line
             name_column = ctx.IDENTIFIER().symbol.column
 
-        self.typedBy.append((ctx.IDENTIFIER().getText(), ctx_type.getText(),
-                            name_line, name_column, type_line, type_column, self.package_name))
+        self.typedBy.append(
+            (
+                ctx.IDENTIFIER().getText(),
+                ctx_type.getText(),
+                name_line,
+                name_column,
+                type_line,
+                type_column,
+                self.package_name,
+            )
+        )
 
     def enterFormalParameter(self, ctx: JavaParserLabeled.FormalParameterContext):
         ctx_name = ctx.variableDeclaratorId()
@@ -86,10 +122,21 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
         name_line = ctx_name.IDENTIFIER().symbol.line
         name_column = ctx_name.IDENTIFIER().symbol.column
 
-        self.typedBy.append((ctx_name.getText(), ctx_type.getText(),
-                            name_line, name_column, type_line, type_column, self.package_name))
+        self.typedBy.append(
+            (
+                ctx_name.getText(),
+                ctx_type.getText(),
+                name_line,
+                name_column,
+                type_line,
+                type_column,
+                self.package_name,
+            )
+        )
 
-    def enterLocalVariableDeclaration(self, ctx: JavaParserLabeled.LocalVariableDeclarationContext):
+    def enterLocalVariableDeclaration(
+        self, ctx: JavaParserLabeled.LocalVariableDeclarationContext
+    ):
         # baraye try va catch va function
         ctx1 = ctx.variableDeclarators()
         ctx_name = ctx1.variableDeclarator()[0].variableDeclaratorId()
@@ -100,5 +147,14 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
         name_line = ctx_name.IDENTIFIER().symbol.line
         name_column = ctx_name.IDENTIFIER().symbol.column
 
-        self.typedBy.append((ctx_name.getText(), ctx_type.getText(),
-                            name_line, name_column, type_line, type_column, self.package_name))
+        self.typedBy.append(
+            (
+                ctx_name.getText(),
+                ctx_type.getText(),
+                name_line,
+                name_column,
+                type_line,
+                type_column,
+                self.package_name,
+            )
+        )

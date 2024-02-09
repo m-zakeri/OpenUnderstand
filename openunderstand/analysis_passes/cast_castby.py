@@ -3,11 +3,21 @@ from general_scope_listener import GeneralScopeListener
 
 
 class CastAndCastBy(GeneralScopeListener):
-
-    def __init__(self, file_full_path, available_package_classes, available_class_methods,
-                 available_class_fields, class_parents):
-        super(CastAndCastBy, self).__init__(file_full_path, available_package_classes, available_class_methods,
-                                            available_class_fields, class_parents)
+    def __init__(
+        self,
+        file_full_path,
+        available_package_classes,
+        available_class_methods,
+        available_class_fields,
+        class_parents,
+    ):
+        super(CastAndCastBy, self).__init__(
+            file_full_path,
+            available_package_classes,
+            available_class_methods,
+            available_class_fields,
+            class_parents,
+        )
         # The dict has a key corresponding to the
         # entity_id of the reference owner entity
         # each key maps to an array of referenced entities

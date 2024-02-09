@@ -92,8 +92,8 @@ The API is exactly the same as Understand's API to be compatible with Understand
 ### Initializing the database
 
 ```python
-from openunderstand.oudb.api import create_db
-from openunderstand.oudb.fill import main
+from oudb.api import create_db
+from oudb.fill import main
 
 create_db(
     dbname="G:\Dev\OpenUnderstand\database.oudb",  # customize the path
@@ -126,7 +126,7 @@ To find more information about CRUD operations check out the [peewee's documents
 ### Using the API
 
 ```python
-from openunderstand.oudb.api import open as db_open
+from oudb.api import open as db_open
 
 db = db_open("G:\Dev\OpenUnderstand\database.oudb")  # customize the path
 ent = db.lookup("Admin", "method")[0]

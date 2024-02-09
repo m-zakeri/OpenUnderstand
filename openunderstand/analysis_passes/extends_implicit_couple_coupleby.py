@@ -5,25 +5,9 @@ from antlr4 import *
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from oudb.api import create_db, open as db_open
-from oudb.fill import main as db_fill
 from oudb.models import KindModel, EntityModel, ReferenceModel
 
 PRJ_INDEX = 4
-PROJECTS_NAME = [
-    'calculator_app',
-    'JSON',
-    'testing_legacy_code',
-    'jhotdraw-develop',
-    'xerces2j',
-    'jvlt-1.3.2',
-    'jfreechart',
-    'ganttproject',
-    '105_freemind',
-]
-DB_PATH = "../database/calculator_app.oudb"
-PROJECT_PATH = "../benchmark/ganttproject"
-PROJECT_NAME = "Sample App"
 
 
 class Singleton(type):
@@ -105,7 +89,6 @@ class DSCmetric(JavaParserLabeledListener):
         return json_output
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
-
         def check_generic_class():
             for child in ctx.children:
                 if isinstance(child, JavaParserLabeled.TypeParametersContext):
@@ -165,8 +148,9 @@ def getNameEntity(prefixes) -> str:
     elif "protected" in prefixes:
         pattern_visibility = " Protected"
 
-    result_str = "Java{0}{1}{2} Class Type{3} Member".format(pattern_static, pattern_abstract, pattern_generic,
-                                                             pattern_visibility)
+    result_str = "Java{0}{1}{2} Class Type{3} Member".format(
+        pattern_static, pattern_abstract, pattern_generic, pattern_visibility
+    )
     return result_str
 
 
@@ -190,7 +174,7 @@ class Project:
     def get_java_files(self):
         for dir_path, _, file_names in os.walk(self.project_dir):
             for file in file_names:
-                if '.java' in str(file):
+                if ".java" in str(file):
                     path = os.path.join(dir_path, file)
                     path = path.replace("/", "\\")
                     self.file_paths.append(path)
@@ -200,15 +184,15 @@ class Project:
     def imported_entity_factory(self, cls_data: ClassTypeData):
         parent_entity: EntityModel = get_parent(cls_data.file_path)
         kindModel = KindModel.get_or_none(_name=getNameEntity(cls_data.get_prefixes()))
-        if kindModel is None:
-            print(getNameEntity(cls_data.get_prefixes()))
+        # if kindModel is None:
+        #     print(getNameEntity(cls_data.get_prefixes()))
         extend_implicit_entity, _ = EntityModel.get_or_create(
             _kind=kindModel._id,
             _parent=parent_entity._id,
             _name=cls_data.get_name(),
             _type=cls_data.get_type(),
             _longname=cls_data.get_long_name(),
-            _contents=cls_data.get_contents()
+            _contents=cls_data.get_contents(),
         )
         entity_kind_object = 84
         java_lang_entity, _ = EntityModel.get_or_create(
@@ -217,7 +201,7 @@ class Project:
             _name="Object",
             _type=None,
             _longname=cls_data.parentClass,
-            _contents=""
+            _contents="",
         )
         return extend_implicit_entity, java_lang_entity
 
@@ -242,6 +226,7 @@ def add_java_file_entity(file_path, file_name):
 
 
 def add_references(importing_ent, imported_ent, cls_data: ClassTypeData, file_path):
+
     ref, _ = ReferenceModel.get_or_create(
         _kind=KindModel.get_or_none(_name="Java Extend Couple Implicit")._id,
         _file_id=importing_ent._id,
@@ -250,6 +235,7 @@ def add_references(importing_ent, imported_ent, cls_data: ClassTypeData, file_pa
         _ent_id=imported_ent._id,
         _scope_id=importing_ent._id,
     )
+
     inverse_ref, _ = ReferenceModel.get_or_create(
         _kind=KindModel.get_or_none(_name="Java Extend Coupleby Implicit")._id,
         _file_id=importing_ent._id,
@@ -279,7 +265,3 @@ def main():
             classType.set_file_path(file_path)
             imported_entity, importing_entity = p.imported_entity_factory(classType)
             add_references(importing_entity, imported_entity, classType, file_path)
-
-
-if __name__ == '__main__':
-    main()

@@ -2,20 +2,28 @@
 
 __author__ = "Navid Mousavizadeh, Amir Mohammad Sohrabi, Sara Younesi, Deniz Ahmadi"
 __copyright__ = "Copyright 2022, The OpenUnderstand Project, Iran University of Science and technology"
-__credits__ = ["Dr.Parsa", "Dr.Zakeri", "Mehdi Razavi", "Navid Mousavizadeh", "Amir Mohammad Sohrabi", "Sara Younesi",
-               "Deniz Ahmadi"]
+__credits__ = [
+    "Dr.Parsa",
+    "Dr.Zakeri",
+    "Mehdi Razavi",
+    "Navid Mousavizadeh",
+    "Amir Mohammad Sohrabi",
+    "Sara Younesi",
+    "Deniz Ahmadi",
+]
 __license__ = "GPL"
 __version__ = "1.0.0"
 
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 
 
 class VariableListener(JavaParserLabeledListener):
     """A listener class for detecting variables"""
 
-    def __init__(self, entity_manager_object):
-        self.entity_manager = entity_manager_object
+    # def __init__(self, entity_manager_object):
+    def __init__(self):
+        # self.entity_manager = entity_manager_object
         self.package = ""
         self._class = ""
         self._method = ""
@@ -24,6 +32,8 @@ class VariableListener(JavaParserLabeledListener):
         self.type = None
         self.modifiers = []
         self.value = None
+        self.var = []
+        self.var_const = []
 
     # package
     def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
@@ -31,7 +41,7 @@ class VariableListener(JavaParserLabeledListener):
 
     # class parent
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
-        self._class = self._class + ctx.IDENTIFIER().getText() + '.'
+        self._class = self._class + ctx.IDENTIFIER().getText() + "."
         self.parent = ctx.IDENTIFIER().getText()
         interface_array = self._interface.split(".")
         if "" in interface_array:
@@ -68,7 +78,9 @@ class VariableListener(JavaParserLabeledListener):
             self._method = self._method + "."
 
     # interface parent
-    def enterInterfaceDeclaration(self, ctx: JavaParserLabeled.InterfaceDeclarationContext):
+    def enterInterfaceDeclaration(
+        self, ctx: JavaParserLabeled.InterfaceDeclarationContext
+    ):
         self._interface = self._interface + ctx.IDENTIFIER().getText() + "."
         class_array = self._class.split(".")
         if "" in class_array:
@@ -80,7 +92,9 @@ class VariableListener(JavaParserLabeledListener):
             self.parent = self._interface[:-1]
         # print("self.parent:", self.parent)
 
-    def exitInterfaceDeclaration(self, ctx: JavaParserLabeled.InterfaceDeclarationContext):
+    def exitInterfaceDeclaration(
+        self, ctx: JavaParserLabeled.InterfaceDeclarationContext
+    ):
         interface_array = self._interface.split(".")
         if "" in interface_array:
             interface_array.remove("")
@@ -89,24 +103,30 @@ class VariableListener(JavaParserLabeledListener):
             self._interface = self._interface + "."
 
     # interface modifiers
-    def enterInterfaceBodyDeclaration(self, ctx: JavaParserLabeled.InterfaceBodyDeclarationContext):
+    def enterInterfaceBodyDeclaration(
+        self, ctx: JavaParserLabeled.InterfaceBodyDeclarationContext
+    ):
         self.modifiers = ctx.modifier()
         for i in range(len(self.modifiers)):
             self.modifiers[i] = self.modifiers[i].getText()
 
     # class modifiers
-    def enterClassBodyDeclaration2(self, ctx: JavaParserLabeled.ClassBodyDeclaration2Context):
+    def enterClassBodyDeclaration2(
+        self, ctx: JavaParserLabeled.ClassBodyDeclaration2Context
+    ):
         self.modifiers = ctx.modifier()
         for i in range(len(self.modifiers)):
             self.modifiers[i] = self.modifiers[i].getText()
 
     # method modifiers and data type
-    def enterLocalVariableDeclaration(self, ctx: JavaParserLabeled.LocalVariableDeclarationContext):
+    def enterLocalVariableDeclaration(
+        self, ctx: JavaParserLabeled.LocalVariableDeclarationContext
+    ):
         self.modifiers = ctx.variableModifier()
         self.type = ctx.typeType().getText()
         for i in range(len(self.modifiers)):
             self.modifiers[i] = self.modifiers[i].getText()
-        self.modifiers.append('local')
+        self.modifiers.append("local")
 
     # interface variable type
     def enterConstDeclaration(self, ctx: JavaParserLabeled.ConstDeclarationContext):
@@ -122,26 +142,36 @@ class VariableListener(JavaParserLabeledListener):
         self.type = ctx.typeType().getText()
 
     # value
-    def enterVariableInitializer1(self, ctx: JavaParserLabeled.VariableInitializer1Context):
+    def enterVariableInitializer1(
+        self, ctx: JavaParserLabeled.VariableInitializer1Context
+    ):
         self.value = ctx.getText()
 
     # interface variable
     def enterConstantDeclarator(self, ctx: JavaParserLabeled.ConstantDeclaratorContext):
-        res = {"name": ctx.IDENTIFIER().getText().lstrip('_'),
-               "parent_longname": self.package + '.' + self.parent,
-               "type": self.type,
-               "modifiers": self.modifiers,
-               "value": self.value}
-        self.entity_manager.get_or_create_variable_entity(res)
+        res = {
+            "name": ctx.IDENTIFIER().getText().lstrip("_"),
+            "parent_longname": self.package + "." + self.parent,
+            "type": self.type,
+            "modifiers": self.modifiers,
+            "value": self.value,
+        }
+        self.var_const.append(res)
+        # self.entity_manager.get_or_create_variable_entity(res)
         # print(self.modifiers, self.package, self.parent, self.type, ctx.IDENTIFIER().getText())
 
     # variable
-    def enterVariableDeclaratorId(self, ctx: JavaParserLabeled.VariableDeclaratorIdContext):
+    def enterVariableDeclaratorId(
+        self, ctx: JavaParserLabeled.VariableDeclaratorIdContext
+    ):
         # print("--- self.package + '.' + self.parent:", self.package + '.' + self.parent)
-        res = {"name": ctx.IDENTIFIER().getText().lstrip('_'),
-               "parent_longname": self.package + '.' + self.parent,
-               "type": self.type,
-               "modifiers": self.modifiers,
-               "value": self.value}
-        self.entity_manager.get_or_create_variable_entity(res)
+        res = {
+            "name": ctx.IDENTIFIER().getText().lstrip("_"),
+            "parent_longname": self.package + "." + self.parent,
+            "type": self.type,
+            "modifiers": self.modifiers,
+            "value": self.value,
+        }
+        self.var.append(res)
+        # self.entity_manager.get_or_create_variable_entity(res)
         # print(self.modifiers, self.package, self.parent, self.type, ctx.IDENTIFIER().getText())

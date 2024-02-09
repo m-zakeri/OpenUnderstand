@@ -2,7 +2,13 @@ from antlr4 import *
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from oudb.models import KindModel, EntityModel, ReferenceModel
-from analysis_passes.g10_import_importby import Project, get_parse_tree, get_project_info, get_kind_name, get_parent
+from analysis_passes.import_importby_g10_2 import (
+    Project,
+    get_parse_tree,
+    get_project_info,
+    get_kind_name,
+    get_parent,
+)
 
 PRJ_INDEX = 0
 REF_NAME = "modify"
@@ -72,7 +78,7 @@ class ModifyListener(JavaParserLabeledListener):
             "parent_id": parent_entity.get_id(),
             "name": name,
             "longname": parent_file_path,
-            "content": content
+            "content": content,
         }
 
     def make_scope_method(self, ctx, file_name):
@@ -86,7 +92,7 @@ class ModifyListener(JavaParserLabeledListener):
 
         obj, _ = EntityModel.get_or_create(
             _kind=kind_id,
-            _parent=parent_entity['id'],
+            _parent=parent_entity["id"],
             _name=name,
             _longname=f"{parent_entity['name']}.{name}",
             _contents=content,
@@ -94,10 +100,10 @@ class ModifyListener(JavaParserLabeledListener):
         return {
             "id": obj.get_id(),
             "kind_id": kind_id,
-            "parent_id": parent_entity['id'],
+            "parent_id": parent_entity["id"],
             "name": name,
             "longname": f"{parent_entity['name']}.{name}",
-            "content": content
+            "content": content,
         }
 
     def enterExpression6(self, ctx: JavaParserLabeled.Expression6Context):
@@ -113,14 +119,21 @@ class ModifyListener(JavaParserLabeledListener):
             var_name = ctx.children[0].children[0].getText()
             var_entity = add_var_entity(var_name)
 
-            line, col = str(ctx.start).split(",")[3][:-1].split(':')
+            line, col = str(ctx.start).split(",")[3][:-1].split(":")
 
             file_entity, _ = get_parent(self.file_name, self.files)
             file_id = file_entity.get_id()
 
-            ref_dict = {'line': line, 'column': col, 'file_id': file_id, 'text': ctx.getText()}
+            ref_dict = {
+                "line": line,
+                "column": col,
+                "file_id": file_id,
+                "text": ctx.getText(),
+            }
 
-            scope_ctx = self.search_scope(ctx, ["ClassDeclarationContext", "MethodDeclarationContext"])
+            scope_ctx = self.search_scope(
+                ctx, ["ClassDeclarationContext", "MethodDeclarationContext"]
+            )
             if type(scope_ctx).__name__ == "ClassDeclarationContext":
                 scope = self.make_scope_class(scope_ctx, self.file_name)
             elif type(scope_ctx).__name__ == "MethodDeclarationContext":
@@ -146,19 +159,19 @@ def add_var_entity(var_name):
 def add_references(scope, ent, ref_dict):
     ref, _ = ReferenceModel.get_or_create(
         _kind=KindModel.get_or_none(_name="Java Modify Deref Partial").get_id(),
-        _file=ref_dict['file_id'],
-        _line=ref_dict['line'],
-        _column=ref_dict['column'],
-        _ent=ent['id'],
-        _scope=scope['id'],
+        _file=ref_dict["file_id"],
+        _line=ref_dict["line"],
+        _column=ref_dict["column"],
+        _ent=ent["id"],
+        _scope=scope["id"],
     )
     inverse_ref, _ = ReferenceModel.get_or_create(
         _kind=KindModel.get_or_none(_name="Java Modifyby Deref Partial").get_id(),
-        _file=ref_dict['file_id'],
-        _line=ref_dict['line'],
-        _column=ref_dict['column'],
-        _ent=scope['id'],
-        _scope=ent['id'],
+        _file=ref_dict["file_id"],
+        _line=ref_dict["line"],
+        _column=ref_dict["column"],
+        _ent=scope["id"],
+        _scope=ent["id"],
     )
 
     # print(ref_dict['text'])
@@ -171,7 +184,7 @@ def add_references(scope, ent, ref_dict):
 
 def main():
     info = get_project_info(PRJ_INDEX, REF_NAME)
-    p = Project(info['DB_PATH'], info['PROJECT_PATH'], info['PROJECT_NAME'])
+    p = Project(info["DB_PATH"], info["PROJECT_PATH"], info["PROJECT_NAME"])
     p.init_db()
     p.get_java_files()
 
@@ -186,5 +199,5 @@ def main():
         walker.walk(listener, tree)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

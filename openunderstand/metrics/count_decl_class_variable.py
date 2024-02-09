@@ -1,16 +1,7 @@
-from openunderstand.define_and_definein import *
+from oudb.models import EntityModel, KindModel, ReferenceModel
 
 
-def declare_class_variables():
-    main()
-    class_variables = {}
-    for ent_model in EntityModel.select():
-        if "Static" in ent_model._kind._name and "Variable" in ent_model._kind._name:
-            exists = class_variables.get(ent_model._parent._longname, -1)
-            if exists == -1:
-                class_variables[ent_model._parent._longname] = 1
-            else:
-                class_variables[ent_model._parent._longname] += 1
-    return class_variables
-
-
+def declare_class_variables(ent_model=None) -> object:
+    kinds = KindModel.select().where(KindModel._name.contains("Variable"))
+    ents = EntityModel.select().where(EntityModel._kind.in_(kinds))
+    return ents.select().where(EntityModel._name.contains(ent_model.name())).count()

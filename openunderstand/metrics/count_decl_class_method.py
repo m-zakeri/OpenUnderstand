@@ -1,16 +1,13 @@
-from openunderstand.define_and_definein import *
+from oudb.models import EntityModel, KindModel, ReferenceModel
 
 
-def declare_method_count():
-    main()
-    class_methods = {}
-    for ent_model in EntityModel.select():
-        if "Static" in ent_model._kind._name and "Method" in ent_model._kind._name:
-            exists = class_methods.get(ent_model._parent._longname, -1)
-            if exists == -1:
-                class_methods[ent_model._parent._longname] = 1
-            else:
-                class_methods[ent_model._parent._longname] += 1
-    return class_methods
-
-
+def declare_method_count(ent_model=None):
+    kinds = KindModel.select().where(
+        KindModel._name.contains("Static") & KindModel._name.contains("Method")
+    )
+    ents = EntityModel.select().where(EntityModel._kind.in_(kinds))
+    return (
+        ents.select()
+        .where(EntityModel._parent._name.contains(ent_model.name()))
+        .count()
+    )

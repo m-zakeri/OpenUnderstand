@@ -1,12 +1,50 @@
-import os
-# encoding: utf-8
-# module understand calls itself understandAPI
-# from D:\program files\SciTools\bin\pc-win64\Python\understand.pyd
-# by generator 1.147
-
+from peewee import fn
 from oudb.models import *
-
 from dataclasses import dataclass
+from functools import reduce
+from ounderstand.parsing_process import process_file
+from metrics.count_decl_method_all import count_decl_method_all
+from metrics.count_decl_class_variable import declare_class_variables
+from metrics.AvgCyclomatic import avg_cyclomatic
+from metrics.AvgCyclomaticModified import avg_cyclomatic_modified
+from metrics.AvgCyclomaticStrict import avg_cyclomatic_strict
+from metrics.AvgEssential import avg_essential
+from metrics.count_decl_class_method import declare_method_count
+from metrics.RatioCommentToCode import get_ratio_comment_to_code
+from metrics.PercentLackOfCohesionModified import (
+    get_percent_lack_of_cohesion_modified,
+)
+from metrics.count_stmt import statement_counter
+from metrics.count_stmt_decl import statement_counter_delc
+from metrics.PercentLackOfCohesion import get_percent_lack_of_cohesion
+from metrics.sum_cyclomatic_modified import get_sum_cyclomatic_modified
+from metrics.sum_cyclomatic_strict import get_sum_cyclomatic_strict
+from metrics.sumOfCyclomatics import get_sum_of_cyclomatics
+from metrics.count_decl_method_private import count_decl_method_private
+from metrics.count_decl_method_protected import (
+    count_decl_method_protected,
+)
+from metrics.count_decl_method_default import count_decl_method_default
+from metrics.count_decl_file import declare_file
+from metrics.sum_essentials import get_sum_essentials
+from metrics.count_decl_executable_unit import declare_executable_unit
+from metrics.min_max_essential_knots import min_max_essential_knots
+from metrics.namm import get_namm
+from metrics.MaxCalculator_G12 import max_cyclomatic
+from metrics.MaxCalculator_G12 import max_essential
+from metrics.MaxCalculator_G12 import max_cyclomatic_modified
+from metrics.MaxCalculator_G12 import max_cyclomatic_stricts
+from metrics.max_nesting import MaxNesting
+from metrics.max_inheritance import FindAllInheritances
+from metrics.knots_inheritance_nesting import get_knot_inheritance_nested
+from metrics.knots_inheritance_nesting import get_max_inheritance
+from openunderstand.metrics.Lineofcode import get_line_of_codes
+from metrics.count_stmt_exe import statement_counter_exe
+from metrics.cyclomatic import cyclomatic
+from metrics.CyclomaticStrict_G12 import cyclomatic_strict
+from metrics.Essential_G12 import essential
+from metrics.CyclomaticModified_G12 import cyclomatic_modified
+from metrics.G11_knots import knot
 
 """
 This is the python interface to Understand databases.
@@ -16,22 +54,22 @@ of the class objects are only valid when returned from a function.
 
 The following classes and methods are in this module:
 Classes:
-  understand.Arch
-  understand.Db
-  understand.Ent
-  understand.Kind
-  understand.Lexeme
-  understand.Lexer
-  understand.LexerIter
-  understand.Metric
-  understand.Ref
-  understand.UnderstandError
-  understand.Visio
+  ounderstand.Arch
+  ounderstand.Db
+  ounderstand.Ent
+  ounderstand.Kind
+  ounderstand.Lexeme
+  ounderstand.Lexer
+  ounderstand.LexerIter
+  ounderstand.Metric
+  ounderstand.Ref
+  ounderstand.UnderstandError
+  ounderstand.Visio
 Methods:
-  understand.checksum(text [,len])
-  understand.license(path)
-  understand.open(dbname)
-  understand.version()
+  ounderstand.checksum(text [,len])
+  ounderstand.license(path)
+  ounderstand.open(dbname)
+  ounderstand.version()
 
 Examples
 
@@ -42,10 +80,10 @@ brevity, most try, except statements statements are ommitted.
 Sorted List of All Entities
 ---------------------------
 
-import understand
+import ounderstand
 
 # Open Database
-oudb = understand.open("test.udb")
+oudb = ounderstand.open("test.udb")
 
 for ent in sorted(oudb.ents(),key= lambda ent: ent.name()):
   print (ent.name(),"  [",ent.kindname(),"]",sep="",end="\n")
@@ -54,9 +92,9 @@ for ent in sorted(oudb.ents(),key= lambda ent: ent.name()):
 List of Files
 -------------
 
-import understand
+import ounderstand
 
-oudb = understand.open("test.udb")
+oudb = ounderstand.open("test.udb")
 
 for file in oudb.ents("File"):
   # print directory name
@@ -66,10 +104,10 @@ for file in oudb.ents("File"):
 Lookup an Entity (Case Insensitive)
 -----------------------------------
 
-import understand
+import ounderstand
 import re
 
-oudb = understand.open("test.udb")
+oudb = ounderstand.open("test.udb")
 
 # Create a regular expression that is case insensitive
 searchstr = re.compile("test*.cpp",re.I)
@@ -80,9 +118,9 @@ for file in oudb.lookup(searchstr,"File"):
 Global Variable Usage
 ---------------------
 
-import understand
+import ounderstand
 
-oudb = understand.open("test.udb")
+oudb = ounderstand.open("test.udb")
 
 for ent in oudb.ents("Global Object ~Static"):
   print (ent,":",sep="")
@@ -94,12 +132,12 @@ for ent in oudb.ents("Global Object ~Static"):
 List of Functions with Parameters
 ---------------------------------
 
-import understand
+import ounderstand
 
 def sortKeyFunc(ent):
   return str.lower(ent.longname())
 
-oudb = understand.open("test.udb")
+oudb = ounderstand.open("test.udb")
 
 ents = oudb.ents("function,method,procedure")
 for func in sorted(ents,key = sortKeyFunc):
@@ -116,9 +154,9 @@ for func in sorted(ents,key = sortKeyFunc):
 List of Functions with Associated Comments
 ------------------------------------------
 
-import understand
+import ounderstand
 
-oudb = understand.open("test.udb")
+oudb = ounderstand.open("test.udb")
 
 for func in oudb.ents("function ~unresolved ~unknown"):
   comments = func.comments("after")
@@ -129,9 +167,9 @@ for func in oudb.ents("function ~unresolved ~unknown"):
 List of Ada Packages
 --------------------
 
-import understand
+import ounderstand
 
-oudb = understand.open("test.udb")
+oudb = ounderstand.open("test.udb")
 
 print ("Standard Packages:")
 for package in oudb.ents("Package"):
@@ -147,9 +185,9 @@ for package in oudb.ents("Package"):
 All Project Metrics
 -------------------
 
-import understand
+import ounderstand
 
-oudb = understand.open("test.udb")
+oudb = ounderstand.open("test.udb")
 
 metrics = oudb.metric(oudb.metrics())
 for k,v in sorted(metrics.items()):
@@ -159,9 +197,9 @@ for k,v in sorted(metrics.items()):
 Cyclomatic Complexity of Functions
 ----------------------------------
 
-import understand
+import ounderstand
 
-oudb = understand.open("test.udb")
+oudb = ounderstand.open("test.udb")
 
 for func in oudb.ents("function,method,procedure"):
   metric = func.metric(("Cyclomatic",))
@@ -172,9 +210,9 @@ for func in oudb.ents("function,method,procedure"):
 "Called By" Graphs of Functions
 -------------------------------
 
-import understand
+import ounderstand
 
-oudb = understand.open("test.udb")
+oudb = ounderstand.open("test.udb")
 
 for func in oudb.ents("function,method,procedure"):
   file = "callby_" + func.name() + ".png"
@@ -185,9 +223,9 @@ for func in oudb.ents("function,method,procedure"):
 Info Browser View of Functions
 ------------------------------
 
-import understand
+import ounderstand
 
-oudb = understand.open("test.udb")
+oudb = ounderstand.open("test.udb")
 
 for func in oudb.ents("function,method,procedure"):
   for line in func.ib():
@@ -197,9 +235,9 @@ for func in oudb.ents("function,method,procedure"):
 Lexical Stream
 --------------
 
-import understand
+import ounderstand
 
-oudb = understand.open("test.udb")
+oudb = ounderstand.open("test.udb")
 
 file = oudb.lookup("test.cpp")[0]
 for lexeme in file.lexer():
@@ -210,54 +248,70 @@ for lexeme in file.lexer():
 
 # Variables with simple values
 
-COMMENT = 'Comment'
-CONTINUATION = 'Continuation'
-DEDENT = 'Dedent'
-ENDOFSTATEMENT = 'EndOfStatement'
-EOF = 'EOF'
-IDENTIFIER = 'Identifier'
-IDSEQ = 'IdSeq'
-INDENT = 'Indent'
-KEYWORD = 'Keyword'
-LABEL = 'Label'
-LITERAL = 'Literal'
-NEWLINE = 'Newline'
-OPERATOR = 'Operator'
-PREPROCESSOR = 'Preprocessor'
-PUNCTUATION = 'Punctuation'
-STRING = 'String'
-WHITESPACE = 'Whitespace'
+COMMENT = "Comment"
+CONTINUATION = "Continuation"
+DEDENT = "Dedent"
+ENDOFSTATEMENT = "EndOfStatement"
+EOF = "EOF"
+IDENTIFIER = "Identifier"
+IDSEQ = "IdSeq"
+INDENT = "Indent"
+KEYWORD = "Keyword"
+LABEL = "Label"
+LITERAL = "Literal"
+NEWLINE = "Newline"
+OPERATOR = "Operator"
+PREPROCESSOR = "Preprocessor"
+PUNCTUATION = "Punctuation"
+STRING = "String"
+WHITESPACE = "Whitespace"
+
+import os
+import git
+from oudb.models import EntityModel, ReferenceModel
 
 
-def create_db(dbname, project_dir: str, project_name=None):
-    db = SqliteDatabase(dbname, pragmas={
-        'journal_mode': 'wal',
-        'cache_size': -1 * 64000,  # 64MB
-        'ignore_check_constraints': 0,
-        'synchronous': 0})
-    db.bind(
-        [KindModel, EntityModel, ReferenceModel, ProjectModel]
+def update_db(repo_path: str = "", branch: str = "origin/master"):
+    for file in [
+        file
+        for file in git.Repo(repo_path).git.diff(branch, name_only=True).split("\n")
+        if file.endswith(".java")
+    ]:
+        process_file(file_address=file)
+
+
+def create_db(
+    dbname: str = "", project_dir: str = "", project_name: str = None, db_path: str = ""
+):
+    path_of_db_file = os.path.join(db_path, dbname)
+    db = SqliteDatabase(
+        path_of_db_file,
+        pragmas={
+            "journal_mode": "wal",
+            "cache_size": -1 * 64000,  # 64MB
+            "ignore_check_constraints": 0,
+            "synchronous": 0,
+        },
     )
-    db.create_tables(
-        [KindModel, EntityModel, ReferenceModel, ProjectModel]
-    )
+    db.bind([KindModel, EntityModel, ReferenceModel, ProjectModel])
+    db.create_tables([KindModel, EntityModel, ReferenceModel, ProjectModel])
 
     ProjectModel.get_or_create(
-        name=project_name or os.path.basename(dbname),
+        name=project_name or os.path.basename(project_dir),
         root=project_dir,
-        db_path=dbname
+        db_path=path_of_db_file,
     )
-    return open(dbname)
+    return open(path_of_db_file)
 
 
 def open(dbname):  # real signature unknown; restored from __doc__
     """
-    understand.open(dbname) -> understand.Db
+    ounderstand.open(dbname) -> ounderstand.Db
 
     Open a database from the passed in filename.
 
-    This returns a new understand.Db given the dbname (string). It
-    will throw an understand.UnderstandError if unsuccessful. Possible causes
+    This returns a new ounderstand.Db given the dbname (string). It
+    will throw an ounderstand.UnderstandError if unsuccessful. Possible causes
     for error are:
       DBAlreadyOpen        - only one database may be open at once
       DBCorrupt            - bad database file
@@ -269,25 +323,25 @@ def open(dbname):  # real signature unknown; restored from __doc__
     if not os.path.isfile(dbname):
         raise UnderstandError()
 
-    db = SqliteDatabase(dbname, pragmas={
-        'journal_mode': 'wal',
-        'cache_size': -1 * 64000,  # 64MB
-        'ignore_check_constraints': 0,
-        'synchronous': 0})
-    db.bind(
-        [KindModel, EntityModel, ReferenceModel, ProjectModel]
+    db = SqliteDatabase(
+        dbname,
+        pragmas={
+            "journal_mode": "wal",
+            "cache_size": -1 * 64000,  # 64MB
+            "ignore_check_constraints": 0,
+            "synchronous": 0,
+        },
     )
 
-    obj = ProjectModel.get_or_none(
-        db_path=dbname
-    )
+    db.bind([KindModel, EntityModel, ReferenceModel, ProjectModel])
 
+    obj = ProjectModel.get_or_none(db_path=dbname)
     return Db(db_obj=obj)
 
 
 def version():  # real signature unknown; restored from __doc__
     """
-    understand.version() -> int
+    ounderstand.version() -> int
 
     Return the current build number for this module
     """
@@ -296,30 +350,31 @@ def version():  # real signature unknown; restored from __doc__
 
 # classes
 
+
 class Db:
     """
-    This class represents an understand database. With the exception of
+    This class represents an ounderstand database. With the exception of
     Db.close(), all methods require an open database. A database is
-    opened through the module function understand.open(dbname). Available
+    opened through the module function ounderstand.open(dbname). Available
     methods are:
 
-      understand.Db.add_annotation_file(path)
-      understand.Db.annotations()
-      understand.Db.archs(ent)
-      understand.Db.close()
-      understand.Db.comparison_db()
-      understand.Db.ent_from_id(id)
-      understand.Db.ents([kindstring])
-      understand.Db.language()
-      understand.Db.lookup(name [,kindstring])
-      understand.Db.lookup_arch(longname)
-      understand.Db.lookup_uniquename(uniquename)
-      understand.Db.metric(metriclist)
-      understand.Db.metrics()
-      understand.Db.metrics_treemap(file, sizemetric, colormetric [enttype [,arch]])
-      understand.Db.name()
-      understand.Db.relative_file_name()
-      understand.Db.root_archs()  understand.Db.__str__() --name
+      ounderstand.Db.add_annotation_file(path)
+      ounderstand.Db.annotations()
+      ounderstand.Db.archs(ent)
+      ounderstand.Db.close()
+      ounderstand.Db.comparison_db()
+      ounderstand.Db.ent_from_id(id)
+      ounderstand.Db.ents([kindstring])
+      ounderstand.Db.language()
+      ounderstand.Db.lookup(name [,kindstring])
+      ounderstand.Db.lookup_arch(longname)
+      ounderstand.Db.lookup_uniquename(uniquename)
+      ounderstand.Db.metric(metriclist)
+      ounderstand.Db.metrics()
+      ounderstand.Db.metrics_treemap(file, sizemetric, colormetric [enttype [,arch]])
+      ounderstand.Db.name()
+      ounderstand.Db.relative_file_name()
+      ounderstand.Db.root_archs()  ounderstand.Db.__str__() --name
     """
 
     def __init__(self, db_obj):
@@ -351,23 +406,31 @@ class Db:
         should be a language-specific entity filter string. The database
         must be open or a UnderstandError will be thrown.
         """
-        all_ents = []
+
+        all_ents = set()
 
         if kindstring is None:
             query = EntityModel.select()
         else:
             # TODO: Complete this later
+            kindstrings = kindstring.split(" ")
             query = EntityModel.select()
-
+            conditions = []
+            for item in kindstrings:
+                kinds = KindModel.select().where(KindModel._name.contains(item))
+                conditions.append(EntityModel._kind.in_(kinds))
+            if conditions:
+                query = query.where(reduce(lambda a, b: a | b, conditions)).where(
+                    reduce(lambda a, b: a & b, conditions)
+                )
         for ent in query:
-            my_ent = Ent(**ent.__dict__.get('__data__'))
-            all_ents.append(my_ent)
-
+            my_ent = Ent(**ent.__dict__.get("__data__"))
+            all_ents.add(my_ent)
         return all_ents
 
     def ent_from_id(self, id: int):  # real signature unknown; restored from __doc__
         """
-        oudb.ent_from_id(id) -> understand.Ent
+        oudb.ent_from_id(id) -> ounderstand.Ent
 
         Return the ent associated with the id.
 
@@ -378,7 +441,7 @@ class Db:
         """
         try:
             ent = EntityModel.get_by_id(pk=id)
-            return Ent(**ent.__dict__.get('__data__'))
+            return Ent(**ent.__dict__.get("__data__"))
         except EntityModel.DoesNotExist:
             return None
 
@@ -396,9 +459,11 @@ class Db:
         """
         return str(self._language)
 
-    def lookup(self, name, kindstring=None):  # real signature unknown; restored from __doc__
+    def lookup(
+        self, name, kindstring=None
+    ):  # real signature unknown; restored from __doc__
         """
-        oudb.lookup(name [,kindstring]) -> list of understand.Ent
+        oudb.lookup(name [,kindstring]) -> list of ounderstand.Ent
 
         Return a list of entities that match the specified name.
 
@@ -420,17 +485,18 @@ class Db:
         query = EntityModel.select()
         if kindstring:
             kinds = KindModel.select().where(KindModel._name.contains(kindstring))
-            query = query.where(EntityModel._kind.in_(kinds))
+            query = query.where(EntityModel._kind(kinds))
         query = query.where(
             (EntityModel._name.contains(name)) | (EntityModel._longname.contains(name))
         )
+
         for ent in query:
-            ents.append(
-                Ent(**ent.__dict__.get('__data__'))
-            )
+            ents.append(Ent(**ent.__dict__.get("__data__")))
         return ents
 
-    def lookup_uniquename(self, uniquename):  # real signature unknown; restored from __doc__
+    def lookup_uniquename(
+        self, uniquename
+    ):  # real signature unknown; restored from __doc__
         """
         oudb.lookup_uniquename(uniquename) -> ent
 
@@ -451,7 +517,9 @@ class Db:
         """
         return str(self._name)
 
-    def relative_file_name(self, absolute_path):  # real signature unknown; restored from __doc__
+    def relative_file_name(
+        self, absolute_path
+    ):  # real signature unknown; restored from __doc__
         """
         oudb.relative_file_name(absolute_path) -> string
 
@@ -462,52 +530,53 @@ class Db:
         return os.path.relpath(absolute_path, common_prefix)
 
     def __str__(self, *args, **kwargs):  # real signature unknown
-        """ Return str(self). """
+        """Return str(self)."""
         return self.name()
 
 
 @dataclass
 class Ent:
     """
-    This class represents an understand entity(files, functions,
+    This class represents an ounderstand entity(files, functions,
     variables, etc). Available methods are:
 
-      understand.Ent.contents()
-      understand.Ent.depends()
-      understand.Ent.dependsby()
-      understand.Ent.ents(refkindstring [,entkindstring])
-      understand.Ent.__eq__() --by id
-      understand.Ent.filerefs([refkindstring [,entkindstring [,unique]]])
-      understand.Ent.__ge__() --by id
-      understand.Ent.__gt__() --by id
-      understand.Ent.__hash__() --id
-      understand.Ent.ib([options])
-      understand.Ent.id()
-      understand.Ent.kind()
-      understand.Ent.kindname()
-      understand.Ent.language()
-      understand.Ent.__le__() --by id
-      understand.Ent.lexer([lookup_ents [,tabstop [,show_inactive [,expand_macros]]]])
-      understand.Ent.library()
-      understand.Ent.longname()
-      understand.Ent.__lt__() --by id
-      understand.Ent.metric(metriclist)
-      understand.Ent.metrics()
-      understand.Ent.name()
-      understand.Ent.__ne__() --by id
-      understand.Ent.parameters(shownames = True)
-      understand.Ent.parent()
-      understand.Ent.parsetime()
-      understand.Ent.ref([refkindstring [,entkindstring]])
-      understand.Ent.refs([refkindstring [,entkindstring [,unique]]])
-      understand.Ent.relname()
-      understand.Ent.__repr__() --uniquename
-      understand.Ent.simplename()
-      understand.Ent.__str__() --name
-      understand.Ent.type()
-      understand.Ent.uniquename()
-      understand.Ent.value()
+      ounderstand.Ent.contents()
+      ounderstand.Ent.depends()
+      ounderstand.Ent.dependsby()
+      ounderstand.Ent.ents(refkindstring [,entkindstring])
+      ounderstand.Ent.__eq__() --by id
+      ounderstand.Ent.filerefs([refkindstring [,entkindstring [,unique]]])
+      ounderstand.Ent.__ge__() --by id
+      ounderstand.Ent.__gt__() --by id
+      ounderstand.Ent.__hash__() --id
+      ounderstand.Ent.ib([options])
+      ounderstand.Ent.id()
+      ounderstand.Ent.kind()
+      ounderstand.Ent.kindname()
+      ounderstand.Ent.language()
+      ounderstand.Ent.__le__() --by id
+      ounderstand.Ent.lexer([lookup_ents [,tabstop [,show_inactive [,expand_macros]]]])
+      ounderstand.Ent.library()
+      ounderstand.Ent.longname()
+      ounderstand.Ent.__lt__() --by id
+      ounderstand.Ent.metric(metriclist)
+      ounderstand.Ent.metrics()
+      ounderstand.Ent.name()
+      ounderstand.Ent.__ne__() --by id
+      ounderstand.Ent.parameters(shownames = True)
+      ounderstand.Ent.parent()
+      ounderstand.Ent.parsetime()
+      ounderstand.Ent.ref([refkindstring [,entkindstring]])
+      ounderstand.Ent.refs([refkindstring [,entkindstring [,unique]]])
+      ounderstand.Ent.relname()
+      ounderstand.Ent.__repr__() --uniquename
+      ounderstand.Ent.simplename()
+      ounderstand.Ent.__str__() --name
+      ounderstand.Ent.type()
+      ounderstand.Ent.uniquename()
+      ounderstand.Ent.value()
     """
+
     _id: int
     _kind: int
     _parent: int
@@ -530,7 +599,7 @@ class Ent:
 
     def depends(self):  # real signature unknown; restored from __doc__
         """
-        ent.depends() -> dict key=understand.Ent value=list of understand.Ref
+        ent.depends() -> dict key=ounderstand.Ent value=list of ounderstand.Ref
 
         Return the dependencies of the class or file
 
@@ -543,7 +612,7 @@ class Ent:
 
     def dependsby(self):  # real signature unknown; restored from __doc__
         """
-        ent.dependsby() -> dict key=understand.Ent value=list of understand.Ref
+        ent.dependsby() -> dict key=ounderstand.Ent value=list of ounderstand.Ref
 
         Return the ents depended on by the class or file
 
@@ -554,9 +623,11 @@ class Ent:
         """
         return {}
 
-    def ents(self, refkindstring, entkindstring=None):  # real signature unknown; restored from __doc__
+    def ents(
+        self, refkindstring, entkindstring=None
+    ):  # real signature unknown; restored from __doc__
         """
-        ent.ents(refkindstring [,entkindstring]) -> list of understand.Ent
+        ent.ents(refkindstring [,entkindstring]) -> list of ounderstand.Ent
 
         Return a list of entities that reference, or are referenced by, the entity.
 
@@ -574,7 +645,8 @@ class Ent:
         )
         if refkindstring:
             kinds = KindModel.select().where(
-                (KindModel._name.contains(refkindstring)) & (KindModel.is_ent_kind == False)
+                (KindModel._name.contains(refkindstring))
+                & (KindModel.is_ent_kind == False)
             )
             query = query.where(ReferenceModel._kind.in_(kinds))
 
@@ -582,15 +654,14 @@ class Ent:
             if entkindstring is not None:
                 if entkindstring.lower() not in ref._ent._kind._name.lower():
                     continue
-            ents.add(
-                Ent(**ref._ent.__dict__.get('__data__'))
-            )
+            ents.add(Ent(**ref._ent.__dict__.get("__data__")))
         return list(ents)
 
-    def filerefs(self, refkindstring=None, entkindstring=None,
-                 unique=None):  # real signature unknown; restored from __doc__
+    def filerefs(
+        self, refkindstring=None, entkindstring=None, unique=None
+    ):  # real signature unknown; restored from __doc__
         """
-        ent.filerefs([refkindstring [,entkindstring [,unique]]]) -> list of understand.Ref
+        ent.filerefs([refkindstring [,entkindstring [,unique]]]) -> list of ounderstand.Ref
 
         Return a list of all references that occur in a file entity.
 
@@ -615,7 +686,7 @@ class Ent:
         return []
 
     def freetext(self, option):  # real signature unknown; restored from __doc__
-        """ ent.freetext(option) -> string """
+        """ent.freetext(option) -> string"""
         return ""
 
     def ib(self, options=None):  # real signature unknown; restored from __doc__
@@ -664,7 +735,7 @@ class Ent:
 
         The identifier is not guaranteed to remain constant after the
         database has been updated. An id can be converted back into an
-        understand.Ent with oudb.ent_from_id(id). The id is used for
+        ounderstand.Ent with oudb.ent_from_id(id). The id is used for
         comparisons and the hash function.
         """
         return self._id
@@ -676,7 +747,7 @@ class Ent:
         Return the kind object for the entity.
         """
         kind = KindModel.get_by_id(self._kind)
-        return Kind(**kind.__dict__.get('__data__'))
+        return Kind(**kind.__dict__.get("__data__"))
 
     def kindname(self):  # real signature unknown; restored from __doc__
         """
@@ -713,7 +784,9 @@ class Ent:
         """
         return str(self._longname)
 
-    def metric(self, metriclist):  # real signature unknown; restored from __doc__
+    def metric(
+        self, metric_list: list = None
+    ) -> dict:  # real signature unknown; restored from __doc__
         """
         ent.metric(metriclist) -> dict key=string value=metricvalue
 
@@ -722,15 +795,285 @@ class Ent:
         Metric list must be a tuple or list containing the names of metrics
         as strings. If the metric is not available, it's value will be None.
         """
-        return {}
+        metrics = {}
+        for item in metric_list:
+            if item not in self.metrics():
+                raise ValueError(f"metric {item} is not in metric list")
+        for item in metric_list:
+            if item == "CountDeclMethodAll":
+                metrics.update({"CountDeclMethodAll": count_decl_method_all(self)})
+            elif item == "CountDeclClassVariable":
+                metrics.update(
+                    {"CountDeclClassVariable": declare_class_variables(self)}
+                )
+            elif item == "AvgCyclomatic":
+                metrics.update({"AvgCyclomatic": avg_cyclomatic(self)})
+            elif item == "AvgCyclomaticModified":
+                metrics.update({"AvgCyclomaticModified": avg_cyclomatic_modified(self)})
+            elif item == "AvgCyclomaticStrict":
+                metrics.update({"AvgCyclomaticStrict": avg_cyclomatic_strict(self)})
+            elif item == "AvgEssential":
+                metrics.update({"AvgEssential": avg_essential(self)})
+            elif item == "CountDeclClassMethod":
+                metrics.update({"CountDeclClassMethod": declare_method_count(self)})
+            elif item == "AvgLine":
+                raise NotImplementedError("metric AvgLine is not implemented")
+            elif item == "AvgLineBlank":
+                raise NotImplementedError("metric AvgLineBlank is not implemented")
+            elif item == "AvgLineCode":
+                raise NotImplementedError("metric AvgLineCode is not implemented")
+            elif item == "AvgLineComment":
+                raise NotImplementedError("metric AvgLineComment is not implemented")
+            elif item == "CountClassBase":
+                raise NotImplementedError("metric CountClassBase is not implemented")
+            elif item == "CountClassCoupled":
+                raise NotImplementedError("metric CountClassCoupled is not implemented")
+            elif item == "CountClassCoupledModified":
+                raise NotImplementedError(
+                    "metric CountClassCoupledModified is not implemented"
+                )
+            elif item == "CountClassDerived":
+                raise NotImplementedError("metric CountClassDerived is not implemented")
+            elif item == "CountDeclClass":
+                raise NotImplementedError("metric CountDeclClass is not implemented")
+            elif item == "CountDeclFile":
+                metrics.update({"CountDeclFile": declare_file(self)})
+            elif item == "CountDeclClassMethod":
+                raise NotImplementedError(
+                    "metric CountDeclClassMethod is not implemented"
+                )
+            elif item == "CountDeclExecutableUnit":
+                metrics.update(
+                    {"CountDeclExecutableUnit": declare_executable_unit(self)}
+                )
+            elif item == "CountDeclFunction":
+                raise NotImplementedError("metric CountDeclFunction is not implemented")
+            elif item == "CountDeclInstanceMethod":
+                raise NotImplementedError(
+                    "metric CountDeclInstanceMethod is not implemented"
+                )
+            elif item == "CountDeclInstanceVariable":
+                raise NotImplementedError(
+                    "metric CountDeclInstanceVariable is not implemented"
+                )
+            elif item == "CountDeclInstanceVariablePrivate":
+                raise NotImplementedError(
+                    "metric CountDeclInstanceVariablePrivate is not implemented"
+                )
+            elif item == "CountDeclInstanceVariableProtected":
+                raise NotImplementedError(
+                    "metric CountDeclInstanceVariableProtected is not implemented"
+                )
+            elif item == "CountDeclInstanceVariablePublic":
+                raise NotImplementedError(
+                    "metric CountDeclInstanceVariablePublic is not implemented"
+                )
+            elif item == "CountDeclMethod":
+                raise NotImplementedError("metric CountDeclMethod is not implemented")
+            elif item == "CountDeclMethodAll":
+                metrics.update({"CountDeclMethodAll": count_decl_method_all(self)})
+            elif item == "CountDeclMethodDefault":
+                metrics.update(
+                    {"CountDeclMethodDefault": count_decl_method_default(self)}
+                )
+            elif item == "CountDeclMethodProtected":
+                metrics.update(
+                    {"CountDeclMethodProtected": count_decl_method_protected(self)}
+                )
+            elif item == "CountDeclMethodPrivate":
+                metrics.update(
+                    {"CountDeclMethodPrivate": count_decl_method_private(self)}
+                )
+            elif item == "CountDeclMethodPublic":
+                raise NotImplementedError(
+                    "metric CountDeclMethodPublic is not implementd"
+                )
+            elif item == "CountInput":
+                raise NotImplementedError("metric CountInput is not implemented")
+            elif item == "CountLine":
+                raise NotImplementedError("metric CountLine is not implemented")
+            elif item == "CountLineBlank":
+                raise NotImplementedError("metric CountLineBlank is not implemented")
+            elif item == "CountLineCode":
+                # check for number of line method objects
+                metrics.update(
+                    {
+                        "CountLineCode": sum(
+                            get_line_of_codes(self).class_countLineCode
+                        )
+                        + sum(get_line_of_codes(self).method_countLineCode)
+                    }
+                )
+            elif item == "CountLineCodeDecl":
+                metrics.update(
+                    {
+                        "CountLineCodeDecl": sum(
+                            get_line_of_codes(self).class_countLineDecl
+                        )
+                        + sum(get_line_of_codes(self).method_countLineDecl)
+                    }
+                )
+            elif item == "CountLineCodeExe":
+                # check for number of line method objects
+                metrics.update(
+                    {
+                        "CountLineCodeExe": sum(
+                            get_line_of_codes(self).class_countLineExec
+                        )
+                        + sum(get_line_of_codes(self).method_countLineExec)
+                    }
+                )
+            elif item == "CountLineComment":
+                metrics.update(
+                    {
+                        "CountLineComment": sum(
+                            get_line_of_codes(self).class_countLineComment
+                        )
+                        + sum(get_line_of_codes(self).method_countLineComment)
+                    }
+                )
+            elif item == "CountOutput":
+                raise NotImplementedError("metric CountOutput is not implemented")
+            elif item == "CountPath":
+                raise NotImplementedError("metric CountPath is not implemented")
+            elif item == "CountPathLog":
+                raise NotImplementedError("metric CountPathLog is not implemented")
+            elif item == "CountSemicolon":
+                raise NotImplementedError("metric CountSemicolon not implemented")
+            elif item == "CountStmt":
+                metrics.update({"CountStmt": statement_counter(self)})
+            elif item == "CountStmtDecl":
+                metrics.update({"CountStmtDecl": statement_counter_delc(self)})
+            elif item == "CountStmtExe":
+                metrics.update({"CountStmtExe": statement_counter_exe(self)})
+            elif item == "Cyclomatic":
+                metrics.update({"Cyclomatic": cyclomatic(self)})
+            elif item == "CyclomaticModified":
+                metrics.update({"CyclomaticModified": cyclomatic_modified(self)})
+            elif item == "Essential":
+                metrics.update({"Essential": essential(self)})
+            elif item == "CyclomaticStrict":
+                metrics.update({"CyclomaticStrict": cyclomatic_strict(self)})
+            elif item == "Knots":
+                metrics.update({"Knots": knot(self)})
+            elif item == "MaxCyclomatic":
+                metrics.update({"MaxCyclomatic": max_cyclomatic(self)})
+            elif item == "MaxCyclomaticModified":
+                metrics.update({"MaxCyclomaticModified": max_cyclomatic_modified(self)})
+            elif item == "MaxCyclomaticStrict":
+                metrics.update({"MaxCyclomaticStrict": max_cyclomatic_stricts(self)})
+            elif item == "MaxEssential":
+                metrics.update({"MaxEssential": max_essential(self)})
+            elif item == "MaxEssentialKnots":
+                metrics.update(
+                    {"MaxEssentialKnots": min_max_essential_knots(self, False)}
+                )
+            elif item == "MaxInheritanceTree":
+                metrics.update({"MaxInheritanceTree": get_max_inheritance(self)})
+            elif item == "MaxNesting":
+                metrics.update({"MaxNesting": MaxNesting(self)})
+            elif item == "MinEssentialKnots":
+                metrics.update(
+                    {"MinEssentialKnots": min_max_essential_knots(self, True)}
+                )
+            elif item == "PercentLackOfCohesion":
+                metrics.update(
+                    {"PercentLackOfCohesion": get_percent_lack_of_cohesion(self)}
+                )
+            elif item == "PercentLackOfCohesionModified":
+                metrics.update(
+                    {
+                        "PercentLackOfCohesionModified": get_percent_lack_of_cohesion_modified(
+                            self
+                        )
+                    }
+                )
+            elif item == "RatioCommentToCode":
+                metrics.update({"RatioCommentToCode": get_ratio_comment_to_code(self)})
+            elif item == "SumCyclomatic":
+                metrics.update({"SumCyclomatic": get_sum_of_cyclomatics(self)})
+            elif item == "SumCyclomaticModified":
+                metrics.update(
+                    {"SumCyclomaticModified": get_sum_cyclomatic_modified(self)}
+                )
+            elif item == "SumCyclomaticStrict":
+                metrics.update({"SumCyclomaticStrict": get_sum_cyclomatic_strict(self)})
+            elif item == "SumEssential":
+                metrics.update({"SumEssential": get_sum_essentials(self)})
+        return metrics
 
     def metrics(self):  # real signature unknown; restored from __doc__
         """
         ent.metrics() -> list of strings
-
         Return a list of metric names defined for the entity.
         """
-        return []
+
+        return [
+            "CountDeclMethodAll",
+            "CountDeclClassVariable",
+            "AvgCyclomatic",
+            "AvgCyclomaticModified",
+            "AvgCyclomaticStrict",
+            "AvgEssential",
+            "CountDeclClassMethod",
+            "AvgLine",
+            "AvgLineBlank",
+            "AvgLineCode",
+            "AvgLineComment",
+            "CountClassBase",
+            "CountClassCoupled",
+            "CountClassCoupledModified",
+            "CountClassDerived",
+            "CountDeclClass",
+            "CountDeclClassMethod",
+            "CountDeclExecutableUnit",
+            "CountDeclFile",
+            "CountDeclFunction",
+            "CountDeclInstanceMethod",
+            "CountDeclInstanceVariable",
+            "CountDeclInstanceVariablePrivate",
+            "CountDeclInstanceVariableProtected",
+            "CountDeclInstanceVariablePublic",
+            "CountDeclMethod",
+            "CountDeclMethodAll",
+            "CountDeclMethodDefault",
+            "CountDeclMethodPrivate",
+            "CountDeclMethodProtected",
+            "CountDeclMethodPublic" "CountInput",
+            "CountLine",
+            "CountLineBlank",
+            "CountLineCode",
+            "CountLineCodeDecl",
+            "CountLineCodeExe",
+            "CountLineComment",
+            "CountOutput",
+            "CountPath",
+            "CountPathLog",
+            "CountSemicolon",
+            "CountStmt",
+            "CountStmtDecl",
+            "CountStmtExe",
+            "Cyclomatic",
+            "CyclomaticModified",
+            "CyclomaticStrict",
+            "Essential",
+            "Knots",
+            "MaxCyclomatic",
+            "MaxCyclomaticModified",
+            "MaxCyclomaticStrict",
+            "MaxEssential",
+            "MaxEssentialKnots",
+            "MaxInheritanceTree",
+            "MaxNesting",
+            "MinEssentialKnots",
+            "PercentLackOfCohesion",
+            "PercentLackOfCohesionModified",
+            "RatioCommentToCode",
+            "SumCyclomatic",
+            "SumCyclomaticModified",
+            "SumCyclomaticStrict",
+            "SumEssential",
+        ]
 
     def name(self):  # real signature unknown; restored from __doc__
         """
@@ -744,7 +1087,9 @@ class Ent:
         """
         return str(self._name)
 
-    def parameters(self, shownames=True):  # real signature unknown; restored from __doc__
+    def parameters(
+        self, shownames=True
+    ):  # real signature unknown; restored from __doc__
         """
         ent.parameters(shownames=True) -> string
 
@@ -760,9 +1105,7 @@ class Ent:
         to get some information about these cases. If no parameters are
         available, None is returned.
         """
-        ents = EntityModel.select().where(
-            EntityModel._parent == self._id
-        )
+        ents = EntityModel.select().where(EntityModel._parent == self._id)
         pars = []
         for ent in ents:
             obj = Ent(**ent.__dict__.get("__data__"))
@@ -772,12 +1115,12 @@ class Ent:
 
     def parent(self):  # real signature unknown; restored from __doc__
         """
-        ent.parent() -> understand.Ent
+        ent.parent() -> ounderstand.Ent
 
         Return the parent of the entity or None if none
         """
         entity = EntityModel.get_by_id(pk=self._parent)
-        return Ent(**entity.__dict__.get('__data__'))
+        return Ent(**entity.__dict__.get("__data__"))
 
     def parsetime(self):  # real signature unknown; restored from __doc__
         """
@@ -790,65 +1133,76 @@ class Ent:
         """
         return 0
 
-    def ref(self, *args, **kwargs):  # real signature unknown; NOTE: unreliably restored from __doc__
+    def ref(
+        self, *args, **kwargs
+    ):  # real signature unknown; NOTE: unreliably restored from __doc__
         """
-        ent.ref([refkindstring [,entkindstring]) -> understand.Ref
+        ent.ref([refkindstring [,entkindstring]) -> ounderstand.Ref
 
         This is the same as ent.refs()[:1]
         """
         return self.refs(*args, **kwargs)[:1]
 
-    def refs(self, refkindstring=None, entkindstring=None,
-             unique=None):  # real signature unknown; restored from __doc__
+    def refs(
+        self, refkindstring=None, entkindstring=None, unique=None
+    ):  # real signature unknown; restored from __doc__
         """
-        ent.refs([refkindstring [,entkindstring [,unique]]]) -> list of understand.Ref
-
+        ent.refs([refkindstring [,entkindstring [,unique]]]) -> list of ounderstand.Ref
         Return a list of references.
-
         The optional paramter refkindstring (string) should be a language-
-        specific reference filter string. If it is not given, all references
-         are returned.
-
+        specific reference filter string. If it is not given, all references are returned.
         The optional paramter entkindstring (string) should be a language-
         specific entity filter string that specifies what kind of referenced
         entities should be returned. If it is not given, all references to
         any kind of entity are returned.
-
         The optional parameter unique (bool) is false by default. If it is
         true, only the first matching reference to each unique entity is
         returned
         """
-        query = ReferenceModel.select().where(
-            ReferenceModel._scope == self._id
-        )
-        if refkindstring:
-            kinds = KindModel.select().where(
-                (KindModel.is_ent_kind == False) & (KindModel._name.contains(refkindstring))
-            )
-            query = query.where(
-                ReferenceModel._kind.in_(kinds)
-            )
+        # TODO : check nested references
+        mlist = [j.strip() for j in refkindstring.split(",")]
+        # print(mlist)
+        refs = []
+        for item in mlist:
+            query = ReferenceModel.select().where(ReferenceModel._scope == self._id)
+            if item:
+                kinds = KindModel.select().where(
+                    (KindModel.is_ent_kind == False) & (KindModel._name.contains(item))
+                    # & (fn.Lower(KindModel._name) == (f"Java {item}").lower())
+                )
+                # if len(mlist) > 1:
+                #     print(kinds.count())
+                #     for k in kinds:
+                #         print("kin : ", k._name)
+                #         print(k._id)
+                #     q = ReferenceModel.select().where(ReferenceModel._kind.in_(kinds))
+                #     for it in query:
+                #         # print("it : ", it._kind)
+                #         if str(it._kind) != "Java Define":
+                #             print("X :", it._kind)
+                #             print("X :", "Java Define")
 
-        if entkindstring:
-            kinds = KindModel.select().where(
-                (KindModel.is_ent_kind == True) & (KindModel._name.contains(entkindstring))
-            )
-            ents = EntityModel.select().where(
-                EntityModel._kind.in_(kinds)
-            )
-            query = query.where(
-                ReferenceModel._ent.in_(ents)
-            )
+                query = query.where(ReferenceModel._kind.in_(kinds))
+                # if len(mlist) > 1:
+                # print(query.count())
+
+            if entkindstring:
+                kinds = KindModel.select().where(
+                    (KindModel.is_ent_kind == True)
+                    & (KindModel._name.contains(entkindstring))
+                )
+                ents = EntityModel.select().where(EntityModel._kind.in_(kinds))
+                query = query.where(ReferenceModel._ent.in_(ents))
+
+            for ref in query:
+                refs.append(Ref(**ref.__dict__.get("__data__")))
+        # Remove duplicates from 'refs' and store unique references in 'references' list
         references = []
-
-        for ref in query:
-            references.append(
-                Ref(**ref.__dict__.get('__data__'))
-            )
-
+        for ref in refs:
+            if ref not in references:
+                references.append(ref)
         if unique:
             references = references[:1]
-
         return references
 
     def relname(self):  # real signature unknown; restored from __doc__
@@ -900,7 +1254,7 @@ class Ent:
         composed of things like parameters and parent names. So, the some
         code changes will in new uniquenames for the same intrinsic entity.
         Use oudb.lookup_uniquename() to convert a unqiuename back to an object
-        of understand.Ent. This is what repr() shows.
+        of ounderstand.Ent. This is what repr() shows.
         """
         return ""
 
@@ -918,33 +1272,33 @@ class Ent:
         return None
 
     def __eq__(self, other):  # real signature unknown
-        """ Return self==value. """
+        """Return self==value."""
         if isinstance(other, Ent):
             return self.id() == other.id()
         return NotImplemented
 
     def __ge__(self, *args, **kwargs):  # real signature unknown
-        """ Return self>=value. """
+        """Return self>=value."""
         pass
 
     def __gt__(self, *args, **kwargs):  # real signature unknown
-        """ Return self>value. """
+        """Return self>value."""
         pass
 
     def __hash__(self, *args, **kwargs):  # real signature unknown
-        """ Return hash(self). """
+        """Return hash(self)."""
         return hash(self.id())
 
     def __le__(self, *args, **kwargs):  # real signature unknown
-        """ Return self<=value. """
+        """Return self<=value."""
         pass
 
     def __lt__(self, *args, **kwargs):  # real signature unknown
-        """ Return self<value. """
+        """Return self<value."""
         pass
 
     def __ne__(self, *args, **kwargs):  # real signature unknown
-        """ Return self!=value. """
+        """Return self!=value."""
         pass
 
     def __str__(self):
@@ -967,15 +1321,16 @@ class Kind(object):
 
     Available methods are:
 
-      understand.Kind.check(kindstring)
-      understand.Kind.inv()
-      understand.Kind.longname()
-      understand.Kind.name()  understand.Kind.__repr__() --longname
-      understand.Kind.__str__() --name
+      ounderstand.Kind.check(kindstring)
+      ounderstand.Kind.inv()
+      ounderstand.Kind.longname()
+      ounderstand.Kind.name()  ounderstand.Kind.__repr__() --longname
+      ounderstand.Kind.__str__() --name
     Static Methods:
-      understand.Kind.list_entity([entkind])
-      understand.Kind.list_reference([refkind])
+      ounderstand.Kind.list_entity([entkind])
+      ounderstand.Kind.list_reference([refkind])
     """
+
     _id: int
     _inv: int
     _name: str
@@ -992,7 +1347,7 @@ class Kind(object):
 
     def inv(self):  # real signature unknown; restored from __doc__
         """
-        kind.inv() -> understand.Kind
+        kind.inv() -> ounderstand.Kind
 
         The logical inverse of a reference kind. This will throw an
         UnderstandError if called with an entity kind.
@@ -1000,48 +1355,48 @@ class Kind(object):
         if self.is_ent_kind:
             raise UnderstandError()
         inverse = KindModel.get_by_id(pk=self._inv)
-        return Kind(**inverse.__data__.get('__data__'))
+        return Kind(**inverse.__data__.get("__data__"))
 
     @staticmethod
     def list_entity(entkind=""):  # real signature unknown; restored from __doc__
         """
-        Kind.list_entity([entkind]) (static method)-> list of understand.Kind
+        Kind.list_entity([entkind]) (static method)-> list of ounderstand.Kind
 
         Return the list of entity kinds that match the filter entkind.
 
         If no entkind is given, all entity kinds are returned. For example,
         to get the list of all c function entity kinds:
-          kinds = understand.Kind.list_entity("c function")
+          kinds = ounderstand.Kind.list_entity("c function")
         """
-        query = KindModel.select().where(KindModel.is_ent_kind == True, KindModel._name.contains(entkind))
+        query = KindModel.select().where(
+            KindModel.is_ent_kind == True, KindModel._name.contains(entkind)
+        )
         kinds = []
         if query.count() == 0:
             query = KindModel.select().where(KindModel.is_ent_kind == True)
         for kind in query:
-            kinds.append(
-                Kind(**kind.__dict__.get('__data__'))
-            )
+            kinds.append(Kind(**kind.__dict__.get("__data__")))
         return kinds
 
     @staticmethod
     def list_reference(refkind=""):  # real signature unknown; restored from __doc__
         """
-        Kind.list_reference([refkind]) (static method)->list of understand.Kind
+        Kind.list_reference([refkind]) (static method)->list of ounderstand.Kind
 
         Return the list of reference kinds that match the filter refkind.
 
         If no refkind is given, all reference kinds are returned. For example,
         to get the list of all ada declare reference kinds:
-          kinds = understand.Kind.list_entity("ada declare")
+          kinds = ounderstand.Kind.list_entity("ada declare")
         """
-        query = KindModel.select().where(KindModel.is_ent_kind == False, KindModel._name.contains(refkind))
+        query = KindModel.select().where(
+            KindModel.is_ent_kind == False, KindModel._name.contains(refkind)
+        )
         kinds = []
         if query.count() == 0:
             query = KindModel.select().where(KindModel.is_ent_kind == False)
         for kind in query:
-            kinds.append(
-                Kind(**kind.__dict__.get('__data__'))
-            )
+            kinds.append(Kind(**kind.__dict__.get("__data__")))
         return kinds
 
     def longname(self):  # real signature unknown; restored from __doc__
@@ -1066,11 +1421,11 @@ class Kind(object):
         return str(self._name)
 
     def __repr__(self, *args, **kwargs):  # real signature unknown
-        """ Return repr(self). """
+        """Return repr(self)."""
         return self.name()
 
     def __str__(self, *args, **kwargs):  # real signature unknown
-        """ Return str(self). """
+        """Return str(self)."""
         return self.name()
 
 
@@ -1080,15 +1435,16 @@ class Ref(object):
     A reference object stores an reference between on entity an another.
     Available methods are:
 
-      understand.Ref.column()
-      understand.Ref.ent()
-      understand.Ref.file()
+      ounderstand.Ref.column()
+      ounderstand.Ref.ent()
+      ounderstand.Ref.file()
       undersatnd.Ref.kind()
-      understand.Ref.kindname()
-      understand.Ref.line()
-      understand.Ref.scope()
-      understand.Ref.__str__() --kindname ent file(line)
+      ounderstand.Ref.kindname()
+      ounderstand.Ref.line()
+      ounderstand.Ref.scope()
+      ounderstand.Ref.__str__() --kindname ent file(line)
     """
+
     _id: int
     _kind: int
     _file: int
@@ -1107,21 +1463,21 @@ class Ref(object):
 
     def ent(self):  # real signature unknown; restored from __doc__
         """
-        ref.ent() -> understand.Ent
+        ref.ent() -> ounderstand.Ent
 
         Return the entity being referenced.
         """
         entity = EntityModel.get_by_id(pk=self._ent)
-        return Ent(**entity.__dict__.get('__data__'))
+        return Ent(**entity.__dict__.get("__data__"))
 
     def file(self):  # real signature unknown; restored from __doc__
         """
-        ref.file() -> understand.Ent
+        ref.file() -> ounderstand.Ent
 
         Return the file where the reference occurred.
         """
         entity = EntityModel.get_by_id(pk=self._file)
-        return Ent(**entity.__dict__.get('__data__'))
+        return Ent(**entity.__dict__.get("__data__"))
 
     def isforward(self):  # real signature unknown; restored from __doc__
         """
@@ -1134,12 +1490,12 @@ class Ref(object):
 
     def kind(self):  # real signature unknown; restored from __doc__
         """
-        ref.kind() -> understand.Kind
+        ref.kind() -> ounderstand.Kind
 
         Return the reference kind.
         """
         refkind = KindModel.get_by_id(pk=self._kind)
-        return Kind(**refkind.__dict__.get('__data__'))
+        return Kind(**refkind.__dict__.get("__data__"))
 
     def kindname(self):  # real signature unknown; restored from __doc__
         """
@@ -1171,19 +1527,19 @@ class Ref(object):
 
     def scope(self):  # real signature unknown; restored from __doc__
         """
-        ref.scope() -> understand.Ent
+        ref.scope() -> ounderstand.Ent
 
         Return the entity performing the reference.
         """
         entity = EntityModel.get_by_id(pk=self._scope)
-        return Ent(**entity.__dict__.get('__data__'))
+        return Ent(**entity.__dict__.get("__data__"))
 
     def __repr__(self, *args, **kwargs):  # real signature unknown
-        """ Return repr(self). """
+        """Return repr(self)."""
         return f"{self.kind()} {self.ent()} {self.file()}({self._line}, {self._column})"
 
     def __str__(self, *args, **kwargs):  # real signature unknown
-        """ Return str(self). """
+        """Return str(self)."""
         return f"{self.kind()} {self.ent()} {self.file()}({self._line}, {self._column})"
 
 
@@ -1192,18 +1548,21 @@ class UnderstandError(Exception):
     def __init__(self, *args, **kwargs):  # real signature unknown
         pass
 
-    __weakref__ = property(lambda self: object(), lambda self, v: None, lambda self: None)  # default
+    __weakref__ = property(
+        lambda self: object(), lambda self, v: None, lambda self: None
+    )  # default
     """list of weak references to the object (if defined)"""
 
 
 class Violation(object):
     """
     Available Methods are:
-      understand.Violation.add_fixit_hint(line,column,length[,text])
+      ounderstand.Violation.add_fixit_hint(line,column,length[,text])
     """
 
-    def add_fixit_hint(self, line, column, end_line, end_column,
-                       text=None):  # real signature unknown; restored from __doc__
+    def add_fixit_hint(
+        self, line, column, end_line, end_column, text=None
+    ):  # real signature unknown; restored from __doc__
         """
         violation.add_fixit_hint(line,column,end_line,end_column[,text]) -> None
 
@@ -1223,4 +1582,4 @@ class Violation(object):
 
 __loader__ = None  # (!) real value is '<_frozen_importlib_external.ExtensionFileLoader object at 0x000001CE33FC3130>'
 
-__spec__ = None  # (!) real value is "ModuleSpec(name='understand', loader=<_frozen_importlib_external.ExtensionFileLoader object at 0x000001CE33FC3130>, origin='D:\\\\program files\\\\SciTools\\\\bin\\\\pc-win64\\\\Python\\\\understand.pyd')"
+__spec__ = None  # (!) real value is "ModuleSpec(name='ounderstand', loader=<_frozen_importlib_external.ExtensionFileLoader object at 0x000001CE33FC3130>, origin='D:\\\\program files\\\\SciTools\\\\bin\\\\pc-win64\\\\Python\\\\ounderstand.pyd')"

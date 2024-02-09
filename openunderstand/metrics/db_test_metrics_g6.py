@@ -12,5 +12,5 @@ def test_all_metrics(db_path):
     print("Protected methods : ", count_decl_method_protected(db_path))
 
 
-if __name__ == '__main__':
-   test_all_metrics("../../benchmark2_database.oudb")
+if __name__ == "__main__":
+    test_all_metrics("../../benchmark2_database.oudb")

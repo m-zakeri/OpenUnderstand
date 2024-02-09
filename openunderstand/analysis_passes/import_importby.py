@@ -39,11 +39,11 @@ class ImportListener(JavaParserLabeledListener):
         longname = ctx.qualifiedName().getText()
         self.longnames.append(longname)
         # print("longname", longname)
-        name = longname.split('.')[-1]
+        name = longname.split(".")[-1]
         # print("name", name)
         self.names.append(name)
 
-        if longname.split('.')[0] == 'java':
+        if longname.split(".")[0] == "java":
             self.is_unknown_class.append(True)
             parent = None
         else:
@@ -58,25 +58,22 @@ class ImportListener(JavaParserLabeledListener):
 
 
 def create_Entity(name, longname, parent, contents, kind, value, entity_type):
-    obj, has_created = EntityModel.get_or_create(_kind=kind,
-                                                 _parent=parent,
-                                                 _name=name,
-                                                 _longname=longname,
-                                                 _value=value,
-                                                 _type=entity_type,
-                                                 _contents=contents
-                                                 )
+    obj, has_created = EntityModel.get_or_create(
+        _kind=kind,
+        _parent=parent,
+        _name=name,
+        _longname=longname,
+        _value=value,
+        _type=entity_type,
+        _contents=contents,
+    )
     return obj
 
 
 def create_Ref(kind, file, line, column, ent, scope):
-    obj, has_created = ReferenceModel.get_or_create(_kind=kind,
-                                                    _file=file,
-                                                    _line=line,
-                                                    _column=column,
-                                                    _ent=ent,
-                                                    _scope=scope
-                                                    )
+    obj, has_created = ReferenceModel.get_or_create(
+        _kind=kind, _file=file, _line=line, _column=column, _ent=ent, _scope=scope
+    )
     return obj
 
 
@@ -99,9 +96,11 @@ def get_class_body(path):
 def readFile():
     listOfFiles = list()
     filename = []
-    for (dirpath, dirnames, filenames) in os.walk(r"E:\uni\compiler\OpenUnderstand\benchmark\calculator_app"):
+    for (dirpath, dirnames, filenames) in os.walk(
+        r"E:\uni\compiler\OpenUnderstand\benchmark\calculator_app"
+    ):
         for file in filenames:
-            if '.java' in str(file):
+            if ".java" in str(file):
                 filename.append(file)
                 listOfFiles.append(os.path.join(dirpath, file))
 
@@ -127,24 +126,37 @@ def readFile():
         # break
         # find enitity
         entities = []
-        for ent_name, longname, is_unk, parent in zip(listener.names, listener.longnames, listener.is_unknown_class,
-                                                      listener.parents):
+        for ent_name, longname, is_unk, parent in zip(
+            listener.names,
+            listener.longnames,
+            listener.is_unknown_class,
+            listener.parents,
+        ):
             if is_unk:
-                ent_kind = KindModel.get_or_none(_name="Java Unknown Class Type Member")._id
+                ent_kind = KindModel.get_or_none(
+                    _name="Java Unknown Class Type Member"
+                )._id
                 contents = ""
-                obj = create_Entity(ent_name, longname, None, contents, ent_kind, None, None)
-
+                obj = create_Entity(
+                    ent_name, longname, None, contents, ent_kind, None, None
+                )
 
             else:
-                ent_kind = KindModel.get_or_none(_name="Java Class Type Public Member")._id
+                ent_kind = KindModel.get_or_none(
+                    _name="Java Class Type Public Member"
+                )._id
                 idx = filename.index(parent)
                 new_path = listOfFiles[idx]
                 contents = get_class_body(new_path)
 
                 # create parent of entity of ref
                 parent_contents = FileStream(new_path)
-                parent_obj = create_Entity(parent, longname, None, parent_contents, file_kind, None, None)
-                obj = create_Entity(ent_name, longname, parent_obj._id, contents, ent_kind, None, None)
+                parent_obj = create_Entity(
+                    parent, longname, None, parent_contents, file_kind, None, None
+                )
+                obj = create_Entity(
+                    ent_name, longname, parent_obj._id, contents, ent_kind, None, None
+                )
 
             entities.append(obj._id)
 
@@ -154,7 +166,9 @@ def readFile():
         # make reference
         ref_kind = KindModel.get_or_none(_name="Java Import")._id
         for ent in entities:
-            obj3 = create_Ref(ref_kind, name, listener.line, listener.col, ent, obj2._id)
+            obj3 = create_Ref(
+                ref_kind, name, listener.line, listener.col, ent, obj2._id
+            )
 
 
 readFile()

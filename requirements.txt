@@ -1,6 +1,9 @@
-peewee==3.14.4
-antlr4-python3-runtime==4.9.2
-dataclasses==0.8
-python-dotenv==0.20.0
+antlr4-python3-runtime==4.9.1
+gitdb==4.0.10
+GitPython==3.1.32
 openpyxl==3.0.10
-pandas==1.1.5
+packaging==23.1
+peewee==3.14.4
+pybind11==2.11.1
+javalang
+tabulate

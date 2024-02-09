@@ -1,14 +1,9 @@
 import os
 from antlr4 import *
-from oudb.fill import main as db_fill
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from oudb.models import *
-from oudb.api import open as db_open, create_db, Kind
 from oudb.models import KindModel, EntityModel, ReferenceModel
-
-from oudb.fill import main
 
 PRJ_INDEX = 0
 REF_NAME = "import demand"
@@ -16,15 +11,15 @@ REF_NAME = "import demand"
 
 def get_project_info(index, ref_name):
     project_names = [
-        'calculator_app',
-        'JSON',
-        'testing_legacy_code',
-        'jhotdraw-develop',
-        'xerces2j',
-        'jvlt-1.3.2',
-        'jfreechart',
-        'ganttproject',
-        '105_freemind',
+        "calculator_app",
+        "JSON",
+        "testing_legacy_code",
+        "jhotdraw-develop",
+        "xerces2j",
+        "jvlt-1.3.2",
+        "jfreechart",
+        "ganttproject",
+        "105_freemind",
     ]
     project_name = project_names[index]
     db_path = f"../../databases/{ref_name}/{project_name}"
@@ -35,9 +30,9 @@ def get_project_info(index, ref_name):
     project_path = f"E:/comppppppp/OpenUnderstand/benchmark/{project_name}"
 
     return {
-        'PROJECT_NAME': project_name,
-        'DB_PATH': db_path,
-        'PROJECT_PATH': project_path,
+        "PROJECT_NAME": project_name,
+        "DB_PATH": db_path,
+        "PROJECT_PATH": project_path,
     }
 
 
@@ -64,7 +59,7 @@ class Project:
     def get_java_files(self):
         for dir_path, _, file_names in os.walk(self.project_dir):
             for file in file_names:
-                if '.java' in str(file):
+                if ".java" in str(file):
                     path = os.path.join(dir_path, file)
                     path = path.replace("/", "\\")
                     self.files.append((file, path))
@@ -72,8 +67,8 @@ class Project:
                     # add_java_file_entity(path, file)
 
 
-class ImportListener(JavaParserLabeledListener):
-    def _init_(self, files):
+class ImportListenerDemand(JavaParserLabeledListener):
+    def __init__(self, files):
         self.names = []
         self.longnames = []
         self.is_unknown_class = []
@@ -92,17 +87,18 @@ class ImportListener(JavaParserLabeledListener):
         if a == "*":
             self.line = ctx.children[0].symbol.line
             self.col = ctx.children[0].symbol.column
-            self.repository.append({
-                "longname": self.longname,
-                "line": self.line
-                , "col": self.col,
-                "name": self.name
+            self.repository.append(
+                {
+                    "longname": self.longname,
+                    "line": self.line,
+                    "col": self.col,
+                    "name": self.name,
+                }
+            )
 
-            })
-            print(ctx.getText())
 
 class ClassEntityListener(JavaParserLabeledListener):
-    def _init_(self):
+    def __init__(self):
         self.class_body = None
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
@@ -128,7 +124,7 @@ def get_class_body(path):
 
 def main():
     info = get_project_info(PRJ_INDEX, REF_NAME)
-    p = Project(info['DB_PATH'], info['PROJECT_PATH'], info['PROJECT_NAME'])
+    p = Project(info["DB_PATH"], info["PROJECT_PATH"], info["PROJECT_NAME"])
     p.get_java_files()
     n = 1
     for file_name, file_path in p.files:
@@ -139,25 +135,20 @@ def main():
 
         for i in listener.repository:
             path = file_path.replace("/", "\\")
-            ent, _ = EntityModel.get_or_create(_kind=1,
-                                               _parent='None',
-                                               _name=path,
-                                               _longname=i["longname"],
-                                               _contents=FileStream(file_path, encoding="utf-8")
-                                               )
+            ent, _ = EntityModel.get_or_create(
+                _kind=1,
+                _parent="None",
+                _name=path,
+                _longname=i["longname"],
+                _contents=FileStream(file_path, encoding="utf-8"),
+            )
 
-            ReferenceModel.get_or_create(_kind=204,
-                                         _file=file_path,
-                                         _line=i["line"],
-                                         _column=i["col"],
-                                         _ent=ent.get_id(),
-                                         _scope=file_path
-                                         )
+            ReferenceModel.get_or_create(
+                _kind=204,
+                _file=file_path,
+                _line=i["line"],
+                _column=i["col"],
+                _ent=ent.get_id(),
+                _scope=file_path,
+            )
             n = n + 1
-
-
-if _name_ == '_main_':
-    create_db("../my.db",
-              project_dir="..\benchmark")
-    main()
-db = db_open("../my.db")

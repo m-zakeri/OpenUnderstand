@@ -1,4 +1,4 @@
-from openunderstand.define_and_definein import *
+from oudb.models import EntityModel, KindModel, ReferenceModel
 
 
 def reach_file(ent_model):
@@ -8,18 +8,8 @@ def reach_file(ent_model):
     return tmp._longname
 
 
-def declare_executable_unit():
-    main()
-    executable_unit = {}
-    for ent_model in EntityModel.select():
-        if "Method" in ent_model._kind._name:
-            file_name = reach_file(ent_model)
-            exists = executable_unit.get(file_name, -1)
-            if exists == -1:
-                executable_unit[file_name] = 1
-            else:
-                executable_unit[file_name] += 1
-    return executable_unit
-
-
-
+def declare_executable_unit(ent_model=None):
+    kinds = KindModel.select().where(KindModel._name.contains("Method"))
+    ents = EntityModel.select().where(EntityModel._kind.in_(kinds))
+    file_name = reach_file(ent_model)
+    return ents.select().where(EntityModel._name.contains(file_name)).count()

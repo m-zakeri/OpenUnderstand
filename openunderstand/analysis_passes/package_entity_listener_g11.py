@@ -2,13 +2,20 @@
 
 __author__ = "Navid Mousavizadeh, Amir Mohammad Sohrabi, Sara Younesi, Deniz Ahmadi"
 __copyright__ = "Copyright 2022, The OpenUnderstand Project, Iran University of Science and technology"
-__credits__ = ["Dr.Parsa", "Dr.Zakeri", "Mehdi Razavi", "Navid Mousavizadeh", "Amir Mohammad Sohrabi", "Sara Younesi",
-               "Deniz Ahmadi"]
+__credits__ = [
+    "Dr.Parsa",
+    "Dr.Zakeri",
+    "Mehdi Razavi",
+    "Navid Mousavizadeh",
+    "Amir Mohammad Sohrabi",
+    "Sara Younesi",
+    "Deniz Ahmadi",
+]
 __license__ = "GPL"
 __version__ = "1.0.0"
 
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 
 
 class PackageListener(JavaParserLabeledListener):
@@ -18,9 +25,11 @@ class PackageListener(JavaParserLabeledListener):
         self.package_data = None
 
     def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
-        package_parts = ctx.getText().replace(';', '').replace('package', '').split('.')
+        package_parts = ctx.getText().replace(";", "").replace("package", "").split(".")
         for i in range(len(package_parts)):
-            self.package_data.append({
-                "package_name": package_parts[i],
-                "package_longname": ".".join(package_parts[:i + 1])
-            })
+            self.package_data.append(
+                {
+                    "package_name": package_parts[i],
+                    "package_longname": ".".join(package_parts[: i + 1]),
+                }
+            )

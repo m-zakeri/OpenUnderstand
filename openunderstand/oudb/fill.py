@@ -5,10 +5,13 @@ import unittest
 
 from oudb.models import KindModel, EntityModel, ReferenceModel
 from oudb.utils import get_entity_object_from_understand
+import pkg_resources
 
 
-def append_java_ent_kinds():
-    with open(os.path.join(sys.path[0], "oudb/java_ent_kinds.txt"), "r") as f:
+def append_java_ent_kinds(path_dir: str = ""):
+    current_directory = os.path.abspath(os.path.dirname(__file__))
+    path_dir = os.path.join(current_directory, "java_ent_kinds.txt")
+    with open(path_dir, "r") as f:
         for line in f.readlines():
             if line.startswith("Java"):
                 query = line.strip()
@@ -24,9 +27,11 @@ def append_java_ref_kind(kind: str, inverse: str, ref: str) -> int:
     return ref_kind.save()
 
 
-def append_java_ref_kinds():
+def append_java_ref_kinds(path_dir: str = ""):
     kind, inv_kind = "", ""
-    with open(os.path.join(sys.path[0], "oudb/java_ref_kinds.txt"), "r") as f:
+    current_directory = os.path.abspath(os.path.dirname(__file__))
+    path_dir = os.path.join(current_directory, "java_ref_kinds.txt")
+    with open(path_dir, "r") as f:
         for line in f.readlines():
             line = line.strip()
             if line.startswith("Java"):
@@ -35,7 +40,9 @@ def append_java_ref_kinds():
                         print(f"Created: {line}")
                         continue
                     else:
-                        raise ConnectionError("Database disconnected, please try again!")
+                        raise ConnectionError(
+                            "Database disconnected, please try again!"
+                        )
                 except peewee.IntegrityError:
                     print(f"KindModel exists: {line}")
             else:
@@ -46,7 +53,7 @@ def append_java_ref_kinds():
 
 def append_entities_with_understand(udb_path: str):
     try:
-        import understand as und
+        from oudb import api as und
     except ImportError:
         print("Understand Python API is not installed correctly.")
 
@@ -70,7 +77,7 @@ def append_entities_with_understand(udb_path: str):
                     _longname=parent.longname(),
                     _value=parent.value(),
                     _type=parent.type(),
-                    _contents=parent.contents()
+                    _contents=parent.contents(),
                 )
 
             # Create entity it-self!
@@ -82,7 +89,7 @@ def append_entities_with_understand(udb_path: str):
                 _longname=ent.longname(),
                 _value=ent.value(),
                 _type=ent.type(),
-                _contents=ent.contents()
+                _contents=ent.contents(),
             )
             print(ent)
 
@@ -90,7 +97,7 @@ def append_entities_with_understand(udb_path: str):
 def append_references_with_understand(udb_path: str):
     # TODO: Implement this method!
     try:
-        import understand as und
+        from openunderstand import ounderstand as und
     except ImportError:
         print("Understand Python API is not installed correctly.")
 
@@ -110,7 +117,7 @@ def append_references_with_understand(udb_path: str):
                 _line=ref.line(),
                 _column=ref.column(),
                 _ent=ent,
-                _scope=scope
+                _scope=scope,
             )
             print(f"Reference created [{has_created}]: {ref}")
         print("===============")
@@ -133,14 +140,11 @@ class TestFill(unittest.TestCase):
         self.assertRaises(peewee.OperationalError, lambda: self.ent_kind.inv())
 
 
-def main():
+def fill(udb_path: str = ""):
+
     # udb_path = "D:\Dev\JavaSample\JavaSample1.udb"
     append_java_ent_kinds()
     append_java_ref_kinds()
     # print("=" * 50)
     # append_entities_with_understand(udb_path)
     # append_references_with_understand(udb_path)
-
-
-if __name__ == '__main__':
-    main()

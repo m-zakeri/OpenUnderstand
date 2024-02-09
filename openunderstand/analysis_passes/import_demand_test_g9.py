@@ -1,37 +1,31 @@
-from pprint import pprint
-import os
 from antlr4 import *
-from oudb.fill import main as db_fill
-from gen.javaLabeled.JavaLexer import JavaLexer
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from oudb.models import *
-from oudb.api import open as db_open, create_db, Kind
-from oudb.models import KindModel, EntityModel, ReferenceModel
+from oudb.api import open as db_open, create_db
+from oudb.models import EntityModel, ReferenceModel
 
 
 try:
-    import understand as und
+    from openunderstand import ounderstand as und
 except ImportError:
-    print("Can not import understand")
+    print("Can not import ounderstand")
 # E:\2\OpenUnderstand\benchmark\calculator_app\calculator_app.und
-db = und.open(r"E:/comppppppp/OpenUnderstand/benchmark/calculator_app/calculator_app/calculator_app.und")
+db = und.open(
+    r"E:/comppppppp/OpenUnderstand/benchmark/calculator_app/calculator_app/calculator_app.und"
+)
 
-#ent = db.lookup("Admin", "method")[0]
+# ent = db.lookup("Admin", "method")[0]
 for ent in db.ents():
     for ref in ent.refs(refkindstring="import demand"):
 
+        create_db("../myOpenunder.db", project_dir="..\benchmark")
 
-        create_db("../myOpenunder.db",
-                  project_dir="..\benchmark")
-
-        ent, _ = EntityModel.get_or_create(_kind=1,
-                                       _parent='None',
-                                       _name=ref.scope().longname(),
-                                       _longname=ref.ent().longname(),
-                                       _contents=FileStream(ref.scope().longname(), encoding="utf-8")
-
-                                       )
+        ent, _ = EntityModel.get_or_create(
+            _kind=1,
+            _parent="None",
+            _name=ref.scope().longname(),
+            _longname=ref.ent().longname(),
+            _contents=FileStream(ref.scope().longname(), encoding="utf-8"),
+        )
 
         ReferenceModel.get_or_create(
             _kind=204,
@@ -39,12 +33,10 @@ for ent in db.ents():
             _line=ref.line(),
             _column=ref.column(),
             _ent=ent.get_id(),
-            _scope=ref.scope().longname()
-            )
+            _scope=ref.scope().longname(),
+        )
 
         db = db_open("../myOpenunder.db")
-
-
 
         # print(f'ref.scope (entity performing reference       ===========>)\n:'
         #       f' "{ref.scope().longname()}", kind: "{ref.scope().kind()}"')
@@ -63,6 +55,3 @@ for ent in db.ents():
         #        "\n" ,"ref.ent().parent  =", ref.ent().parent() ,"\n" ,"ref.ent().type  =",
         #        ref.ent().type() ,"\n" ,"ref.ent().value  =",
         # ref.ent().value(),"\n" )
-
-
-print("hello test")
