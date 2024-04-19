@@ -24,6 +24,9 @@ class DefineListener(JavaParserLabeledListener):
         column = ent_start.symbol.column
         self.defines.append(
             {
+                "contents": ctx.getText(),
+                "type": "Package",
+                "parent": self.package,
                 "scope": None,
                 "ent": ent_name,
                 "scope_longname": None,
@@ -33,7 +36,7 @@ class DefineListener(JavaParserLabeledListener):
             }
         )
 
-    def add_define_info(self, ent, ent_parents, ent_name=None):
+    def add_define_info(self, ent, ent_parents, ent_name=None, type=None, contents=None):
         if ent_name is None:
             ent_name = ent.getText()
         line = ent.symbol.line
@@ -44,8 +47,19 @@ class DefineListener(JavaParserLabeledListener):
             scope_name = None
         else:
             scope_name = ent_parents[-1]
+        # if ent_name == "parse":
+        #     print("scope_longname = ", scope_longname)
+        #     print("scope_name = ", scope_name)
+        #     print("ent_name = parse")
+        # if scope_name == "parse":
+        #     print("ent_longname = ", ent_longname)
+        #     print("ent_name = ", ent_name)
+        #     print("scope_name = parse")
         self.defines.append(
             {
+                "contents": contents,
+                "type": type,
+                "parent": self.package,
                 "scope": scope_name,
                 "ent": ent_name,
                 "scope_longname": scope_longname,
@@ -58,50 +72,54 @@ class DefineListener(JavaParserLabeledListener):
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        self.add_define_info(ent, ent_parents)
+        self.add_define_info(ent=ent, ent_parents=ent_parents, type="Class")
 
     def enterInterfaceDeclaration(
         self, ctx: JavaParserLabeled.InterfaceDeclarationContext
     ):
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        self.add_define_info(ent, ent_parents)
+        self.add_define_info(ent=ent, ent_parents=ent_parents, type="Interface")
 
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        self.add_define_info(ent, ent_parents)
+        # print("METHOD Type : ", ctx.typeTypeOrVoid().getText())
+        # print("METHOD contents : ", ctx.getText())
+        self.add_define_info(ent=ent, ent_parents=ent_parents, type=ctx.typeTypeOrVoid().getText(), contents=ctx.getText())
 
     def enterAnnotationTypeDeclaration(
         self, ctx: JavaParserLabeled.AnnotationTypeDeclarationContext
     ):
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        self.add_define_info(ent, ent_parents)
+        self.add_define_info(ent=ent, ent_parents=ent_parents, type="Annotation", contents=ctx.getText())
 
     def enterConstructorDeclaration(
         self, ctx: JavaParserLabeled.ConstructorDeclarationContext
     ):
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        self.add_define_info(ent, ent_parents)
+        self.add_define_info(ent=ent, ent_parents=ent_parents, type="Constructor", contents=ctx.getText())
 
     def enterVariableDeclarator(self, ctx: JavaParserLabeled.VariableDeclaratorContext):
         ent = ctx.variableDeclaratorId().IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        self.add_define_info(ent, ent_parents)
+
+        self.add_define_info(ent=ent, ent_parents=ent_parents, type=ctx.parentCtx.parentCtx.typeType().getText(), contents=ctx.getText())
+
 
     def enterEnumConstant(self, ctx: JavaParserLabeled.EnumConstantContext):
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        self.add_define_info(ent, ent_parents)
+        self.add_define_info(ent=ent, ent_parents=ent_parents, type="EnumConst", contents=ctx.getText())
 
     def enterEnumDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        self.add_define_info(ent, ent_parents)
-        self.add_define_info(ent, ent_parents + [ent.getText()], "values")
-        self.add_define_info(ent, ent_parents + [ent.getText()], "valueOf")
+        self.add_define_info(ent, ent_parents, type="Enum",contents=ctx.getText())
+        self.add_define_info(ent, ent_parents + [ent.getText()], "values", type="Enum",contents=ctx.getText())
+        self.add_define_info(ent, ent_parents + [ent.getText()], "valueOf", type="Enum",contents=ctx.getText())
 
     def enterFormalParameter(self, ctx: JavaParserLabeled.FormalParametersContext):
         ent = ctx.variableDeclaratorId().IDENTIFIER()
@@ -143,7 +161,7 @@ class DefineListener(JavaParserLabeledListener):
     def enterConstantDeclarator(self, ctx: JavaParserLabeled.ConstantDeclaratorContext):
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        self.add_define_info(ent, ent_parents)
+        self.add_define_info(ent=ent, ent_parents=ent_parents, type="Constant", contents=ctx.getText())
 
     def enterLastFormalParameter(
         self, ctx: JavaParserLabeled.LastFormalParameterContext

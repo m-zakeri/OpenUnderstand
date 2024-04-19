@@ -1,181 +1,156 @@
-from antlr4 import *
-from gen.javaLabeled.JavaLexer import JavaLexer
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from analysis_passes import class_properties
+"""
+## Description
+This module find all OpenUnderstand call and callby references in a Java project
 
+
+## References
+
+
+"""
+
+__author__ = "AminHZ Dev"
+__version__ = "0.1.0"
+
+from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 
 
 class CoupleAndCoupleBy(JavaParserLabeledListener):
-    """
-    #Todo: Implementing the ANTLR listener pass for Java Couple and Java Coupleby reference kind
-    """
+    couples = []
 
     def __init__(self):
-        self.Couple = []
-        self.packageName = ""
-        self.Imports = {}
-        self.Modifiers = []
-        self.dic = {}
-        self.file = None
-        self.classes = {}
-        self.classlongname = ""
-        self.couplebyrefrences = []
-        self.news = []
-        self.extend = False
-        self.classx = False
+        self.couples = []
 
-    def set_file(self, filex):
-        self.file = filex
+    def addReference(
+        self,
+        scope_kind,
+        scope_name,
+        scope_longname,
+        scope_parent,
+        scope_contents,
+        scope_modifiers,
+        line,
+        col,
+        type_ent_longname,
+    ):
 
-    def set_classesx(self, classesx):
-        self.classes = classesx
+        if scope_name is not None and type_ent_longname is not None:
+            self.couples.append(
+                {
+                    "scope_kind": scope_kind,
+                    "scope_name": scope_name,
+                    "scope_longname": scope_longname,
+                    "scope_parent": scope_parent,
+                    "scope_contents": scope_contents,
+                    "scope_modifiers": scope_modifiers,
+                    "line": line,
+                    "col": col,
+                    "type_ent_longname": type_ent_longname,
+                }
+            )
 
-    def set_couples(self, couples):
-        self.Couple = couples
+    def addStaticClassesToCouples(
+        self, ctx, expression: JavaParserLabeled.Expression0Context
+    ):
+        self.addReference(
+            "Class",
+            ctx.IDENTIFIER().getText(),
+            ctx.IDENTIFIER().getText(),
+            None,
+            ctx.getText(),
+            [],
+            expression.primary().children[0].symbol.line,
+            expression.primary().children[0].symbol.column,
+            str(expression.primary().getText()),
+        )
 
-    @property
-    def get_couples(self):
-        return self.Couple
+    def addClassObjectsToCouples(self, ctx, field):
+        typeType = field.typeType()
+        targetClass = typeType.classOrInterfaceType()
 
-    @property
-    def get_classes(self):
-        return self.classes
+        if targetClass is not None:
 
-    def extract_original_text(self, ctx):
-        token_source = ctx.start.getTokenSource()
-        input_stream = token_source.inputStream
-        start, stop = ctx.start.start, ctx.stop.stop
-        return input_stream.getText(start, stop)
+            self.addReference(
+                "Class",
+                ctx.IDENTIFIER().getText(),
+                ctx.IDENTIFIER().getText(),
+                None,
+                ctx.getText(),
+                [],
+                targetClass.children[0].symbol.line,
+                targetClass.children[0].symbol.column,
+                str(targetClass.IDENTIFIER()[0]),
+            )
+
+    def globalClassVariablesAnalyzer(self, ctx, member):
+        field = member.fieldDeclaration()
+        self.addClassObjectsToCouples(ctx, field)
+
+    def parameterVariablesAnalyzer(self, ctx, formalParameters):
+        for formalParameter in formalParameters.formalParameter():
+            self.addClassObjectsToCouples(ctx, formalParameter)
+
+    def recursiveExpressions(
+        self, ctx, expression: JavaParserLabeled.Expression1Context
+    ):
+        mainExpression = expression.expression()
+        while (
+            type(mainExpression) != JavaParserLabeled.Expression0Context
+            and mainExpression.expression()
+            and type(mainExpression.expression())
+            == JavaParserLabeled.Expression0Context
+        ):
+            mainExpression = mainExpression.expression()
+        if type(mainExpression) == JavaParserLabeled.Expression0Context:
+            self.addStaticClassesToCouples(ctx, mainExpression)
+            methodCall = expression.methodCall()
+            if (
+                type(methodCall) == JavaParserLabeled.MethodCall0Context
+                and type(methodCall.expressionList())
+                == JavaParserLabeled.ExpressionListContext
+            ):
+                expressionList = methodCall.expressionList()
+                if expressionList.expression():
+                    for subExpression in expressionList.expression():
+                        if type(subExpression) == JavaParserLabeled.Expression1Context:
+                            self.recursiveExpressions(ctx, subExpression)
+
+    def localMethodVariablesAnalyzer(self, ctx, block):
+        for blockStatement in block.blockStatement():
+            if type(blockStatement) == JavaParserLabeled.BlockStatement0Context:
+                variable = blockStatement.localVariableDeclaration()
+                self.addClassObjectsToCouples(ctx, variable)
+            elif type(blockStatement) == JavaParserLabeled.BlockStatement1Context:
+                statement = blockStatement.statement()
+                if type(statement) == JavaParserLabeled.Statement15Context:
+                    expression = statement.expression()
+                    if type(expression) == JavaParserLabeled.Expression1Context:
+                        self.recursiveExpressions(ctx, expression)
+
+    def methodAnalyzer(self, ctx, member):
+        formalParameters = (
+            member.methodDeclaration().formalParameters().formalParameterList()
+        )
+        if type(formalParameters) == JavaParserLabeled.FormalParameterList0Context:
+            self.parameterVariablesAnalyzer(ctx, formalParameters)
+
+        block = member.methodDeclaration().methodBody().block()
+        self.localMethodVariablesAnalyzer(ctx, block)
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
-        if True:
-            scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-            if len(scope_parents) == 1:
-                scope_longname = scope_parents[0]
-            else:
-                scope_longname = ".".join(scope_parents)
-            [line, col] = str(ctx.start).split(",")[3].split(":")
-            self.classlongname = self.packageName + "." + scope_longname
-            self.dic = {
-                "scope_kind": "Class",
-                "scope_name": ctx.IDENTIFIER().__str__(),
-                "scope_longname": self.packageName + "." + scope_longname,
-                "scope_parent": scope_parents[-2] if len(scope_parents) >= 2 else None,
-                "scope_contents": self.extract_original_text(ctx),
-                "scope_modifiers": self.Modifiers,
-                "File": self.file,
-                "line": line,
-                "col": col[:-1],
-            }
-            if ctx.EXTENDS() != None:
-                self.extend = True
-                self.classx = True
+        for item in ctx.classBody().classBodyDeclaration():
+            member = item.memberDeclaration()
 
-            self.Modifiers = []
+            if (
+                type(item) == JavaParserLabeled.ClassBodyDeclaration2Context
+                and type(member) == JavaParserLabeled.MemberDeclaration2Context
+            ):
+                # Global class variables declaration
+                self.globalClassVariablesAnalyzer(ctx, member)
 
-    def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
-        self.packageName = ctx.qualifiedName().getText()
-
-    def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
-        imported_class_longname = ctx.qualifiedName().getText()
-        imported_class_name = imported_class_longname.split(".")[-1]
-        self.Imports[imported_class_name] = imported_class_longname
-
-    def exitClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
-
-        self.dic["type_ent_longname"] = self.couplebyrefrences
-        self.Couple.append(self.dic)
-
-        self.classes[self.classlongname] = self.dic
-
-        self.classlongname = ""
-        self.couplebyrefrences = []
-        self.news = []
-
-    def enterClassOrInterfaceModifier(
-        self, ctx: JavaParserLabeled.ClassOrInterfaceModifierContext
-    ):
-        parent = ctx.parentCtx
-        if type(parent).__name__ == "TypeDeclarationContext":
-            self.Modifiers.append(ctx.getText())
-
-    def enterClassOrInterfaceType(
-        self, ctx: JavaParserLabeled.ClassOrInterfaceTypeContext
-    ):
-        prnt1 = ctx.parentCtx
-        keyname = None
-
-        if type(prnt1).__name__ == "TypeTypeContext":
-            if type(prnt1.parentCtx).__name__ != "ClassDeclarationContext":
-                typereferenced = ctx.getText()
-                if typereferenced in self.Imports:
-                    keyname = self.Imports[typereferenced]
-                else:
-                    keyname = self.packageName + "." + typereferenced
-        if keyname != None and keyname not in self.couplebyrefrences:
-            self.couplebyrefrences.append(keyname)
-
-        if self.extend and self.classx:
-            extendx = ctx.IDENTIFIER()[0].getText()
-            key2 = ""
-            if extendx in self.Imports:
-                key2 = self.Imports[extendx]
-            else:
-                key2 = self.packageName + "." + extendx
-
-            if key2 != None and key2 not in self.couplebyrefrences:
-                self.couplebyrefrences.append(key2)
-            self.extend = False
-            self.classx = False
-
-    def enterExpression1(self, ctx: JavaParserLabeled.Expression1Context):
-        expression = ctx.getText()
-
-        exp = expression.split(".")
-        classnamemain = exp[0]
-        typex = type(ctx.children[0]).__name__
-
-        if ctx.DOT() != None:
-            if classnamemain in self.Imports:
-                reference = self.Imports[classnamemain]
-                if reference not in self.couplebyrefrences:
-                    self.couplebyrefrences.append(reference)
-
-            if typex == "Expression0Context":
-                if (
-                    classnamemain not in self.Imports
-                    and classnamemain not in self.couplebyrefrences
-                    and classnamemain != "this"
-                    and classnamemain not in self.news
-                ):
-                    self.couplebyrefrences.append(classnamemain)
-
-    def enterExpression4(self, ctx: JavaParserLabeled.Expression4Context):
-        name = ctx.children[1]
-        parent = ctx.parentCtx
-
-        createdname = name.children[0].getText()
-
-        if type(parent).__name__ == "VariableInitializer1Context":
-            parent2 = parent.parentCtx
-            if type(parent2).__name__ == "VariableDeclaratorContext":
-                parent3 = parent.parentCtx
-                if parent3.ASSIGN() != None:
-                    if parent3.ASSIGN().getText() == "=":
-                        self.news.append(parent3.children[0].getText())
-
-        if createdname in self.Imports:
-            reference = self.Imports[createdname]
-            if reference not in self.couplebyrefrences:
-                self.couplebyrefrences.append(reference)
-        if "." in createdname:
-            if createdname not in self.couplebyrefrences:
-                self.couplebyrefrences.append(createdname)
-
-    def exitMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
-        self.news = []
-
-    # def enterFormalParameter(self, ctx:JavaParserLabeled.FormalParameterContext):
-    #     self.couplebyrefrences.pop()
-    #     #fieldparametersarenotclasses
+            elif (
+                type(item) == JavaParserLabeled.ClassBodyDeclaration2Context
+                and type(member) == JavaParserLabeled.MemberDeclaration0Context
+            ):
+                # Method declaration
+                self.methodAnalyzer(ctx, member)

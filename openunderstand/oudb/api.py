@@ -38,7 +38,7 @@ from metrics.max_nesting import MaxNesting
 from metrics.max_inheritance import FindAllInheritances
 from metrics.knots_inheritance_nesting import get_knot_inheritance_nested
 from metrics.knots_inheritance_nesting import get_max_inheritance
-from openunderstand.metrics.Lineofcode import get_line_of_codes
+from metrics.Lineofcode import get_line_of_codes
 from metrics.count_stmt_exe import statement_counter_exe
 from metrics.cyclomatic import cyclomatic
 from metrics.CyclomaticStrict_G12 import cyclomatic_strict
@@ -484,10 +484,13 @@ class Db:
         ents = []
         query = EntityModel.select()
         if kindstring:
-            kinds = KindModel.select().where(KindModel._name.contains(kindstring))
-            query = query.where(EntityModel._kind(kinds))
+            kinds = KindModel.select().where(
+                fn.Lower(KindModel._name).contains(kindstring.lower()))
+            query = query.where(EntityModel._kind.in_(kinds))
+
         query = query.where(
-            (EntityModel._name.contains(name)) | (EntityModel._longname.contains(name))
+            (EntityModel._name.contains(name)) | (
+                EntityModel._longname.contains(name))
         )
 
         for ent in query:
@@ -1160,7 +1163,8 @@ class Ent:
         returned
         """
         # TODO : check nested references
-        mlist = [j.replace(" ", "") for j in refkindstring.split(",")]
+        mlist = [j.strip() for j in refkindstring.split(",")]
+        # print(mlist)
         refs = []
         for item in mlist:
             query = ReferenceModel.select().where(ReferenceModel._scope == self._id)

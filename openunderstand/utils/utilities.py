@@ -2,7 +2,7 @@ import time
 import logging
 import configparser
 from os.path import basename
-from openunderstand.gen.javaLabeled import JavaParserLabeled
+from gen.javaLabeled import JavaParserLabeled
 
 
 class ClassTypeData:
