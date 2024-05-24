@@ -15,6 +15,7 @@ from analysis_passes.import_importby_g10_2 import ImportListener, ImportedEntity
 from analysis_passes.import_demand_g9 import ImportListenerDemand
 
 from analysis_passes.define_definein import DefineListener
+
 # from analysis_passes.define_and_definin_g6 import DefineListener
 from analysis_passes.modify_modifyby import ModifyListener
 from analysis_passes.entity_manager_g11 import (
@@ -29,7 +30,7 @@ from analysis_passes.set_setby import SetAndSetByListener
 from analysis_passes.setinit_setinitby import SetInitAndSetByInitListener
 from analysis_passes.setpartial_setpartialby import SetPartialAndSetByPartialListener
 from ounderstand.override_overrideby__G12 import overridelistener
-from ounderstand.couple_coupleby__G12 import CoupleAndCoupleBy
+from analysis_passes.couple_coupleby__G12 import CoupleAndCoupleBy
 from analysis_passes.create_createby_g9 import CreateAndCreateBy
 from analysis_passes.declare_declarein import DeclareAndDeclareinListener
 from analysis_passes.extend_listener_g6 import ExtendListener
@@ -150,7 +151,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def define_listener(self, tree, file_ent, file_address, p):
         try:
-            listener = DefineListener()
+            listener = DefineListener(file_address)
             p.Walk(listener, tree)
             p.addDefineRefs(listener.defines, file_ent)
             self.logger.info("define success ")
@@ -253,9 +254,9 @@ class ListenersAndParsers:
 
     @timer_decorator()
     def couple_listener(self, tree, file_ent, file_address, p):
-        classescoupleby = {}
-        couple = []
         try:
+            couple = []
+            classescoupleby = {}
             listener = CoupleAndCoupleBy()
             listener.set_file(filex=file_address)
             listener.set_classesx(classesx=classescoupleby)
@@ -263,7 +264,9 @@ class ListenersAndParsers:
             p.Walk(listener, tree)
             classescoupleby = listener.get_classes
             couple = listener.get_couples
-            p.addcouplereference(classescoupleby, couple, file_ent)
+            p.addcouplereference(
+                classescoupleby , couple, file_ent
+            )
             self.logger.info("couple success ")
         except Exception as e:
             self.logger.error(
@@ -331,10 +334,15 @@ class ListenersAndParsers:
             self.logger.info("setInit Ref success ")
         except Exception as e:
             self.logger.error(
-                "An Error occurred in setInit ref in file :" + file_address + "\n" + str(e)
+                "An Error occurred in setInit ref in file :"
+                + file_address
+                + "\n"
+                + str(e)
             )
 
-    def setbypartialby_listener(self, tree, file_ent, file_address, p, stream: str = ""):
+    def setbypartialby_listener(
+        self, tree, file_ent, file_address, p, stream: str = ""
+    ):
         try:
             # setinit ref
             listener = SetPartialAndSetByPartialListener(file_address)
@@ -343,7 +351,10 @@ class ListenersAndParsers:
             self.logger.info("set Partial Ref success ")
         except Exception as e:
             self.logger.error(
-                "An Error occurred in setInit ref in file :" + file_address + "\n" + str(e)
+                "An Error occurred in setInit ref in file :"
+                + file_address
+                + "\n"
+                + str(e)
             )
 
     @timer_decorator()
@@ -407,7 +418,11 @@ class ListenersAndParsers:
             self.logger.info("cast success ")
         except Exception as e:
             self.logger.error(
-                "An Error occurred in cast in file :" + file_address + "\n" + str(e) + traceback.format_exc()
+                "An Error occurred in cast in file :"
+                + file_address
+                + "\n"
+                + str(e)
+                + traceback.format_exc()
             )
 
     @timer_decorator()

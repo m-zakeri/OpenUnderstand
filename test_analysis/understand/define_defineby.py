@@ -1,29 +1,35 @@
 import sys
 import os
 from pathlib import Path
+
 sys.path.insert(
     0,
     "/home/y/Downloads/Scientific.Toolworks.Understand.5.1.1023.Linux/Understand-5.1.1023-Linux-64bit/scitools/bin/linux64/Python",
 )
-os.environ[
-    "LD_LIBRARY_PATH"
-] = "/home/y/Downloads/Scientific.Toolworks.Understand.5.1.1023.Linux/Understand-5.1.1023-Linux-64bit/scitools/bin/linux64/Python"
+os.environ["LD_LIBRARY_PATH"] = (
+    "/home/y/Downloads/Scientific.Toolworks.Understand.5.1.1023.Linux/Understand-5.1.1023-Linux-64bit/scitools/bin/linux64/Python"
+)
 
 import understand as und
 
-_db = und.open("/home/y/Desktop/CodART/benchmark_projects/JSON20201115/JSON20201115.udb")
+_db = und.open(
+    "/home/y/Desktop/CodART/benchmark_projects/JSON20201115/JSON20201115.udb"
+)
 dbents = _db.ents()
 print("---------Define---------")
-all_things=[]
+all_things = []
 print(len(dbents))
 class_ents = _db.lookup("JSONML", "Class")
 class_ent = None
 for ent in class_ents:
     if ent.parent() is not None:
         print("ent.parent().longname()", ent.parent().longname())
-        if Path(ent.parent().longname()) == Path("/home/y/Desktop/CodART/benchmark_projects/JSON20201115/src/main/java/org/json/JSONML.java"):
+        print("ent.parent().simplename()", ent.parent().simplename())
+        if Path(ent.parent().longname()) == Path(
+            "/home/y/Desktop/CodART/benchmark_projects/JSON20201115/src/main/java/org/json/JSONML.java"
+        ):
             class_ent = ent
-            break
+            # break
 if class_ent is None:
     _db.close()
 

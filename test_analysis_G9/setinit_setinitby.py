@@ -23,7 +23,6 @@ class SetInitAndSetByInitListener(JavaParserLabeledListener):
         self.stream = ""
         self.ss = ""
 
-
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         name_of_file = self.file_name.split("\\")[
             self.file_name.split("\\").count(0) - 1
@@ -53,7 +52,7 @@ class SetInitAndSetByInitListener(JavaParserLabeledListener):
         try:
             name_of_file = self.file_name.split("\\")[
                 self.file_name.split("\\").count(0) - 1
-                ]
+            ]
             node = ctx
             while node.getRuleIndex() not in (20, 7, 25):
                 node = node.parentCtx
@@ -62,26 +61,26 @@ class SetInitAndSetByInitListener(JavaParserLabeledListener):
                 set_init_short_name = ctx.parentCtx.children[0].getText()
                 self.ss = node.children[0].getText()
                 set_init_long_name = (
-                        self.package_name
-                        + "."
-                        + node.children[0].getText()
-                        + "."
-                        + self.ex_name
-                        + "."
-                        + ctx.parentCtx.children[0].getText()
+                    self.package_name
+                    + "."
+                    + node.children[0].getText()
+                    + "."
+                    + self.ex_name
+                    + "."
+                    + ctx.parentCtx.children[0].getText()
                 )
             elif node.getRuleIndex() == 25:
                 self.stream = node.parentCtx.parentCtx.getText()
                 set_init_short_name = ctx.parentCtx.children[0].getText()
                 self.ss = node.children[0].getText()
                 set_init_long_name = (
-                        self.package_name
-                        + "."
-                        + node.children[0].getText()
-                        + "."
-                        + self.ex_name
-                        + "."
-                        + ctx.parentCtx.children[0].getText()
+                    self.package_name
+                    + "."
+                    + node.children[0].getText()
+                    + "."
+                    + self.ex_name
+                    + "."
+                    + ctx.parentCtx.children[0].getText()
                 )
             else:
                 node1 = ctx
@@ -92,26 +91,21 @@ class SetInitAndSetByInitListener(JavaParserLabeledListener):
                     node2 = node2.parentCtx
                 self.stream = node.parentCtx.parentCtx.getText()
                 self.ss = node2.children[0].children[1].children[2].getText()
-                set_init_short_name = node1.children[0].getText()+"."+ctx.parentCtx.children[0].getText()
+                set_init_short_name = (
+                    node1.children[0].getText()
+                    + "."
+                    + ctx.parentCtx.children[0].getText()
+                )
                 set_init_long_name = (
-                        self.package_name
-                        + "."
-                        + self.ex_name
-                        + "."
-                        + ctx.parentCtx.children[0].getText()
+                    self.package_name
+                    + "."
+                    + self.ex_name
+                    + "."
+                    + ctx.parentCtx.children[0].getText()
                 )
             set_init_type = ctx.parentCtx.children[0].getText()
-            line = (
-                ctx.parentCtx.children[0]
-                .children[0]
-                .symbol.line
-            )
-            column = (
-                ctx.parentCtx.children[0]
-                .children[0]
-
-                .symbol.column
-            )
+            line = ctx.parentCtx.children[0].children[0].symbol.line
+            column = ctx.parentCtx.children[0].children[0].symbol.column
             if self.call_function:
                 set_init_value = self.method_name
             elif self.create_object:
@@ -146,4 +140,3 @@ class SetInitAndSetByInitListener(JavaParserLabeledListener):
 
     def exitPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
         self.package_name = ctx.children[1].getText()
-

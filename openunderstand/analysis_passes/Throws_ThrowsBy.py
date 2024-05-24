@@ -9,10 +9,10 @@ from oudb.models import ProjectModel, EntityModel
 def throws_parent_finder(root_dir, file_name):
     for root, dirs, files in os.walk(root_dir):
         for file in files:
-            if file.endswith(".java") and file == (file_name + '.java'):
-                root_splited = str(root).split('/')
-                org_index = root_splited.index('org')
-                return '.'.join(root_splited[org_index:])
+            if file.endswith(".java") and file == (file_name + ".java"):
+                root_splited = str(root).split("/")
+                org_index = root_splited.index("org")
+                return ".".join(root_splited[org_index:])
 
 
 class Throws_TrowsBy(JavaParserLabeledListener):
@@ -23,8 +23,11 @@ class Throws_TrowsBy(JavaParserLabeledListener):
         parents = ""
         context = ""
         current = c
-        parents_list = ["ConstructorDeclarationContext", "MethodDeclarationContext",
-                        "InterfaceMethodDeclarationContext"]
+        parents_list = [
+            "ConstructorDeclarationContext",
+            "MethodDeclarationContext",
+            "InterfaceMethodDeclarationContext",
+        ]
         while current is not None:
             if type(current.parentCtx).__name__ in parents_list:
                 parents = current.parentCtx.typeTypeOrVoid().getText()
@@ -75,47 +78,18 @@ class Throws_TrowsBy(JavaParserLabeledListener):
         if ctx.THROWS():
             modifiers = self.findmethodacess(ctx)
             mothodedreturn, methodcontext = self.findmethodreturntype(ctx)
-            refEntName = ctx.qualifiedNameList().getText().split(',')[-1]
+            refEntName = ctx.qualifiedNameList().getText().split(",")[-1]
             if refEntName:
                 allrefs = class_properties.ClassPropertiesListener.findParents(
                     ctx
                 )  # self.findParents(ctx)
                 refent = allrefs[-1]
                 entlongname = ".".join(allrefs)
-                is_here = throws_parent_finder(ProjectModel.select()[0].root, refEntName)
-                if is_here is not None:
-                    refEntName = is_here + '.' + refEntName
-                [line, col] = str(ctx.start).split(",")[3].split(":")
-
-                self.implement.append(
-                    {
-                        "scopename": refent,
-                        "scopelongname": entlongname,
-                        "scopemodifiers": modifiers,
-                        "scopereturntype": mothodedreturn,
-                        "scopecontent": methodcontext,
-                        "line": line,
-                        "col": col[:-1],
-                        "refent": refEntName,
-                        "scope_parent": allrefs[-2] if len(allrefs) > 2 else None,
-                        "potential_refent": ".".join(allrefs[:-1]) + "." + refEntName,
-                    }
+                is_here = throws_parent_finder(
+                    ProjectModel.select()[0].root, refEntName
                 )
-    def enterConstructorDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
-
-        if ctx.THROWS():
-            modifiers = self.findmethodacess(ctx)
-            mothodedreturn, methodcontext = self.findmethodreturntype(ctx)
-            refEntName = ctx.qualifiedNameList().getText().split(',')[-1]
-            if refEntName:
-                allrefs = class_properties.ClassPropertiesListener.findParents(
-                    ctx
-                )  # self.findParents(ctx)
-                refent = allrefs[-1]
-                entlongname = ".".join(allrefs)
-                is_here = throws_parent_finder(ProjectModel.select()[0].root, refEntName)
                 if is_here is not None:
-                    refEntName = is_here + '.' + refEntName
+                    refEntName = is_here + "." + refEntName
                 [line, col] = str(ctx.start).split(",")[3].split(":")
 
                 self.implement.append(
@@ -133,21 +107,61 @@ class Throws_TrowsBy(JavaParserLabeledListener):
                     }
                 )
 
-    def enterInterfaceMethodDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
+    def enterConstructorDeclaration(
+        self, ctx: JavaParserLabeled.EnumDeclarationContext
+    ):
 
         if ctx.THROWS():
             modifiers = self.findmethodacess(ctx)
             mothodedreturn, methodcontext = self.findmethodreturntype(ctx)
-            refEntName = ctx.qualifiedNameList().getText().split(',')[-1]
+            refEntName = ctx.qualifiedNameList().getText().split(",")[-1]
             if refEntName:
                 allrefs = class_properties.ClassPropertiesListener.findParents(
                     ctx
                 )  # self.findParents(ctx)
                 refent = allrefs[-1]
                 entlongname = ".".join(allrefs)
-                is_here = throws_parent_finder(ProjectModel.select()[0].root, refEntName)
+                is_here = throws_parent_finder(
+                    ProjectModel.select()[0].root, refEntName
+                )
                 if is_here is not None:
-                    refEntName = is_here + '.' + refEntName
+                    refEntName = is_here + "." + refEntName
+                [line, col] = str(ctx.start).split(",")[3].split(":")
+
+                self.implement.append(
+                    {
+                        "scopename": refent,
+                        "scopelongname": entlongname,
+                        "scopemodifiers": modifiers,
+                        "scopereturntype": mothodedreturn,
+                        "scopecontent": methodcontext,
+                        "line": line,
+                        "col": col[:-1],
+                        "refent": refEntName,
+                        "scope_parent": allrefs[-2] if len(allrefs) > 2 else None,
+                        "potential_refent": ".".join(allrefs[:-1]) + "." + refEntName,
+                    }
+                )
+
+    def enterInterfaceMethodDeclaration(
+        self, ctx: JavaParserLabeled.EnumDeclarationContext
+    ):
+
+        if ctx.THROWS():
+            modifiers = self.findmethodacess(ctx)
+            mothodedreturn, methodcontext = self.findmethodreturntype(ctx)
+            refEntName = ctx.qualifiedNameList().getText().split(",")[-1]
+            if refEntName:
+                allrefs = class_properties.ClassPropertiesListener.findParents(
+                    ctx
+                )  # self.findParents(ctx)
+                refent = allrefs[-1]
+                entlongname = ".".join(allrefs)
+                is_here = throws_parent_finder(
+                    ProjectModel.select()[0].root, refEntName
+                )
+                if is_here is not None:
+                    refEntName = is_here + "." + refEntName
                 [line, col] = str(ctx.start).split(",")[3].split(":")
 
                 self.implement.append(

@@ -130,9 +130,9 @@ class overridelistener(JavaParserLabeledListener):
                     "scope_kind": "Method",
                     "scope_name": ctx.IDENTIFIER().getText(),
                     "scope_longname": self.packageName + "." + scope_longname,
-                    "scope_parent": scope_parents[-2]
-                    if len(scope_parents) >= 2
-                    else None,
+                    "scope_parent": (
+                        scope_parents[-2] if len(scope_parents) >= 2 else None
+                    ),
                     "scope_contents": self.extract_original_text(ctx),
                     "scope_modifiers": list(reversed(self.modifiers)),
                     "line": line,

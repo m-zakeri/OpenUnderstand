@@ -39,6 +39,6 @@ for j, ent in enumerate(_db.ents()):
         print("ent: ", ref.ent())
         print("kind: ", ref.kind())
         print()
-    b+=c
+    b += c
 
 print(b)

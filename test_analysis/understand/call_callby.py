@@ -5,9 +5,9 @@ sys.path.insert(
     0,
     "/home/y/Downloads/Scientific.Toolworks.Understand.5.1.1023.Linux/Understand-5.1.1023-Linux-64bit/scitools/bin/linux64/Python",
 )
-os.environ[
-    "LD_LIBRARY_PATH"
-] = "/home/y/Downloads/Scientific.Toolworks.Understand.5.1.1023.Linux/Understand-5.1.1023-Linux-64bit/scitools/bin/linux64/Python"
+os.environ["LD_LIBRARY_PATH"] = (
+    "/home/y/Downloads/Scientific.Toolworks.Understand.5.1.1023.Linux/Understand-5.1.1023-Linux-64bit/scitools/bin/linux64/Python"
+)
 
 import understand as und
 
@@ -37,6 +37,6 @@ for j, ent in enumerate(_db.ents()):
         print("ent: ", ref.ent())
         print("kind: ", ref.kind())
         print()
-    b+=c
+    b += c
 
 print(b)

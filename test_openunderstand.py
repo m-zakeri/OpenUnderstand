@@ -9,11 +9,11 @@ from openunderstand.ounderstand.openunderstand import *
 
 # for codart
 start_parsing(
-    repo_address="/home/y/Desktop/CodART/benchmark_projects/JSON20201115",
-    db_address="/home/y/Desktop/CodART/benchmark_projects/JSON20201115",
+    repo_address="/home/y/Desktop/desktop_2./OpenUnderstand/benchmark/JSON",
+    db_address="/home/y/Desktop/desktop_2./OpenUnderstand/benchmark/JSON",
     db_name="mydb.udb",
     engine_core="Python3",
-    log_address="/home/y/Desktop/CodART/benchmark_projects/JSON20201115/a.log",
+    log_address="/home/y/Desktop/desktop_2./OpenUnderstand/benchmark/JSON/a.log",
 )
 # for local
 # start_parsing(

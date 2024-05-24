@@ -11,6 +11,7 @@ sys.path.append(parent_dir_openunderstand)
 
 # Now import the 'openunderstand' module
 import openunderstand.ounderstand as und
+
 db = und.open("/path/to/openunderstand/database.udb")
 dbents = db.ents()
 
@@ -28,7 +29,7 @@ for i in dbents:
 
 print(counter)
 for j, i in enumerate(sorted(refs_dict), 1):
-    print(f'{j:2d})', i, len(refs_file := refs_dict[i]))
+    print(f"{j:2d})", i, len(refs_file := refs_dict[i]))
     for k, v in refs_file.items():
         print(f"\t{k:4d}: {v}")
     print("-------------")
@@ -46,7 +47,7 @@ for i in dbents:
 
 print(counter)
 for j, i in enumerate(sorted(refs_dict), 1):
-    print(f'{j:2d})', i, len(refs_file := refs_dict[i]))
+    print(f"{j:2d})", i, len(refs_file := refs_dict[i]))
     for k, v in refs_file.items():
         print(f"\t{k:4d}: {v}")
     print("-------------")

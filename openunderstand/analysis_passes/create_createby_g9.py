@@ -12,12 +12,13 @@ This module find all OpenUnderstand call and callby references in a Java project
 """
 
 __author__ = "zahra habibolah, G4"
-#__version__ = "0.1.0"
+# __version__ = "0.1.0"
 
 # Omitted imports and other code for brevity
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 import analysis_passes.class_properties as class_properties
+
 
 class CreateAndCreateBy(JavaParserLabeledListener):
     def __init__(self):
@@ -161,15 +162,14 @@ class CreateAndCreateBy(JavaParserLabeledListener):
                 scope_longname = self.package_long_name + "." + ".".join(all_parents)
                 [line, col] = str(ctx.start).split(",")[3].split(":")
 
-            #if creator.arrayCreatorRest() or creator.classCreatorRest():
+                # if creator.arrayCreatorRest() or creator.classCreatorRest():
                 # If we're in the correct context for creator1, then check for createdName0
-                #createdName = creator.createdName()
-                #if isinstance(createdName, JavaParserLabeled.CreatedName0Context):
-                    #all_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-                    #scope_name = all_parents[-1]
-                    #scope_longname = self.package_long_name + "." + ".".join(all_parents)
-                    #[line, col] = str(ctx.start).split(",")[3].split(":")
-
+                # createdName = creator.createdName()
+                # if isinstance(createdName, JavaParserLabeled.CreatedName0Context):
+                # all_parents = class_properties.ClassPropertiesListener.findParents(ctx)
+                # scope_name = all_parents[-1]
+                # scope_longname = self.package_long_name + "." + ".".join(all_parents)
+                # [line, col] = str(ctx.start).split(",")[3].split(":")
 
                 self.create.append(
                     {
@@ -182,8 +182,12 @@ class CreateAndCreateBy(JavaParserLabeledListener):
                         "line": line.strip(),
                         "col": col.strip(),
                         "refent": createdName.getText(),
-                        "scope_parent": all_parents[-2] if len(all_parents) > 1 else None,
-                        "potential_refent": ".".join(all_parents[:-1]) + "." + createdName.getText(),
+                        "scope_parent": (
+                            all_parents[-2] if len(all_parents) > 1 else None
+                        ),
+                        "potential_refent": ".".join(all_parents[:-1])
+                        + "."
+                        + createdName.getText(),
                     }
                 )
 
@@ -195,11 +199,8 @@ class CreateAndCreateBy(JavaParserLabeledListener):
         self.package_long_name = ctx.qualifiedName().getText()
 
 
-
-
-
-#This code does not show the parts related to THROW, i.e. statement11
-#the code below is the version that shows it, but the outputs are more in Linux.
+# This code does not show the parts related to THROW, i.e. statement11
+# the code below is the version that shows it, but the outputs are more in Linux.
 
 # Omitted imports and other code for brevity
 # from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener

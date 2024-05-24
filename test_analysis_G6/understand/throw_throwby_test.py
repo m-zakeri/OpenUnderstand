@@ -5,9 +5,9 @@ sys.path.insert(
     0,
     "/home/y/Downloads/Scientific.Toolworks.Understand.5.1.1023.Linux/Understand-5.1.1023-Linux-64bit/scitools/bin/linux64/Python",
 )
-os.environ[
-    "LD_LIBRARY_PATH"
-] = "/home/y/Downloads/Scientific.Toolworks.Understand.5.1.1023.Linux/Understand-5.1.1023-Linux-64bit/scitools/bin/linux64/Python"
+os.environ["LD_LIBRARY_PATH"] = (
+    "/home/y/Downloads/Scientific.Toolworks.Understand.5.1.1023.Linux/Understand-5.1.1023-Linux-64bit/scitools/bin/linux64/Python"
+)
 import understand as und
 
 db = und.open("/path/to/understand/database.udb")
@@ -27,7 +27,7 @@ for i in dbents:
 
 print(counter)
 for j, i in enumerate(sorted(refs_dict), 1):
-    print(f'{j:2d})', i, len(refs_file := refs_dict[i]))
+    print(f"{j:2d})", i, len(refs_file := refs_dict[i]))
     for k, v in refs_file.items():
         print(f"\t{k:4d}: {v}")
     print("-------------")
@@ -45,8 +45,7 @@ for i in dbents:
 
 print(counter)
 for j, i in enumerate(sorted(refs_dict), 1):
-    print(f'{j:2d})', i, len(refs_file := refs_dict[i]))
+    print(f"{j:2d})", i, len(refs_file := refs_dict[i]))
     for k, v in refs_file.items():
         print(f"\t{k:4d}: {v}")
     print("-------------")
-
