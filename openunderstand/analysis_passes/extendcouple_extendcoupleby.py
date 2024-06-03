@@ -13,7 +13,7 @@ __version__ = "0.1.0"
 
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-import analysis_passes.class_properties as class_properties
+import openunderstand.analysis_passes.class_properties as class_properties
 
 
 class ExtendCoupleAndExtendCoupleBy(JavaParserLabeledListener):
@@ -45,9 +45,9 @@ class ExtendCoupleAndExtendCoupleBy(JavaParserLabeledListener):
                     "scope_kind": "Class",
                     "scope_name": ctx.IDENTIFIER().__str__(),
                     "scope_longname": str(scope_longname),
-                    "scope_parent": scope_parents[-2]
-                    if len(scope_parents) > 2
-                    else None,
+                    "scope_parent": (
+                        scope_parents[-2] if len(scope_parents) > 2 else None
+                    ),
                     "scope_contents": ctx.getText(),
                     "scope_modifiers": class_properties.ClassPropertiesListener.findClassOrInterfaceModifiers(
                         ctx

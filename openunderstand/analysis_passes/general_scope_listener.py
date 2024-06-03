@@ -3,7 +3,7 @@ from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from antlr4 import *
-from analysis_passes.call_callby import *
+from openunderstand.analysis_passes.call_callby import *
 
 
 class GeneralScopeListener(JavaParserLabeledListener):

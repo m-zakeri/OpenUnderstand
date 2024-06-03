@@ -5,9 +5,9 @@ sys.path.insert(
     0,
     "/home/y/Downloads/Scientific.Toolworks.Understand.5.1.1023.Linux/Understand-5.1.1023-Linux-64bit/scitools/bin/linux64/Python",
 )
-os.environ[
-    "LD_LIBRARY_PATH"
-] = "/home/y/Downloads/Scientific.Toolworks.Understand.5.1.1023.Linux/Understand-5.1.1023-Linux-64bit/scitools/bin/linux64/Python"
+os.environ["LD_LIBRARY_PATH"] = (
+    "/home/y/Downloads/Scientific.Toolworks.Understand.5.1.1023.Linux/Understand-5.1.1023-Linux-64bit/scitools/bin/linux64/Python"
+)
 import understand as und
 
 my_path = "/home/y/Desktop/iust/OpenUnderstand/benchmark/JSON/JSON.udb"

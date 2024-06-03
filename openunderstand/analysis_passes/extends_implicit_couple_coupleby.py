@@ -5,7 +5,7 @@ from antlr4 import *
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from oudb.models import KindModel, EntityModel, ReferenceModel
+from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel
 
 PRJ_INDEX = 4
 

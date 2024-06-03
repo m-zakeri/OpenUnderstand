@@ -1,5 +1,5 @@
 from multiprocessing import cpu_count, Pool
-from ounderstand.parsing_process import process_file, get_files
+from openunderstand.ounderstand.parsing_process import process_file, get_files
 
 
 def runner(path_project: str = ""):

@@ -1,6 +1,6 @@
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from analysis_passes.entity_manager_g11 import get_created_entity_longname
+from openunderstand.analysis_passes.entity_manager_g11 import get_created_entity_longname
 
 
 class ModifyListener(JavaParserLabeledListener):

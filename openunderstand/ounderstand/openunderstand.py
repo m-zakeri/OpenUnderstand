@@ -32,6 +32,7 @@ def save_config(
 
     with open("config.ini", "w") as configfile:
         config.write(configfile)
+        configfile.close()
 
 
 def parse_arguments() -> None:
@@ -81,9 +82,9 @@ def start_parsing(
     engine_core: str = None,
     log_address: str = None,
 ):
-    from oudb.api import create_db
-    from oudb.fill import fill
-    from ounderstand.runner import runner
+    from openunderstand.oudb.api import create_db
+    from openunderstand.oudb.fill import fill
+    from openunderstand.ounderstand.runner import runner
 
     if (
         repo_address is not None
@@ -102,7 +103,7 @@ def start_parsing(
     try:
         config = configparser.ConfigParser()
         config.read("config.ini")
-    except:
+    except Exception as e:
         raise Exception(
             "please init all input values of start_parsing() function or run command line cli openunderstand \n - >> this error occur because of config.ini not exist"
         )

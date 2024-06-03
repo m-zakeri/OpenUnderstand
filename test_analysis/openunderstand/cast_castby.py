@@ -31,6 +31,6 @@ for j, ent in enumerate(_db.ents()):
         print("file: ", ref.file())
         print("scope: ", ref.scope())
         print()
-    b+=c
+    b += c
 
 print(b)

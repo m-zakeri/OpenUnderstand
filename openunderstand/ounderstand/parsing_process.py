@@ -1,7 +1,7 @@
-from ounderstand.project import Project
-from ounderstand.listeners_and_parsers import ListenersAndParsers
+from openunderstand.ounderstand.project import Project
+from openunderstand.ounderstand.listeners_and_parsers import ListenersAndParsers
 import os
-from utils.utilities import setup_config
+from openunderstand.utils.utilities import setup_config
 from fnmatch import fnmatch
 
 

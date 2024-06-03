@@ -1,7 +1,7 @@
 from antlr4 import *
 
 from gen.javaLabeled.JavaLexer import JavaLexer
-from oudb.models import EntityModel
+from openunderstand.oudb.models import EntityModel
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 

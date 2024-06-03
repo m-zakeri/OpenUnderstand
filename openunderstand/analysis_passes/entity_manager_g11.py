@@ -24,16 +24,16 @@ __version__ = "1.0.0"
 
 import os.path
 
-from oudb.models import EntityModel, KindModel
+from openunderstand.oudb.models import EntityModel, KindModel
 from antlr4 import *
 
 # Listeners
-from analysis_passes.package_entity_listener_g11 import PackageListener
-from analysis_passes.class_properties import (
+from openunderstand.analysis_passes.package_entity_listener_g11 import PackageListener
+from openunderstand.analysis_passes.class_properties import (
     ClassPropertiesListener,
     InterfacePropertiesListener,
 )
-from oudb.models import KindModel
+from openunderstand.oudb.models import KindModel
 
 # Constants
 FILE_KIND_ID = 1
@@ -304,9 +304,9 @@ class EntityGenerator:
                 _kind=kind,
                 _name=props["name"],
                 _longname=props["longname"],
-                _parent=props["parent"]
-                if props["parent"] is not None
-                else file_address,
+                _parent=(
+                    props["parent"] if props["parent"] is not None else file_address
+                ),
                 _contents=props["contents"],
             )
         return ent[0]
@@ -323,9 +323,9 @@ class EntityGenerator:
                 _kind=kind,
                 _name=props["name"],
                 _longname=props["longname"],
-                _parent=props["parent"]
-                if props["parent"] is not None
-                else file_address,
+                _parent=(
+                    props["parent"] if props["parent"] is not None else file_address
+                ),
                 _contents=props["contents"],
             )
         return ent[0]

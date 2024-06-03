@@ -2,6 +2,7 @@ from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from os.path import basename
 
+
 class SetPartialAndSetByPartialListener(JavaParserLabeledListener):
     def __init__(self, file_name):
         self.ex_name = ""
@@ -22,8 +23,9 @@ class SetPartialAndSetByPartialListener(JavaParserLabeledListener):
         self.ss = ""
         self.set_value = ""
 
-
-    def add_set_by_entry(self, set_short_name, set_long_name, name_of_file, line, column, ctx):
+    def add_set_by_entry(
+        self, set_short_name, set_long_name, name_of_file, line, column, ctx
+    ):
         # print("nnnmmm", self.ss)
         sss = self.ss + "." + self.ex_name
         self.set_by_partial.append(
@@ -65,16 +67,23 @@ class SetPartialAndSetByPartialListener(JavaParserLabeledListener):
             set_short_name = ctx.children[0].getText()
             if int(ctx.children[0].getChildCount()) > 1:
                 node = ctx
-                if ctx.children[1].getText() and ctx.children[0].children[1].getText() == "=":
+                if (
+                    ctx.children[1].getText()
+                    and ctx.children[0].children[1].getText() == "="
+                ):
                     line = ctx.children[0].children[2].symbol.line
                     column = ctx.children[0].children[2].symbol.column
                     # print(self.file_name)
 
                 else:
                     if ctx.children[1].getText() == "=":
-                        if ctx.children[0].children[1].getText() == "." and \
-                                ctx.children[0].children[0].getText() != "this":
-                            self.ex_name = ctx.parentCtx.parentCtx.parentCtx.parentCtx.parentCtx.children[0].getText()
+                        if (
+                            ctx.children[0].children[1].getText() == "."
+                            and ctx.children[0].children[0].getText() != "this"
+                        ):
+                            self.ex_name = ctx.parentCtx.parentCtx.parentCtx.parentCtx.parentCtx.children[
+                                0
+                            ].getText()
                             while node.getChildCount() != 0:
                                 node = node.children[0]
                             node1 = ctx
@@ -85,24 +94,34 @@ class SetPartialAndSetByPartialListener(JavaParserLabeledListener):
                             self.stream = node1.parentCtx.parentCtx.getText()
                             self.ss = node1.children[0].getText()
                             set_long_name = (
-                                    self.package_name
-                                    + "."
-                                    + self.ex_name
-                                    + "."
-                                    + ctx.parentCtx.parentCtx.parentCtx.parentCtx.parentCtx.children[1].getText()
-                                    + "."
-                                    + node.getText()
+                                self.package_name
+                                + "."
+                                + self.ex_name
+                                + "."
+                                + ctx.parentCtx.parentCtx.parentCtx.parentCtx.parentCtx.children[
+                                    1
+                                ].getText()
+                                + "."
+                                + node.getText()
                             )
                             set_short_name = ctx.children[0].children[0].getText()
                             line = node.symbol.line
                             column = node.symbol.column
-                            self.add_set_by_entry(set_short_name, set_long_name, name_of_file, line, column, ctx)
-
+                            self.add_set_by_entry(
+                                set_short_name,
+                                set_long_name,
+                                name_of_file,
+                                line,
+                                column,
+                                ctx,
+                            )
 
             else:
                 pass
 
-            self.add_set_by_entry(set_short_name, set_long_name, name_of_file, line, column, ctx)
+            self.add_set_by_entry(
+                set_short_name, set_long_name, name_of_file, line, column, ctx
+            )
 
         except:
             x = 0

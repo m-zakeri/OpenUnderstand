@@ -1,43 +1,44 @@
-from analysis_passes.Throws_ThrowsBy import Throws_TrowsBy
-from analysis_passes.DotRef_DorRefBy import DotRef_DotRefBy
-from analysis_passes.callNonDynamic_callNonDynamicby import (
+from openunderstand.analysis_passes.Throws_ThrowsBy import Throws_TrowsBy
+from openunderstand.analysis_passes.DotRef_DorRefBy import DotRef_DotRefBy
+from openunderstand.analysis_passes.callNonDynamic_callNonDynamicby import (
     CallNonDynamicAndCallNonDynamicBy,
 )
 
-from analysis_passes.call_callby import CallAndCallBy
-from analysis_passes.cast_cast_by import CastAndCastBy, implementListener
-from analysis_passes.contain_contain_by import ContainAndContainBy
-from analysis_passes.extends_implicit_couple_coupleby import (
+from openunderstand.analysis_passes.call_callby import CallAndCallBy
+from openunderstand.analysis_passes.cast_cast_by import CastAndCastBy, implementListener
+from openunderstand.analysis_passes.contain_contain_by import ContainAndContainBy
+from openunderstand.analysis_passes.extends_implicit_couple_coupleby import (
     PackageImportListener,
     DSCmetric,
 )
-from analysis_passes.import_importby_g10_2 import ImportListener, ImportedEntityListener
-from analysis_passes.import_demand_g9 import ImportListenerDemand
+from openunderstand.analysis_passes.import_importby_g10_2 import ImportListener, ImportedEntityListener
+from openunderstand.analysis_passes.import_demand_g9 import ImportListenerDemand
 
-# from analysis_passes.define_definein import DefineListener
-from analysis_passes.define_and_definin_g6 import DefineListener
-from analysis_passes.modify_modifyby import ModifyListener
-from analysis_passes.entity_manager_g11 import (
+from openunderstand.analysis_passes.define_definein import DefineListener
+
+# from analysis_passes.define_and_definin_g6 import DefineListener
+from openunderstand.analysis_passes.modify_modifyby import ModifyListener
+from openunderstand.analysis_passes.entity_manager_g11 import (
     EntityGenerator,
     FileEntityManager,
     get_created_entity,
 )
 
-from analysis_passes.use_useby import UseAndUseByListener
-from analysis_passes.type_typedby import TypedAndTypedByListener
-from analysis_passes.set_setby import SetAndSetByListener
-from analysis_passes.setinit_setinitby import SetInitAndSetByInitListener
-from analysis_passes.setpartial_setpartialby import SetPartialAndSetByPartialListener
-from ounderstand.override_overrideby__G12 import overridelistener
-from ounderstand.couple_coupleby__G12 import CoupleAndCoupleBy
-from analysis_passes.create_createby_g9 import CreateAndCreateBy
-from analysis_passes.declare_declarein import DeclareAndDeclareinListener
-from analysis_passes.extend_listener_g6 import ExtendListener
-from analysis_passes.extendcouple_extendcoupleby import ExtendCoupleAndExtendCoupleBy
-from analysis_passes.variable_listener_g11 import VariableListener
-from analysis_passes.open_openby import OpenListener
-from analysis_passes.usemodule_usemoduleby_g11 import UseModuleUseModuleByListener
-from utils.utilities import setup_logger, timer_decorator
+from openunderstand.analysis_passes.use_useby import UseAndUseByListener
+from openunderstand.analysis_passes.type_typedby import TypedAndTypedByListener
+from openunderstand.analysis_passes.set_setby import SetAndSetByListener
+from openunderstand.analysis_passes.setinit_setinitby import SetInitAndSetByInitListener
+from openunderstand.analysis_passes.setpartial_setpartialby import SetPartialAndSetByPartialListener
+from openunderstand.ounderstand.override_overrideby__G12 import overridelistener
+from openunderstand.analysis_passes.couple_coupleby__G12 import CoupleAndCoupleBy
+from openunderstand.analysis_passes.create_createby_g9 import CreateAndCreateBy
+from openunderstand.analysis_passes.declare_declarein import DeclareAndDeclareinListener
+from openunderstand.analysis_passes.extend_listener_g6 import ExtendListener
+from openunderstand.analysis_passes.extendcouple_extendcoupleby import ExtendCoupleAndExtendCoupleBy
+from openunderstand.analysis_passes.variable_listener_g11 import VariableListener
+from openunderstand.analysis_passes.open_openby import OpenListener
+from openunderstand.analysis_passes.usemodule_usemoduleby_g11 import UseModuleUseModuleByListener
+from openunderstand.utils.utilities import setup_logger, timer_decorator
 import os
 from pathlib import Path
 import traceback
@@ -150,31 +151,9 @@ class ListenersAndParsers:
     @timer_decorator()
     def define_listener(self, tree, file_ent, file_address, p):
         try:
-            listener = DefineListener()
+            listener = DefineListener(file_address)
             p.Walk(listener, tree)
-            package_name = listener.package["package_name"]
-            p.add_entity_package(listener.package, file_address)
-            p.add_defined_entities(
-                listener.classes, "class", package_name, file_address
-            )
-            p.add_defined_entities(
-                listener.interfaces, "interface", package_name, file_address
-            )
-            p.add_defined_entities(
-                listener.fields, "variable", package_name, file_address
-            )
-            p.add_defined_entities(
-                listener.methods, "method", package_name, file_address
-            )
-            p.add_defined_entities(
-                listener.local_variables,
-                "local variable",
-                package_name,
-                file_address,
-            )
-            p.add_defined_entities(
-                listener.formal_parameters, "parameter", package_name, file_address
-            )
+            p.addDefineRefs(listener.defines, file_ent)
             self.logger.info("define success ")
         except Exception as e:
             self.logger.error(
@@ -182,7 +161,46 @@ class ListenersAndParsers:
                 + file_address
                 + "\n"
                 + str(e)
+                + "\n"
+                + traceback.format_exc()
             )
+
+    # @timer_decorator()
+    # def define_listener(self, tree, file_ent, file_address, p):
+    #     try:
+    #         listener = DefineListener()
+    #         p.Walk(listener, tree)
+    #         package_name = listener.package["package_name"]
+    #         p.add_entity_package(listener.package, file_address)
+    #         p.add_defined_entities(
+    #             listener.classes, "class", package_name, file_address
+    #         )
+    #         p.add_defined_entities(
+    #             listener.interfaces, "interface", package_name, file_address
+    #         )
+    #         p.add_defined_entities(
+    #             listener.fields, "variable", package_name, file_address
+    #         )
+    #         p.add_defined_entities(
+    #             listener.methods, "method", package_name, file_address
+    #         )
+    #         p.add_defined_entities(
+    #             listener.local_variables,
+    #             "local variable",
+    #             package_name,
+    #             file_address,
+    #         )
+    #         p.add_defined_entities(
+    #             listener.formal_parameters, "parameter", package_name, file_address
+    #         )
+    #         self.logger.info("define success ")
+    #     except Exception as e:
+    #         self.logger.error(
+    #             "An Error occurred for reference implement in file define:"
+    #             + file_address
+    #             + "\n"
+    #             + str(e)
+    #         )
 
     @timer_decorator()
     def declare_listener(self, tree, file_ent, file_address, p):
@@ -236,9 +254,9 @@ class ListenersAndParsers:
 
     @timer_decorator()
     def couple_listener(self, tree, file_ent, file_address, p):
-        classescoupleby = {}
-        couple = []
         try:
+            couple = []
+            classescoupleby = {}
             listener = CoupleAndCoupleBy()
             listener.set_file(filex=file_address)
             listener.set_classesx(classesx=classescoupleby)
@@ -246,7 +264,9 @@ class ListenersAndParsers:
             p.Walk(listener, tree)
             classescoupleby = listener.get_classes
             couple = listener.get_couples
-            p.addcouplereference(classescoupleby, couple, file_ent)
+            p.addcouplereference(
+                classescoupleby , couple, file_ent
+            )
             self.logger.info("couple success ")
         except Exception as e:
             self.logger.error(
@@ -314,10 +334,15 @@ class ListenersAndParsers:
             self.logger.info("setInit Ref success ")
         except Exception as e:
             self.logger.error(
-                "An Error occurred in setInit ref in file :" + file_address + "\n" + str(e)
+                "An Error occurred in setInit ref in file :"
+                + file_address
+                + "\n"
+                + str(e)
             )
 
-    def setbypartialby_listener(self, tree, file_ent, file_address, p, stream: str = ""):
+    def setbypartialby_listener(
+        self, tree, file_ent, file_address, p, stream: str = ""
+    ):
         try:
             # setinit ref
             listener = SetPartialAndSetByPartialListener(file_address)
@@ -326,7 +351,10 @@ class ListenersAndParsers:
             self.logger.info("set Partial Ref success ")
         except Exception as e:
             self.logger.error(
-                "An Error occurred in setInit ref in file :" + file_address + "\n" + str(e)
+                "An Error occurred in setInit ref in file :"
+                + file_address
+                + "\n"
+                + str(e)
             )
 
     @timer_decorator()
@@ -390,7 +418,11 @@ class ListenersAndParsers:
             self.logger.info("cast success ")
         except Exception as e:
             self.logger.error(
-                "An Error occurred in cast in file :" + file_address + "\n" + str(e) + traceback.format_exc()
+                "An Error occurred in cast in file :"
+                + file_address
+                + "\n"
+                + str(e)
+                + traceback.format_exc()
             )
 
     @timer_decorator()

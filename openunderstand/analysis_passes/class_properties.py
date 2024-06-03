@@ -4,7 +4,6 @@ The helper module for couple_coupleby.py, create_createby_g11.py, declare_declar
 Todo: Must be document well
 """
 
-
 __author__ = "Shaghayegh Mobasher , Setayesh kouloubandi ,Parisa Alaie, Zakeri"
 __version__ = "0.1.1"
 
@@ -20,6 +19,9 @@ class ClassPropertiesListener(JavaParserLabeledListener):
         self.class_properties = None
 
     def checkParents(self, c):
+        # reversed(self.class_longname)
+        # myList = []
+        # myList.append(".".join(self.class_longname))
         return set(ClassPropertiesListener.findParents(c)) & set(
             list(reversed(self.class_longname))
         )
@@ -36,8 +38,18 @@ class ClassPropertiesListener(JavaParserLabeledListener):
                 JavaParserLabeled.RULE_interfaceDeclaration,
                 JavaParserLabeled.RULE_constructorDeclaration,
                 JavaParserLabeled.RULE_annotationTypeDeclaration,
+                JavaParserLabeled.RULE_annotationTypeDeclaration,
+                JavaParserLabeled.RULE_genericInterfaceMethodDeclaration,
+                JavaParserLabeled.RULE_packageDeclaration,
+                JavaParserLabeled.RULE_typeDeclaration
             ]:
-                parents.append(current.IDENTIFIER().getText())
+                try:
+                    parents.append(current.IDENTIFIER().getText())
+                except Exception as e:
+                    txt = current.parentCtx.getChild(0).getText()
+                    txt = txt.replace("package", "").replace(";", "").split(".")
+                    for item in txt:
+                        parents.append(item)
             current = current.parentCtx
         return list(reversed(parents))
 
@@ -69,9 +81,9 @@ class ClassPropertiesListener(JavaParserLabeledListener):
                     self.class_properties["parent"] = None
                 else:
                     self.class_properties["parent"] = self.class_longname[-2]
-                self.class_properties[
-                    "modifiers"
-                ] = ClassPropertiesListener.findClassOrInterfaceModifiers(ctx)
+                self.class_properties["modifiers"] = (
+                    ClassPropertiesListener.findClassOrInterfaceModifiers(ctx)
+                )
                 self.class_properties["contents"] = ctx.getText()
 
 
@@ -102,7 +114,7 @@ class InterfacePropertiesListener(JavaParserLabeledListener):
                     self.interface_properties["parent"] = None
                 else:
                     self.interface_properties["parent"] = self.interface_longname[-2]
-                self.interface_properties[
-                    "modifiers"
-                ] = ClassPropertiesListener.findClassOrInterfaceModifiers(ctx)
+                self.interface_properties["modifiers"] = (
+                    ClassPropertiesListener.findClassOrInterfaceModifiers(ctx)
+                )
                 self.interface_properties["contents"] = ctx.getText()

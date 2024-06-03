@@ -14,12 +14,12 @@ __credits__ = [
 __license__ = "GPL"
 __version__ = "1.0.0"
 
-from ounderstand.project import Project
+from openunderstand.ounderstand.project import Project
 from antlr4 import *
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from analysis_passes.entity_manager_g11 import (
+from openunderstand.analysis_passes.entity_manager_g11 import (
     get_created_entity_longname,
     get_all_files,
     get_created_entity_id,

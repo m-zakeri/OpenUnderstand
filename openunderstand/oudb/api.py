@@ -1,50 +1,51 @@
+import re
 from peewee import fn
-from oudb.models import *
+from openunderstand.oudb.models import *
 from dataclasses import dataclass
 from functools import reduce
-from ounderstand.parsing_process import process_file
-from metrics.count_decl_method_all import count_decl_method_all
-from metrics.count_decl_class_variable import declare_class_variables
-from metrics.AvgCyclomatic import avg_cyclomatic
-from metrics.AvgCyclomaticModified import avg_cyclomatic_modified
-from metrics.AvgCyclomaticStrict import avg_cyclomatic_strict
-from metrics.AvgEssential import avg_essential
-from metrics.count_decl_class_method import declare_method_count
-from metrics.RatioCommentToCode import get_ratio_comment_to_code
-from metrics.PercentLackOfCohesionModified import (
+from openunderstand.ounderstand.parsing_process import process_file
+from openunderstand.metrics.count_decl_method_all import count_decl_method_all
+from openunderstand.metrics.count_decl_class_variable import declare_class_variables
+from openunderstand.metrics.AvgCyclomatic import avg_cyclomatic
+from openunderstand.metrics.AvgCyclomaticModified import avg_cyclomatic_modified
+from openunderstand.metrics.AvgCyclomaticStrict import avg_cyclomatic_strict
+from openunderstand.metrics.AvgEssential import avg_essential
+from openunderstand.metrics.count_decl_class_method import declare_method_count
+from openunderstand.metrics.RatioCommentToCode import get_ratio_comment_to_code
+from openunderstand.metrics.PercentLackOfCohesionModified import (
     get_percent_lack_of_cohesion_modified,
 )
-from metrics.count_stmt import statement_counter
-from metrics.count_stmt_decl import statement_counter_delc
-from metrics.PercentLackOfCohesion import get_percent_lack_of_cohesion
-from metrics.sum_cyclomatic_modified import get_sum_cyclomatic_modified
-from metrics.sum_cyclomatic_strict import get_sum_cyclomatic_strict
-from metrics.sumOfCyclomatics import get_sum_of_cyclomatics
-from metrics.count_decl_method_private import count_decl_method_private
-from metrics.count_decl_method_protected import (
+from openunderstand.metrics.count_stmt import statement_counter
+from openunderstand.metrics.count_stmt_decl import statement_counter_delc
+from openunderstand.metrics.PercentLackOfCohesion import get_percent_lack_of_cohesion
+from openunderstand.metrics.sum_cyclomatic_modified import get_sum_cyclomatic_modified
+from openunderstand.metrics.sum_cyclomatic_strict import get_sum_cyclomatic_strict
+from openunderstand.metrics.sumOfCyclomatics import get_sum_of_cyclomatics
+from openunderstand.metrics.count_decl_method_private import count_decl_method_private
+from openunderstand.metrics.count_decl_method_protected import (
     count_decl_method_protected,
 )
-from metrics.count_decl_method_default import count_decl_method_default
-from metrics.count_decl_file import declare_file
-from metrics.sum_essentials import get_sum_essentials
-from metrics.count_decl_executable_unit import declare_executable_unit
-from metrics.min_max_essential_knots import min_max_essential_knots
-from metrics.namm import get_namm
-from metrics.MaxCalculator_G12 import max_cyclomatic
-from metrics.MaxCalculator_G12 import max_essential
-from metrics.MaxCalculator_G12 import max_cyclomatic_modified
-from metrics.MaxCalculator_G12 import max_cyclomatic_stricts
-from metrics.max_nesting import MaxNesting
-from metrics.max_inheritance import FindAllInheritances
-from metrics.knots_inheritance_nesting import get_knot_inheritance_nested
-from metrics.knots_inheritance_nesting import get_max_inheritance
+from openunderstand.metrics.count_decl_method_default import count_decl_method_default
+from openunderstand.metrics.count_decl_file import declare_file
+from openunderstand.metrics.sum_essentials import get_sum_essentials
+from openunderstand.metrics.count_decl_executable_unit import declare_executable_unit
+from openunderstand.metrics.min_max_essential_knots import min_max_essential_knots
+from openunderstand.metrics.namm import get_namm
+from openunderstand.metrics.MaxCalculator_G12 import max_cyclomatic
+from openunderstand.metrics.MaxCalculator_G12 import max_essential
+from openunderstand.metrics.MaxCalculator_G12 import max_cyclomatic_modified
+from openunderstand.metrics.MaxCalculator_G12 import max_cyclomatic_stricts
+from openunderstand.metrics.max_nesting import MaxNesting
+from openunderstand.metrics.max_inheritance import FindAllInheritances
+from openunderstand.metrics.knots_inheritance_nesting import get_knot_inheritance_nested
+from openunderstand.metrics.knots_inheritance_nesting import get_max_inheritance
 from openunderstand.metrics.Lineofcode import get_line_of_codes
-from metrics.count_stmt_exe import statement_counter_exe
-from metrics.cyclomatic import cyclomatic
-from metrics.CyclomaticStrict_G12 import cyclomatic_strict
-from metrics.Essential_G12 import essential
-from metrics.CyclomaticModified_G12 import cyclomatic_modified
-from metrics.G11_knots import knot
+from openunderstand.metrics.count_stmt_exe import statement_counter_exe
+from openunderstand.metrics.cyclomatic import cyclomatic
+from openunderstand.metrics.CyclomaticStrict_G12 import cyclomatic_strict
+from openunderstand.metrics.Essential_G12 import essential
+from openunderstand.metrics.CyclomaticModified_G12 import cyclomatic_modified
+from openunderstand.metrics.G11_knots import knot
 
 """
 This is the python interface to Understand databases.
@@ -268,7 +269,7 @@ WHITESPACE = "Whitespace"
 
 import os
 import git
-from oudb.models import EntityModel, ReferenceModel
+from openunderstand.oudb.models import EntityModel, ReferenceModel
 
 
 def update_db(repo_path: str = "", branch: str = "origin/master"):
@@ -484,14 +485,18 @@ class Db:
         ents = []
         query = EntityModel.select()
         if kindstring:
-            kinds = KindModel.select().where(KindModel._name.contains(kindstring))
-            query = query.where(EntityModel._kind(kinds))
+            kinds = KindModel.select().where(
+                fn.Lower(KindModel._name).contains(kindstring.lower())
+            )
+            query = query.where(EntityModel._kind.in_(kinds))
+
         query = query.where(
             (EntityModel._name.contains(name)) | (EntityModel._longname.contains(name))
         )
 
         for ent in query:
-            ents.append(Ent(**ent.__dict__.get("__data__")))
+            if re.search(f'Java\\s+{kindstring}'.lower(), str(ent._kind._name).lower()):
+                ents.append(Ent(**ent.__dict__.get("__data__")))
         return ents
 
     def lookup_uniquename(
@@ -1119,6 +1124,8 @@ class Ent:
 
         Return the parent of the entity or None if none
         """
+        if self._parent is None:
+            return None
         entity = EntityModel.get_by_id(pk=self._parent)
         return Ent(**entity.__dict__.get("__data__"))
 
@@ -1167,24 +1174,25 @@ class Ent:
             query = ReferenceModel.select().where(ReferenceModel._scope == self._id)
             if item:
                 kinds = KindModel.select().where(
-                    (KindModel.is_ent_kind == False) & (KindModel._name.contains(item))
-                    # & (fn.Lower(KindModel._name) == (f"Java {item}").lower())
+                    (KindModel.is_ent_kind == False)
+                    & (KindModel._name.contains(item))
+                    & (fn.Lower(KindModel._name) == (f"Java {item}").lower())
                 )
-                # if len(mlist) > 1:
-                #     print(kinds.count())
-                #     for k in kinds:
-                #         print("kin : ", k._name)
-                #         print(k._id)
-                #     q = ReferenceModel.select().where(ReferenceModel._kind.in_(kinds))
-                #     for it in query:
-                #         # print("it : ", it._kind)
-                #         if str(it._kind) != "Java Define":
-                #             print("X :", it._kind)
-                #             print("X :", "Java Define")
+                if len(mlist) > 0:
+                    print(kinds.count())
+                    for k in kinds:
+                        print("kin : ", k._name)
+                        print(k._id)
+                    q = ReferenceModel.select().where(ReferenceModel._kind.in_(kinds))
+                    for it in query:
+                        print("it : ", it._kind)
+                        if str(it._kind) != "Java Define":
+                            print("X :", it._kind)
+                            print("X :", "Java Define")
 
                 query = query.where(ReferenceModel._kind.in_(kinds))
-                # if len(mlist) > 1:
-                # print(query.count())
+                if len(mlist) > 0:
+                    print(query.count())
 
             if entkindstring:
                 kinds = KindModel.select().where(

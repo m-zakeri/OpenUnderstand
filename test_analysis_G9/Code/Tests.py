@@ -17,10 +17,12 @@ dbents = _db.ents()
 def understandout(ou, ouanswer):
     import os
     import sys
+
     sys.path.append(
         "/home/mehran/Downloads/Scientific.Toolworks.Understand.5.1.1023.Linux/Understand-5.1.1023-Linux-64bit/scitools/bin/linux64/Python"
     )
     import understand
+
     db = understand.open(
         "/home/mehran/Downloads/OpenUnderstand/benchmark/hw6test/hw6test.udb"
     )
@@ -28,7 +30,9 @@ def understandout(ou, ouanswer):
     unders = []
     counter = 0
     for i in dbents:
-        for ref in sorted(i.refs("Set Partial"), key=lambda x: x.line()):  # Sort by line numbers
+        for ref in sorted(
+            i.refs("Set Partial"), key=lambda x: x.line()
+        ):  # Sort by line numbers
             print("Under =====> ", ref.ent().name(), ref.line())
             unders.append(ref.line())
             counter += 1
@@ -38,11 +42,21 @@ def understandout(ou, ouanswer):
     count2 = Counter(unders)
 
     # Find elements that are in one Counter but not in the other, considering counts
-    unique_to_openunderstand = {key: count1[key] for key in count1 if key not in count2 or count1[key] > count2[key]}
-    unique_to_understand = {key: count2[key] for key in count2 if key not in count1 or count2[key] > count1[key]}
+    unique_to_openunderstand = {
+        key: count1[key]
+        for key in count1
+        if key not in count2 or count1[key] > count2[key]
+    }
+    unique_to_understand = {
+        key: count2[key]
+        for key in count2
+        if key not in count1 or count2[key] > count1[key]
+    }
 
     # Create and print a table
-    table = Table(title="Number of Set Partials", show_header=True, header_style="bold magenta")
+    table = Table(
+        title="Number of Set Partials", show_header=True, header_style="bold magenta"
+    )
     table.add_column("OpenUnderstand", style="dim", justify="center")
     table.add_column("Understand", style="dim", justify="center")
     for key, count in unique_to_openunderstand.items():
@@ -57,8 +71,14 @@ def understandout(ou, ouanswer):
     console.print(table)
 
     # Print the unique elements
-    print("Elements unique to OpenUnderstand:", [key for key, count in unique_to_openunderstand.items()])
-    print("Elements unique to Understand:", [key for key, count in unique_to_understand.items()])
+    print(
+        "Elements unique to OpenUnderstand:",
+        [key for key, count in unique_to_openunderstand.items()],
+    )
+    print(
+        "Elements unique to Understand:",
+        [key for key, count in unique_to_understand.items()],
+    )
 
 
 print("\n--------------Set--------------")
@@ -66,7 +86,9 @@ print("\n--------------Set--------------")
 counter = 0
 openunderstandOutput = []
 for i in dbents:
-    for ref in sorted(i.refs("Set Partial"), key=lambda y: y.line()):  # Sort by line numbers
+    for ref in sorted(
+        i.refs("Set Partial"), key=lambda y: y.line()
+    ):  # Sort by line numbers
         print("OpenUnder =====> ", ref.ent().name(), ref.line())
         openunderstandOutput.append(ref.line())
         counter += 1
@@ -103,8 +125,3 @@ understandout(openunderstandOutput, ouanswer)
 # ref.scope().name [Not OK]
 # ref.scope().kindname [just like kind]
 # ref.scope().parent [Error]
-
-
-
-
-

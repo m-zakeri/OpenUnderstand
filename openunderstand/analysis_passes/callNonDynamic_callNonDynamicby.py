@@ -8,13 +8,12 @@ This module find all OpenUnderstand call and callby references in a Java project
 
 """
 
-
 # from OpenUnderstand.openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 # from OpenUnderstand.openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 # import OpenUnderstand.openunderstand.analysis_passes.class_properties as class_properties
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-import analysis_passes.class_properties as class_properties
+import openunderstand.analysis_passes.class_properties as class_properties
 
 
 class CallNonDynamicAndCallNonDynamicBy(JavaParserLabeledListener):
@@ -99,11 +98,11 @@ class CallNonDynamicAndCallNonDynamicBy(JavaParserLabeledListener):
                                                         "scope_longname": str(
                                                             scope_longname
                                                         ),
-                                                        "scope_parent": scope_parents[
-                                                            -2
-                                                        ]
-                                                        if len(scope_parents) > 2
-                                                        else None,
+                                                        "scope_parent": (
+                                                            scope_parents[-2]
+                                                            if len(scope_parents) > 2
+                                                            else None
+                                                        ),
                                                         "scope_contents": cls.getText(),
                                                         "scope_modifiers": class_properties.ClassPropertiesListener.findClassOrInterfaceModifiers(
                                                             context
@@ -140,9 +139,11 @@ class CallNonDynamicAndCallNonDynamicBy(JavaParserLabeledListener):
                                                     "scope_longname": str(
                                                         scope_longname
                                                     ),
-                                                    "scope_parent": scope_parents[-2]
-                                                    if len(scope_parents) > 2
-                                                    else None,
+                                                    "scope_parent": (
+                                                        scope_parents[-2]
+                                                        if len(scope_parents) > 2
+                                                        else None
+                                                    ),
                                                     "scope_contents": cls.getText(),
                                                     "scope_modifiers": class_properties.ClassPropertiesListener.findClassOrInterfaceModifiers(
                                                         context

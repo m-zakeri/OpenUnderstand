@@ -119,9 +119,9 @@ class LineOfCode(JavaParserLabeledListener):
         self.method_countLineExec = []
         self.class_countLineDecl[ctx.IDENTIFIER().getText()] = self.method_countLineDecl
         self.method_countLineDecl = []
-        self.class_countLineComment[
-            ctx.IDENTIFIER().getText()
-        ] = self.method_countLineComment
+        self.class_countLineComment[ctx.IDENTIFIER().getText()] = (
+            self.method_countLineComment
+        )
         self.method_countLineComment = []
         self.class_countLineCode[ctx.IDENTIFIER().getText()] = self.method_countLineCode
         self.method_countLineCode = []
@@ -131,12 +131,12 @@ class LineOfCode(JavaParserLabeledListener):
         self, ctx: JavaParserLabeled.InterfaceDeclarationContext
     ):
         tokens = self.find(ctx.start, ctx.stop)
-        self.interface_countLineDecl[
-            "interface " + ctx.IDENTIFIER().getText()
-        ] = self.countLineCodeDecl(tokens[0])
-        self.interface_countLineComment[
-            "interface " + ctx.IDENTIFIER().getText()
-        ] = self.countLineCodeComment(tokens[1])
+        self.interface_countLineDecl["interface " + ctx.IDENTIFIER().getText()] = (
+            self.countLineCodeDecl(tokens[0])
+        )
+        self.interface_countLineComment["interface " + ctx.IDENTIFIER().getText()] = (
+            self.countLineCodeComment(tokens[1])
+        )
         self.interface_countLineCode["interface " + ctx.IDENTIFIER().getText()] = len(
             tokens[0]
         )

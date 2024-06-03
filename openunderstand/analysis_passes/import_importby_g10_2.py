@@ -4,7 +4,7 @@ from pathlib import Path
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from oudb.models import KindModel, EntityModel, ReferenceModel, ProjectModel
+from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel, ProjectModel
 
 PRJ_INDEX = 3
 REF_NAME = "import"
@@ -99,9 +99,14 @@ class ImportListener(JavaParserLabeledListener):
             imported_class_file_name = None
         line = ctx.children[0].symbol.line
         col = ctx.children[0].symbol.column
-        if ((ctx.children[1].getText() != "static")
-                or ((ctx.children[1].getText() == "static") and not is_built_in)
-                or ((ctx.children[1].getText() == "static") and ctx.getText().endswith(".*;"))):
+        if (
+            (ctx.children[1].getText() != "static")
+            or ((ctx.children[1].getText() == "static") and not is_built_in)
+            or (
+                (ctx.children[1].getText() == "static")
+                and ctx.getText().endswith(".*;")
+            )
+        ):
             self.repository.append(
                 {
                     "imported_class_name": imported_class_name,
@@ -127,7 +132,7 @@ class ImportedEntityListener(JavaParserLabeledListener):
             self.branches = ctx.parentCtx.children
 
     def enterInterfaceDeclaration(
-            self, ctx: JavaParserLabeled.InterfaceDeclarationContext
+        self, ctx: JavaParserLabeled.InterfaceDeclarationContext
     ):
         if self.name == ctx.IDENTIFIER().getText():
             self.body = ctx.getText()
