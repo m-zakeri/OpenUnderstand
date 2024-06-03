@@ -4,7 +4,7 @@ from pathlib import Path
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from oudb.models import KindModel, EntityModel, ReferenceModel, ProjectModel
+from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel, ProjectModel
 
 PRJ_INDEX = 3
 REF_NAME = "import"

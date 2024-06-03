@@ -1,4 +1,4 @@
-from oudb.models import EntityModel, KindModel, ReferenceModel
+from openunderstand.oudb.models import EntityModel, KindModel, ReferenceModel
 
 
 def declare_file(ent_model=None):

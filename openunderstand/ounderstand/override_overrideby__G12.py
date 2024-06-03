@@ -2,11 +2,8 @@ from antlr4 import *
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from analysis_passes import class_properties
+from openunderstand.analysis_passes import class_properties
 
-DB_PATH = "../../database/calculator_app.oudb"
-PROJECT_PATH = "../../benchmarks_projects/calculator_app"
-PROJECT_NAME = "Calculator App"
 
 
 # class decleration:

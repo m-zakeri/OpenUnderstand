@@ -1,4 +1,4 @@
-from oudb.models import EntityModel, KindModel, ReferenceModel
+from openunderstand.oudb.models import EntityModel, KindModel, ReferenceModel
 
 
 def count_decl_method_private(ent_model=None):

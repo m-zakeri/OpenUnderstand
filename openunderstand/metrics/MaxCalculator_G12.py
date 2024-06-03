@@ -1,13 +1,13 @@
 from antlr4 import *
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from oudb.models import EntityModel
+from openunderstand.oudb.models import EntityModel
 import os
 from fnmatch import fnmatch
-from metrics.Cyclomatic_G12 import CyclomaticListener
-from metrics.Essential_G12 import EssentialMetricListener
-from metrics.CyclomaticModified_G12 import CyclomaticModifiedListener
-from metrics.CyclomaticStrict_G12 import CyclomaticStrictListener
+from openunderstand.metrics.Cyclomatic_G12 import CyclomaticListener
+from openunderstand.metrics.Essential_G12 import EssentialMetricListener
+from openunderstand.metrics.CyclomaticModified_G12 import CyclomaticModifiedListener
+from openunderstand.metrics.CyclomaticStrict_G12 import CyclomaticStrictListener
 
 
 def get_parse_tree(file_path):

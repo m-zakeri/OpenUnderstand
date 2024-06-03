@@ -7,14 +7,14 @@ from fnmatch import fnmatch
 from antlr4 import *
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaLexer import JavaLexer
-from oudb.models import KindModel, EntityModel, ReferenceModel
-from analysis_passes.modify_modifyby import ModifyListener
-from analysis_passes.g6_class_properties import (
+from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel
+from openunderstand.analysis_passes.modify_modifyby import ModifyListener
+from openunderstand.analysis_passes.g6_class_properties import (
     ClassPropertiesListener,
     InterfacePropertiesListener,
 )
 
-from utils.utilities import ClassTypeData
+from openunderstand.utils.utilities import ClassTypeData
 
 # from utils.antler_parser import _cpp_parse
 
@@ -274,7 +274,6 @@ class Project:
                 _ent=scope,
                 _scope=ent,
             )
-            print("kkkkkkkkk", par)
 
     def addUseRefs(self, d_use, file_ent, stream: str = ""):
         for use_tuple in d_use:
@@ -509,7 +508,6 @@ class Project:
             longname = ref_dict["ent"]
             ent = ModifyListener.get_different_combinations(longname)
             scope = ref_dict["scope"]
-            # print(ref_dict)
             _, _ = ReferenceModel.get_or_create(
                 _kind=208,
                 _file=ref_dict["file"],
@@ -755,7 +753,6 @@ class Project:
 
         s = f"Java {p_static} {p_abstract} {p_generic} {kind} {p_type} {p_visibility} {p_member}"
         s = " ".join(s.split())
-        print(s)
         return s
 
     def add_opened_entity(self, entity):
@@ -1550,9 +1547,4 @@ class Project:
 
             except Exception as e:
                 print(e)
-                print("ERROR M : 0 ", c["scope_kind"])
-                print("ERROR M : 1 ", c["scope_modifiers"])
-                print(
-                    "ERROR M : 3 ",
-                    self.findKindWithKeywords(c["scope_kind"], c["scope_modifiers"]),
-                )
+

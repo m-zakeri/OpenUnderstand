@@ -1,13 +1,12 @@
-from ounderstand.project import Project
+from openunderstand.ounderstand.project import Project
 from collections import Counter
 from antlr4 import *
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from metrics.utils_g10 import get_method_prefixes
+from openunderstand.metrics.utils_g10 import get_method_prefixes
 from gen.javaLabeled.JavaLexer import JavaLexer
 
-PRJ_INDEX = 2
-METRIC_NAME = "Cyclomatic"
+
 
 
 def make_enum_scope():

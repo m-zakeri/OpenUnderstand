@@ -13,7 +13,7 @@ __version__ = "0.1.0"
 
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-import analysis_passes.class_properties as class_properties
+import openunderstand.analysis_passes.class_properties as class_properties
 
 
 class ExtendCoupleAndExtendCoupleBy(JavaParserLabeledListener):

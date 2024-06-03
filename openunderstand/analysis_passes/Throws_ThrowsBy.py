@@ -2,8 +2,8 @@ import os
 
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-import analysis_passes.class_properties as class_properties
-from oudb.models import ProjectModel, EntityModel
+import openunderstand.analysis_passes.class_properties as class_properties
+from openunderstand.oudb.models import ProjectModel, EntityModel
 
 
 def throws_parent_finder(root_dir, file_name):

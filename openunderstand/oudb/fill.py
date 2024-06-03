@@ -3,8 +3,8 @@ import os
 import sys
 import unittest
 
-from oudb.models import KindModel, EntityModel, ReferenceModel
-from oudb.utils import get_entity_object_from_understand
+from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel
+from openunderstand.oudb.utils import get_entity_object_from_understand
 import pkg_resources
 
 

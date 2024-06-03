@@ -78,7 +78,7 @@ def setup_config():
     config = configparser.ConfigParser()
     config.read(
         os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "..", "..", "config.ini"
+            os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "config.ini"
         )
     )
     return config

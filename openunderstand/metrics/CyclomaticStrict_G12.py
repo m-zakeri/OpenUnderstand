@@ -1,9 +1,9 @@
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaLexer import JavaLexer
-from ounderstand.project import Project
+from openunderstand.ounderstand.project import Project
 from antlr4 import *
-from analysis_passes import class_properties
+from openunderstand.analysis_passes import class_properties
 
 
 def countParents(ctx):
