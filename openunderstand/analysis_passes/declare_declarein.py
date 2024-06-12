@@ -1,3 +1,6 @@
+from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+
 __author__ = "Ali Rasouli, G4"
 
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
