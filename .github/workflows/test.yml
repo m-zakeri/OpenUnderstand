@@ -1,47 +1,49 @@
 name: OpenUnderstand Testing CI
 
 on:
-push:
-branches:
-- feature/testing-404131067
-pull_request:
-branches:
-- main
-- master
+  pull_request:
 
 jobs:
-test:
-runs-on: windows-latest
+  test:
+    runs-on: ubuntu-latest
 
-```
-steps:
-  - name: Checkout repository
-    uses: actions/checkout@v4
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-  - name: Set up Python
-    uses: actions/setup-python@v5
-    with:
-      python-version: "3.12"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-  - name: Install dependencies
-    run: |
-      python -m pip install --upgrade pip
-      pip install pytest pytest-cov coverage ruff
-      pip install -e .
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov coverage ruff
+          pip install -e .
 
-  - name: Run linting
-    run: |
-      ruff check tests
+      - name: Run linting
+        run: |
+          ruff check tests
 
-  - name: Run unit tests with coverage
-    run: |
-      pytest tests --cov=tests --cov-branch --cov-report=term --cov-report=xml --junitxml=test-results.xml --cov-fail-under=80
+      - name: Run unit tests with coverage
+        run: |
+          pytest tests \
+            --cov=openunderstand \
+            --cov-branch \
+            --cov-report=xml:coverage.xml \
+            --cov-report=term \
+            --junitxml=test-results.xml \
+            --cov-fail-under=80
 
-  - name: Upload test and coverage artifacts
-    uses: actions/upload-artifact@v4
-    with:
-      name: test-and-coverage-reports
-      path: |
-        coverage.xml
-        test-results.xml
-```
+      - name: Upload test report
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: test-results.xml
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
