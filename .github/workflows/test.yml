@@ -1,0 +1,43 @@
+name: OpenUnderstand Testing CI
+
+on:
+  push:
+    branches:
+      - feature/testing-404131067
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  test:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov coverage ruff
+          pip install -e .
+
+      - name: Run linting
+        run: |
+          ruff check tests
+
+      - name: Run unit tests with coverage
+        run: |
+          pytest tests --cov=tests --cov-report=term --cov-fail-under=80
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: .coverage
