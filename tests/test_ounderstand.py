@@ -1,12 +1,15 @@
-import os
-import sys
 import pytest
+import logging
+import configparser
+from unittest.mock import MagicMock
 
-sys.path.insert(0, os.getcwd())
-
+from openunderstand.utils import utilities
 from openunderstand.utils.utilities import ClassTypeData
-
-
+from openunderstand.utils.utilities import (
+    timer_decorator,
+    setup_config,
+    setup_logger,
+)
 class FakeIdentifier:
     def __str__(self):
         return "SampleClass"
@@ -175,18 +178,7 @@ def test_class_type_data_multi_pass_analysis_simulation():
     assert data.file_path == "src/Main.java"
     assert data.line == 10
     assert data.column == 5
-import os
-import logging
-import configparser
-from unittest.mock import MagicMock
 
-from openunderstand.utils import utilities
-from openunderstand.utils.utilities import (
-    ClassTypeData,
-    timer_decorator,
-    setup_config,
-    setup_logger,
-)
 
 
 def test_get_long_name_returns_package_and_child_text():
