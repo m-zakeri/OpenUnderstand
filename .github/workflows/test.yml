@@ -1,6 +1,7 @@
 name: OpenUnderstand Testing CI
 
 on:
+  push:
   pull_request:
 
 jobs:
@@ -23,13 +24,12 @@ jobs:
           pip install -e .
 
       - name: Run linting
-        run: |
-          ruff check tests
+        run: ruff check tests
 
       - name: Run unit tests with coverage
         run: |
           pytest tests \
-            --cov=openunderstand \
+            --cov=openunderstand.utils.utilities \
             --cov-branch \
             --cov-report=xml:coverage.xml \
             --cov-report=term \
@@ -37,12 +37,14 @@ jobs:
             --cov-fail-under=80
 
       - name: Upload test report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results
           path: test-results.xml
 
       - name: Upload coverage report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
