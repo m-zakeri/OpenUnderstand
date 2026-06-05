@@ -1,0 +1,69 @@
+========================================================================
+Advanced Software Testing and Program Analysis
+Homework 3: Industrial-Grade Unit Testing and CI/CD for OpenUnderstand
+Instructor: Morteza Zakeri
+========================================================================
+
+Student Name : Aqeel Wali Abd Alameir
+Student ID   : 404131067
+Selected Module : openunderstand/utils/utilities.py
+Testing Branch  : feature/testing-404131067
+
+------------------------------------------------------------------------
+PROJECT LINKS (GitHub)
+------------------------------------------------------------------------
+
+1) Forked Repository (my work):
+   https://github.com/abciali1995-byte/OpenUnderstand
+
+2) Testing Branch:
+   https://github.com/abciali1995-byte/OpenUnderstand/tree/feature/testing-404131067
+
+3) CI/CD Pipeline - GitHub Actions (passing / green):
+   https://github.com/abciali1995-byte/OpenUnderstand/actions
+
+4) CI/CD Workflow File:
+   https://github.com/abciali1995-byte/OpenUnderstand/blob/feature/testing-404131067/.github/workflows/test.yml
+
+5) Unit Tests File:
+   https://github.com/abciali1995-byte/OpenUnderstand/blob/feature/testing-404131067/tests/test_ounderstand.py
+
+6) Pynguin Generated Tests:
+   https://github.com/abciali1995-byte/OpenUnderstand/tree/feature/testing-404131067/pynguin_tests
+
+------------------------------------------------------------------------
+OPEN-SOURCE WORKFLOW (Upstream Repository: m-zakeri/OpenUnderstand)
+------------------------------------------------------------------------
+
+7) GitHub Issue (reported defect):
+   Issue #73 - ModuleNotFoundError: 'gen' package required to import
+               openunderstand.utils.utilities in a clean environment
+   https://github.com/m-zakeri/OpenUnderstand/issues/73
+
+8) Pull Request:
+   PR #70 - Add pytest tests and coverage
+   https://github.com/m-zakeri/OpenUnderstand/pull/70
+
+------------------------------------------------------------------------
+RESULTS SUMMARY
+------------------------------------------------------------------------
+
+- Handcrafted unit tests : 16 passed
+- Line coverage          : 100%  (quality gate: 80%)
+- Branch coverage        : 100%  (quality gate: 70%)
+- Linting (ruff)         : All checks passed (0 errors)
+- CI/CD pipeline status  : Passing (green)
+- Pynguin                : Generated, evaluated, integrated into CI
+- Mutation testing tool  : cosmic-ray 8.4.6
+- Total mutants          : 67
+- Mutation score         : 100%  (0 surviving mutants)
+
+------------------------------------------------------------------------
+FILES INCLUDED IN THIS SUBMISSION
+------------------------------------------------------------------------
+
+- report.pdf    (Final report, with screenshots in Appendix B)
+- report.md     (Final report in Markdown format)
+- LINKS.txt     (This file)
+
+========================================================================
