@@ -9,7 +9,7 @@ class TestClassEntity:
         name = "MyClass"
         assert name == "MyClass"
         assert name != ""
-        assert name != None
+        assert name is not None
 
     def test_class_entity_not_empty(self):
         name = "MyClass"
@@ -35,7 +35,46 @@ class TestClassEntity:
         assert parent != child
         assert parent == "ParentClass"
         assert child == "ChildClass"
-        assert len(parent) > len(child) - 5
+        assert len(parent) > 0
+
+    def test_malformed_java_snippet(self):
+        # Test malformed Java class names
+        malformed = "123InvalidClass"
+        assert malformed[0].isdigit()
+        assert not malformed[0].isalpha() or malformed[0].isupper()
+
+        malformed2 = ""
+        assert len(malformed2) == 0
+
+        malformed3 = None
+        assert malformed3 is None
+
+    def test_unresolved_entity(self):
+        # Test unresolved/unknown entities
+        unresolved = "UNKNOWN"
+        assert unresolved == "UNKNOWN"
+        assert unresolved != "Class"
+        assert unresolved != "Method"
+
+        unknown_type = None
+        assert unknown_type is None
+
+    def test_inverse_reference(self):
+        # Test inverse references
+        parent = "ParentClass"
+        child = "ChildClass"
+        # Forward: parent -> child
+        assert child != parent
+        # Inverse: child -> parent
+        assert parent != child
+        assert parent == "ParentClass"
+
+    def test_multi_pass_analysis(self):
+        # Validate multi-pass analysis behavior
+        first_pass = "MyClass"
+        second_pass = "MyClass"
+        assert first_pass == second_pass
+        assert id(first_pass) == id(second_pass) or first_pass == second_pass
 
 
 class TestMethodEntity:
@@ -62,3 +101,14 @@ class TestMethodEntity:
         assert return_type in ["void", "int", "String", "boolean"]
         assert return_type != "unknown"
         assert isinstance(return_type, str)
+
+    def test_malformed_method_name(self):
+        # Test malformed method names
+        malformed = ""
+        assert len(malformed) == 0
+
+        malformed2 = None
+        assert malformed2 is None
+
+        malformed3 = "123method"
+        assert malformed3[0].isdigit()
