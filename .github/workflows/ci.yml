@@ -19,7 +19,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install pytest pytest-cov coverage ruff
+          pip install pytest pytest-cov coverage ruff peewee
 
       - name: Run linting
         run: |
