@@ -1,0 +1,203 @@
+project_path = "."
+module_name = "openunderstand.metrics"
+algorithm = "DYNAMOSA"
+ignore_modules = []
+ignore_methods = []
+subprocess = false
+subprocess_if_recommended = true
+use_master_worker = true
+filesystem_isolation = false
+
+[test_case_output]
+output_path = "tests/generated"
+crash_path = ""
+export_strategy = "PY_TEST"
+max_length_test_case = 2500
+assertion_generation = "SIMPLE"
+allow_stale_assertions = false
+mutation_strategy = "FIRST_ORDER_MUTANTS"
+mutation_order = 1
+post_process = true
+float_precision = 0.01
+format_with_black = true
+
+[statistics_output]
+report_dir = "pynguin-report"
+statistics_backend = "CSV"
+timeline_interval = 1000000000
+timeline_interpolation = true
+coverage_metrics = [ "BRANCH",]
+output_variables = [ "TargetModule", "Coverage",]
+configuration_id = ""
+run_id = ""
+project_name = ""
+create_coverage_report = false
+type_guess_top_n = 10
+store_test_before_execution = false
+
+[stopping]
+maximum_search_time = -1
+maximum_test_executions = -1
+maximum_statement_executions = -1
+maximum_slicing_time = 600
+maximum_iterations = -1
+maximum_test_execution_timeout = 5
+maximum_coverage = 100
+maximum_coverage_plateau = -1
+minimum_coverage = 100
+minimum_plateau_iterations = -1
+maximum_memory = 3000
+test_execution_time_per_statement = 1
+
+[large_language_model]
+api_key = ""
+model_name = "gpt-4o-mini"
+temperature = 0.8
+hybrid_initial_population = false
+llm_test_case_percentage = 0.5
+enable_response_caching = false
+call_llm_for_uncovered_targets = false
+coverage_threshold = 1
+call_llm_on_stall_detection = false
+max_plateau_len = 25
+max_llm_interventions = 1
+
+[string_statement]
+random_string_weight = 0.3
+faker_string_weight = 0.3
+fandango_string_weight = 0.4
+fandango_faker_string_weight = 0.0
+
+[seeding]
+seed = 1781021697815222100
+constant_seeding = true
+initial_population_seeding = false
+initial_population_data = ""
+seeded_testcases_reuse_probability = 0.9
+initial_population_mutations = 0
+dynamic_constant_seeding = true
+seeded_primitives_reuse_probability = 0.2
+seeded_dynamic_values_reuse_probability = 0.6
+seed_from_archive = false
+seed_from_archive_probability = 0.2
+seed_from_archive_mutations = 3
+max_dynamic_length = 1000
+max_dynamic_pool_size = 50
+
+[type_inference]
+type_inference_strategy = "TYPE_HINTS"
+type_tracing = 0.0
+subtype_inference = "NONE"
+type_tracing_subtype_weight = 0.3
+type_tracing_argument_type_weight = 0.5
+type_tracing_attribute_weight = 0.2
+typeevalpy_json_path = ""
+
+[pynguinml]
+ml_testing_enabled = false
+constraints_path = ""
+dtype_mapping_path = ""
+constructor_function = ""
+constructor_function_parameter = ""
+max_ndim = 4
+max_shape_dim = 4
+ignore_constraints_probability = 0.25
+
+[test_creation]
+max_recursion = 10
+max_delta = 20
+max_int = 2048
+string_length = 20
+bytes_length = 20
+collection_size = 5
+primitive_reuse_probability = 0.5
+object_reuse_probability = 0.9
+none_weight = 1
+any_weight = 5
+original_type_weight = 5
+type_tracing_weight = 10
+type_tracing_kept_guesses = 2
+wrap_var_param_type_probability = 0.7
+negate_type = 0.1
+skip_optional_parameter_probability = 0.7
+max_attempts = 1000
+insertion_uut = 0.5
+max_size = 100
+use_random_object_for_call = 0.1
+
+[generator_selection]
+generator_selection_algorithm = "RANK_SELECTION"
+generator_selection_bias = 1.7
+generator_any_distance = 30
+generator_not_constructor_penalty = 10.0
+generator_param_penalty = 1.0
+generator_hierarchy_penalty = 1.0
+generator_any_type_penalty = 100.0
+
+[search_algorithm]
+min_initial_tests = 1
+max_initial_tests = 10
+population = 10
+chromosome_length = 48
+chop_max_length = true
+elite = 1
+crossover_rate = 0.648
+test_insertion_probability = 0.1
+test_delete_probability = 0.3333333333333333
+test_change_probability = 0.3333333333333333
+test_insert_probability = 0.3333333333333333
+statement_insertion_probability = 0.5
+random_perturbation = 0.2
+change_parameter_probability = 0.1
+tournament_size = 4
+rank_bias = 1.68
+selection = "RANK_SELECTION"
+use_archive = false
+filter_covered_targets_from_test_cluster = false
+number_of_mutations = 3
+
+[mio]
+exploitation_starts_at_percent = 0.5
+
+[random]
+max_sequence_length = 10
+max_sequences_combined = 10
+
+[to_cover]
+only_cover = []
+no_cover = []
+enable_inline_pynguin_no_cover = true
+enable_inline_pragma_no_cover = true
+
+[local_search]
+local_search = true
+local_search_same_datatype = true
+local_search_different_datatype = false
+local_search_llm = false
+local_search_primitives = true
+local_search_collections = false
+local_search_complex_objects = false
+local_search_probability = 0.02
+local_search_time = 5000
+ls_int_delta_increasing_factor = 2
+ls_string_random_mutation_count = 10
+ls_random_parametrized_statement_call_count = 10
+ls_max_different_type_mutations = 10
+ls_different_type_primitive_probability = 0.3
+ls_different_type_collection_probability = 0.3
+ls_dict_max_insertions = 10
+ls_llm_whole_module = false
+
+[test_case_output.minimization]
+test_case_minimization_strategy = "CASE"
+test_case_minimization_direction = "BACKWARD"
+
+[mio.initial_config]
+number_of_tests_per_target = 10
+random_test_or_from_archive_probability = 0.5
+number_of_mutations = 1
+
+[mio.focused_config]
+number_of_tests_per_target = 1
+random_test_or_from_archive_probability = 0.0
+number_of_mutations = 10
