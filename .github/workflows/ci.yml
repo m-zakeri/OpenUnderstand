@@ -21,6 +21,9 @@ jobs:
         run: |
           pip install pytest pytest-cov coverage ruff
 
+      - name: Run linting
+        run: |
+          ruff check tests/ || true
 
       - name: Run tests
         run: |
@@ -28,4 +31,10 @@ jobs:
 
       - name: Run coverage
         run: |
-          pytest tests/ --cov=tests --cov-report=term-missing --cov-fail-under=80
+          pytest tests/ --cov=tests --cov-report=term-missing --cov-report=xml --cov-fail-under=80
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage.xml
