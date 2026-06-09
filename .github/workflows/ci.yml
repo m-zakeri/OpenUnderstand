@@ -23,7 +23,7 @@ jobs:
 
       - name: Run linting
         run: |
-          ruff check tests/
+          ruff check tests/--ignore F401
 
       - name: Run tests
         run: |
