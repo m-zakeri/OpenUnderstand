@@ -1,8 +1,29 @@
+import os
 import time
 import logging
 import configparser
 from os.path import basename
+
 from gen.javaLabeled import JavaParserLabeled
+
+# Project root resolved relative to this file's location:
+# openunderstand/utils/utilities.py -> utils -> openunderstand -> <project root>
+PROJECT_ROOT = os.path.dirname(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+)
+
+
+def resolve_path(path: str) -> str:
+    """Resolve a path from config.ini to an absolute path.
+
+    Relative paths are resolved against the project root so the project
+    works on any machine and in CI, regardless of the current working
+    directory. Absolute paths are returned unchanged for backward
+    compatibility.
+    """
+    if os.path.isabs(path):
+        return path
+    return os.path.normpath(os.path.join(PROJECT_ROOT, path))
 
 
 class ClassTypeData:
@@ -71,16 +92,9 @@ def timer_decorator():
     return decorator
 
 
-import os
-
-
 def setup_config():
     config = configparser.ConfigParser()
-    config.read(
-        os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "config.ini"
-        )
-    )
+    config.read(os.path.join(PROJECT_ROOT, "config.ini"))
     return config
 
 
@@ -92,8 +106,13 @@ def setup_logger():
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.INFO)
 
+    # Resolve the log file path relative to the project root and make sure
+    # the destination directory exists before attaching the file handler.
+    log_path = resolve_path(config["Logging"]["filename"])
+    os.makedirs(os.path.dirname(log_path), exist_ok=True)
+
     # Create file handler and set the log level based on the configuration
-    file_handler = logging.FileHandler(config["Logging"]["filename"])
+    file_handler = logging.FileHandler(log_path)
     file_handler.setLevel(getattr(logging, config["Logging"]["level"].upper()))
 
     # Create log formatter
