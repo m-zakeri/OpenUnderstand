@@ -167,3 +167,12 @@ cython_debug/
 
 *.oudb
 benchmark/
+
+# Homework 3 test-engineering artifacts
+.venv-pynguin/
+coverage.json
+reports/
+html/
+.mutmut-cache
+cr-session.sqlite
+pynguin-report/

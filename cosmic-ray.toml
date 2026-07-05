@@ -1,0 +1,20 @@
+# Fallback mutation-testing configuration using Cosmic Ray.
+# Use this if mutmut misbehaves on your platform (Part 5 allows either tool).
+#
+# Usage:
+#   cosmic-ray init cosmic-ray.toml cr-session.sqlite
+#   cosmic-ray exec cosmic-ray.toml cr-session.sqlite
+#   cr-report cr-session.sqlite          # text report incl. survival rate
+#   cr-html cr-session.sqlite > cr.html  # optional HTML report
+
+[cosmic-ray]
+module-path = "openunderstand/oudb/api.py"
+timeout = 30.0
+excluded-modules = []
+test-command = "python -m pytest tests -x -q"
+
+[cosmic-ray.distributor]
+name = "local"
+
+[cosmic-ray.filters.operators-filter]
+exclude-operators = []

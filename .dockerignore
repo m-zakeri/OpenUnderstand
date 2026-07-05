@@ -1,0 +1,15 @@
+.git
+.venv
+.venv-pynguin
+__pycache__/
+*.pyc
+htmlcov/
+html/
+.coverage
+coverage.*
+reports/
+.mutmut-cache
+.pytest_cache/
+*.oudb
+*.udb
+*.und

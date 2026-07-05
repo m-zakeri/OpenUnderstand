@@ -1,0 +1,30 @@
+# Pre-commit hooks for local quality gates (mirrors the CI lint stage).
+# Install once with:  pre-commit install
+# Run on demand with: pre-commit run --all-files
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: ["--fix"]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: end-of-file-fixer
+        exclude: '^(openunderstand|benchmark|docs|grammars|test_analysis.*|test_metrics)/'
+      - id: trailing-whitespace
+        exclude: '^(openunderstand|benchmark|docs|grammars|test_analysis.*|test_metrics)/'
+      - id: check-yaml
+      - id: check-merge-conflict
+
+  # Run the isolated unit suite before every push (not on every commit).
+  - repo: local
+    hooks:
+      - id: pytest-unit
+        name: pytest (isolated unit tests)
+        entry: pytest tests -q
+        language: system
+        pass_filenames: false
+        stages: [pre-push]

@@ -1,0 +1,100 @@
+# ---------------------------------------------------------------------------
+# Tooling configuration for the OpenUnderstand test-engineering work
+# (Homework 3 - Industrial-Grade Unit Testing and CI/CD).
+#
+# NOTE: this file intentionally contains only [tool.*] tables.  Project
+# packaging is still handled by the existing setup.py, so there is no
+# [build-system] / [project] table here to avoid conflicting metadata.
+# ---------------------------------------------------------------------------
+
+# ----------------------------- pytest --------------------------------------
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers"
+testpaths = ["tests"]
+# Make the repository root importable so `import openunderstand...` works
+# regardless of the current working directory (pytest >= 7).
+pythonpath = ["."]
+markers = [
+    "slow: marks tests as slow (deselect with -m 'not slow')",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+# ---------------------------- coverage.py ----------------------------------
+# Coverage is scoped to the modules actually under test (the api/db layer),
+# in line with the assignment's "1-2 modules for testing in isolation".
+[tool.coverage.run]
+branch = true
+relative_files = true
+source = [
+    "openunderstand/oudb/api.py",
+    "openunderstand/oudb/models.py",
+]
+omit = [
+    "*/tests/*",
+    "*/gen/*",
+    "*/__init__.py",
+]
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
+precision = 2
+# Line-coverage quality gate (Part 2).  Branch >= 70% is checked separately
+# in CI from the generated coverage.json.
+fail_under = 80
+exclude_lines = [
+    "pragma: no cover",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "\\.\\.\\.",
+]
+
+[tool.coverage.xml]
+output = "coverage.xml"
+
+[tool.coverage.json]
+output = "coverage.json"
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+# ------------------------------- ruff --------------------------------------
+# Linting is scoped to the student-authored test code.  The large legacy
+# source tree (auto-generated ANTLR parsers, historical group submissions)
+# is excluded so the "zero linting errors" gate reflects the new work.
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = [
+    "openunderstand",
+    "benchmark",
+    "docs",
+    "grammars",
+    "test_analysis",
+    "test_analysis_G6",
+    "test_analysis_G9",
+    "test_metrics",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "B", "UP", "C4"]
+ignore = [
+    "E402",  # module-level import not at top: required by the conftest stub bootstrap
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/conftest.py" = ["E402"]
+
+# ------------------------------- mypy --------------------------------------
+# Static typing is optional for this assignment; configured leniently and
+# scoped to the test package so it never blocks the pipeline.
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+warn_unused_ignores = false
+warn_redundant_casts = true
+files = ["tests"]
+exclude = "(openunderstand|benchmark|docs|grammars|test_analysis.*|test_metrics)"

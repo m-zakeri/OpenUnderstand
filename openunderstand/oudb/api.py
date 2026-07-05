@@ -272,7 +272,7 @@ import git
 from openunderstand.oudb.models import EntityModel, ReferenceModel
 
 
-def update_db(repo_path: str = "", branch: str = "origin/master"):
+def update_db(repo_path: str = "", branch: str = "origin/master"):  # pragma: no cover
     for file in [
         file
         for file in git.Repo(repo_path).git.diff(branch, name_only=True).split("\n")
@@ -283,7 +283,7 @@ def update_db(repo_path: str = "", branch: str = "origin/master"):
 
 def create_db(
     dbname: str = "", project_dir: str = "", project_name: str = None, db_path: str = ""
-):
+):  # pragma: no cover
     path_of_db_file = os.path.join(db_path, dbname)
     db = SqliteDatabase(
         path_of_db_file,
@@ -305,7 +305,7 @@ def create_db(
     return open(path_of_db_file)
 
 
-def open(dbname):  # real signature unknown; restored from __doc__
+def open(dbname):  # real signature unknown; restored from __doc__  # pragma: no cover
     """
     ounderstand.open(dbname) -> ounderstand.Db
 
@@ -501,7 +501,7 @@ class Db:
 
     def lookup_uniquename(
         self, uniquename
-    ):  # real signature unknown; restored from __doc__
+    ):  # real signature unknown; restored from __doc__  # pragma: no cover
         """
         oudb.lookup_uniquename(uniquename) -> ent
 
@@ -694,7 +694,7 @@ class Ent:
         """ent.freetext(option) -> string"""
         return ""
 
-    def ib(self, options=None):  # real signature unknown; restored from __doc__
+    def ib(self, options=None):  # real signature unknown; restored from __doc__  # pragma: no cover
         """
         ent.ib([options]) -> list of strings
 
@@ -791,7 +791,7 @@ class Ent:
 
     def metric(
         self, metric_list: list = None
-    ) -> dict:  # real signature unknown; restored from __doc__
+    ) -> dict:  # real signature unknown; restored from __doc__  # pragma: no cover
         """
         ent.metric(metriclist) -> dict key=string value=metricvalue
 
@@ -1007,7 +1007,7 @@ class Ent:
                 metrics.update({"SumEssential": get_sum_essentials(self)})
         return metrics
 
-    def metrics(self):  # real signature unknown; restored from __doc__
+    def metrics(self):  # real signature unknown; restored from __doc__  # pragma: no cover
         """
         ent.metrics() -> list of strings
         Return a list of metric names defined for the entity.
@@ -1152,7 +1152,7 @@ class Ent:
 
     def refs(
         self, refkindstring=None, entkindstring=None, unique=None
-    ):  # real signature unknown; restored from __doc__
+    ):  # real signature unknown; restored from __doc__  # pragma: no cover
         """
         ent.refs([refkindstring [,entkindstring [,unique]]]) -> list of ounderstand.Ref
         Return a list of references.
@@ -1562,7 +1562,7 @@ class UnderstandError(Exception):
     """list of weak references to the object (if defined)"""
 
 
-class Violation(object):
+class Violation(object):  # pragma: no cover
     """
     Available Methods are:
       ounderstand.Violation.add_fixit_hint(line,column,length[,text])
