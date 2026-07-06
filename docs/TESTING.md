@@ -49,39 +49,36 @@ independent.
 
 ## 2. Environment setup (Part 1)
 
-```bash
-# main environment
-py -3.12 -m venv .venv
-.\.venv\Scripts\Activate.ps1          # Windows
-# source .venv/bin/activate            # Linux/macOS
-python -m pip install --upgrade pip
-pip install -r requirements-dev.txt    # runtime + test tooling
+Run each line separately (PowerShell on Windows):
 
-# optional local hooks
-pre-commit install
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1          # Windows  (source .venv/bin/activate on Linux/macOS)
+python -m pip install --upgrade pip
+pip install -r requirements-dev.txt   # runtime + test tooling
+pre-commit install                    # optional local hooks
 ```
 
 ## 3. Running the suite & coverage (Parts 3 & 5)
 
-```bash
+```powershell
 # plain run
 pytest tests -q
 
-# with coverage + branch + reports (matches CI)
-pytest tests \
-  --cov=openunderstand.oudb.api \
-  --cov=openunderstand.oudb.models \
-  --cov-branch \
-  --cov-report=term-missing \
-  --cov-report=html \
-  --cov-report=json
+# with coverage + branch + reports (matches CI) — one line, PowerShell-safe
+pytest tests --cov=openunderstand.oudb.api --cov=openunderstand.oudb.models --cov-branch --cov-report=term-missing --cov-report=html --cov-report=json
 ```
+
 HTML report: `htmlcov/index.html`. Quality gates: **line ≥ 80%**,
 **branch ≥ 70%** (enforced in CI from `coverage.json`).
 
+> Note: the multi-line `\`-continued form only works in bash/WSL/Git Bash. In
+> PowerShell either keep it on one line (above) or use a backtick `` ` `` at the
+> end of each line.
+
 ## 4. Linting (Part 1 / Part 2 gate)
 
-```bash
+```powershell
 ruff check tests        # must report zero errors
 ruff format tests       # auto-format
 mypy tests              # optional static typing
@@ -97,7 +94,7 @@ and on PRs:
    3.10/3.11/3.12, then enforce the coverage gates from `coverage.json`
 3. **reports/artifacts** — JUnit XML, Cobertura `coverage.xml`, `coverage.json`
    and the HTML report are uploaded as build artifacts; optional Codecov upload
-4. **mutation** — opt-in job (manual `workflow_dispatch`) runs mutmut
+4. **mutation** — opt-in job (manual `workflow_dispatch`) runs mutmut on Linux
 
 Reproducibility: pinned `requirements-dev.txt`, pip caching, and
 `PYTHONHASHSEED=0`.
@@ -105,25 +102,52 @@ Reproducibility: pinned `requirements-dev.txt`, pip caching, and
 ## 6. Automated test generation — Pynguin (Part 4)
 
 Pynguin lives in its **own** venv (it pins old dependencies):
-```bash
+
+```powershell
 py -3.12 -m venv .venv-pynguin
 .\.venv-pynguin\Scripts\Activate.ps1
 pip install "pynguin>=0.43.0"
 pip install -r requirements.txt
-.\scripts\run_pynguin.ps1     # or ./scripts/run_pynguin.sh
+.\scripts\run_pynguin.ps1     # or ./scripts/run_pynguin.sh on Linux/macOS
 ```
+
 See `tests/generated/README.md` for the required curate→evaluate→refactor→
 integrate workflow.
 
+> **Note:** On the current Pynguin release this run fails with an internal
+> `NameError: IterableClassWatcher` (after a `dill` `RecursionError`), because
+> the target is a peewee/ORM-backed module — a documented tool limitation, see
+> `docs/REPORT.md` §4.1. The scaffolding is kept for a fixed Pynguin release or a
+> pure-Python target module.
+
 ## 7. Mutation testing (Part 5)
 
-```bash
-.\scripts\run_mutation.ps1    # or ./scripts/run_mutation.sh
-mutmut results
-mutmut html                   # ./html/index.html
+**mutmut has no native Windows support**
+([issue #397](https://github.com/boxed/mutmut/issues/397)), so on Windows use the
+**Cosmic Ray** engine (configured in `cosmic-ray.toml`). Run from the repo root
+with `.venv` activated:
+
+```powershell
+pip install cosmic-ray
+cosmic-ray init cosmic-ray.toml cr-session.sqlite
+cosmic-ray exec cosmic-ray.toml cr-session.sqlite    # runs the suite per mutant; be patient
+cr-report cr-session.sqlite
 ```
-Mutation score = `killed / (killed + survived)`. If mutmut misbehaves on native
-Windows, run it under WSL or use the Cosmic Ray config (`cosmic-ray.toml`).
+
+Or use the wrapper: `.\scripts\run_mutation.ps1` (Windows, Cosmic Ray).
+
+On **Linux or WSL** you can use mutmut instead (`./scripts/run_mutation.sh`):
+
+```bash
+mutmut run
+mutmut results
+mutmut html          # ./html/index.html
+```
+
+Mutation score = `killed / total` (equivalently `killed / (killed + survived)`).
+Latest run (Cosmic Ray, whole-module `api.py`): **839 mutants, 104 killed,
+735 survived → 12.40 %**. See `docs/REPORT.md` §5.2 for the analysis of surviving
+mutants.
 
 ## 8. Reproducible container (bonus)
 

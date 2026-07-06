@@ -11,6 +11,13 @@ import importlib.machinery
 import sys
 import types
 
+# Pynguin snapshots module state with ``dill``, which recursively pickles the
+# peewee ORM objects reachable from ``openunderstand.oudb.api``.  Those object
+# graphs are deep, so the default limit (1000) overflows with a
+# ``RecursionError`` before generation even starts.  Raise it well above the
+# ORM graph depth so serialization can complete.
+sys.setrecursionlimit(30000)
+
 
 class _Dummy:
     def __init__(self, *args, **kwargs):

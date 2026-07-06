@@ -169,4 +169,9 @@ cython_debug/
 benchmark/
 
 # Homework 3 test-engineering artifacts
-.v
+.venv-pynguin/
+# coverage.json and reports/ are committed as HW3 deliverables
+html/
+.mutmut-cache
+cr-session.sqlite
+pynguin-report/
