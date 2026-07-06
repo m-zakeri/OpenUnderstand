@@ -43,14 +43,14 @@ pip-log.txt
 pip-delete-this-directory.txt
 
 # Unit test / coverage reports
-htmlcov/
+# htmlcov/ is committed as an HW3 deliverable (coverage HTML report)
 .tox/
 .nox/
 .coverage
 .coverage.*
 .cache
 nosetests.xml
-coverage.xml
+# coverage.xml is committed as an HW3 deliverable
 *.cover
 *.py,cover
 .hypothesis/
@@ -169,10 +169,4 @@ cython_debug/
 benchmark/
 
 # Homework 3 test-engineering artifacts
-.venv-pynguin/
-coverage.json
-reports/
-html/
-.mutmut-cache
-cr-session.sqlite
-pynguin-report/
+.v
