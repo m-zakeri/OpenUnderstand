@@ -9,9 +9,14 @@ mutmut run || true   # mutmut exits non-zero when mutants survive; that's expect
 echo ">> Results summary:"
 mutmut results || true
 
-echo ">> Generating HTML report (./html/index.html):"
-mutmut html || true
+# mutmut 3.x removed the `html` and `junitxml` subcommands that 2.x provided.
+# `export-cicd-stats` is the machine-readable replacement; `browse` is the
+# interactive report.  requirements-dev.txt pins mutmut>=3.0,<4.0, and
+# setup.cfg uses the 3.x configuration keys.
+echo ">> Machine-readable summary:"
+mutmut export-cicd-stats || true
 
 echo
 echo "Mutation score = killed / (killed + survived)."
 echo "Inspect a surviving mutant with:  mutmut show <id>"
+echo "Browse all results interactively with:  mutmut browse"

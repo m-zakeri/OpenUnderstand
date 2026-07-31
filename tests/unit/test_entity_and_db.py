@@ -9,6 +9,7 @@ import os
 import pytest
 
 from openunderstand.oudb import api
+from openunderstand.oudb.models import EntityModel, ReferenceModel
 
 
 # --- Ent scalar accessors --------------------------------------------------
@@ -80,6 +81,80 @@ def test_ents_filtered_by_entity_kind(references, entities, make_ent):
 
 def test_ents_filtered_by_non_matching_entity_kind(references, entities, make_ent):
     assert make_ent(entities["method"]).ents("Call", "Parameter") == []
+
+
+# The three tests below were added to kill specific mutants that survived the
+# Cosmic Ray run (docs/REPORT.md section 5.2).  Each pins down a behaviour the
+# original assertions left ambiguous.
+def test_ents_without_a_ref_kind_filter_returns_every_kind(
+    db, kinds, entities, make_ent
+):
+    """
+    Kills `AddNot` on `if refkindstring:` -- with no filter, references of
+    *every* kind must be followed, not just one kind.
+    """
+    ReferenceModel.create(
+        _kind=kinds["call"], _file=entities["file"], _line=3, _column=5,
+        _ent=entities["method"], _scope=entities["method"],
+    )
+    ReferenceModel.create(
+        _kind=kinds["define"], _file=entities["file"], _line=4, _column=5,
+        _ent=entities["parameter"], _scope=entities["method"],
+    )
+
+    unfiltered = {e.name() for e in make_ent(entities["method"]).ents(None)}
+    filtered = {e.name() for e in make_ent(entities["method"]).ents("Call")}
+
+    assert unfiltered == {"run", "x"}
+    assert filtered == {"run"}
+    assert filtered < unfiltered
+
+
+def test_ents_skips_non_matching_refs_instead_of_stopping(
+    db, kinds, entities, make_ent
+):
+    """
+    Kills `ReplaceContinueWithBreak`: the entity-kind filter must *skip* a
+    non-matching reference and keep scanning.
+
+    Both references below are found through their `_scope`, so they are scanned
+    in insertion order.  The first does not match `Method`, so a `break` would
+    discard the second one and return an empty list.
+    """
+    callee = EntityModel.create(
+        _kind=kinds["method"], _parent=entities["class"], _name="other",
+        _longname="com.example.Main.other", _value="", _type="void", _contents="",
+    )
+    ReferenceModel.create(  # scanned first, target is a Parameter -> no match
+        _kind=kinds["call"], _file=entities["file"], _line=1, _column=1,
+        _ent=entities["parameter"], _scope=entities["method"],
+    )
+    ReferenceModel.create(  # scanned second, target is a Method -> matches
+        _kind=kinds["call"], _file=entities["file"], _line=2, _column=1,
+        _ent=callee, _scope=entities["method"],
+    )
+
+    related = make_ent(entities["method"]).ents("Call", "Method")
+    assert [e.name() for e in related] == ["other"]
+
+
+def test_parameters_only_reads_direct_children(db, kinds, entities, make_ent):
+    """
+    Kills `ReplaceComparisonOperator_Eq_GtE` on the `_parent == self._id`
+    lookup: a parameter belonging to a *different* method must never leak into
+    this method's signature.
+    """
+    other_method = EntityModel.create(
+        _kind=kinds["method"], _parent=entities["class"], _name="other",
+        _longname="com.example.Main.other", _value="", _type="void", _contents="",
+    )
+    EntityModel.create(  # higher id, belongs to `other`, must not appear below
+        _kind=kinds["parameter"], _parent=other_method, _name="y",
+        _longname="com.example.Main.other.y", _value="", _type="long", _contents="",
+    )
+
+    assert make_ent(entities["method"]).parameters() == "int x"
+    assert make_ent(other_method).parameters() == "long y"
 
 
 def test_depends_and_dependsby_are_empty_dicts(entities, make_ent):

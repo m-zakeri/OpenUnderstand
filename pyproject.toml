@@ -15,8 +15,17 @@ testpaths = ["tests"]
 # Make the repository root importable so `import openunderstand...` works
 # regardless of the current working directory (pytest >= 7).
 pythonpath = ["."]
+# Test tiers.  `--strict-markers` means an unregistered marker is a collection
+# error, so this list is the authoritative set.
+#   unit      tests/unit/      example-based tests for the api/db layer
+#   property  tests/property/  Hypothesis property-based tests (same unit)
+# Both tiers test the *same* unit in isolation; they differ only in how inputs
+# are chosen. Select one with e.g. `pytest -m property`.
 markers = [
     "slow: marks tests as slow (deselect with -m 'not slow')",
+    "unit: example-based unit tests for the api/db layer (parser stubbed)",
+    "property: Hypothesis property-based tests for the api/db layer",
+    "generated: curated Pynguin-generated tests (tests/generated)",
 ]
 filterwarnings = [
     "ignore::DeprecationWarning",
@@ -67,7 +76,9 @@ directory = "htmlcov"
 # is excluded so the "zero linting errors" gate reflects the new work.
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+# Target the *lowest* Python the CI matrix runs (3.10) so ruff never proposes
+# syntax that would break the 3.10 job.  The suite is verified on 3.10-3.12.
+target-version = "py310"
 extend-exclude = [
     "openunderstand",
     "benchmark",
@@ -92,9 +103,14 @@ ignore = [
 # Static typing is optional for this assignment; configured leniently and
 # scoped to the test package so it never blocks the pipeline.
 [tool.mypy]
-python_version = "3.12"
+# No `python_version` pin: mypy then targets whichever interpreter is running,
+# so `mypy tests` works unchanged on 3.10, 3.11 and 3.12.
 ignore_missing_imports = true
 warn_unused_ignores = false
 warn_redundant_casts = true
 files = ["tests"]
 exclude = "(openunderstand|benchmark|docs|grammars|test_analysis.*|test_metrics)"
+# `exclude` only stops mypy collecting those paths -- it still follows imports
+# into them.  `silent` analyses them for types but suppresses their errors, so
+# `mypy tests` reports on the student-authored test code only.
+follow_imports = "silent"

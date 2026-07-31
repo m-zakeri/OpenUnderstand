@@ -5,9 +5,17 @@ Faults discovered while building the isolated unit-test suite for
 GitHub issue: copy it into a new issue at
 <https://github.com/m-zakeri/OpenUnderstand/issues>.
 
-The two confirmed, test-backed faults (#1 and #2) are reproduced by `xfail`
-tests already in the suite, so they are documented without breaking the CI
-"all tests passing" gate.
+The three confirmed, test-backed faults (#1, #2 and #5) are reproduced by
+`xfail` tests already in the suite, so they are documented without breaking the
+CI "all tests passing" gate.
+
+## Filed issue links
+
+| Fault | Failing test | Issue URL |
+|---|---|---|
+| #1 `Kind.inv()` raises `TypeError` | `tests/unit/test_kind.py::test_inv_on_reference_kind_returns_forward_kind` | _to be filled in after filing_ |
+| #2 `Db.lookup(name)` returns `[]` | `tests/unit/test_entity_and_db.py::test_lookup_without_kind_filter_should_find_entities` | _to be filled in after filing_ |
+| #5 `Db.relative_file_name()` escapes the project root | `tests/property/test_api_properties.py::test_relative_file_name_preserves_the_basename` | _to be filled in after filing_ |
 
 ---
 
@@ -57,7 +65,7 @@ TypeError: api.Kind() argument after ** must be a mapping, not NoneType
 ```
 
 ### Failing test
-`tests/test_kind.py::test_inv_on_reference_kind_returns_forward_kind`
+`tests/unit/test_kind.py::test_inv_on_reference_kind_returns_forward_kind`
 (currently marked `xfail(raises=TypeError)`).
 
 ### Suggested fix (optional PR)
@@ -105,7 +113,7 @@ regardless of kind.
 Always returns `[]`.
 
 ### Failing test
-`tests/test_entity_and_db.py::test_lookup_without_kind_filter_should_find_entities`
+`tests/unit/test_entity_and_db.py::test_lookup_without_kind_filter_should_find_entities`
 (currently marked `xfail`).
 
 ### Suggested fix (optional PR)
@@ -120,6 +128,80 @@ Only apply the kind regex when `kindstring` is provided:
 +        ):
 +            continue
 +        ents.append(Ent(**ent.__dict__.get("__data__")))
+```
+
+---
+
+## Issue #5 — `Db.relative_file_name()` can escape the project root
+
+**Labels:** bug, api
+
+### Summary
+`Db.relative_file_name(path)` uses `os.path.commonprefix`, which compares paths
+**character by character** rather than by path component. When a file name and
+the project root merely share a few leading characters, the method relativises
+against a directory that does not exist, and returns a path that walks *out* of
+the project with `..` — or collapses the file name entirely.
+
+> Discovered by the Hypothesis property-based suite, not by hand: the property
+> "relativising a path must never change its basename" was falsified within a
+> few dozen generated examples.
+
+### Environment
+- OpenUnderstand @ `master`
+- Python 3.12 (also reproduces on 3.10/3.11)
+- OS: Windows 11 / Ubuntu 22.04
+
+### Root cause
+`api.py`, in `Db.relative_file_name()`:
+
+```python
+list_of_paths = [self._root, absolute_path]
+common_prefix = os.path.commonprefix(list_of_paths)   # <-- character-wise
+return os.path.relpath(absolute_path, common_prefix)
+```
+
+`os.path.commonprefix` is documented as operating on strings, **not** paths; the
+standard library provides `os.path.commonpath` for the path-aware version.
+
+### Steps to reproduce
+```python
+# project root = "com/example"
+db.relative_file_name("common/Other.java")
+# commonprefix(["com/example", "common/Other.java"]) == "com"
+# -> relpath("common/Other.java", "com") == "../common/Other.java"
+
+db.relative_file_name("c")
+# commonprefix(["com/example", "c"]) == "c"
+# -> relpath("c", "c") == "."          # the file name is lost entirely
+```
+
+### Expected behaviour
+A path inside the project root is returned relative to it; a path outside the
+root is either returned unchanged or rejected. The basename is never altered.
+
+### Observed behaviour
+`"../common/Other.java"` — a path that escapes the project root — and `"."` for
+the second case, which loses the file name completely. Any reported source
+location built on this is wrong.
+
+### Failing tests
+- `tests/property/test_api_properties.py::test_relative_file_name_preserves_the_basename`
+  (property, marked `xfail`)
+- `tests/property/test_api_properties.py::test_relative_file_name_can_escape_the_project_root`
+  (deterministic reproduction, passes by asserting the buggy behaviour)
+
+### Suggested fix (optional PR)
+```diff
+-        list_of_paths = [self._root, absolute_path]
+-        common_prefix = os.path.commonprefix(list_of_paths)
+-        return os.path.relpath(absolute_path, common_prefix)
++        try:
++            common = os.path.commonpath([self._root, absolute_path])
++        except ValueError:
++            # different drives / mix of absolute and relative -> not relativisable
++            return absolute_path
++        return os.path.relpath(absolute_path, common)
 ```
 
 ---
@@ -149,3 +231,52 @@ this code.)
 
 **Suggested fix:** intersect the per-token kind sets first, or apply a single
 `AND` over per-token `_name.contains(token)` conditions on `KindModel`.
+
+### Finding #6 — `Db.ents()` returns a `set`, but its docstring promises a list
+The docstring reads `oudb.ents([kindstring]) -> list of Ent`, and the commercial
+Understand API returns a list. The implementation builds and returns a `set`, so
+callers cannot index or slice the result, and iteration order is unspecified.
+`Ent.ents()` has the mirror-image problem: it builds a `set` and then wraps it in
+`list(...)`, so it *is* a list but its **order is non-deterministic**.
+
+This is why the CI pipeline pins `PYTHONHASHSEED=0` — without it, set iteration
+order varies per process and any test asserting on a multi-element result would
+be flaky.
+
+**Suggested fix:** return a list built in a deterministic order (e.g. sorted by
+entity id), and de-duplicate explicitly rather than relying on `set`.
+
+### Finding #7 — `Db.lookup()` interpolates user input into a regular expression
+`Db.lookup()` builds its filter with an f-string:
+
+```python
+re.search(f'Java\\s+{kindstring}'.lower(), str(ent._kind._name).lower())
+```
+
+`kindstring` reaches `re.search` unescaped, so a caller passing regex
+metacharacters changes the match semantics, and a pathological pattern such as
+`"(a+)+$"` causes catastrophic backtracking (a ReDoS) on every candidate entity.
+The same applies to `name`, which is passed to peewee's `contains()`.
+
+**Suggested fix:** `re.escape(kindstring)`, or drop the regex entirely — the
+surrounding SQL query already performs the kind filtering.
+
+### Finding #8 — `fill.py` never persists the forward kind's inverse
+In `openunderstand/oudb/fill.py::append_java_ref_kind`:
+
+```python
+inv_kind, _ = KindModel.get_or_create(_name=inv, is_ent_kind=False, _inv=ref_kind)
+ref_kind.inverse = inv_kind      # <-- `inverse` is not a model field
+return ref_kind.save()
+```
+
+`KindModel` declares `_inv`, not `inverse`, so this assignment sets an ordinary
+Python attribute that `save()` never writes to the database. Only the *inverse*
+kind gets its `_inv` populated; the forward kind's stays `NULL`.
+
+Consequence: even after Fault #1 is fixed, `Kind("Java Call").inv()` still cannot
+return `Java Callby` — the link only exists in one direction. The test fixtures
+in `tests/conftest.py` reproduce this asymmetry deliberately, which is why the
+inverse-reference test runs in the `Callby → Call` direction.
+
+**Suggested fix:** `ref_kind._inv = inv_kind` before `save()`.

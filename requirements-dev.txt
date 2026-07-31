@@ -1,6 +1,11 @@
 # Development / test-engineering dependencies for Homework 3.
 # Install with:  pip install -r requirements-dev.txt
 #
+# Every entry carries an upper bound as well as a floor.  The assignment's
+# "pipeline reproducibility" gate is only meaningful if a new upstream major
+# release cannot turn a green build red without a code change -- an unpinned
+# linter is the classic way that happens.
+#
 # (Pynguin is deliberately NOT listed here: it pins old transitive
 #  dependencies that conflict with the tools below, so it must live in its
 #  own virtual environment -- see scripts/run_pynguin.* and docs/TESTING.md.)
@@ -8,18 +13,24 @@
 -r requirements.txt
 
 # --- Test runner & coverage ---
-pytest>=7.4
-pytest-cov>=4.1
-coverage[toml]>=7.4
+pytest>=7.4,<10.0
+pytest-cov>=4.1,<8.0
+coverage[toml]>=7.4,<8.0
 
 # --- Linting & static analysis ---
-ruff>=0.4
-mypy>=1.8
+# Upper-bounded so a new ruff release cannot introduce rules that break the
+# zero-lint quality gate on an unchanged tree.
+ruff>=0.4,<1.0
+mypy>=1.8,<3.0
 
 # --- Mutation testing (Part 5) ---
-mutmut>=2.4
-# Alternative mutation engine (use if mutmut misbehaves on native Windows):
-# cosmic-ray>=8.3
+# Both engines are installed so `pip install -r requirements-dev.txt` is the only
+# setup step on every platform.  mutmut has no native Windows support
+# (https://github.com/boxed/mutmut/issues/397), so Windows uses Cosmic Ray;
+# Linux/macOS/WSL can use either.  See docs/TESTING.md section 7.
+# mutmut is pinned to 3.x because setup.cfg uses the 3.x configuration keys.
+mutmut>=3.0,<4.0
+cosmic-ray>=8.3,<9.0
 
 # --- Property-based testing (bonus) ---
-hypothesis>=6.100
+hypothesis>=6.100,<7.0

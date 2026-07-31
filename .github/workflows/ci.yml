@@ -51,13 +51,21 @@ jobs:
           python-version: "3.12"
           cache: "pip"
 
+      # Install from requirements-dev.txt rather than a bare `pip install ruff`,
+      # so the linter version is bounded by the same file as everything else.
+      # An unpinned linter can turn a green build red with no code change,
+      # which would defeat the "pipeline reproducibility" gate.
       - name: Install lint tooling
         run: |
           python -m pip install --upgrade pip
-          pip install ruff
+          pip install -r requirements-dev.txt
 
       - name: Run ruff (zero-error gate)
         run: ruff check tests
+
+      - name: Run mypy (optional static analysis, non-blocking)
+        continue-on-error: true
+        run: mypy tests
 
   # ----------------------------------------------------------------------- #
   # Stage B: Tests + coverage + quality gates                               #
@@ -84,6 +92,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
+      # Runs both tiers: tests/unit (example-based) and tests/property
+      # (Hypothesis).  Both target the api/db layer with the parser stubbed --
+      # that is the unit under test.
       - name: Run unit tests with coverage + reports
         run: |
           mkdir -p reports
@@ -168,17 +179,22 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements-dev.txt
 
+      # mutmut 3.x removed the `junitxml` subcommand that 2.x provided;
+      # `export-cicd-stats` is its machine-readable replacement.  mutmut exits
+      # non-zero whenever mutants survive, which is normal, hence `|| true`.
       - name: Run mutation testing
         run: |
           mkdir -p reports
           mutmut run || true
-          mutmut results || true
-          mutmut junitxml > reports/mutmut-junit.xml || true
+          mutmut results | tee reports/mutmut-results.txt || true
+          mutmut export-cicd-stats > reports/mutmut-stats.json || true
 
       - name: Upload mutation report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: mutation-report
-          path: reports/mutmut-junit.xml
+          path: |
+            reports/mutmut-results.txt
+            reports/mutmut-stats.json
           if-no-files-found: warn

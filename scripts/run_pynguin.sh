@@ -1,11 +1,10 @@
 #!/usr/bin/env bash
 # Run Pynguin automated test generation against the api/db layer (Part 4).
 #
-# Prerequisites (one-time):
-#   python3.12 -m venv .venv-pynguin
+# Prerequisites (one-time) — needs Python 3.10-3.12:
+#   python3 -m venv .venv-pynguin
 #   source .venv-pynguin/bin/activate
-#   pip install "pynguin>=0.43.0"
-#   pip install -r requirements.txt        # so the target module's imports resolve
+#   pip install "pynguin>=0.43.0" -r requirements.txt
 #
 # Then, with .venv-pynguin activated, run this script from the repo root.
 set -euo pipefail
@@ -21,12 +20,16 @@ export PYTHONPATH="${REPO}:${REPO}/tests/_pynguin_support"
 
 mkdir -p "${REPO}/tests/generated"
 
+# 30 s is what the committed results in docs/REPORT.md section 4 were produced
+# with; raise it if you want a longer search (the coverage delta plateaus early
+# on this module -- nearly every branch sits behind a live peewee query).
 pynguin \
   --project-path "${REPO}" \
   --module-name openunderstand.oudb.api \
   --output-path "${REPO}/tests/generated" \
-  --maximum-search-time 120 \
+  --maximum-search-time 30 \
   --seed 42 \
+  --assertion-generation MUTATION_ANALYSIS \
   -v
 
 # Optional flags worth exploring (verify names with `pynguin --help`):

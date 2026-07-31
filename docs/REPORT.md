@@ -34,11 +34,27 @@ Java-parsing stack: almost every metric module imports
 parsers. None of that is needed to test the database-backed api/db layer, and it
 would make "unit" tests slow, brittle, and non-isolated.
 
-The suite therefore installs lightweight **stub modules** in `sys.modules`
-before importing the api (`tests/conftest.py`). The unit under test is thus
-decoupled from its heavy collaborators — a textbook application of the
-test-double/seam technique. The same shim is reused for Pynguin via a
-`sitecustomize.py` placed on `PYTHONPATH`.
+The suite therefore installs a :pep:`302` **meta-path finder** that synthesises
+stub modules for those prefixes before importing the api. The unit under test is
+thus decoupled from its heavy collaborators — a textbook application of the
+test-double/seam technique.
+
+The finder lives in a single module, `tests/_isolation.py`, with two callers:
+`tests/conftest.py` for the pytest suite, and
+`tests/_pynguin_support/sitecustomize.py` for Pynguin, which runs in a separate
+process *and* virtualenv and so loads it by path. One implementation means both
+paths isolate exactly the same surface.
+
+Two details in that finder are worth calling out because both were driven by
+real failures:
+
+* Stub modules set `__path__ = []` so they count as *packages* and nested
+  imports (`openunderstand.metrics.cyclomatic`) resolve recursively.
+* The module-level `__getattr__` synthesises arbitrary names but **refuses
+  dunders**. Introspection tools walk `sys.modules` probing `__file__`,
+  `__all__` and similar, expecting a real value or `AttributeError`; returning a
+  class instead made Hypothesis' constant-collection pass crash with
+  `TypeError: argument of type 'type' is not iterable`.
 
 Each test runs against a fresh **in-memory SQLite** database (peewee
 `:memory:`), created and dropped per test, so the suite is hermetic, fast, and
@@ -48,97 +64,224 @@ order-independent, and never touches a developer's real `.oudb` files.
 
 ```
 tests/
-├── conftest.py            # isolation bootstrap + shared fixtures
-├── test_kind.py           # entity & reference kinds, inverse references
-├── test_ref.py            # reference objects
-├── test_entity_and_db.py  # parent-child, unknown entities, db queries
-├── test_misc.py           # remaining in-scope accessors / dunders
-├── _pynguin_support/      # sitecustomize shim for Pynguin
-└── generated/             # curated Pynguin output
+├── _isolation.py             # the stub meta-path finder (one implementation)
+├── conftest.py               # isolation bootstrap + shared fixtures
+├── unit/                     # example-based tests (71)
+│   ├── test_kind.py          #   entity & reference kinds, inverse references
+│   ├── test_ref.py           #   reference objects
+│   ├── test_entity_and_db.py #   parent-child, unknown entities, db queries
+│   └── test_misc.py          #   remaining in-scope accessors / dunders
+├── property/                 # Hypothesis property-based tests (23)
+│   └── test_api_properties.py
+├── _pynguin_support/         # sitecustomize shim for Pynguin
+└── generated/                # curated Pynguin output
 ```
+
+Both tiers exercise the **same** unit in isolation and differ only in how inputs
+are chosen: hand-picked examples versus generated ones. Splitting them keeps the
+example-based suite readable while letting the property tier be selected or
+skipped independently (`pytest -m property`).
 
 Fixtures provide a realistic slice of the Java kind table (with inverse `_inv`
 wiring identical to `oudb/fill.py`), a `File → Class → Method → Parameter`
 entity tree, a `Java Call` reference, and an `api.Db` bound to the in-memory
 database. Factory fixtures (`make_kind`/`make_ent`/`make_ref`) wrap ORM rows as
-api dataclasses exactly as the production code does.
+api dataclasses exactly as the production code does — re-fetching by primary key
+first, because `Model.create()` only records explicitly-set columns in peewee's
+`__data__` and the dataclasses require every field.
 
 # 3. Manual Unit Testing
 
 Handcrafted tests cover the eight behaviours required by Part 3:
 
-| # | Requirement | Where |
-|---|---|---|
-| 1 | Handcrafted unit tests | all `tests/test_*.py` |
-| 2 | Normal behaviour | name/longname/check/list_*/accessors |
-| 3 | Malformed input | reference to a non-existent entity id (`test_ref`) |
-| 4 | Edge cases | empty filter string, no-match fallback (`test_kind`) |
-| 5 | Unresolved/unknown entities | `ent_from_id(unknown) → None`; unknown kind filter → empty |
-| 6 | Inverse references | `Kind.inv()` (entity-kind raises; reference-kind via xfail) |
-| 7 | Parent–child relationships | full `parent()` chain walk (`test_entity_and_db`) |
-| 8 | Multi-pass analysis | parser-stage concern; documented + skipped placeholder |
+| # | Requirement | Where | Status |
+|---|---|---|---|
+| 1 | Handcrafted unit tests | all `tests/unit/test_*.py` | done |
+| 2 | Normal behaviour | name/longname/check/list_*/accessors | done |
+| 3 | Malformed input | reference to a non-existent entity id (`test_ref`) | scoped — see below |
+| 4 | Edge cases | empty filter string, no-match fallback (`test_kind`) | done |
+| 5 | Unresolved/unknown entities | `ent_from_id(unknown) → None`; unknown kind filter → empty | done |
+| 6 | Inverse references | `Kind.inv()` (entity-kind raises; reference-kind via xfail) | done |
+| 7 | Parent–child relationships | full `parent()` chain walk (`test_entity_and_db`) | done |
+| 8 | Multi-pass analysis | parser-stage concern; documented + skipped placeholder | not implemented — see below |
 
-Requirement 8 (multi-pass analysis) is a property of the parser/listener stage,
-which is intentionally stubbed for isolated unit testing; it is addressed
-instead by oracle-based/differential testing (Section 6) and marked with an
-explicit `skip` so the intent is recorded.
+Two requirements are **deliberately not implemented**, and the reasoning is the
+same for both: the unit under test is the api/db layer, and the parser is a
+stubbed collaborator.
 
-Two behaviours are encoded as `xfail` tests because they expose genuine bugs
+* **Requirement 3 (malformed Java snippets).** Malformed *Java* can only be
+  observed by the ANTLR grammar and the listener passes. At the api layer the
+  analogous defect is a malformed *database row*, which is what
+  `test_ent_for_unknown_id_raises_does_not_exist` covers: a reference pointing
+  at an entity id that does not exist must raise rather than silently pass.
+  Testing the grammar itself would be an integration test against a different
+  unit.
+* **Requirement 8 (multi-pass analysis).** The api layer performs no
+  multi-pass analysis; declaration and reference-resolution passes belong to
+  `openunderstand.ounderstand`. The requirement is qualified "where applicable"
+  and it does not apply to this unit. It is marked with an explicit `skip`
+  carrying that reason so the decision is recorded in the test output itself,
+  and is addressed instead by oracle-based/differential testing (Section 6).
+
+Scoping a unit and then testing everything inside it is a different activity
+from testing whatever happens to be reachable. Both decisions are recorded in
+the code, not only in this report.
+
+Three behaviours are encoded as `xfail` tests because they expose genuine bugs
 (Section 7); marking them as expected failures keeps the pipeline green while
-still documenting the defects.
+still documenting the defects in executable form.
+
+## 3.1 Property-based testing (bonus)
+
+`tests/property/` adds 23 Hypothesis tests over the same unit. Where the
+example-based tier pins behaviour at inputs the author thought of, these state
+*invariants* and let Hypothesis search for counterexamples:
+
+| Invariant | Why it matters |
+|---|---|
+| `Kind.check(s)` ⟺ case-insensitive substring | the filter primitive every `kindstring` query is built on |
+| `Ent.simplename()` never contains `.` | the documented Java contract |
+| `a == b ⟹ hash(a) == hash(b)` | `Db.ents()` returns a `set`; a violation silently drops entities |
+| `__eq__` is symmetric | required of any `__eq__`; catches `==` → `<=` style defects |
+| `value()`/`type()` return `None` only for `None` | null-propagation contract |
+| relativising a path preserves its basename | **falsified — became Fault #5** |
+
+The last row is the payoff: within a few dozen generated examples Hypothesis
+found that `Db.relative_file_name()` returns a path escaping the project root
+(Section 7). No hand-written example in the suite had come close.
+
+One property was *deliberately weakened* after Hypothesis falsified it:
+case-insensitive matching is only asserted over ASCII, because
+`'ı'.upper() == 'I'` makes `str.lower()` case folding non-round-trip-safe for
+Unicode. That is correct Python behaviour rather than a defect, so it is
+recorded as a documented limitation of kind filtering instead of a bug.
 
 # 4. Automated Test Generation (Pynguin)
 
-Pynguin (DYNAMOSA, fixed seed for reproducibility) targets
-`openunderstand.oudb.api`. Because Pynguin pins old transitive dependencies, it
-runs in its own virtual environment; the `scripts/run_pynguin.*` wrappers set
-`PYNGUIN_DANGER_AWARE` and put the isolation shim on `PYTHONPATH` so generation
-focuses on the api/db layer rather than the parser.
+Pynguin 0.45.0 (DYNAMOSA, `--seed 42`, `--assertion-generation
+MUTATION_ANALYSIS`) targets `openunderstand.oudb.api`. Because Pynguin pins old
+transitive dependencies, it runs in its own virtual environment; the
+`scripts/run_pynguin.*` wrappers set `PYNGUIN_DANGER_AWARE` (Pynguin *executes*
+the module under test, so the acknowledgement is mandatory) and put the
+isolation shim on `PYTHONPATH` so generation focuses on the api/db layer rather
+than the parser.
 
-Generated tests are treated as raw material, not deliverables. The intended
-workflow (documented in `tests/generated/README.md`) is: **evaluate** the
-coverage delta, **remove** flaky/meaningless cases (identity, ordering,
-timestamps, random junk assertions), **refactor** for readability, and
-**integrate** the survivors under `tests/` so CI runs them automatically.
+## 4.1 Getting Pynguin to run at all
 
-## 4.1 Empirical result: Pynguin could not generate tests for this module
+Generation initially failed, and the two failures are worth reporting because
+diagnosing them is most of the engineering content of this part.
 
-Running Pynguin against `openunderstand.oudb.api` was attempted in a dedicated
-`.venv-pynguin` (Python 3.12) via `scripts/run_pynguin.ps1`. Generation **failed
-before producing any tests**, in two distinct stages:
+**Failure 1 — `RecursionError: maximum recursion depth exceeded`.** Pynguin
+snapshots module state with `dill`, which recursively pickles every object
+reachable from the target module. `api.py` reaches the peewee ORM classes, whose
+metaclass and `ForeignKeyField` back-reference graphs are deeply
+self-referential, overflowing CPython's default 1000-frame limit. *Fixed* by
+raising the recursion limit to 30 000 in the Pynguin start-up shim
+(`tests/_pynguin_support/sitecustomize.py`).
 
-1. **`RecursionError: maximum recursion depth exceeded`** — Pynguin snapshots the
-   module state with `dill`, which recursively pickles every object reachable
-   from the target module. `api.py` reaches the peewee ORM classes
-   (`EntityModel`, `KindModel`, `ReferenceModel`), whose metaclass/field graphs
-   are deeply self-referential, overflowing CPython's default 1000-frame limit.
-   *Mitigation attempted:* raising the interpreter recursion limit to 30 000 in
-   the Pynguin start-up shim (`tests/_pynguin_support/sitecustomize.py`). This
-   got past the serialization stage.
+**Failure 2 — `NameError: name 'IterableClassWatcher' is not defined`.** This
+was initially recorded as an unfixable internal Pynguin bug. That diagnosis was
+wrong, and the correction is instructive: **`IterableClassWatcher` is not a
+Pynguin symbol at all.** It is a metaclass in *GitPython* (`git/util.py`), the
+deprecated `Iterable` shim that GitPython 3.1.x warns about. The full mechanism:
 
-2. **`NameError: name 'IterableClassWatcher' is not defined`** — an *internal*
-   Pynguin symbol referenced by its runtime instrumentation/type-tracing layer
-   is undefined in the installed release. Because the missing name belongs to
-   Pynguin itself (not to the module under test), it is a tool-side regression
-   that no configuration of the target can work around.
+1. Pynguin runs its search in a `multiprocess` worker and ships module state to
+   it with `dill`.
+2. `dill._create_type` reconstructs `git.util.Iterable`.
+3. Constructing that class invokes its metaclass, whose `__init__` refers to its
+   own name as a *module global*:
+   ```python
+   class IterableClassWatcher(type):
+       def __init__(cls, name, bases, clsdict):
+           for base in bases:
+               if type(base) == IterableClassWatcher:   # global lookup
+   ```
+4. During reconstruction that global is not yet bound in the rebuilt namespace,
+   so the worker dies with `NameError`.
 
-**Analysis.** Pynguin's DYNAMOSA engine relies on (a) `dill`-serialising module
-state and (b) instrumenting the return values of the unit under test to seed its
-type system. Both mechanisms are hostile to a database-facade module: the ORM
-object graph is unserialisable in practice, and the API returns ORM-wrapped
-dataclasses that trigger Pynguin's `IterableClass` watcher path — exactly where
-the internal `NameError` fires. This is a **known class of limitation** for
-search-based generators on framework/ORM-bound code, and is reported here as a
-genuine engineering finding rather than papered over with fabricated numbers.
+`api.py` imports `git` at module level but uses it in exactly one function,
+`update_db()`, which needs a real repository and is already marked
+`# pragma: no cover` — i.e. it is outside the unit under test. **The fix was
+therefore to add `git` to the isolation shim's stubbed prefixes**, keeping
+GitPython out of the module graph entirely. Two lines of configuration, once the
+cause was actually identified.
 
-**Consequence for the suite.** Automated generation added no tests, so coverage
-of the api/db layer rests entirely on the handcrafted suite (Part 3) — which
-already reaches **97.13 % line / 93.18 % branch**, comfortably above target. The
-`scripts/run_pynguin.*` wrappers, the isolation shim, and the
-curate→evaluate→refactor→integrate workflow in `tests/generated/README.md` are
-retained so the pipeline is ready to absorb generated tests on a Pynguin release
-where the instrumentation bug is fixed, or against a pure-Python (ORM-free)
-module.
+A third, smaller failure followed (`ModuleNotFoundError: _ou_test_isolation`):
+the shim loaded `tests/_isolation.py` under a synthetic module name without
+registering it in `sys.modules`, and Pynguin re-imports the `__module__` of
+everything it reaches in order to parse its syntax tree. Registering the module
+before `exec_module` resolved it.
+
+**Lesson.** "Internal tool bug" is a diagnosis worth double-checking. The
+symbol in the traceback belonged to a *transitive dependency of the module under
+test*, and the fix belonged in the isolation configuration — the same seam that
+already existed for the parser and metric stack.
+
+## 4.2 Result and evaluation of usefulness
+
+Pynguin completed successfully and emitted **14 test cases** in ~30 s of search.
+Coverage of `api.py` + `models.py`, with branch tracking:
+
+| Suite | Line | Branch |
+|---|---|---|
+| Manual only (`tests/unit` + `tests/property`) | 97.39 % | 95.45 % |
+| Generated only (14 raw cases) | 57.44 % | 9.09 % |
+| **Combined** | **97.39 %** | **95.45 %** |
+
+**The generated suite adds zero coverage.** Every line and branch it reaches was
+already covered by the handcrafted tests. That is the honest evaluation required
+by task 4, and it is what justified aggressive curation rather than wholesale
+adoption. The branch figure (9.09 %) is the more telling one: search-based
+generation reached the module's easy surface — constructors and scalar accessors
+— but almost none of its conditional logic.
+
+## 4.3 Curation (tasks 5 and 6)
+
+The raw output is preserved verbatim at
+`pynguin-report/generated-raw-output.py.txt`, deliberately outside `tests/` so
+pytest does not collect it. The curated survivors live in
+`tests/generated/test_api_pynguin_curated.py`, which CI runs automatically
+because the folder sits under `tests/`.
+
+**Removed:**
+
+| What | Why |
+|---|---|
+| 17 module-constant assertions repeated in *every* test (`module_0.COMMENT == "Comment"` …) | assert unrelated module globals; no oracle for the behaviour under test |
+| `test_case_3/7/9/10/12` | invoked `longname()`, `id()`, `__str__()`, `__ge__()`, `__repr__()` with **no assertion** — proves only "it did not raise" |
+| `test_case_13` | called `create_db("bF4kZ}NM2k0@,", None, None)`, which **writes a SQLite file to the working directory**. A unit test must not touch the filesystem |
+| `test_case_0/4/6/8` | duplicates of existing `tests/unit/` cases, with worse names and random literals |
+
+**Kept and refactored:** two behaviours the manual suite genuinely did not
+cover, renamed from `test_case_N`, given meaningful locals, and given the
+assertions Pynguin could not infer:
+
+* `api.open()` on a non-file path raises `UnderstandError` — the manual suite
+  skips `open()` because it needs an on-disk `.udb`, but the guard clause is
+  reachable without one. Generalised into a parametrised test over three
+  non-file paths.
+* `Ref` accessors tolerate a partially-populated row — Pynguin built a `Ref`
+  from a mix of `None` and out-of-range integers, a shape no fixture would
+  produce by hand, and that row shape is reachable whenever an analysis pass is
+  interrupted.
+
+**Net contribution: 5 tests, 0 % coverage delta, 2 genuinely novel behaviours.**
+That is a modest but real return, and reporting it as modest is the point —
+the temptation with generated tests is to count them rather than assess them.
+
+## 4.4 What this says about search-based generation here
+
+Pynguin's DYNAMOSA engine seeds its type system by instrumenting return values
+and snapshots state with `dill`. Both mechanisms are strained by a
+database-facade module: the ORM object graph is expensive to serialise, and the
+API returns ORM-wrapped dataclasses whose construction requires a bound
+database that the generator has no way to synthesise. That is why it reached
+constructors and accessors but only 9 % of branches — nearly every interesting
+branch in `api.py` sits behind a live peewee query.
+
+The practical conclusion is not that the tool is broken, but that its
+assumptions and this module's design are mismatched. It found two edges worth
+keeping, and it cost two genuine bugs' worth of diagnosis to get there.
 
 # 5. Coverage and Mutation Analysis
 
@@ -159,13 +302,14 @@ Quality gates enforced by CI: **line ≥ 80 %**, **branch ≥ 70 %**.
 
 | Metric | Result | Gate | Pass? |
 |---|---|---|---|
-| Tests passed | 68 passed, 1 skipped, 2 xfailed (71 collected) | all green | Pass |
-| Line coverage | 97.13 % | ≥ 80 % | Pass |
-| Branch coverage | 93.18 % (41 / 44) | ≥ 70 % | Pass |
+| Tests passed | 98 passed, 1 skipped, 3 xfailed (102 collected) | all green | Pass |
+| Line coverage | 97.39 % (331 / 339) | ≥ 80 % | Pass |
+| Branch coverage | 95.45 % (42 / 44) | ≥ 70 % | Pass |
 
-Per-module: `api.py` 98.82 % line coverage (294 stmts, 1 missed), `models.py`
-84.44 % (45 stmts, 7 missed). The two `xfail` tests document real faults
-(Section 7); the one skip is the parser-stage multi-pass concern.
+Per-module: `api.py` 98.98 % line coverage, `models.py` 84.44 % (45 stmts, 7
+missed — the ORM `__str__`/`__repr__` dunders). The three `xfail` tests document
+real faults (Section 7); the one skip is the parser-stage multi-pass concern
+explained in Section 3.
 
 ## 5.2 Mutation testing
 
@@ -199,58 +343,101 @@ in the coverage configuration (Section 5.1). Mutants planted in code the unit
 suite never executes **cannot** be killed by that suite, so they inflate the
 surviving count.
 
+Rather than assert that, it can be measured. Every Cosmic Ray mutant records the
+source line it was planted on (`mutation_specs.start_pos_row`), and
+`coverage.json` records which lines the suite executes. Joining the two
+partitions the run into in-scope and out-of-scope mutants:
+
+| Scope | Mutants | Killed | Survived | **Score** |
+|---|---|---|---|---|
+| Whole file (`api.py`) | 839 | 104 | 735 | 12.40 % |
+| **In-scope (covered lines)** | **100** | **75** | **25** | **75.00 %** |
+| Out-of-scope (excluded regions) | 739 | 29 | 710 | 3.92 % |
+
+These are the figures from the committed session (`cr-session.sqlite`), taken
+**before** the improvement work below. After the five targeted tests were added,
+each of those five mutants was re-applied by hand and confirmed to fail the
+suite, giving an in-scope score of **80 killed / 100 → 80.00 %**. The session
+file was not regenerated because a full re-run means re-evaluating all 839
+mutants (≈ 90 minutes); the command to refresh it is `.\scripts\run_mutation.ps1`.
+
+The interpretation is now empirical rather than rhetorical: **88 % of all
+mutants sit in code the unit suite is not responsible for**, and on the code it
+*is* responsible for it kills three out of four. The exact command that
+reproduces this split is in `docs/TESTING.md` §7, so the number is auditable
+rather than asserted.
+
 The surviving mutants cluster into three categories:
 
-1. **Out-of-scope integration code (the large majority).** Hundreds of
-   `ReplaceComparisonOperator` and `NumberReplacer` mutants land in the
-   metric/file/browser methods that unit tests intentionally do not exercise.
-2. **Equivalent mutants.** Many `ReplaceComparisonOperator_Eq_Is` /
+1. **Out-of-scope integration code (the large majority).** 710 of the 735
+   survivors — hundreds of `ReplaceComparisonOperator` and `NumberReplacer`
+   mutants in the metric/file/browser methods that unit tests intentionally do
+   not exercise.
+2. **Equivalent or unreachable mutants.** `ReplaceComparisonOperator_Eq_Is` /
    `Eq_IsNot` survivors are semantically equivalent — for comparisons against
    `None` or interned singletons, `==` and `is` behave identically, so no test
-   can distinguish them. These are unkillable in principle and are correctly
-   *not* counted as test weaknesses.
-3. **Genuinely killable survivors in in-scope code (a small minority).** A
-   handful of mutants in the `Kind`/`Ref`/`Ent`/`Db` accessors that the suite
-   *does* cover but does not assert tightly enough (e.g. a boundary comparison
-   whose exact operator the assertions don't pin down).
+   can distinguish them. A further cluster of 11 `ReplaceBinaryOperator_BitOr_*`
+   mutants on line 424 is *unreachable by construction*: they mutate the lambda
+   inside `reduce(lambda a, b: a | b, conditions)`, which is never invoked
+   because single-token filters produce a one-element list — and multi-token
+   filters are themselves broken (Finding #4). These are unkillable in
+   principle and correctly *not* counted as test weaknesses.
+3. **Genuinely killable survivors in in-scope code.** A small minority in the
+   `Kind`/`Ref`/`Ent`/`Db` accessors that the suite covered but did not assert
+   tightly enough.
 
 ### Improving the tests accordingly
 
-The correct methodological fix — and the way to obtain a *representative* score —
-is to re-scope the mutation target to the same surface as the coverage
-configuration (the unit-tested `Kind`/`Ref`/`Ent`/`Db` methods) rather than the
-whole facade. For the third category above, tightening assertions on the exact
-returned values and boundary conditions kills the remaining in-scope survivors;
-categories 1 and 2 are addressed by scoping and by marking equivalent mutants,
-not by adding tests. Chasing the bonus **> 85 % mutation score** target would
-require either that re-scoping or unit-testing the integration engine (which
-belongs to oracle/integration testing, Section 6), and was out of scope for this
-submission.
+Category 3 was acted on. Five specific survivors were reproduced by hand,
+targeted with new assertions, and each fix verified by re-applying the mutation
+and confirming the suite now fails:
+
+| Surviving mutant | Why it survived | Test added |
+|---|---|---|
+| `ents`: `if refkindstring:` → `if not refkindstring:` | every test passed a filter, so the unfiltered path was never taken | `test_ents_without_a_ref_kind_filter_returns_every_kind` |
+| `ents`: `continue` → `break` | only one reference existed, so skipping vs stopping were indistinguishable | `test_ents_skips_non_matching_refs_instead_of_stopping` |
+| `parameters`: `_parent == self._id` → `>=` | only one method had parameters, so a wider comparison matched the same rows | `test_parameters_only_reads_direct_children` |
+| `__eq__`: `==` → `<=` | the one inequality case compared a higher id to a lower one, which `<=` also rejects | property test `test_equality_is_symmetric` |
+| `simplename`: `[-1]` → `[-2]` | no test used a single-segment name, where `[-2]` raises | property test `test_simplename_is_the_last_dotted_segment` |
+
+Two of the five were killed by the property tier without any targeted work,
+which is a concrete argument for property-based testing: Hypothesis generates
+the boundary inputs (a name with exactly one segment; two ids in the opposite
+order) that a human writing examples reliably forgets.
+
+Line coverage rose from 97.13 % to 97.39 % and branch coverage from 93.18 % to
+95.45 % as a side effect.
+
+Categories 1 and 2 are addressed by scoping and by marking equivalent mutants,
+not by adding tests. Chasing the bonus **> 85 % mutation score** would require
+unit-testing the integration engine, which belongs to oracle/integration testing
+(Section 6) and remains out of scope for this submission.
 
 # 6. Oracle-Based Validation
 
-The commercial SciTools *Understand* serves as the oracle. For a small Java
-sample, the same queries are run through Understand's Python API and through
-OpenUnderstand, and the resulting entity/reference graphs are compared
-(differential testing). This validates semantics that pure unit tests cannot —
-e.g. that `Java Call`/`Java Callby` are produced with the correct scope/ent
-orientation, and that parent–child containment matches Understand's. Because
-Understand is licensed and platform-specific, this stage is run locally and
-summarised here rather than in CI.
+**Status: not executed.** Oracle-based differential testing against the
+commercial SciTools *Understand* tool was **not performed** for this submission,
+because a licensed Understand installation was not available on the development
+machine. No oracle-derived result is claimed anywhere in this report. Differential
+testing against Understand is listed as a *Bonus Challenge* in the assignment.
 
-**Status:** Oracle-based differential testing against the commercial SciTools
-*Understand* tool was **not executed** for this submission, because a licensed
-Understand installation was not available on the development machine. The
-approach is documented above and the isolation stubs (`conftest.py`,
-`sitecustomize.py`) are structured so a differential harness can be dropped in
-where an Understand license is present. Differential testing against Understand
-is listed as a *Bonus Challenge* in the assignment.
+**Design that was prepared for it.** The intended approach uses Understand as the
+oracle: for a small Java sample, the same queries would be issued through
+Understand's Python API and through OpenUnderstand, and the resulting
+entity/reference graphs compared. That would validate semantics pure unit tests
+cannot reach — e.g. that `Java Call`/`Java Callby` are produced with the correct
+scope/ent orientation, and that parent–child containment matches Understand's.
+Because Understand is licensed and platform-specific, such a stage would run
+locally rather than in CI. The isolation seams built for the unit suite
+(`tests/conftest.py`, `tests/_pynguin_support/sitecustomize.py`) are structured so
+a differential harness can be dropped in where a license is present.
 
 # 7. Fault Discovery
 
-Code review while building the suite surfaced four faults; the two confirmed,
-test-backed ones are filed as GitHub issues (`docs/FAULTS.md`) and reproduced by
-`xfail` tests.
+Building the suite surfaced **eight** faults. The three confirmed, test-backed
+ones are reproduced by `xfail` tests and written up as complete, ready-to-file
+GitHub issue reports in `docs/FAULTS.md` (see that file for the issue links once
+filed against <https://github.com/m-zakeri/OpenUnderstand/issues>).
 
 1. **`Kind.inv()` always raises `TypeError`.** It calls
    `inverse.__data__.get("__data__")`, which is `None` (every other call site
@@ -265,6 +452,23 @@ test-backed ones are filed as GitHub issues (`docs/FAULTS.md`) and reproduced by
 4. **`Db.ents()` multi-token filtering is contradictory** (ANDs per-token
    `_kind IN (...)` subqueries that can never be simultaneously satisfied),
    already flagged in-code with a `TODO`.
+5. **`Db.relative_file_name()` can escape the project root.** It uses
+   `os.path.commonprefix`, which compares *characters* rather than path
+   components, so root `com/example` and path `common/Other.java` share the
+   bogus prefix `"com"` and the result becomes `../common/Other.java`; the
+   degenerate case returns `"."` and loses the file name entirely.
+   `os.path.commonpath` is the correct API. **Found by Hypothesis, not by hand.**
+6. **`Db.ents()` returns a `set` where its docstring promises a list**, and
+   `Ent.ents()` returns a list built from a set, so its order is unspecified.
+   This is why CI pins `PYTHONHASHSEED=0`.
+7. **`Db.lookup()` interpolates unescaped user input into a regex**, giving a
+   ReDoS surface (`re.escape` is the fix). The SQL query already filters by
+   kind, so the regex is arguably redundant entirely.
+8. **`fill.py` never persists the forward kind's inverse.** It assigns to
+   `ref_kind.inverse`, which is not a model field, so `save()` writes nothing.
+   Only the inverse direction of the `_inv` link is ever stored — meaning even
+   after Fault #1 is fixed, `Kind("Java Call").inv()` still cannot reach
+   `Java Callby`. The test fixtures reproduce this asymmetry deliberately.
 
 Each issue includes environment, reproduction steps, expected vs. observed
 behaviour, the failing test, and a suggested fix for an optional pull request.
@@ -283,22 +487,47 @@ behaviour, the failing test, and a suggested fix for an optional pull request.
 - **Tests are excellent bug detectors.** Simply trying to assert the *correct*
   behaviour of `Kind.inv()` and `Db.lookup()` immediately exposed real defects;
   `xfail` lets a suite document bugs without going red.
+- **Property-based testing finds what examples cannot.** Hand-written examples
+  encode what the author already suspects. Hypothesis falsified an invariant I
+  believed was obviously true — that relativising a path preserves its basename
+  — and produced Fault #5 within seconds. It also killed two mutation survivors
+  for free, and forced an honest correction: my "case-insensitivity" property
+  was itself wrong for Unicode (`'ı'.upper() == 'I'`), which is now documented
+  as a limitation rather than pretended away.
+- **A metric is only as good as its scope, and scope can be measured.** The
+  12.40 % mutation score looked damning until the run was partitioned against
+  coverage data: 88 % of mutants live in code the unit suite is not responsible
+  for, and the in-scope score is 75 %. Computing that split turned an
+  argument into evidence — and the residue it exposed was small enough to
+  actually fix.
 - **Tooling reproducibility matters.** Pinned dev requirements, pip caching,
   `PYTHONHASHSEED=0`, and a Dockerfile make the pipeline reproducible; Pynguin's
   dependency pins justified a separate environment.
-- **Automated generation is not universally applicable.** Pynguin could not run
-  on the ORM-backed API module at all — it failed first on `dill` recursion and
-  then on an internal instrumentation bug (`IterableClassWatcher`). Knowing when
-  a tool's assumptions (serialisable state, simple return types) are violated,
-  and documenting that honestly, is itself part of the engineering job; the
-  manual suite already exceeded every coverage gate without it.
+- **"Internal tool bug" deserves a second look.** Pynguin's
+  `NameError: IterableClassWatcher` looked like an unfixable defect in the
+  generator. It was not: the symbol belongs to *GitPython*, a transitive
+  dependency that `api.py` imports for a single out-of-scope function, and
+  `dill` was choking on its deprecated metaclass. Adding `git` to the isolation
+  shim fixed it. The lesson is to read the traceback all the way down to which
+  *package* the failing symbol lives in before concluding the tool is at fault.
+- **Generated tests should be counted last and assessed first.** Once running,
+  Pynguin produced 14 cases with a **0 % coverage delta** over the manual suite
+  — and 9 % branch coverage on its own. Curating them down to 5 (deleting
+  assertion-free calls, module-constant noise, and one test that wrote a file to
+  disk) was more valuable than adopting all 14. A tool's assumptions —
+  serialisable state, constructible inputs — are strained by an ORM facade, and
+  saying so with measurements beats both fabricating success and declaring
+  defeat.
 
 # 9. Deliverables and Where to Find Them
 
 | Deliverable | Location in repository |
 |---|---|
-| Unit tests (handcrafted) | `tests/` (`test_kind.py`, `test_ref.py`, `test_entity_and_db.py`, `test_misc.py`) |
-| Test fixtures / isolation | `tests/conftest.py`, `tests/_pynguin_support/sitecustomize.py` |
+| Unit tests (handcrafted) | `tests/unit/` (`test_kind.py`, `test_ref.py`, `test_entity_and_db.py`, `test_misc.py`) |
+| Property-based tests (bonus) | `tests/property/test_api_properties.py` |
+| Generated tests (curated) | `tests/generated/test_api_pynguin_curated.py` |
+| Generated tests (raw Pynguin output) | `pynguin-report/generated-raw-output.py.txt` |
+| Test fixtures / isolation | `tests/_isolation.py`, `tests/conftest.py`, `tests/_pynguin_support/sitecustomize.py` |
 | CI/CD pipeline | `.github/workflows/ci.yml` |
 | Coverage reports | `coverage.xml`, `coverage.json`, `htmlcov/index.html`, `reports/junit.xml` |
 | Mutation config | `cosmic-ray.toml` (Cosmic Ray), `setup.cfg` (mutmut) |
@@ -306,37 +535,41 @@ behaviour, the failing test, and a suggested fix for an optional pull request.
 | Mutation scripts | `scripts/run_mutation.sh` / `.ps1` |
 | Fault reports (GitHub issues) | `docs/FAULTS.md` |
 | Testing / reproduce guide | `docs/TESTING.md` |
-| This report | `docs/REPORT.md` (Markdown) and the exported Word file |
+| This report | `docs/REPORT.md` (source), `docs/OpenUnderstand-HW3-Final-Report.docx`, `docs/OpenUnderstand-HW3-Final-Report.pdf` |
 | Reproducible container | `Dockerfile`, `.dockerignore` |
 
 # Appendix A — How to reproduce
 
-Full step-by-step instructions (environment setup, per-part commands) are in
-`docs/TESTING.md`. The essential commands are:
+Any of Python 3.10, 3.11 or 3.12 works (CI tests all three). Every command is a
+single line, so it can be pasted into PowerShell, `cmd` or a POSIX shell without
+edits. Full step-by-step instructions are in `docs/TESTING.md`.
 
-```bash
-# 1. Environment (Part 1)
+**Windows (PowerShell), from the repo root:**
+
+```powershell
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1          # Windows  (source .venv/bin/activate on Linux/macOS)
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements-dev.txt
-
-# 2. Lint gate (Part 1 / 2)
 ruff check tests
+pytest tests --cov=openunderstand.oudb.api --cov=openunderstand.oudb.models --cov-branch --cov-report=term-missing --cov-report=html --cov-report=json
+.\scripts\run_mutation.ps1
+```
 
-# 3. Unit tests + coverage + reports (Parts 3 & 5)
-pytest tests --cov=openunderstand.oudb.api --cov=openunderstand.oudb.models \
-  --cov-branch --cov-report=term-missing --cov-report=html --cov-report=json
+Steps 4–5 above are the lint gate (Parts 1–2) and the unit tests plus coverage
+(Parts 3 & 5); step 6 is mutation testing (Part 5, Cosmic Ray — mutmut has no
+native Windows support).
 
-# 4. Automated generation (Part 4) — separate env
-py -3.12 -m venv .venv-pynguin ; .\.venv-pynguin\Scripts\Activate.ps1
+**Linux/macOS:** identical, except `source .venv/bin/activate` and
+`./scripts/run_mutation.sh` (mutmut).
+
+**Pynguin (Part 4)** needs its own environment because it pins older
+dependencies:
+
+```powershell
+python -m venv .venv-pynguin
+.\.venv-pynguin\Scripts\Activate.ps1
 pip install "pynguin>=0.43.0" -r requirements.txt
 .\scripts\run_pynguin.ps1
-
-# 5. Mutation testing (Part 5) — Cosmic Ray on Windows (mutmut needs WSL)
-pip install cosmic-ray
-cosmic-ray init cosmic-ray.toml cr-session.sqlite
-cosmic-ray exec cosmic-ray.toml cr-session.sqlite
-cr-report cr-session.sqlite
 ```
 
 See `docs/TESTING.md` for the full guide, including the CI job breakdown and the

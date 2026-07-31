@@ -173,5 +173,21 @@ benchmark/
 # coverage.json and reports/ are committed as HW3 deliverables
 html/
 .mutmut-cache
-cr-session.sqlite
-pynguin-report/
+.ruff_cache/
+
+# Pynguin and Cosmic Ray *execute* the module under test, so `api.create_db()`
+# gets called with randomly generated names and litters the repo root with
+# stray SQLite databases (94 of them, ~5 MB, after one session).  This is also
+# why the generated test that called `create_db()` was removed during curation
+# -- see tests/generated/README.md.  Clean them up with:
+#   git clean -n .    # review first
+#   git clean -f .
+*.sqlite
+*.sqlite3
+!cr-session.sqlite
+
+# NOTE: cr-session.sqlite (2 MB, the Cosmic Ray mutation session) and
+# pynguin-report/ (61 KB, Pynguin's emitted config + raw generated output) are
+# deliberately NOT ignored -- they are the evidence behind the mutation score in
+# docs/REPORT.md section 5.2 and the Pynguin results in section 4, and the
+# assignment lists both as deliverables.

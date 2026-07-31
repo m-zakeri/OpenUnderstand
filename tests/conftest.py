@@ -1,80 +1,43 @@
 """
 Shared pytest fixtures and test-isolation bootstrap for the OpenUnderstand
-unit-test suite.
+test suite.
 
 The module under test is ``openunderstand.oudb.api`` -- the public, Understand-
 compatible Python API (``Db``, ``Ent``, ``Kind``, ``Ref``).
 
+Test tiers
+----------
+``tests/unit/``         isolated unit tests for the api/db layer (stubbed parser)
+``tests/integration/``  tests that drive the *real* ANTLR Java parser
+``tests/property/``     Hypothesis property-based tests
+
+Fixtures defined here are visible to all three tiers.
+
 Why the stub bootstrap below exists
 -----------------------------------
 Importing ``openunderstand.oudb.api`` transitively imports the whole metric
-engine (``openunderstand.metrics.*``) and the ANTLR/Java parsing stack
-(``openunderstand.ounderstand.*``).  The metric modules also use absolute
-``from gen.javaLabeled... import ...`` imports that only resolve in the original
-run layout.  None of that machinery is needed to exercise the database-backed
-``Db``/``Ent``/``Kind``/``Ref`` classes.
+engine and the ANTLR/Java parsing stack.  None of that machinery is needed to
+exercise the database-backed ``Db``/``Ent``/``Kind``/``Ref`` classes, so before
+importing the api we install a meta-path finder that synthesises a harmless
+stub for any import under those prefixes.  See ``tests/_isolation.py``.
 
-So, before importing the api, we install a meta-path finder that synthesises a
-harmless stub for ANY import under those prefixes.  This is the textbook "test
-in isolation" technique: the unit under test (the api layer) is decoupled from
-its heavy collaborators (the parser/metric layers).
+Note that the stub only covers the top-level ``gen`` package (the absolute
+import form used by the metric modules); ``openunderstand.gen.*`` is *not*
+stubbed, which is what lets ``tests/integration/`` drive the real parser.
 
 Every test runs against a fresh in-memory SQLite database, so tests never touch
 the developer's real ``.oudb`` files and cannot interfere with one another.
 """
 
-import importlib.abc
-import importlib.machinery
-import sys
-import types
-
 import pytest
 from peewee import SqliteDatabase
 
+from tests._isolation import install_stub_finder
 
 # ---------------------------------------------------------------------------
 # 1. Isolation bootstrap: stub the heavy parser/metric stack before importing api
 # ---------------------------------------------------------------------------
-class _Dummy:
-    """A do-nothing stand-in for any class/function pulled from a stub module."""
-
-    def __init__(self, *args, **kwargs):
-        pass
-
-    def __call__(self, *args, **kwargs):
-        return None
-
-
-def _stub_getattr(_name):
-    return _Dummy
-
-
-class _StubFinder(importlib.abc.MetaPathFinder, importlib.abc.Loader):
-    _PREFIXES = ("openunderstand.metrics", "openunderstand.ounderstand", "gen")
-
-    def _matches(self, fullname):
-        return any(
-            fullname == prefix or fullname.startswith(prefix + ".")
-            for prefix in self._PREFIXES
-        )
-
-    def find_spec(self, fullname, path=None, target=None):
-        if self._matches(fullname):
-            return importlib.machinery.ModuleSpec(fullname, self)
-        return None
-
-    def create_module(self, spec):
-        module = types.ModuleType(spec.name)
-        module.__path__ = []  # treat as a package so submodule imports resolve
-        module.__getattr__ = _stub_getattr  # PEP 562: synthesise any name
-        return module
-
-    def exec_module(self, module):
-        pass
-
-
-if not any(isinstance(f, _StubFinder) for f in sys.meta_path):
-    sys.meta_path.insert(0, _StubFinder())
+install_stub_finder()
 
 # Now it is safe to import the unit under test and the ORM models.
 from openunderstand.oudb import api  # noqa: E402

@@ -857,7 +857,7 @@ class Ent:
                 raise NotImplementedError(
                     "metric CountDeclInstanceMethod is not implemented"
                 )
-            elif item == "CountDeclInstanceVariable":
+            elif item < "CountDeclInstanceVariable":
                 raise NotImplementedError(
                     "metric CountDeclInstanceVariable is not implemented"
                 )
