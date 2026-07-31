@@ -1,0 +1,4 @@
+# Keep the bash wrappers LF-only. This repo is developed on Windows with
+# core.autocrlf=true, which would otherwise check them out with CRLF endings and
+# make bash fail with "$'\r': command not found".
+*.sh text eol=lf
