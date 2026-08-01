@@ -52,7 +52,10 @@ class ReferenceModel(Model):
     _scope = ForeignKeyField(EntityModel, backref="inv_refs")
 
     def __str__(self):
-        return f"{self._kind} {self._ent} {self._file}({self._line}, {self._column})"
+        try:
+            return f"{self._kind} {self._ent} {self._file}({self._line}, {self._column})"
+        except:
+            return f"ReferenceModel(id={self._id})"
 
 
 class ProjectModel(Model):
