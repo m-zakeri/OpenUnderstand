@@ -510,14 +510,25 @@ behaviour, the failing test, and a suggested fix for an optional pull request.
   `dill` was choking on its deprecated metaclass. Adding `git` to the isolation
   shim fixed it. The lesson is to read the traceback all the way down to which
   *package* the failing symbol lives in before concluding the tool is at fault.
-- **Generated tests should be counted last and assessed first.** Once running,
-  Pynguin produced 14 cases with a **0 % coverage delta** over the manual suite
-  — and 9 % branch coverage on its own. Curating them down to 5 (deleting
-  assertion-free calls, module-constant noise, and one test that wrote a file to
-  disk) was more valuable than adopting all 14. A tool's assumptions —
-  serialisable state, constructible inputs — are strained by an ORM facade, and
-  saying so with measurements beats both fabricating success and declaring
-  defeat.
+- **Automated test generation does not necessarily add value.** This is the
+  most uncomfortable result in the project, and the one I would defend hardest.
+  After the considerable effort of getting Pynguin to run at all — three
+  separate start-up failures, a dedicated virtual environment, and a custom
+  isolation shim — it produced 14 tests whose measured contribution was
+  **0 % line coverage and 0 % branch coverage** over the handcrafted suite. Not
+  a small gain: *zero*. On its own the generated suite reached only 9 % branch
+  coverage, because nearly every branch in `api.py` sits behind a live peewee
+  query that a search-based generator cannot construct. Worse, the raw output
+  was actively harmful in places: assertion-free calls that prove only "it did
+  not raise", the same 17 irrelevant module-constant assertions pasted into
+  every test, and one case that called `create_db()` and **wrote stray SQLite
+  files into the repository** — 94 of them accumulated across the generation and
+  mutation runs. Curating 14 down to 5 was worth more than adopting all 14.
+  The lesson is not that the tool is bad, but that *tool output is not evidence
+  of test quality*: a suite is worth what it can detect, not what it can be
+  counted as. Had I reported "14 automatically generated tests added" without
+  measuring the delta, the number would have been true and the claim
+  misleading.
 
 # 9. Deliverables and Where to Find Them
 
