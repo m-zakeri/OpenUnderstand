@@ -49,8 +49,8 @@ setuptools.setup(
     exclude_package_data={"": ["README.md"]},
     python_requires=">=3.8",
     install_requires=[
-        "antlr4-python3-runtime==4.9.1",
-        "peewee>=3.14.4",
+        "antlr4-python3-runtime==4.13.2",
+        "peewee>=3.17,<4",
         "decorator>=4.4.2",
         "networkx>=2.5.1",
         "pandas>=1.1.5",

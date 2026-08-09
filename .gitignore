@@ -167,3 +167,11 @@ cython_debug/
 
 *.oudb
 benchmark/
+
+# comparison-harness artifacts (built .udb / .und, dumps, reports)
+scripts/compare/out/
+*.und
+
+# speedy-antlr accelerator build artifacts
+openunderstand/gen/java8speedy/.build-cache/
+openunderstand/gen/java8speedy/*.so
