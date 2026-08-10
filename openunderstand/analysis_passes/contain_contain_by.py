@@ -40,10 +40,14 @@ class ContainAndContainBy(JavaParserLabeledListener):
         else:
             scope_longname = ".".join(scope_parents)
 
-        scope_longname = "." + scope_longname
+        # findParents() already yields the package components followed by any
+        # enclosing types, but stops short of this class. So the fully
+        # qualified name is those parents plus this class's own name --
+        # prefixing packageLongName here produced "org.json.org.json", and
+        # omitting `name` left the class's longname pointing at its package.
+        scope_longname = ".".join(scope_parents + [name])
         packageName = self.packageInfo[0]["name"]
         packageLongName = self.packageInfo[0]["longname"]
-        scope_longname = packageLongName + scope_longname
         packageKind = self.packageInfo[0]["kind"]
         packageContent = self.packageInfo[0]["contents"]
         packageParent = self.packageInfo[0]["parent"]
