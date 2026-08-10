@@ -1,97 +1,148 @@
 # OpenUnderstand
+
 ![OpenUnderstand Logo](docs/figs/OpenUnderstand_Logo.png)
 
-An open-source implementation of Understand API in Python.
+An open-source implementation of the [SciTools Understand](https://scitools.com)
+Python API, for Java.
 
-## Useful links
+Understand reads a codebase and lets you ask questions about it — which methods
+call this one, what does this class contain, how complex is this function. The
+API is good. The analysis is closed: the database format is proprietary, the API
+source is not published, and it needs a licence.
 
-* OpenUnderstand Documentation Website: [www.m-zakeri.github.io/OpenUnderstand.](https://m-zakeri.github.io/OpenUnderstand/)
+OpenUnderstand reimplements that API on top of an ANTLR4 Java parser and a
+SQLite database, so the same scripts run without one.
 
-# Configuration Setup Script
+```python
+import openunderstand.ounderstand as und
 
-This script allows you to set up and save configuration options using command-line arguments.
+db = und.open("myproject.udb")
 
-## Prerequisites
+for cls in db.ents("Class"):
+    print(cls.longname())
+    for ref in cls.refs("Define", "Method"):
+        print("   ", ref.ent().name(), "at line", ref.line())
+```
 
-- Python 3.x
+That is Understand's API, unchanged. Same class names, same method signatures,
+same kind names.
 
-## Usage
+## Install
 
-1. Open a terminal or command prompt.
+```bash
+git clone https://github.com/m-zakeri/OpenUnderstand
+cd OpenUnderstand
+python -m venv .venv && . .venv/bin/activate
+pip install -r requirements.txt
+```
 
-2. Run the script with the following command:
+Python 3.10+.
 
-## Options
+## Build a database
 
-- `-r`, `--repo_address`: Address of the repository (Optional)
-- `-udb`, `--db_address`: Address of the SQLite database (Optional)
-- `-e`, `--engine_address`: Use the engine (C++ or Python) (Optional)
-- `-l`, `--log_address`: Address of the log file (Optional)
+Point it at a directory of Java source:
 
-3. Provide the desired values for the options you want to set. If any option is not provided, default values will be used.
+```bash
+python openunderstand/ounderstand/openunderstand.py \
+    -r /path/to/java/project \
+    -dba /path/for/database \
+    -dbn myproject.udb \
+    -l /path/for/app.log
+```
 
-4. Once the script finishes, a `config.ini` file will be generated with the provided or default values.
+| Flag | Meaning |
+| --- | --- |
+| `-r` | source directory to analyse |
+| `-dba` | directory to write the database into |
+| `-dbn` | database filename |
+| `-e` | `C++` (fast) or `Python` parser backend |
+| `-l` | log file |
 
+Or from Python:
 
-*************************************************************
-To set up the configuration options with specific addresses, run the following command:
+```python
+from openunderstand.ounderstand.openunderstand import start_parsing
 
-    python openunderstand.py [-r REPO_ADDRESS] [-dba DB_ADDRESS] [-dbn DB_NAME] [-e ENGINE_CORE] [-l LOG_ADDRESS]
- 
-## Arguments
-* -r, --repo_address: Repository address of the project.
-* -dba, --db_address: Database SQLite address.
-* -dbn, --db_name: Database SQLite name file.
-* -e, --engine_core: Engine for parser usage (C++ or Python).
-* -l, --log_address: App log name address file.
+start_parsing(
+    repo_address="/path/to/java/project",
+    db_address="/path/for/database",
+    db_name="myproject.udb",
+    engine_core="C++",
+    log_address="/path/for/app.log",
+)
+```
 
+The result is a `.udb` file. Despite the name it is plain SQLite — open it with
+any SQLite tool if you want to poke at the rows directly.
 
+## How correct is it?
 
-This will save the provided addresses in the `config.ini` file.
+Honestly measured, not claimed. `scripts/compare/` builds a database with
+OpenUnderstand and one with real Understand from the same source, then diffs
+them.
 
-If you don't provide any options, default values will be used for all addresses.
+On the `org.json` benchmark (22 files), current agreement:
 
-    python openunderstand.py
+| | |
+| --- | ---: |
+| Entities Understand finds that OpenUnderstand also finds | 1030 / 1236 |
+| References reproduced at the exact same position | 47% |
+| Reference precision | 0.36 |
 
+[docs/parity.md](docs/parity.md) has the per-kind breakdown, and
+`scripts/compare/out/<fixture>/report.md` ranks every remaining defect.
 
-This will generate a `config.ini` file with default values.
+If you have Understand installed and licensed, run it yourself:
 
-#### [DEFAULT]
-* repo_address: default_repo
-* db_address: default_db
-* db_name: default_db_name
-* engine_address: default_engine
-* log_address: default_log
+```bash
+bash scripts/fetch_benchmarks.sh JSON
+bash scripts/compare/run_all.sh --fixture JSON
+```
 
-Feel free to modify the default values directly in the `config.ini` file.
-****************************************
-## Default Values
-If an argument is not provided, the following default values will be used:
+This is the test suite. There are no unit tests, because the only
+specification that matters is what the real tool outputs.
 
-**repo_address:** Current working directory with "project" appended.
+## What it does not do
 
-**db_address:** Current working directory.
+- **Java 8 only.** The grammar predates records, sealed types, `var`, text
+  blocks and `yield`.
+- **No external resolution.** The JDK and third-party jars are not analysed, so
+  `java.lang.String` exists but has no members.
+- **Long names carry no parameter list**, so method overloads merge into one
+  entity.
+- **Partial coverage.** Roughly half of Understand's references are reproduced.
+  Unimplemented API methods raise `NotImplementedError` rather than returning
+  something plausible and wrong.
 
-**db_name:** "default.oudb".
+## Documentation
 
-**engine_core:** "Python".
+| | |
+| --- | --- |
+| [Getting started](docs/index.md) | install, build, query |
+| [API reference](docs/api.md) | every class and method, and what is missing |
+| [Kinds](docs/kinds.md) | the 237 entity and 106 reference kinds |
+| [Architecture](docs/architecture.md) | how a file becomes rows; how to add a pass |
+| [Parity](docs/parity.md) | measured agreement with Understand |
 
-**log_address:** Current working directory with "app.log" appended.
+Published at
+[m-zakeri.github.io/OpenUnderstand](https://m-zakeri.github.io/OpenUnderstand/).
 
- 
-### Examples
+## Contributing
 
-1.Set the repository address to "/path/to/repo":
-    
-    python openunderstand.py -r /path/to/repo
+Read [docs/architecture.md](docs/architecture.md) first — particularly the two
+`sys.path` and `config.ini` landmines, and the rule that kind ids are positions
+and must always be resolved by name.
 
-2.Set the database address to "/path/to/db", the database name to "database.oudb", and the engine core to "C++":
+Then: make the change, run
+`bash scripts/compare/run_all.sh --fixture calculator_app`, and report recall
+*and* precision before and after. A change that raises recall by tanking
+precision is not an improvement.
 
-    python cli.py -dba /path/to/db -dbn database.oudb -e C++
+Pull requests target the `dev` branch.
 
-3.Set the log address to "/path/to/log/file.log":
+## Credits
 
-    python cli.py -l /path/to/log/file.log
-
-### BUILDING
-    python3 setup.py sdist bdist_wheel
+Started at the IUST Reverse Engineering Research Laboratory. Uses
+[ANTLR4](https://www.antlr.org/), [peewee](http://docs.peewee-orm.com/), and a
+labelled fork of the [grammars-v4](https://github.com/antlr/grammars-v4) Java
+grammar.

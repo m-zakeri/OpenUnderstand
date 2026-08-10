@@ -1501,13 +1501,23 @@ class Project:
     def addThrows_TrowsByRefs(self, ref_dicts, file_ent, file_address, id1, id2, Throw):
         for ref_dict in ref_dicts:
 
-            scope = EntityModel.get_or_create(
-                _kind=self.findKindWithKeywords("Method", ref_dict["scopemodifiers"]),
-                _name=ref_dict["scopename"],
-                _parent=resolve_entity_ref(ref_dict["scope_parent"], file_ent),
-                _longname=ref_dict["scopelongname"],
-                _contents=ref_dict["scopecontent"],
-            )[0]
+            # Prefer the entity the define pass already declared. Guessing a
+            # Method kind here created a second row for names that are really
+            # classes -- an `org.json.CDL` in the method family alongside the
+            # real one in the type family, which do not merge by design.
+            scope = EntityModel.get_or_none(
+                EntityModel._longname == ref_dict["scopelongname"]
+            )
+            if scope is None:
+                scope = EntityModel.get_or_create(
+                    _kind=self.findKindWithKeywords(
+                        "Method", ref_dict["scopemodifiers"]
+                    ),
+                    _name=ref_dict["scopename"],
+                    _parent=resolve_entity_ref(ref_dict["scope_parent"], file_ent),
+                    _longname=ref_dict["scopelongname"],
+                    _contents=ref_dict["scopecontent"],
+                )[0]
 
             if not Throw:
                 if ref_dict["refent"] is None:
