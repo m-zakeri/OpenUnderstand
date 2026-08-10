@@ -48,7 +48,13 @@ class ClassPropertiesListener(JavaParserLabeledListener):
                 except Exception as e:
                     txt = current.parentCtx.getChild(0).getText()
                     txt = txt.replace("package", "").replace(";", "").split(".")
-                    for item in txt:
+                    # This loop walks inner-to-outer, so `parents` is built up
+                    # backwards and reversed once at the end. A package
+                    # contributes several components at once, so they have to
+                    # go in backwards too -- appending them forwards leaves
+                    # them reversed in the result, turning "org.json" into
+                    # "json.org" in every longname derived from it.
+                    for item in reversed(txt):
                         parents.append(item)
             current = current.parentCtx
         return list(reversed(parents))

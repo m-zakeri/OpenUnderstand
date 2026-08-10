@@ -159,7 +159,8 @@ class CreateAndCreateBy(JavaParserLabeledListener):
                 createdName = creator.createdName()
                 all_parents = class_properties.ClassPropertiesListener.findParents(ctx)
                 scope_name = all_parents[-1]
-                scope_longname = self.package_long_name + "." + ".".join(all_parents)
+                # findParents() already includes the package components.
+                scope_longname = ".".join(all_parents)
                 [line, col] = str(ctx.start).split(",")[3].split(":")
 
                 # if creator.arrayCreatorRest() or creator.classCreatorRest():

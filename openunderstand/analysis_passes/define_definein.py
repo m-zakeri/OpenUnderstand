@@ -21,12 +21,12 @@ class DefineListener(JavaParserLabeledListener):
 
         ent_start = ctx.qualifiedName().IDENTIFIER()[0]
         ent_name = ctx.qualifiedName().IDENTIFIER()[-1].getText()
-        ent_longname = "/".join(self.package)
-        ent_longname = os.path.join(self.file_address, ent_longname)
+        # A package is identified by its dotted name. This used to join the
+        # components with "/" and then prefix the source file path, producing
+        # longnames like "/abs/path/CDL.java/org/json" that match nothing.
+        ent_longname = ".".join(self.package)
         line = ent_start.symbol.line
         column = ent_start.symbol.column
-        print("file address in enterPackageDeclaration : ", self.file_address)
-        print("ent_longname in enterPackageDeclaration : ", ent_longname)
         self.defines.append(
             {
                 "contents": ctx.getText(),
@@ -48,14 +48,10 @@ class DefineListener(JavaParserLabeledListener):
             ent_name = ent.getText()
         line = ent.symbol.line
         column = ent.symbol.column
-        print("type : ", type)
-        print("YO 1: ", self.package)
-        print("YO 2: ", ent_parents)
-        scope_longname = ".".join(self.package) + "." + ".".join(ent_parents)
-        print("scope_longname : ", scope_longname)
-        print("ent_name : ", ent_name)
-        print("self.package : ", ".".join(self.package))
-        ent_longname = scope_longname + "." + ent_name
+        # findParents() already includes the package components, so prefixing
+        # self.package here produced it twice ("org.json" + "." + "org.json").
+        scope_longname = ".".join(ent_parents)
+        ent_longname = (scope_longname + "." + ent_name) if scope_longname else ent_name
         if len(ent_parents) == 0:
             scope_name = None
         else:

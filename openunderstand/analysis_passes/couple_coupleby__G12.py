@@ -70,9 +70,9 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
             else:
                 scope_longname = ".".join(scope_parents)
             [line, col] = str(ctx.start).split(",")[3].split(":")
-            self.classlongname =  self.packageName + '.' + scope_longname
+            self.classlongname =  scope_longname
             self.dic = {"scope_kind": "Class", "scope_name": ctx.IDENTIFIER().__str__(),
-                                           "scope_longname": self.packageName + '.' + scope_longname,
+                                           "scope_longname": scope_longname,
                                            "scope_parent": scope_parents[-2] if len(scope_parents) >= 2 else None,
                                            "scope_contents": self.extract_original_text(ctx),
                                            "scope_modifiers": self.Modifiers , 'File' : self.file , 'line':line ,  'col' : col[:-1] }

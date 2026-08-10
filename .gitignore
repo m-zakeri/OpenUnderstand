@@ -177,3 +177,12 @@ openunderstand/gen/java8speedy/.build-cache/
 openunderstand/gen/java8speedy/*.so
 
 scripts
+# The comparison harness lives under scripts/, which the bare `scripts` rule
+# and the `lib/` rule above would otherwise exclude in full. Re-include it,
+# then re-exclude its build artifacts (order matters: last match wins).
+!scripts/
+!scripts/compare/
+!scripts/compare/**
+scripts/compare/out/
+scripts/compare/**/__pycache__/
+scripts/compare/**/*.pyc
