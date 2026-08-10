@@ -38,7 +38,10 @@ from openunderstand.metrics.MaxCalculator_G12 import max_cyclomatic_stricts
 from openunderstand.metrics.max_nesting import MaxNesting
 from openunderstand.metrics.max_inheritance import FindAllInheritances
 from openunderstand.metrics.knots_inheritance_nesting import get_knot_inheritance_nested
-from openunderstand.metrics.knots_inheritance_nesting import get_max_inheritance
+from openunderstand.metrics.knots_inheritance_nesting import (
+    max_inheritance_tree,
+    max_nesting,
+)
 from openunderstand.metrics.Lineofcode import get_line_of_codes
 from openunderstand.metrics.count_stmt_exe import statement_counter_exe
 from openunderstand.metrics.cyclomatic import cyclomatic
@@ -336,7 +339,12 @@ def open(dbname):  # real signature unknown; restored from __doc__
 
     db.bind([KindModel, EntityModel, ReferenceModel, ProjectModel])
 
-    obj = ProjectModel.get_or_none(db_path=dbname)
+    # db_path is whatever absolute path the database was built at, so an exact
+    # match fails as soon as the file is copied or opened by a different route,
+    # and Db.__init__ then dies on None. A database holds one project.
+    obj = ProjectModel.get_or_none(db_path=dbname) or ProjectModel.select().first()
+    if obj is None:
+        raise UnderstandError()
     return Db(db_obj=obj)
 
 
@@ -347,6 +355,43 @@ def version():  # real signature unknown; restored from __doc__
     Return the current build number for this module
     """
     return "0.1.0"
+
+
+def kind_matches(kind_name, kindstring):
+    """Understand's kind filter grammar.
+
+    A filter is a comma-separated list of alternatives; an entity matches if
+    it matches any one of them. Within an alternative, space-separated words
+    are ANDed, and a word prefixed with "~" must be absent.
+
+    Words match whole tokens of the kind name, which is what makes
+    ``refs("Call")`` also return ``Java Call Nondynamic`` -- every call site in
+    this API used to compare kind names for equality, so a filter matched only
+    the one kind spelled exactly that way.
+    """
+    if not kindstring:
+        return True
+    tokens = set(str(kind_name).lower().split())
+    for alternative in str(kindstring).split(","):
+        words = alternative.split()
+        if not words:
+            continue
+        if all(
+            (word.lstrip("~").lower() in tokens) != word.startswith("~")
+            for word in words
+            if word.lstrip("~")
+        ):
+            return True
+    return False
+
+
+def _kinds_matching(kindstring, is_ent_kind):
+    """Ids of the seeded kinds a filter string selects."""
+    return [
+        k._id
+        for k in KindModel.select().where(KindModel.is_ent_kind == is_ent_kind)
+        if kind_matches(k._name, kindstring)
+    ]
 
 
 # classes
@@ -408,26 +453,14 @@ class Db:
         must be open or a UnderstandError will be thrown.
         """
 
-        all_ents = set()
-
-        if kindstring is None:
-            query = EntityModel.select()
-        else:
-            # TODO: Complete this later
-            kindstrings = kindstring.split(" ")
-            query = EntityModel.select()
-            conditions = []
-            for item in kindstrings:
-                kinds = KindModel.select().where(KindModel._name.contains(item))
-                conditions.append(EntityModel._kind.in_(kinds))
-            if conditions:
-                query = query.where(reduce(lambda a, b: a | b, conditions)).where(
-                    reduce(lambda a, b: a & b, conditions)
-                )
-        for ent in query:
-            my_ent = Ent(**ent.__dict__.get("__data__"))
-            all_ents.add(my_ent)
-        return all_ents
+        # A list, not a set: Understand returns every entity, and a set silently
+        # collapsed entities that compare equal.
+        query = EntityModel.select()
+        if kindstring is not None:
+            query = query.where(
+                EntityModel._kind.in_(_kinds_matching(kindstring, True))
+            )
+        return [Ent(**ent.__dict__.get("__data__")) for ent in query]
 
     def ent_from_id(self, id: int):  # real signature unknown; restored from __doc__
         """
@@ -482,22 +515,22 @@ class Db:
         would return a list of file entities containing "Test" (case sensitive)
         in their names.
         """
-        ents = []
         query = EntityModel.select()
         if kindstring:
-            kinds = KindModel.select().where(
-                fn.Lower(KindModel._name).contains(kindstring.lower())
+            query = query.where(
+                EntityModel._kind.in_(_kinds_matching(kindstring, True))
             )
-            query = query.where(EntityModel._kind.in_(kinds))
 
-        query = query.where(
-            (EntityModel._name.contains(name)) | (EntityModel._longname.contains(name))
-        )
-
-        for ent in query:
-            if re.search(f'Java\\s+{kindstring}'.lower(), str(ent._kind._name).lower()):
-                ents.append(Ent(**ent.__dict__.get("__data__")))
-        return ents
+        # name is a regular expression, compiled or not -- the old code did a
+        # substring query and then re-tested every row against the regex
+        # "java\s+<kindstring>", which is not a kind name, so a lookup without
+        # a kindstring could never return anything.
+        pattern = name if hasattr(name, "search") else re.compile(name)
+        return [
+            Ent(**ent.__dict__.get("__data__"))
+            for ent in query
+            if pattern.search(ent._name or "") or pattern.search(ent._longname or "")
+        ]
 
     def lookup_uniquename(
         self, uniquename
@@ -801,9 +834,11 @@ class Ent:
         as strings. If the metric is not available, it's value will be None.
         """
         metrics = {}
+        known = set(self.metrics())
         for item in metric_list:
-            if item not in self.metrics():
-                raise ValueError(f"metric {item} is not in metric list")
+            # The docstring promises None for an unrecognised metric.
+            if item not in known:
+                metrics[item] = None
         for item in metric_list:
             if item == "CountDeclMethodAll":
                 metrics.update({"CountDeclMethodAll": count_decl_method_all(self)})
@@ -843,10 +878,6 @@ class Ent:
                 raise NotImplementedError("metric CountDeclClass is not implemented")
             elif item == "CountDeclFile":
                 metrics.update({"CountDeclFile": declare_file(self)})
-            elif item == "CountDeclClassMethod":
-                raise NotImplementedError(
-                    "metric CountDeclClassMethod is not implemented"
-                )
             elif item == "CountDeclExecutableUnit":
                 metrics.update(
                     {"CountDeclExecutableUnit": declare_executable_unit(self)}
@@ -875,8 +906,6 @@ class Ent:
                 )
             elif item == "CountDeclMethod":
                 raise NotImplementedError("metric CountDeclMethod is not implemented")
-            elif item == "CountDeclMethodAll":
-                metrics.update({"CountDeclMethodAll": count_decl_method_all(self)})
             elif item == "CountDeclMethodDefault":
                 metrics.update(
                     {"CountDeclMethodDefault": count_decl_method_default(self)}
@@ -974,9 +1003,9 @@ class Ent:
                     {"MaxEssentialKnots": min_max_essential_knots(self, False)}
                 )
             elif item == "MaxInheritanceTree":
-                metrics.update({"MaxInheritanceTree": get_max_inheritance(self)})
+                metrics.update({"MaxInheritanceTree": max_inheritance_tree(self)})
             elif item == "MaxNesting":
-                metrics.update({"MaxNesting": MaxNesting(self)})
+                metrics.update({"MaxNesting": max_nesting(self)})
             elif item == "MinEssentialKnots":
                 metrics.update(
                     {"MinEssentialKnots": min_max_essential_knots(self, True)}
@@ -1013,7 +1042,9 @@ class Ent:
         Return a list of metric names defined for the entity.
         """
 
-        return [
+        # dict.fromkeys, not set(): the order is the documented order, and the
+        # list carried CountDeclClassMethod and CountDeclMethodAll twice.
+        return list(dict.fromkeys([
             "CountDeclMethodAll",
             "CountDeclClassVariable",
             "AvgCyclomatic",
@@ -1044,7 +1075,8 @@ class Ent:
             "CountDeclMethodDefault",
             "CountDeclMethodPrivate",
             "CountDeclMethodProtected",
-            "CountDeclMethodPublic" "CountInput",
+            "CountDeclMethodPublic",
+            "CountInput",
             "CountLine",
             "CountLineBlank",
             "CountLineCode",
@@ -1078,7 +1110,7 @@ class Ent:
             "SumCyclomaticModified",
             "SumCyclomaticStrict",
             "SumEssential",
-        ]
+        ]))
 
     def name(self):  # real signature unknown; restored from __doc__
         """
@@ -1148,7 +1180,10 @@ class Ent:
 
         This is the same as ent.refs()[:1]
         """
-        return self.refs(*args, **kwargs)[:1]
+        # A single Ref or None -- this returned a list, so every caller that
+        # used the documented shape (ref.line(), ref.ent()) got an AttributeError.
+        refs = self.refs(*args, **kwargs)
+        return refs[0] if refs else None
 
     def refs(
         self, refkindstring=None, entkindstring=None, unique=None
@@ -1166,37 +1201,35 @@ class Ent:
         true, only the first matching reference to each unique entity is
         returned
         """
-        # TODO : check nested references
-        mlist = [j.strip() for j in refkindstring.split(",")]
-        # print(mlist)
-        refs = []
-        for item in mlist:
-            query = ReferenceModel.select().where(ReferenceModel._scope == self._id)
-            if item:
-                kinds = KindModel.select().where(
-                    (KindModel.is_ent_kind == False)
-                    & (KindModel._name.contains(item))
-                    & (fn.Lower(KindModel._name) == (f"Java {item}").lower())
-                )
-                query = query.where(ReferenceModel._kind.in_(kinds))
+        query = ReferenceModel.select().where(ReferenceModel._scope == self._id)
+        # refkindstring is optional -- this used to split None and raise
+        # AttributeError, so ent.refs() with no arguments never worked at all.
+        if refkindstring:
+            query = query.where(
+                ReferenceModel._kind.in_(_kinds_matching(refkindstring, False))
+            )
+        if entkindstring:
+            ents = EntityModel.select().where(
+                EntityModel._kind.in_(_kinds_matching(entkindstring, True))
+            )
+            query = query.where(ReferenceModel._ent.in_(ents))
 
-            if entkindstring:
-                kinds = KindModel.select().where(
-                    (KindModel.is_ent_kind == True)
-                    & (KindModel._name.contains(entkindstring))
-                )
-                ents = EntityModel.select().where(EntityModel._kind.in_(kinds))
-                query = query.where(ReferenceModel._ent.in_(ents))
-
-            for ref in query:
-                refs.append(Ref(**ref.__dict__.get("__data__")))
-        # Remove duplicates from 'refs' and store unique references in 'references' list
         references = []
-        for ref in refs:
-            if ref not in references:
-                references.append(ref)
-        if unique:
-            references = references[:1]
+        seen_refs = set()
+        seen_ents = set()
+        for row in query:
+            data = row.__dict__.get("__data__")
+            key = tuple(sorted(data.items(), key=lambda kv: kv[0]))
+            if key in seen_refs:
+                continue
+            seen_refs.add(key)
+            # unique keeps the first reference per referenced entity -- it used
+            # to truncate the whole list to one element.
+            if unique:
+                if data.get("_ent") in seen_ents:
+                    continue
+                seen_ents.add(data.get("_ent"))
+            references.append(Ref(**data))
         return references
 
     def relname(self):  # real signature unknown; restored from __doc__
@@ -1337,7 +1370,7 @@ class Kind(object):
 
         Return true if the kind matches the filter string kindstring.
         """
-        return kindstring.lower() in self.name().lower()
+        return kind_matches(self._name, kindstring)
 
     def inv(self):  # real signature unknown; restored from __doc__
         """
@@ -1348,8 +1381,11 @@ class Kind(object):
         """
         if self.is_ent_kind:
             raise UnderstandError()
-        inverse = KindModel.get_by_id(pk=self._inv)
-        return Kind(**inverse.__data__.get("__data__"))
+        if self._inv is None:
+            return None
+        inverse = KindModel.get_by_id(self._inv)
+        # __data__ is the field dict itself, not a dict containing one.
+        return Kind(**inverse.__data__)
 
     @staticmethod
     def list_entity(entkind=""):  # real signature unknown; restored from __doc__

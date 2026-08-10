@@ -423,6 +423,48 @@ class Project:
                             _scope=ent,
                         )
 
+    def addUseVariantRefs(self, ref_dicts, file_ent):
+        """Write the qualified Use/Typed variants collected by use_variants.py.
+
+        Each is resolved against the entity the define pass already created for
+        the enclosing scope; a name that resolves to nothing becomes an Unknown
+        placeholder, which merge_placeholder_entities() folds in afterwards.
+        """
+        for ref_dict in ref_dicts:
+            scope_longname = ref_dict["scope_longname"]
+            scope = EntityModel.get_or_none(EntityModel._longname == scope_longname)
+            if scope is None:
+                continue
+
+            name = ref_dict["name"]
+            ent = EntityModel.get_or_none(
+                EntityModel._longname == f"{scope_longname}.{name}"
+            ) or EntityModel.get_or_none(EntityModel._name == name)
+            if ent is None:
+                ent, _ = EntityModel.get_or_create(
+                    _kind=kind_id("Java Unknown Class Type Member"),
+                    _name=name,
+                    _parent=file_ent,
+                    _longname=name,
+                    _contents="",
+                )
+
+            forward = ref_dict["kind"]
+            inverse = KindModel.get_or_none(_name=forward)
+            if inverse is None or inverse._inv_id is None:
+                continue
+            for kind, (a, b) in ((forward, (ent, scope)),
+                                 (KindModel.get_by_id(inverse._inv_id)._name,
+                                  (scope, ent))):
+                ReferenceModel.get_or_create(
+                    _kind=kind_id(kind),
+                    _file=file_ent,
+                    _line=ref_dict["line"],
+                    _column=col_1based(ref_dict["col"]),
+                    _ent=a,
+                    _scope=b,
+                )
+
     def addImplementOrImplementByRefs(self, ref_dicts, file_ent, file_address):
         pass
 

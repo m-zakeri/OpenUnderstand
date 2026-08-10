@@ -192,13 +192,13 @@ def run_with_database(path_):
 
 
 def max_cyclomatic_modified(ent_model=None) -> int:
-    Cyclomatic_listener = CyclomaticModifiedListener(ent_model.contents())
+    Cyclomatic_listener = CyclomaticModifiedListener()
     max_cyclomatic_ = MaxCyclomatic(Cyclomatic_listener)
     return max_cyclomatic_.return_package_max(content=ent_model.contents())
 
 
 def max_cyclomatic_stricts(ent_model=None) -> int:
-    Cyclomatic_listener = CyclomaticStrictListener(ent_model.contents())
+    Cyclomatic_listener = CyclomaticStrictListener()
     max_cyclomatic_ = MaxCyclomatic(Cyclomatic_listener)
     return max_cyclomatic_.return_package_max(content=ent_model.contents())
 

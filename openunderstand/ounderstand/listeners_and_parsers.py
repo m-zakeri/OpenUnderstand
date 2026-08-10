@@ -15,6 +15,7 @@ from openunderstand.analysis_passes.import_importby_g10_2 import ImportListener,
 from openunderstand.analysis_passes.import_demand_g9 import ImportListenerDemand
 
 from openunderstand.analysis_passes.define_definein import DefineListener
+from openunderstand.analysis_passes.use_variants import UseVariantListener
 
 # from analysis_passes.define_and_definin_g6 import DefineListener
 from openunderstand.analysis_passes.modify_modifyby import ModifyListener
@@ -150,6 +151,23 @@ class ListenersAndParsers:
         except Exception as e:
             self.logger.error(
                 "An Error occurred in file create refs :" + file_address + "\n" + str(e)
+            )
+
+    @timer_decorator()
+    def use_variant_listener(self, tree, file_ent, file_address, p):
+        try:
+            listener = UseVariantListener(file_address)
+            p.Walk(listener, tree)
+            p.addUseVariantRefs(listener.uses, file_ent)
+            self.logger.info("use variants success")
+        except Exception as e:
+            self.logger.error(
+                "An Error occurred in use variants in file :"
+                + file_address
+                + "\n"
+                + str(e)
+                + "\n"
+                + traceback.format_exc()
             )
 
     @timer_decorator()

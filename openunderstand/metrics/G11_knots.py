@@ -218,4 +218,5 @@ def knot(ent_model=None):
     parser = JavaParserLabeled(tokens)
     return_tree = parser.compilationUnit()
     p.Walk(reference_listener=listener, parse_tree=return_tree)
-    return listener.count_essential_metric
+    # The listener counts knots, not essential complexity.
+    return listener.count_knots_metric

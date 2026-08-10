@@ -104,7 +104,7 @@ def get_percent_lack_of_cohesion_modified(ent_model=None):
     token_string = CommonTokenStream(lexer)
     parser = JavaParserLabeled(token_string)
     pars_tree = parser.compilationUnit()
-    my_listener = UseAndUseByListener(file)
+    my_listener = UseAndUseByListener(ent_model.longname())
     walker = ParseTreeWalker()
     walker.walk(t=pars_tree, listener=my_listener)
     # this table stores items

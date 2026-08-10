@@ -25,6 +25,39 @@ def get_max_inheritance(inheritances, key):
     return level
 
 
+def _parse(ent_model):
+    lexer = JavaLexer(InputStream(ent_model.contents() or ""))
+    return JavaParserLabeled(CommonTokenStream(lexer)).compilationUnit()
+
+
+def max_inheritance_tree(ent_model):
+    """MaxInheritanceTree for one entity.
+
+    api.py dispatched this to get_max_inheritance(), which takes an
+    inheritance map and a class name, not an entity -- so asking for the
+    metric raised TypeError. The map has to be built first.
+    """
+    tree = _parse(ent_model)
+    walker = ParseTreeWalker()
+    finder = FindAllClasses()
+    walker.walk(t=tree, listener=finder)
+    classes = {name: [] for name in finder.class_names}
+    inheritances = FindAllInheritances(classes)
+    walker.walk(t=tree, listener=inheritances)
+    return get_max_inheritance(inheritances.classes, ent_model.name())
+
+
+def max_nesting(ent_model):
+    """MaxNesting for one entity.
+
+    MaxNesting is a listener class, and api.py called it as MaxNesting(ent),
+    which its zero-argument constructor rejected.
+    """
+    listener = MaxNesting()
+    ParseTreeWalker().walk(t=_parse(ent_model), listener=listener)
+    return listener.max_nesting
+
+
 def getListOfFiles(dirName):
     listOfFile = os.listdir(dirName)
     allFiles = list()

@@ -30,6 +30,7 @@ def process_file(file_address):
         lap.create_listener,
         lap.type_listener,
         lap.define_listener,
+        lap.use_variant_listener,
         lap.declare_listener,
         lap.override_listener,
         lap.callby_listener,
