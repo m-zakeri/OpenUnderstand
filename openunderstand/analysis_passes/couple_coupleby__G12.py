@@ -54,8 +54,10 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         return self.classes
 
     def extract_original_text(self, ctx):
-        token_source = ctx.start.getTokenSource()
-        input_stream = token_source.inputStream
+        # getInputStream() rather than getTokenSource().inputStream: both return
+        # the same stream under the Python parser, but the C++ accelerator
+        # leaves the token-source slot empty, so the indirect route is None.
+        input_stream = ctx.start.getInputStream()
         start, stop = ctx.start.start, ctx.stop.stop
         return input_stream.getText(start, stop)
 
