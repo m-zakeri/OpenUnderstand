@@ -15,8 +15,34 @@ from openunderstand.analysis_passes.g6_class_properties import (
 )
 
 from openunderstand.utils.utilities import ClassTypeData
+from openunderstand.utils import antler_parser, utilities
 
-# from utils.antler_parser import _cpp_parse
+_ENGINE = None
+
+
+def _use_cpp_engine():
+    """Whether config.ini asked for the C++ parser, cached after the first read.
+
+    Read once rather than per file: Project is constructed for every source
+    file, and setup_config() re-parses config.ini on each call.
+
+    Historically `engine_core` was written by the CLI but never read anywhere,
+    so choosing "C++" did nothing. It now selects the accelerator -- and still
+    falls back to the Python parser, with one warning, if it was never built.
+    """
+    global _ENGINE
+    if _ENGINE is None:
+        try:
+            # Resolved through the module, not `from ... import`, so a caller
+            # that swaps utilities.setup_config still wins regardless of import
+            # order.
+            requested = utilities.setup_config()["Config"]["engine_core"]
+        except Exception:
+            requested = "Python"
+        # The CLI default is "Python", config.ini has said "Python3", and the
+        # README says "C++ or Python". Accept anything that starts with a "c".
+        _ENGINE = requested.strip().lower().startswith("c")
+    return _ENGINE
 
 
 class Project:
@@ -33,13 +59,9 @@ class Project:
 
     def Parse(self, fileAddress):
         file_stream = FileStream(fileAddress, encoding="utf8")
-        lexer = JavaLexer(file_stream)
-        tokens = CommonTokenStream(lexer)
-        parser = JavaParserLabeled(tokens)
-        return_tree = parser.compilationUnit()
-        # return_tree = _cpp_parse(
-        #     stream=file_stream, java_parser_labeld=JavaParserLabeled
-        # )
+        return_tree = antler_parser.parse(
+            file_stream, "compilationUnit", prefer_cpp=_use_cpp_engine()
+        )
         self.tree = return_tree
         return return_tree
 
