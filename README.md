@@ -30,13 +30,24 @@ same kind names.
 ## Install
 
 ```bash
+pip install openunderstand
+```
+
+Python 3.9+. Optional extras:
+
+| Extra | For |
+| --- | --- |
+| `openunderstand[speedy]` | the C++ parser accelerator (~8× faster parsing) |
+| `openunderstand[mcp]` | the MCP server, so an assistant can query your code |
+
+From a checkout instead:
+
+```bash
 git clone https://github.com/m-zakeri/OpenUnderstand
 cd OpenUnderstand
 python -m venv .venv && . .venv/bin/activate
-pip install -r requirements.txt
+pip install -e ".[dev]"
 ```
-
-Python 3.10+.
 
 ## Build a database
 
@@ -102,14 +113,30 @@ bash scripts/compare/run_all.sh --fixture JSON
 This is the test suite. There are no unit tests, because the only
 specification that matters is what the real tool outputs.
 
+## Use it from an assistant
+
+An MCP server ships with the package:
+
+```bash
+pip install "openunderstand[mcp]"
+```
+
+```json
+{"mcpServers": {"openunderstand": {"command": "openunderstand-mcp"}}}
+```
+
+Six tools (`analyze`, `open_database`, `list_entities`, `entity_references`,
+`entity_metrics`, `list_kinds`), four resources exposing the kind vocabulary
+and metric names, and three prompts (`review_class`, `complexity_hotspots`,
+`trace_callers`) — so an assistant can analyse a Java project and ask what
+calls what, without knowing the schema. See [docs/mcp.md](docs/mcp.md).
+
 ## What it does not do
 
 - **Java 8 only.** The grammar predates records, sealed types, `var`, text
   blocks and `yield`.
 - **No external resolution.** The JDK and third-party jars are not analysed, so
   `java.lang.String` exists but has no members.
-- **Long names carry no parameter list**, so method overloads merge into one
-  entity.
 - **Partial coverage.** Roughly half of Understand's references are reproduced.
   Unimplemented API methods raise `NotImplementedError` rather than returning
   something plausible and wrong.
@@ -123,15 +150,15 @@ specification that matters is what the real tool outputs.
 | [Kinds](docs/kinds.md) | the 237 entity and 106 reference kinds |
 | [Architecture](docs/architecture.md) | how a file becomes rows; how to add a pass |
 | [Parity](docs/parity.md) | measured agreement with Understand |
+| [MCP server](docs/mcp.md) | query your code from an assistant |
 
 Published at
 [m-zakeri.github.io/OpenUnderstand](https://m-zakeri.github.io/OpenUnderstand/).
 
 ## Contributing
 
-Read [docs/architecture.md](docs/architecture.md) first — particularly the two
-`sys.path` and `config.ini` landmines, and the rule that kind ids are positions
-and must always be resolved by name.
+Read [docs/architecture.md](docs/architecture.md) first — particularly the rule
+that kind ids are positions and must always be resolved by name.
 
 Then: make the change, run
 `bash scripts/compare/run_all.sh --fixture calculator_app`, and report recall

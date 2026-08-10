@@ -250,6 +250,122 @@ class ReferenceModel(Model):
         return f"{self._kind} {self._ent} {self._file}({self._line}, {self._column})"
 
 
+#: What a declaration demotes to when its file no longer declares it.
+_PLACEHOLDER_FOR = {
+    "method": "Java Unknown Method Member",
+    "type": "Java Unknown Class Type Member",
+    "variable": "Java Unknown Variable Member",
+    "package": "Java Unknown Package",
+}
+
+
+def dependent_files(file_entity_ids):
+    """Files that must be re-analysed when these change, transitively.
+
+    Understand's incremental analysis re-analyses "all files that have been
+    changed and all files that depend on those changed". Editing a base class
+    changes what its subclasses inherit, so analysing only the edited file
+    leaves their members and couplings stale.
+
+    A file depends on another when it references a *type* declared there.
+    Only types: a package entity is "declared" by every file in the package,
+    so following those made every file depend on every other -- editing a leaf
+    class pulled in the whole project.
+    Both halves of that are already stored -- Define references say where an
+    entity is declared, and every reference records the file it occurs in --
+    so the graph is a query, not a new table.
+
+    Transitive, because inheritance chains: editing C must reach B extends C
+    and A extends B. Returns the closure *including* the starting files.
+    """
+    define = KindModel.get_or_none(_name="Java Define")
+    if define is None:
+        return set(file_entity_ids)
+
+    closure = set(file_entity_ids)
+    pending = list(file_entity_ids)
+    while pending:
+        current = pending.pop()
+        declared = []
+        for ref in ReferenceModel.select().where(
+            (ReferenceModel._kind == define._id)
+            & (ReferenceModel._file == current)
+        ):
+            target = EntityModel.get_or_none(_id=ref._ent_id)
+            if target is not None and kind_family(target._kind_id) == "type":
+                declared.append(target._id)
+        if not declared:
+            continue
+        for ref in ReferenceModel.select().where(
+            (ReferenceModel._ent.in_(declared))
+            | (ReferenceModel._scope.in_(declared))
+        ):
+            if ref._file_id is not None and ref._file_id not in closure:
+                closure.add(ref._file_id)
+                pending.append(ref._file_id)
+    return closure
+
+
+def purge_file(file_entity_id):
+    """Remove everything a file contributed, so it can be re-analysed.
+
+    Re-running an analysis pass over a changed file only ever *adds* rows --
+    `get_or_create` dedupes what is still there and knows nothing about what
+    has gone. Rename a method and the database ends up holding both names.
+    An incremental update therefore has to delete the file's contribution
+    first.
+
+    An entity declared in this file is deleted only if nothing else still
+    refers to it: a class named from another file must survive as the
+    placeholder it will become again.
+
+    Returns (entities_removed, references_removed).
+    """
+    define = KindModel.get_or_none(_name="Java Define")
+    declared = set()
+    if define is not None:
+        declared = {
+            ref._ent_id
+            for ref in ReferenceModel.select().where(
+                (ReferenceModel._kind == define._id)
+                & (ReferenceModel._file == file_entity_id)
+            )
+        }
+
+    refs_removed = ReferenceModel.delete().where(
+        ReferenceModel._file == file_entity_id
+    ).execute()
+
+    entities_removed = 0
+    for entity_id in declared:
+        entity = EntityModel.get_or_none(_id=entity_id)
+        if entity is None or entity._id == file_entity_id:
+            continue
+        still_used = ReferenceModel.select().where(
+            (ReferenceModel._ent == entity_id) | (ReferenceModel._scope == entity_id)
+        ).exists()
+        if still_used:
+            # Named from another file, so the row has to stay -- but its
+            # declaration is gone, so it is no longer a known method or class.
+            # Demoting it to a placeholder says exactly that, and lets
+            # merge_placeholder_entities() re-resolve it if the declaration
+            # reappears elsewhere. Leaving the old kind would claim a
+            # declaration that no longer exists.
+            unknown = _PLACEHOLDER_FOR.get(kind_family(entity._kind_id))
+            if unknown:
+                entity._kind = kind_id(unknown)
+                entity._line = entity._column = None
+                entity._contents = ""
+                entity.save()
+            continue
+        EntityModel.update({EntityModel._parent: None}).where(
+            EntityModel._parent == entity_id
+        ).execute()
+        entity.delete_instance()
+        entities_removed += 1
+    return entities_removed, refs_removed
+
+
 def merge_placeholder_entities():
     """Fold Unknown/Unresolved entities into the real entity they describe.
 

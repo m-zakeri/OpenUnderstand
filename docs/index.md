@@ -18,13 +18,11 @@ currently is.
 ## Install
 
 ```bash
-git clone https://github.com/m-zakeri/OpenUnderstand
-cd OpenUnderstand
-python -m venv .venv && . .venv/bin/activate
-pip install -r requirements.txt
+pip install openunderstand
 ```
 
-Python 3.10 or newer.
+Python 3.9 or newer. Extras: `[speedy]` for the C++ parser accelerator,
+`[mcp]` for the MCP server, `[dev]` for the test and build tooling.
 
 ## Build a database
 
@@ -92,3 +90,4 @@ specification that matters is the real tool's output.
 | [Kinds](kinds.md) | The 237 entity and 106 reference kinds |
 | [Architecture](architecture.md) | How a file becomes rows, and how to add a pass |
 | [Parity](parity.md) | Current measured agreement with Understand |
+| [MCP server](mcp.md) | Query your code from an assistant |

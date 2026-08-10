@@ -38,4 +38,5 @@ nav:
     - Kinds: kinds.md
     - Architecture: architecture.md
     - Parity with Understand: parity.md
+    - MCP server: mcp.md
     - Issue tracker: 'https://github.com/m-zakeri/OpenUnderstand/issues'

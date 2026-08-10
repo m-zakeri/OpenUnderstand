@@ -189,9 +189,9 @@ See [Kinds](kinds.md) for the full vocabulary.
 
 These are deliberate and measured, not accidental:
 
-- **Long names carry no parameter list.** `org.json.JSONObject.put` names every
-  overload of `put`, where Understand distinguishes them. Overloads therefore
-  merge into one entity.
+- **Long names carry no parameter list** — as in Understand, where
+  `println.print` also names two entities. Overloads are told apart by
+  declaration position, so they are separate entities here too.
 - **External types are not resolved.** No JDK or third-party jars are analysed,
   so `java.lang.String` exists as an unresolved entity with no members.
 - **Java 8 only.** The grammar predates records, sealed types, `var`, text

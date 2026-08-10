@@ -143,19 +143,20 @@ runtime. The accelerator is roughly 8× faster at parsing and falls back to
 Python with one warning if it was never built. Build it with
 `python openunderstand/gen/java8speedy/build.py`.
 
-## Two path landmines
+## Packaging
 
-1. **`openunderstand/` must be on `sys.path`.** The generated parsers are
-   imported as top-level `gen.javaLabeled...`, not `openunderstand.gen...`, so
-   any entry point needs:
-   ```python
-   sys.path.append(os.path.join(os.getcwd(), "openunderstand"))
-   ```
+The installed package is `openunderstand`; everything imports fully qualified
+(`openunderstand.gen.javaLabeled...`). Two long-standing landmines are gone:
 
-2. **`config.ini` is read from two places.** `start_parsing` reads `./config.ini`
-   relative to the working directory, while `utils/utilities.py:setup_config`
-   resolves to one directory *above* the repository root. If logger setup fails
-   with a `KeyError` on `["Logging"]`, that second file is missing.
+- Imports used to be top-level `gen.javaLabeled...`, so `openunderstand/` had
+  to be on `sys.path` and the package could not be installed and used.
+- `setup_config()` used to resolve `config.ini` one directory *above* the
+  repository root and `KeyError` on a missing `[Logging]` section. It now
+  falls back to defaults, so the library works with no configuration.
+
+An installed wheel is expected to do the whole job with only `antlr4-runtime`
+and `peewee`. `scripts/` has the check that proves it — build the wheel,
+install it in a clean venv, analyse a project and query it.
 
 ## The comparison harness
 

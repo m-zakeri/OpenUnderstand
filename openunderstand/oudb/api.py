@@ -275,18 +275,96 @@ import os
 from openunderstand.oudb.models import EntityModel, ReferenceModel
 
 
+def update_files(paths, source_root: str = ""):
+    """Re-analyse specific files in an open database.
+
+    Fast because it touches only the files given -- on a 228-file project a
+    full analysis takes minutes, one file takes well under a second.
+
+    Each file's previous contribution is deleted before it is re-analysed.
+    Without that the update only adds: rename a method and the database keeps
+    both names, because the passes dedupe against what is present and know
+    nothing about what has gone.
+
+    Files that no longer exist are purged and not re-analysed, so deleting a
+    source file does the right thing.
+
+    Returns a summary dict.
+    """
+    from openunderstand.oudb.models import (dependent_files, purge_file,
+                                            merge_placeholder_entities,
+                                            relabel_nondynamic_calls)
+    from openunderstand.ounderstand.parsing_process import process_file
+    from openunderstand.ounderstand import symbol_table
+
+    requested = [os.path.abspath(p) for p in paths]
+
+    # Expand to the files that depend on these, before anything is purged --
+    # purging deletes the references the dependency graph is derived from.
+    seeds = [e._id for e in
+             (EntityModel.get_or_none(EntityModel._longname == p) for p in requested)
+             if e is not None]
+    affected = dependent_files(seeds)
+    # Filter to real file entities: some passes still record a non-file entity
+    # as a reference's _file, and following those would drag in things that
+    # are not files at all.
+    file_kind = kind_id("Java File")
+    dependents = [
+        e._longname for e in
+        EntityModel.select().where(EntityModel._id.in_(affected))
+        if e._kind_id == file_kind
+    ] if affected else []
+    paths = sorted({*requested, *dependents})
+
+    removed_entities = removed_refs = 0
+    for path in paths:
+        file_ent = EntityModel.get_or_none(EntityModel._longname == path)
+        if file_ent is not None:
+            ents, refs = purge_file(file_ent._id)
+            removed_entities += ents
+            removed_refs += refs
+            if not os.path.exists(path):
+                file_ent.delete_instance()
+
+    # The index feeds cross-file name resolution, so it has to see the new
+    # source before the passes run.
+    if source_root:
+        symbol_table.build(source_root)
+
+    reanalysed = [p for p in paths if os.path.exists(p)]
+    for path in reanalysed:
+        process_file(path)
+
+    merged = merge_placeholder_entities()
+    relabelled = relabel_nondynamic_calls()
+    return {
+        "requested": len(requested),
+        "files": len(paths),
+        "reanalysed": len(reanalysed),
+        "deleted": len(paths) - len(reanalysed),
+        "entities_removed": removed_entities,
+        "references_removed": removed_refs,
+        "placeholders_merged": merged,
+        "calls_relabelled": relabelled,
+    }
+
+
 def update_db(repo_path: str = "", branch: str = "origin/master"):
+    """Re-analyse the .java files that differ from `branch`.
+
+    Paths from `git diff` are repository-relative; they are resolved against
+    `repo_path` so this works from any working directory.
+    """
     # Imported here, not at module scope: GitPython is only needed by this
     # one function, and importing it at the top made it a hard runtime
     # dependency of the whole API.
     import git
 
-    for file in [
-        file
-        for file in git.Repo(repo_path).git.diff(branch, name_only=True).split("\n")
-        if file.endswith(".java")
-    ]:
-        process_file(file_address=file)
+    repo_path = os.path.abspath(repo_path)
+    changed = git.Repo(repo_path).git.diff(branch, name_only=True).split("\n")
+    paths = [os.path.join(repo_path, name)
+             for name in changed if name.endswith(".java")]
+    return update_files(paths, source_root=repo_path)
 
 
 def create_db(
