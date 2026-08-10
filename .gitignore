@@ -177,3 +177,4 @@ openunderstand/gen/java8speedy/.build-cache/
 openunderstand/gen/java8speedy/*.so
 
 scripts
+.claude
