@@ -17,9 +17,9 @@ __version__ = "1.0.0"
 from openunderstand.ounderstand.project import Project
 from antlr4 import *
 from openunderstand.metrics import context
-from gen.javaLabeled.JavaLexer import JavaLexer
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from openunderstand.analysis_passes.entity_manager_g11 import (
     get_created_entity_longname,
     get_all_files,

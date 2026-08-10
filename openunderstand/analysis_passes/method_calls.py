@@ -13,8 +13,8 @@ entity when exactly one project-wide match exists -- which is the symbol table,
 arrived at from the other direction.
 """
 
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 import openunderstand.analysis_passes.class_properties as class_properties
 
 

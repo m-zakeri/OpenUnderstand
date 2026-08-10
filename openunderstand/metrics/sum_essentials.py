@@ -1,9 +1,9 @@
 from antlr4 import *
 from openunderstand.metrics import context
 from openunderstand.oudb.models import kind_id, EntityModel
-from gen.javaLabeled.JavaLexer import JavaLexer
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 
 
 class EssentialListener(JavaParserLabeledListener):

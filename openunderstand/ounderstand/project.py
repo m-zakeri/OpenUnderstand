@@ -5,8 +5,8 @@ import logging
 import os
 from fnmatch import fnmatch
 from antlr4 import *
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaLexer import JavaLexer
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
 from openunderstand.oudb.models import (KindModel, EntityModel, ReferenceModel,
                                         col_1based, resolve_entity_ref, kind_family)
 from openunderstand.analysis_passes.modify_modifyby import ModifyListener

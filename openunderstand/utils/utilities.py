@@ -2,7 +2,7 @@ import time
 import logging
 import configparser
 from os.path import basename
-from gen.javaLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled import JavaParserLabeled
 
 
 class ClassTypeData:
@@ -78,33 +78,68 @@ def timer_decorator():
 import os
 
 
+#: Used when config.ini is absent, which is the normal case for an installed
+#: package: a user who runs `pip install openunderstand` has no config file,
+#: and until these defaults existed the first call raised KeyError('Logging')
+#: from a file they were never told to create.
+_DEFAULTS = {
+    "Config": {"engine_core": "Python"},
+    "Logging": {"filename": "", "level": "INFO"},
+}
+
+
 def setup_config():
+    """Configuration, with defaults for everything the code reads.
+
+    The file is looked for beside the current working directory first -- which
+    is where the CLI writes it -- and then at the historical location three
+    levels above this module. Missing keys fall back to _DEFAULTS rather than
+    raising, so the library is usable without any configuration at all.
+    """
     config = configparser.ConfigParser()
-    config.read(
+    config.read_dict(_DEFAULTS)
+    config.read([
+        os.path.join(os.getcwd(), "config.ini"),
         os.path.join(
             os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "config.ini"
-        )
-    )
+        ),
+    ])
     return config
 
 
+_LOGGER = None
+
+
 def setup_logger():
-    # Read configurations from config.ini file
+    """The shared logger, created once.
+
+    Memoized because `timer_decorator` calls this per listener per file: it
+    used to add a new FileHandler on every call, so a 22-file analysis ended
+    up with hundreds of handlers all writing the same lines.
+
+    With no log filename configured it logs to stderr rather than failing --
+    an analysis library should not require a log destination to run.
+    """
+    global _LOGGER
+    if _LOGGER is not None:
+        return _LOGGER
+
     config = setup_config()
-
-    # Create logger object
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger("openunderstand")
     logger.setLevel(logging.INFO)
+    logger.handlers.clear()
 
-    # Create file handler and set the log level based on the configuration
-    file_handler = logging.FileHandler(config["Logging"]["filename"])
-    file_handler.setLevel(getattr(logging, config["Logging"]["level"].upper()))
+    filename = config["Logging"].get("filename", "")
+    try:
+        handler = logging.FileHandler(filename) if filename else logging.StreamHandler()
+    except OSError:
+        handler = logging.StreamHandler()
+    handler.setLevel(getattr(logging, config["Logging"].get("level", "INFO").upper(),
+                             logging.INFO))
+    handler.setFormatter(
+        logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    )
+    logger.addHandler(handler)
 
-    # Create log formatter
-    formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
-    file_handler.setFormatter(formatter)
-
-    # Add file handler to the logger
-    logger.addHandler(file_handler)
-
+    _LOGGER = logger
     return logger

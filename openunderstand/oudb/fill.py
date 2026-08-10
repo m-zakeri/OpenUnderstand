@@ -5,7 +5,6 @@ import unittest
 
 from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel
 from openunderstand.oudb.utils import get_entity_object_from_understand
-import pkg_resources
 
 
 def append_java_ent_kinds(path_dir: str = ""):

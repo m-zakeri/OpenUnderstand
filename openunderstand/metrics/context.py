@@ -14,8 +14,8 @@ from functools import lru_cache
 
 from antlr4 import CommonTokenStream, InputStream, ParseTreeWalker
 
-from gen.javaLabeled.JavaLexer import JavaLexer
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from openunderstand.oudb.models import EntityModel, ReferenceModel, kind_id
 
 

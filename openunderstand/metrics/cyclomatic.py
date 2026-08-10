@@ -1,11 +1,11 @@
 from openunderstand.ounderstand.project import Project
 from collections import Counter
 from antlr4 import *
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from openunderstand.metrics.utils_g10 import get_method_prefixes
 from openunderstand.metrics import context
-from gen.javaLabeled.JavaLexer import JavaLexer
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
 
 
 

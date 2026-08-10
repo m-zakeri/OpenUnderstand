@@ -42,7 +42,6 @@ from openunderstand.metrics.knots_inheritance_nesting import (
     max_inheritance_tree,
     max_nesting,
 )
-from openunderstand.metrics.Lineofcode import get_line_of_codes
 from openunderstand.metrics import context as metric_context
 from openunderstand.metrics import graph_metrics
 from openunderstand.metrics.count_stmt_exe import statement_counter_exe
@@ -273,11 +272,15 @@ STRING = "String"
 WHITESPACE = "Whitespace"
 
 import os
-import git
 from openunderstand.oudb.models import EntityModel, ReferenceModel
 
 
 def update_db(repo_path: str = "", branch: str = "origin/master"):
+    # Imported here, not at module scope: GitPython is only needed by this
+    # one function, and importing it at the top made it a hard runtime
+    # dependency of the whole API.
+    import git
+
     for file in [
         file
         for file in git.Repo(repo_path).git.diff(branch, name_only=True).split("\n")

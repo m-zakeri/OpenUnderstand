@@ -14,8 +14,8 @@ __credits__ = [
 __license__ = "GPL"
 __version__ = "1.0.0"
 
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 
 
 class VariableListener(JavaParserLabeledListener):

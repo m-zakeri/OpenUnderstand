@@ -2,9 +2,9 @@ import os
 
 from antlr4 import *
 
-from gen.javaLabeled.JavaLexer import JavaLexer
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel, col_1based, kind_id
 
 PRJ_INDEX = 4

@@ -21,8 +21,8 @@ The listener only collects; resolving a name to an entity is the write
 layer's job.
 """
 
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 import openunderstand.analysis_passes.class_properties as class_properties
 
 

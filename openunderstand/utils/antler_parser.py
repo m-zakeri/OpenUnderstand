@@ -21,13 +21,13 @@ import logging
 from antlr4 import CommonTokenStream, InputStream
 from antlr4.tree.Tree import ParseTree
 
-from gen.javaLabeled.JavaLexer import JavaLexer
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 
 logger = logging.getLogger(__name__)
 
 try:
-    from gen.java8speedy import sa_javalabeled_cpp_parser as _accelerator
+    from openunderstand.gen.java8speedy import sa_javalabeled_cpp_parser as _accelerator
 except ImportError:  # not built -- expected, and fine
     _accelerator = None
 
