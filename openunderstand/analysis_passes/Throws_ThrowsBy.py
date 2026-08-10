@@ -90,8 +90,7 @@ class Throws_TrowsBy(JavaParserLabeledListener):
                 )
                 if is_here is not None:
                     refEntName = is_here + "." + refEntName
-                [line, col] = str(ctx.start).split(",")[3].split(":")
-
+                line, col = ctx.start.line, ctx.start.column
                 self.implement.append(
                     {
                         "scopename": refent,
@@ -126,8 +125,7 @@ class Throws_TrowsBy(JavaParserLabeledListener):
                 )
                 if is_here is not None:
                     refEntName = is_here + "." + refEntName
-                [line, col] = str(ctx.start).split(",")[3].split(":")
-
+                line, col = ctx.start.line, ctx.start.column
                 self.implement.append(
                     {
                         "scopename": refent,
@@ -162,8 +160,7 @@ class Throws_TrowsBy(JavaParserLabeledListener):
                 )
                 if is_here is not None:
                     refEntName = is_here + "." + refEntName
-                [line, col] = str(ctx.start).split(",")[3].split(":")
-
+                line, col = ctx.start.line, ctx.start.column
                 self.implement.append(
                     {
                         "scopename": refent,

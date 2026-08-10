@@ -69,7 +69,7 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
             # name has to be appended -- otherwise a class's longname is its
             # package ("org.json" for class CDL) and matches nothing.
             scope_longname = ".".join(scope_parents + [ctx.IDENTIFIER().__str__()])
-            [line, col] = str(ctx.start).split(",")[3].split(":")
+            line, col = ctx.start.line, ctx.start.column
             self.classlongname =  scope_longname
             self.dic = {"scope_kind": "Class", "scope_name": ctx.IDENTIFIER().__str__(),
                                            "scope_longname": scope_longname,

@@ -63,7 +63,7 @@ class CastAndCastBy(JavaParserLabeledListener):
 
         name = ctx.typeType().getText()
         scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        [line, col] = str(ctx.start).split(",")[3].split(":")  # line, column
+        line, col = ctx.start.line, ctx.start.column
         col = col[:-1]
 
         if len(scope_parents) >= 2:

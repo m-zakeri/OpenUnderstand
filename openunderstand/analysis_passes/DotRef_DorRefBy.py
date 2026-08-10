@@ -64,8 +64,7 @@ class DotRef_DotRefBy(JavaParserLabeledListener):
                 refent = allrefs[-1]
                 if refEntName in self.class_name or refEntName is None:
                     entlongname = ".".join(allrefs)
-                    [line, col] = str(ctx.start).split(",")[3].split(":")
-
+                    line, col = ctx.start.line, ctx.start.column
                     self.implement.append(
                         {
                             "scopename": refent,

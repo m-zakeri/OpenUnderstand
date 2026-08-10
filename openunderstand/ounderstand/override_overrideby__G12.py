@@ -117,7 +117,7 @@ class overridelistener(JavaParserLabeledListener):
                 else:
                     scope_longname = ".".join(scope_parents)
 
-                [line, col] = str(ctx.start).split(",")[3].split(":")
+                line, col = ctx.start.line, ctx.start.column
                 ##############
 
                 string = ""

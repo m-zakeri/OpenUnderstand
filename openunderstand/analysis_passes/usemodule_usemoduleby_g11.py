@@ -28,7 +28,7 @@ class UseModuleUseModuleByListener(JavaParserLabeledListener):
         self.methods.append(ctx.IDENTIFIER().getText())
 
     def enterAnnotation(self, ctx: JavaParserLabeled.AnnotationContext):
-        line_col = str(ctx.start).split(",")[3][:-1].split(":")
+        line_col = [ctx.start.line, ctx.start.column]
         self.useModules.append(
             {
                 "scope": "",
