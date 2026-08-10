@@ -75,7 +75,7 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
                                            "scope_longname": scope_longname,
                                            "scope_parent": scope_parents[-2] if len(scope_parents) >= 2 else None,
                                            "scope_contents": self.extract_original_text(ctx),
-                                           "scope_modifiers": self.Modifiers , 'File' : self.file , 'line':line ,  'col' : col[:-1] }
+                                           "scope_modifiers": self.Modifiers , 'File' : self.file , 'line':line ,  'col' : col }
             if(ctx.EXTENDS() != None):
                 self.extend = True
                 self.classx = True

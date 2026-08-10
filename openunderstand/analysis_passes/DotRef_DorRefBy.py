@@ -73,7 +73,7 @@ class DotRef_DotRefBy(JavaParserLabeledListener):
                             "scopereturntype": mothodedreturn,
                             "scopecontent": methodcontext,
                             "line": line,
-                            "col": col[:-1],
+                            "col": col,
                             "refent": refEntName,
                             "scope_parent": allrefs[-2] if len(allrefs) > 2 else None,
                             "potential_refent": (

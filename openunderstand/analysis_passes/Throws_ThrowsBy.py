@@ -70,7 +70,7 @@ class Throws_TrowsBy(JavaParserLabeledListener):
     #                                        "scope_modifiers":
     #                                            class_properties.ClassPropertiesListener.findClassOrInterfaceModifiers(ctx),
     #                                        "line": line,
-    #                                        "col": col[:-1],
+    #                                        "col": col,
     #                                        "type_ent_longname": myType_longname})
 
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
@@ -99,7 +99,7 @@ class Throws_TrowsBy(JavaParserLabeledListener):
                         "scopereturntype": mothodedreturn,
                         "scopecontent": methodcontext,
                         "line": line,
-                        "col": col[:-1],
+                        "col": col,
                         "refent": refEntName,
                         "scope_parent": allrefs[-2] if len(allrefs) > 2 else None,
                         "potential_refent": ".".join(allrefs[:-1]) + "." + refEntName,
@@ -134,7 +134,7 @@ class Throws_TrowsBy(JavaParserLabeledListener):
                         "scopereturntype": mothodedreturn,
                         "scopecontent": methodcontext,
                         "line": line,
-                        "col": col[:-1],
+                        "col": col,
                         "refent": refEntName,
                         "scope_parent": allrefs[-2] if len(allrefs) > 2 else None,
                         "potential_refent": ".".join(allrefs[:-1]) + "." + refEntName,
@@ -169,7 +169,7 @@ class Throws_TrowsBy(JavaParserLabeledListener):
                         "scopereturntype": mothodedreturn,
                         "scopecontent": methodcontext,
                         "line": line,
-                        "col": col[:-1],
+                        "col": col,
                         "refent": refEntName,
                         "scope_parent": allrefs[-2] if len(allrefs) > 2 else None,
                         "potential_refent": ".".join(allrefs[:-1]) + "." + refEntName,

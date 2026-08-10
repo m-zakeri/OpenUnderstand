@@ -19,6 +19,7 @@ from openunderstand.utils.utilities import ClassTypeData
 from openunderstand.utils import antler_parser, utilities
 from openunderstand.oudb.models import kind_id
 from openunderstand.utils import kind_names
+from openunderstand.ounderstand import symbol_table
 
 _ENGINE = None
 
@@ -46,6 +47,19 @@ def _use_cpp_engine():
         # README says "C++ or Python". Accept anything that starts with a "c".
         _ENGINE = requested.strip().lower().startswith("c")
     return _ENGINE
+
+
+def resolved_longname(simple_name, fallback, scope_longname=""):
+    """Long name for a simple name, preferring the project-wide index.
+
+    The type, set and use passes build a long name by gluing the current
+    package in front of whatever identifier they saw -- so a type declared in
+    another package became `org.json.String`, matched nothing, and left a
+    placeholder behind. The index knows where a name is actually declared and
+    refuses ambiguous ones, so the fallback is still used when it cannot say.
+    """
+    resolved = symbol_table.resolve(simple_name, scope_longname)
+    return resolved or fallback
 
 
 class Project:
@@ -138,7 +152,8 @@ class Project:
                 _kind=kind_id("Java Unknown Class Type Member"),
                 _parent=None,
                 _name=type_tuple[1],
-                _longname=type_tuple[6] + "." + type_tuple[1],
+                _longname=resolved_longname(
+                    type_tuple[1], type_tuple[6] + "." + type_tuple[1], type_tuple[6]),
                 _value=None,
                 _type=None,
                 _contents=stream,
@@ -316,7 +331,8 @@ class Project:
                 _kind=kind_id("Java Unknown Variable Member"),
                 _parent=None,
                 _name=use_tuple[1],
-                _longname=use_tuple[6] + "." + use_tuple[1],
+                _longname=resolved_longname(
+                    use_tuple[1], use_tuple[6] + "." + use_tuple[1], use_tuple[6]),
                 _value=None,
                 _type=None,
                 _contents=stream,
@@ -327,7 +343,8 @@ class Project:
                 _kind=kind_id("Java Unknown Method Member"),
                 _parent=None,
                 _name=use_tuple[0],
-                _longname=use_tuple[6] + "." + use_tuple[0],
+                _longname=resolved_longname(
+                    use_tuple[0], use_tuple[6] + "." + use_tuple[0], use_tuple[6]),
                 _value=None,
                 _type=None,
                 _contents=stream,
@@ -386,6 +403,11 @@ class Project:
                 _value=None,
                 _type=ref_dict["type"],
                 _contents=ref_dict["contents"],
+                # The declaration site. Two same-named declarations at
+                # different positions are two entities, which is how overloads
+                # stay distinct.
+                _line=ref_dict["line"],
+                _column=col_1based(ref_dict["col"]),
             )
 
             # The define pass is the only one that reads the declaration
@@ -462,6 +484,14 @@ class Project:
                 EntityModel._longname == f"{ref_dict['scope_longname']}.{name}"
             )
             if ent is None:
+                # The declaration may be in another file, which this pass
+                # cannot see. The project-wide index built before the passes
+                # ran can answer that; it refuses ambiguous names rather than
+                # guessing.
+                resolved = symbol_table.resolve(name, ref_dict["scope_longname"])
+                if resolved:
+                    ent = EntityModel.get_or_none(EntityModel._longname == resolved)
+            if ent is None:
                 ent, _ = EntityModel.get_or_create(
                     _kind=kind_id("Java Unknown Method Member"),
                     _name=name,
@@ -499,7 +529,13 @@ class Project:
             name = ref_dict["name"]
             ent = EntityModel.get_or_none(
                 EntityModel._longname == f"{scope_longname}.{name}"
-            ) or EntityModel.get_or_none(EntityModel._name == name)
+            )
+            if ent is None:
+                resolved = symbol_table.resolve(name, scope_longname)
+                if resolved:
+                    ent = EntityModel.get_or_none(EntityModel._longname == resolved)
+            if ent is None:
+                ent = EntityModel.get_or_none(EntityModel._name == name)
 
             # A dereference is only "partial" when the receiver is a variable.
             # `JSONObject.NULL` reads the same way syntactically but names a
@@ -621,6 +657,13 @@ class Project:
 
     def addCallOrCallByRefs(self, ref_dicts, file_ent, file_address):
         for ref_dict in ref_dicts:
+            # NOTE: this listener reports the enclosing *package* as the
+            # scope's long name while naming the method, which leaves a
+            # class-kinded row shadowing each package -- the last 3 kind
+            # disagreements against Understand. Repairing the name here was
+            # measured to cost 1.6 points of reference recall, because every
+            # other pass still uses the unrepaired form; the fix belongs in
+            # call_callby.py, using findParents() as the define pass does.
             scope = EntityModel.get_or_create(
                 _kind=self.findKindWithKeywords(
                     ref_dict["scope_kind"], ref_dict["scope_modifiers"]

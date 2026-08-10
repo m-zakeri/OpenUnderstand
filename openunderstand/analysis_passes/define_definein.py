@@ -122,7 +122,8 @@ def source_text(ctx):
     if stream is None:
         return ctx.getText()
     try:
-        return stream.getText(start.start, _line_end(stream, stop.stop))
+        return stream.getText(_doc_comment_start(stream, start.start),
+                              _line_end(stream, stop.stop))
     except Exception:
         return ctx.getText()
 
@@ -149,12 +150,16 @@ def _line_end(stream, stop):
 
 
 def _doc_comment_start(stream, begin):
-    """Start offset of the comment block immediately above a declaration.
+    """Extend a declaration's start back over its Javadoc block.
 
-    Not used for an entity's extent: Understand reports CountLine 13 for
-    `Main.main`, which is its declaration line through its closing brace with
-    the comment above it excluded. Kept because the attribution is still the
-    right one for anything that wants a declaration's documentation.
+    Understand counts a `/** ... */` block above a declaration as part of it,
+    and a `//` comment above it as not. Both halves are measured: `Main.main`
+    is preceded by a `//` line and Understand reports CountLine 13 -- its
+    declaration through its closing brace -- while org.json's members are
+    preceded by Javadoc and Understand's line counts include it.
+
+    Only whitespace may separate the block from the declaration, so one
+    documenting something else is not swallowed.
     """
     try:
         text = stream.strdata
@@ -164,27 +169,14 @@ def _doc_comment_start(stream, begin):
     i = begin - 1
     while i >= 0 and text[i] in " \t\r\n":
         i -= 1
-    if i < 1:
+    if i < 1 or text[i - 1:i + 1] != "*/":
         return begin
 
-    if text[i - 1:i + 1] == "*/":
-        opening = text.rfind("/*", 0, i)
-        return opening if opening != -1 else begin
-
-    # A run of // lines directly above the declaration.
-    end_of_run = i
-    start_of_run = None
-    while True:
-        line_start = text.rfind("\n", 0, end_of_run) + 1
-        if not text[line_start:end_of_run + 1].lstrip().startswith("//"):
-            break
-        start_of_run = line_start
-        end_of_run = line_start - 1
-        while end_of_run >= 0 and text[end_of_run] in " \t\r\n":
-            end_of_run -= 1
-        if end_of_run < 0:
-            break
-    return start_of_run if start_of_run is not None else begin
+    opening = text.rfind("/*", 0, i)
+    # `/*` alone is an ordinary block comment; only `/**` is documentation.
+    if opening == -1 or not text.startswith("/**", opening):
+        return begin
+    return opening
 
 
 def _is_generic(ctx):

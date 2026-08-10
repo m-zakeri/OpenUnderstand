@@ -155,6 +155,12 @@ class EntityModel(Model):
     _value = CharField(max_length=512, null=True)
     _type = CharField(max_length=512, null=True)
     _contents = TextField(null=True)
+    # Where the declaration is. Understand separates overloads by declaration
+    # site, not by name -- its long names carry no parameter list either, so
+    # `println.print` names two entities there. Without a position this table
+    # cannot express that, and every overload collapsed into one row.
+    _line = IntegerField(null=True)
+    _column = IntegerField(null=True)
 
     @classmethod
     def get_or_create(cls, **kwargs):
@@ -175,6 +181,13 @@ class EntityModel(Model):
         real kind. When a real kind arrives for a row currently holding a
         placeholder, the row is upgraded in place. That is what makes the
         result independent of the order the passes run in.
+
+        Overloads are the other exception. Two rows with the same long name
+        declared at different positions are different declarations -- that is
+        how Understand tells `println.print(String)` from
+        `println.print(String, String)`. Only a caller that knows it is looking
+        at a declaration supplies a position; every other pass omits it and
+        keeps resolving by name.
         """
         defaults = dict(kwargs.pop("defaults", None) or {})
         fields = {**defaults, **kwargs}
@@ -186,19 +199,30 @@ class EntityModel(Model):
         incoming = fields.get("_kind", fields.get("_kind_id"))
         incoming_placeholder = is_placeholder_kind(incoming)
         incoming_family = kind_family(incoming)
+        incoming_site = (fields.get("_line"), fields.get("_column"))
 
         match = None
         for row in cls.select().where(cls._longname == longname):
             row_placeholder = is_placeholder_kind(row._kind_id)
-            if incoming_placeholder or row_placeholder or \
-                    kind_family(row._kind_id) == incoming_family:
-                match = row
-                if not row_placeholder:
-                    break  # prefer a row that already has a real kind
+            if not (incoming_placeholder or row_placeholder
+                    or kind_family(row._kind_id) == incoming_family):
+                continue
+            row_site = (row._line, row._column)
+            if all(incoming_site) and all(row_site) and incoming_site != row_site:
+                continue  # a different declaration of the same name: an overload
+            match = row
+            if not row_placeholder:
+                break  # prefer a row that already has a real kind
         if match is not None:
+            dirty = False
             if is_placeholder_kind(match._kind_id) and not incoming_placeholder \
                     and incoming is not None:
                 match._kind = incoming
+                dirty = True
+            if all(incoming_site) and not all((match._line, match._column)):
+                match._line, match._column = incoming_site
+                dirty = True
+            if dirty:
                 match.save()
             return match, False
 

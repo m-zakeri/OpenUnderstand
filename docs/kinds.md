@@ -99,8 +99,8 @@ is one kind, not five attributes.
 | `Java Interface Type Protected` | — |
 | `Java Interface Type Public` | yes |
 | `Java Method Constructor Member Default` | — |
-| `Java Method Constructor Member Private` | — |
-| `Java Method Constructor Member Protected` | — |
+| `Java Method Constructor Member Private` | yes |
+| `Java Method Constructor Member Protected` | yes |
 | `Java Method Constructor Member Public` | yes |
 | `Java Method Default Member` | yes |
 | `Java Method Lambda` | — |
@@ -168,7 +168,7 @@ is one kind, not five attributes.
 | `Java Static Final Generic Method Private Member` | — |
 | `Java Static Final Generic Method Protected Member` | — |
 | `Java Static Final Generic Method Public Member` | — |
-| `Java Static Final Method Default Member` | — |
+| `Java Static Final Method Default Member` | yes |
 | `Java Static Final Method Private Member` | — |
 | `Java Static Final Method Protected Member` | — |
 | `Java Static Final Method Public Member` | yes |

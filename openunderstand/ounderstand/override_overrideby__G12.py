@@ -137,7 +137,7 @@ class overridelistener(JavaParserLabeledListener):
                     "scope_contents": self.extract_original_text(ctx),
                     "scope_modifiers": list(reversed(self.modifiers)),
                     "line": line,
-                    "col": col[:-1],
+                    "col": col,
                     "type_ent_longname": self.packageName + "." + self.class_Name,
                     "File": self.FileName,
                     "is_overrided": self.isoverride,

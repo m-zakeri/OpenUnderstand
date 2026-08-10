@@ -185,6 +185,34 @@ def count_decl_file(ent_model):
     })
 
 
+def average_line_counts(ent_model) -> dict:
+    """Understand's AvgCountLine family: mean lines per member.
+
+    Understand names these AvgCountLine / AvgCountLineBlank / AvgCountLineCode
+    / AvgCountLineComment. This project listed them as AvgLine, AvgLineBlank,
+    AvgLineCode and AvgLineComment -- names Understand does not recognise, so a
+    script written against Understand asked for AvgCountLine and got nothing
+    back. Verified against Understand on `integral`: 9 / 0 / 8 / 1.
+    """
+    from openunderstand.metrics import context
+
+    entity = _entity(ent_model)
+    empty = {"total": 0, "blank": 0, "code": 0, "comment": 0}
+    if entity is None:
+        return empty
+
+    members = _declares(entity._id, "method")
+    if not members:
+        return empty
+
+    totals = dict(empty)
+    for member in members:
+        counts = context.line_counts(member._contents or "")
+        for key in totals:
+            totals[key] += counts[key]
+    return {key: round(value / len(members)) for key, value in totals.items()}
+
+
 def count_semicolon(ent_model):
     """Statements terminated by a semicolon.
 

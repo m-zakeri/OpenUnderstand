@@ -861,14 +861,18 @@ class Ent:
                 metrics.update({"AvgEssential": avg_essential(self)})
             elif item == "CountDeclClassMethod":
                 metrics.update({"CountDeclClassMethod": declare_method_count(self)})
-            elif item == "AvgLine":
-                raise NotImplementedError("metric AvgLine is not implemented")
-            elif item == "AvgLineBlank":
-                raise NotImplementedError("metric AvgLineBlank is not implemented")
-            elif item == "AvgLineCode":
-                raise NotImplementedError("metric AvgLineCode is not implemented")
-            elif item == "AvgLineComment":
-                raise NotImplementedError("metric AvgLineComment is not implemented")
+            elif item == "AvgCountLine":
+                metrics.update({"AvgCountLine":
+                                graph_metrics.average_line_counts(self)["total"]})
+            elif item == "AvgCountLineBlank":
+                metrics.update({"AvgCountLineBlank":
+                                graph_metrics.average_line_counts(self)["blank"]})
+            elif item == "AvgCountLineCode":
+                metrics.update({"AvgCountLineCode":
+                                graph_metrics.average_line_counts(self)["code"]})
+            elif item == "AvgCountLineComment":
+                metrics.update({"AvgCountLineComment":
+                                graph_metrics.average_line_counts(self)["comment"]})
             elif item == "CountClassBase":
                 metrics.update({"CountClassBase": graph_metrics.count_class_base(self)})
             elif item == "CountClassCoupled":
@@ -997,7 +1001,13 @@ class Ent:
                     }
                 )
             elif item == "RatioCommentToCode":
-                metrics.update({"RatioCommentToCode": get_ratio_comment_to_code(self)})
+                # Understand reports this to two decimal places as a string.
+                # Returning a full-precision float meant a value that was
+                # arithmetically right still compared unequal.
+                counts = metric_context.line_counts(self.contents())
+                metrics.update({"RatioCommentToCode": (
+                    f"{counts['comment'] / counts['code']:.2f}"
+                    if counts["code"] else "0.00")})
             elif item == "SumCyclomatic":
                 metrics.update({"SumCyclomatic": metric_context.cyclomatic_summary(self)["sum"]})
             elif item == "SumCyclomaticModified":
@@ -1026,10 +1036,10 @@ class Ent:
             "AvgCyclomaticStrict",
             "AvgEssential",
             "CountDeclClassMethod",
-            "AvgLine",
-            "AvgLineBlank",
-            "AvgLineCode",
-            "AvgLineComment",
+            "AvgCountLine",
+            "AvgCountLineBlank",
+            "AvgCountLineCode",
+            "AvgCountLineComment",
             "CountClassBase",
             "CountClassCoupled",
             "CountClassCoupledModified",
