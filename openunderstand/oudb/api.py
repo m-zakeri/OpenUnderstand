@@ -625,6 +625,11 @@ class Ent:
     _value: str
     _type: str
     _contents: str
+    # Declaration position. Ent is constructed by splatting an EntityModel row,
+    # so a column added to the model without a field here makes every
+    # db.ents() call raise TypeError.
+    _line: int = None
+    _column: int = None
 
     def contents(self):  # real signature unknown; restored from __doc__
         """
@@ -837,6 +842,21 @@ class Ent:
         """
         metrics = {}
         known = set(self.metrics())
+
+        # A package has no source of its own: Understand reports the roll-up
+        # over the files it spans. Doing this before the dispatch chain keeps
+        # every metric's own definition untouched.
+        members = graph_metrics.container_members(self)
+        if members:
+            nested = graph_metrics.container_methods(self)
+            for item in metric_list:
+                if item not in known or item in graph_metrics._NOT_AGGREGATED:
+                    continue
+                over = nested if graph_metrics.aggregates_over_methods(item) else members
+                metrics[item] = graph_metrics.aggregate(
+                    item, [Ent(**row.__dict__.get("__data__")).metric([item]).get(item)
+                           for row in over])
+            metric_list = [m for m in metric_list if m not in metrics]
         for item in metric_list:
             # The docstring promises None for an unrecognised metric.
             if item not in known:
@@ -846,7 +866,8 @@ class Ent:
                 metrics.update({"CountDeclMethodAll": count_decl_method_all(self)})
             elif item == "CountDeclClassVariable":
                 metrics.update(
-                    {"CountDeclClassVariable": declare_class_variables(self)}
+                    {"CountDeclClassVariable":
+                         graph_metrics.count_decl_class_variable(self)}
                 )
             elif item == "AvgCyclomatic":
                 # The mean over the entity's own methods. This used to return a
@@ -860,7 +881,8 @@ class Ent:
             elif item == "AvgEssential":
                 metrics.update({"AvgEssential": avg_essential(self)})
             elif item == "CountDeclClassMethod":
-                metrics.update({"CountDeclClassMethod": declare_method_count(self)})
+                metrics.update({"CountDeclClassMethod":
+                                graph_metrics.count_decl_class_method(self)})
             elif item == "AvgCountLine":
                 metrics.update({"AvgCountLine":
                                 graph_metrics.average_line_counts(self)["total"]})
@@ -878,7 +900,8 @@ class Ent:
             elif item == "CountClassCoupled":
                 metrics.update({"CountClassCoupled": graph_metrics.count_class_coupled(self)})
             elif item == "CountClassCoupledModified":
-                metrics.update({"CountClassCoupledModified": graph_metrics.count_class_coupled(self)})
+                metrics.update({"CountClassCoupledModified":
+                                graph_metrics.count_class_coupled(self, True)})
             elif item == "CountClassDerived":
                 metrics.update({"CountClassDerived": graph_metrics.count_class_derived(self)})
             elif item == "CountDeclClass":

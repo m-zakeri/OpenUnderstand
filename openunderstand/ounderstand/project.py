@@ -1590,7 +1590,12 @@ class Project:
 
             if not Throw:
                 if ref_dict["refent"] is None:
-                    ent = self.getUnnamedPackageEntity(file_ent)
+                    # No target: skip. Pointing these at the unnamed-package
+                    # entity made one row the sink for every unresolved
+                    # dereference in the project -- on a 228-file benchmark
+                    # that was 52,588 of 59,213 DotRef references, two thirds
+                    # of the whole database, and most of the build time.
+                    continue
                 else:
                     ent = self.getScopeEntity(
                         file_ent, ref_dict["refent"], ref_dict["refent"]
