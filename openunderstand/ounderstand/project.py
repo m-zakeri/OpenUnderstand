@@ -8,7 +8,7 @@ from antlr4 import *
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaLexer import JavaLexer
 from openunderstand.oudb.models import (KindModel, EntityModel, ReferenceModel,
-                                        col_1based, resolve_entity_ref)
+                                        col_1based, resolve_entity_ref, kind_family)
 from openunderstand.analysis_passes.modify_modifyby import ModifyListener
 from openunderstand.analysis_passes.g6_class_properties import (
     ClassPropertiesListener,
@@ -423,6 +423,47 @@ class Project:
                             _scope=ent,
                         )
 
+    def addMethodCallRefs(self, ref_dicts, file_ent):
+        """Write Call/Callby for every call site, resolving what it can locally.
+
+        A name that resolves to nothing here becomes an Unknown placeholder;
+        merge_placeholder_entities() folds it into the real method once every
+        file has been parsed, which is what makes cross-file calls resolve at
+        all.
+        """
+        for ref_dict in ref_dicts:
+            scope = EntityModel.get_or_none(
+                EntityModel._longname == ref_dict["scope_longname"]
+            )
+            if scope is None:
+                continue
+
+            name = ref_dict["name"]
+            ent = EntityModel.get_or_none(
+                EntityModel._longname == f"{ref_dict['scope_longname']}.{name}"
+            )
+            if ent is None:
+                ent, _ = EntityModel.get_or_create(
+                    _kind=kind_id("Java Unknown Method Member"),
+                    _name=name,
+                    _parent=file_ent,
+                    _longname=name,
+                    _contents="",
+                )
+            if ent._id == scope._id:
+                continue
+
+            for kind, (a, b) in (("Java Call", (ent, scope)),
+                                 ("Java Callby", (scope, ent))):
+                ReferenceModel.get_or_create(
+                    _kind=kind_id(kind),
+                    _file=file_ent,
+                    _line=ref_dict["line"],
+                    _column=col_1based(ref_dict["col"]),
+                    _ent=a,
+                    _scope=b,
+                )
+
     def addUseVariantRefs(self, ref_dicts, file_ent):
         """Write the qualified Use/Typed variants collected by use_variants.py.
 
@@ -440,6 +481,15 @@ class Project:
             ent = EntityModel.get_or_none(
                 EntityModel._longname == f"{scope_longname}.{name}"
             ) or EntityModel.get_or_none(EntityModel._name == name)
+
+            # A dereference is only "partial" when the receiver is a variable.
+            # `JSONObject.NULL` reads the same way syntactically but names a
+            # type, and Understand labels that differently -- without this the
+            # pass emitted 1379 rows where Understand emits 788.
+            if ref_dict["kind"] == "Java Use Deref Partial":
+                if ent is None or kind_family(ent._kind_id) != "variable":
+                    continue
+
             if ent is None:
                 ent, _ = EntityModel.get_or_create(
                     _kind=kind_id("Java Unknown Class Type Member"),

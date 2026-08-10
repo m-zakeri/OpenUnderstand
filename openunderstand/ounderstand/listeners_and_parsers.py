@@ -16,6 +16,7 @@ from openunderstand.analysis_passes.import_demand_g9 import ImportListenerDemand
 
 from openunderstand.analysis_passes.define_definein import DefineListener
 from openunderstand.analysis_passes.use_variants import UseVariantListener
+from openunderstand.analysis_passes.method_calls import MethodCallListener
 
 # from analysis_passes.define_and_definin_g6 import DefineListener
 from openunderstand.analysis_passes.modify_modifyby import ModifyListener
@@ -151,6 +152,19 @@ class ListenersAndParsers:
         except Exception as e:
             self.logger.error(
                 "An Error occurred in file create refs :" + file_address + "\n" + str(e)
+            )
+
+    @timer_decorator()
+    def method_call_listener(self, tree, file_ent, file_address, p):
+        try:
+            listener = MethodCallListener(file_address)
+            p.Walk(listener, tree)
+            p.addMethodCallRefs(listener.calls, file_ent)
+            self.logger.info("method calls success")
+        except Exception as e:
+            self.logger.error(
+                "An Error occurred in method calls in file :"
+                + file_address + "\n" + str(e) + "\n" + traceback.format_exc()
             )
 
     @timer_decorator()

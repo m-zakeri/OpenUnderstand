@@ -85,7 +85,8 @@ def start_parsing(
     from openunderstand.oudb.api import create_db
     from openunderstand.oudb.fill import fill
     from openunderstand.ounderstand.runner import runner
-    from openunderstand.oudb.models import merge_placeholder_entities
+    from openunderstand.oudb.models import (merge_placeholder_entities,
+                                            relabel_nondynamic_calls)
 
     if (
         repo_address is not None
@@ -120,6 +121,7 @@ def start_parsing(
     # before the define pass has declared the real ones. Fold them together
     # once everything has been written.
     merge_placeholder_entities()
+    relabel_nondynamic_calls()
 
 
 if __name__ == "__main__":

@@ -276,6 +276,54 @@ def merge_placeholder_entities():
     return merged
 
 
+#: A call to one of these cannot be dispatched virtually, so Understand labels
+#: it Nondynamic rather than Call.
+_NONDYNAMIC_TOKENS = {"static", "private", "final", "constructor"}
+
+
+def relabel_nondynamic_calls():
+    """Split Java Call into Call/Call Nondynamic once targets are known.
+
+    Whether a call is virtual depends on the callee's modifiers, which the call
+    site cannot see -- especially across files. Deciding it here, after
+    merge_placeholder_entities() has resolved the targets, is what makes it
+    answerable at all.
+
+    Returns the number of references relabelled.
+    """
+    pairs = [("Java Call", "Java Callby"),
+             ("Java Call Nondynamic", "Java Callby Nondynamic")]
+    ids = {}
+    for forward, inverse in pairs:
+        for name in (forward, inverse):
+            row = KindModel.get_or_none(KindModel._name == name)
+            if row is None:
+                return 0
+            ids[name] = row._id
+
+    def is_nondynamic(entity_id):
+        entity = EntityModel.get_or_none(_id=entity_id)
+        if entity is None:
+            return False
+        return bool(set(_kind_name(entity._kind_id).lower().split())
+                    & _NONDYNAMIC_TOKENS)
+
+    relabelled = 0
+    # The callee is _ent on a Call and _scope on its inverse.
+    for kind_name, target, callee in (
+        ("Java Call", "Java Call Nondynamic", "_ent_id"),
+        ("Java Callby", "Java Callby Nondynamic", "_scope_id"),
+    ):
+        for ref in ReferenceModel.select().where(
+            ReferenceModel._kind == ids[kind_name]
+        ):
+            if is_nondynamic(getattr(ref, callee)):
+                ref._kind = ids[target]
+                ref.save()
+                relabelled += 1
+    return relabelled
+
+
 class ProjectModel(Model):
     name = CharField(max_length=128)
     language = CharField(max_length=128, default="Java")

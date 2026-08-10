@@ -34,18 +34,8 @@ plugins:
 
 nav:
     - Home: index.md
-    - Entity kinds: entity_kinds.md
-    - References kinds: reference_kinds.md
-    - Source code metrics: source_code_metrics.md
-    - Benchmarks: benchmarks.md
-    - Development proposals:
-        - Core entity-reference development: proposals/core_entity_reference_development.md
-        - Core source code metrics development: proposals/core_source_code_metrics_development.md
-        - Core code graphs and visualiztion development: proposals/core_code_graphs_development.md
-        - Code review and bug fixing: proposals/code_review_and_bug_fixing.md
-    - Analysis passes:
-        - Call and Callby: reference_kinds/call_callby.md
-    - Code graph and visulization:
-        - Control flow graph: code_graphs/control_flow_graph.md
-    - Tutorials: tutorials.md
+    - API reference: api.md
+    - Kinds: kinds.md
+    - Architecture: architecture.md
+    - Parity with Understand: parity.md
     - Issue tracker: 'https://github.com/m-zakeri/OpenUnderstand/issues'
