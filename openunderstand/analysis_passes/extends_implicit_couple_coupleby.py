@@ -5,7 +5,7 @@ from antlr4 import *
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel
+from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel, col_1based
 
 PRJ_INDEX = 4
 
@@ -231,7 +231,7 @@ def add_references(importing_ent, imported_ent, cls_data: ClassTypeData, file_pa
         _kind=KindModel.get_or_none(_name="Java Extend Couple Implicit")._id,
         _file_id=importing_ent._id,
         _line=cls_data.line,
-        _column=cls_data.column,
+        _column=col_1based(cls_data.column),
         _ent_id=imported_ent._id,
         _scope_id=importing_ent._id,
     )
@@ -240,7 +240,7 @@ def add_references(importing_ent, imported_ent, cls_data: ClassTypeData, file_pa
         _kind=KindModel.get_or_none(_name="Java Extend Coupleby Implicit")._id,
         _file_id=importing_ent._id,
         _line=cls_data.line,
-        _column=cls_data.column,
+        _column=col_1based(cls_data.column),
         _ent_id=importing_ent._id,
         _scope_id=imported_ent._id,
     )

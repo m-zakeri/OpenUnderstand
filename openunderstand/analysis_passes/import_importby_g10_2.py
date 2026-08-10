@@ -4,7 +4,7 @@ from pathlib import Path
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel, ProjectModel
+from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel, ProjectModel, col_1based
 
 PRJ_INDEX = 3
 REF_NAME = "import"
@@ -255,7 +255,7 @@ def add_references(importing_ent, imported_ent, ref_dict):
         _kind=206,  # Java Import
         _file=importing_ent.get_id(),
         _line=ref_dict["line"],
-        _column=ref_dict["column"],
+        _column=col_1based(ref_dict["column"]),
         _ent=imported_ent.get_id(),
         _scope=importing_ent.get_id(),
     )
@@ -263,7 +263,7 @@ def add_references(importing_ent, imported_ent, ref_dict):
         _kind=207,  # Java Importby
         _file=importing_ent.get_id(),
         _line=ref_dict["line"],
-        _column=ref_dict["column"],
+        _column=col_1based(ref_dict["column"]),
         _ent=importing_ent.get_id(),
         _scope=imported_ent.get_id(),
     )

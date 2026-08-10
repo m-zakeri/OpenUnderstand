@@ -7,7 +7,7 @@ from fnmatch import fnmatch
 from antlr4 import *
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaLexer import JavaLexer
-from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel
+from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel, col_1based
 from openunderstand.analysis_passes.modify_modifyby import ModifyListener
 from openunderstand.analysis_passes.g6_class_properties import (
     ClassPropertiesListener,
@@ -113,7 +113,7 @@ class Project:
                 _kind=192,
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _ent=ent,
                 _scope=scope,
             )
@@ -123,7 +123,7 @@ class Project:
                 _kind=193,
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _scope=ent,
                 _ent=scope,
             )
@@ -155,7 +155,7 @@ class Project:
                 _kind=224,
                 _file=scope,
                 _line=type_tuple[4],
-                _column=type_tuple[5],
+                _column=col_1based(type_tuple[5]),
                 _ent=ent,
                 _scope=scope,
             )
@@ -164,7 +164,7 @@ class Project:
                 _kind=225,
                 _file=ent,
                 _line=type_tuple[2],
-                _column=type_tuple[3],
+                _column=col_1based(type_tuple[3]),
                 _ent=scope,
                 _scope=ent,
             )
@@ -198,7 +198,7 @@ class Project:
                 _kind=222,
                 _file=scope,
                 _line=type_tuple[4],
-                _column=type_tuple[5],
+                _column=col_1based(type_tuple[5]),
                 _ent=ent,
                 _scope=scope,
             )
@@ -207,7 +207,7 @@ class Project:
                 _kind=223,
                 _file=ent,
                 _line=type_tuple[4],
-                _column=type_tuple[5],
+                _column=col_1based(type_tuple[5]),
                 _ent=scope,
                 _scope=ent,
             )
@@ -240,7 +240,7 @@ class Project:
                 _kind=218,
                 _file=scope,
                 _line=type_tuple[5],
-                _column=type_tuple[6],
+                _column=col_1based(type_tuple[6]),
                 _ent=ent,
                 _scope=scope,
             )
@@ -249,7 +249,7 @@ class Project:
                 _kind=219,
                 _file=ent,
                 _line=type_tuple[5],
-                _column=type_tuple[6],
+                _column=col_1based(type_tuple[6]),
                 _ent=scope,
                 _scope=ent,
             )
@@ -283,7 +283,7 @@ class Project:
                 _kind=220,
                 _file=scope,
                 _line=type_tuple[4],
-                _column=type_tuple[5],
+                _column=col_1based(type_tuple[5]),
                 _ent=ent,
                 _scope=scope,
             )
@@ -292,7 +292,7 @@ class Project:
                 _kind=221,
                 _file=ent,
                 _line=type_tuple[4],
-                _column=type_tuple[5],
+                _column=col_1based(type_tuple[5]),
                 _ent=scope,
                 _scope=ent,
             )
@@ -324,7 +324,7 @@ class Project:
                 _kind=226,
                 _file=file_ent,
                 _line=use_tuple[4],
-                _column=use_tuple[5],
+                _column=col_1based(use_tuple[5]),
                 _ent=ent,
                 _scope=scope,
             )
@@ -333,7 +333,7 @@ class Project:
                 _kind=227,
                 _file=file_ent,
                 _line=use_tuple[2],
-                _column=use_tuple[3],
+                _column=col_1based(use_tuple[3]),
                 _ent=scope,
                 _scope=ent,
             )
@@ -381,7 +381,7 @@ class Project:
                 _kind=194,
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _ent=ent,
                 _scope=scope,
             )
@@ -391,7 +391,7 @@ class Project:
                 _kind=195,
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _scope=ent,
                 _ent=scope,
             )
@@ -421,7 +421,7 @@ class Project:
                 _kind=188,
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _ent=ent,
                 _scope=scope,
             )
@@ -429,7 +429,7 @@ class Project:
                 _kind=189,
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _ent=scope,
                 _scope=ent,
             )
@@ -441,7 +441,7 @@ class Project:
             _kind=KindModel.get_or_none(_name="Java Extend Couple Implicit")._id,
             _file_id=importing_ent._id,
             _line=cls_data.line,
-            _column=cls_data.column,
+            _column=col_1based(cls_data.column),
             _ent_id=imported_ent._id,
             _scope_id=importing_ent._id,
         )
@@ -449,7 +449,7 @@ class Project:
             _kind=KindModel.get_or_none(_name="Java Extend Coupleby Implicit")._id,
             _file_id=importing_ent._id,
             _line=cls_data.line,
-            _column=cls_data.column,
+            _column=col_1based(cls_data.column),
             _ent_id=importing_ent._id,
             _scope_id=imported_ent._id,
         )
@@ -476,7 +476,7 @@ class Project:
                 _kind=178,
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _ent=ent,
                 _scope=scope,
             )
@@ -484,7 +484,7 @@ class Project:
                 _kind=179,
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _ent=scope,
                 _scope=ent,
             )
@@ -511,7 +511,7 @@ class Project:
                 _kind=172,
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _ent=ent,
                 _scope=scope,
             )
@@ -519,7 +519,7 @@ class Project:
                 _kind=173,
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _ent=scope,
                 _scope=ent,
             )
@@ -534,7 +534,7 @@ class Project:
                 _kind=208,
                 _file=ref_dict["file"],
                 _line=ref_dict["line"],
-                _column=ref_dict["column"],
+                _column=col_1based(ref_dict["column"]),
                 _ent=ent if ent is not None else "NOT FOUND",
                 _scope=scope,
             )
@@ -542,7 +542,7 @@ class Project:
                 _kind=209,
                 _file=ref_dict["file"],
                 _line=ref_dict["line"],
-                _column=ref_dict["column"],
+                _column=col_1based(ref_dict["column"]),
                 _ent=scope,
                 _scope=ent if ent is not None else "NOT FOUND",
             )
@@ -571,7 +571,7 @@ class Project:
                 _kind=170,
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _ent=ent,
                 _scope=scope,
             )
@@ -579,7 +579,7 @@ class Project:
                 _kind=171,
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _ent=scope,
                 _scope=ent,
             )
@@ -605,7 +605,7 @@ class Project:
                 _kind=174,
                 _file=file_ent,
                 _line=ref_dicts["line"],
-                _column=ref_dicts["col"],
+                _column=col_1based(ref_dicts["col"]),
                 _scope=scope,
                 _ent=ent,
             )
@@ -613,7 +613,7 @@ class Project:
                 _kind=175,
                 _file=file_ent,
                 _line=ref_dicts["line"],
-                _column=ref_dicts["col"],
+                _column=col_1based(ref_dicts["col"]),
                 _scope=ent,
                 _ent=scope,
             )
@@ -638,7 +638,7 @@ class Project:
                 _kind=176,
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _scope=ent,
                 _ent=scope,
             )
@@ -647,7 +647,7 @@ class Project:
                 _kind=177,
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _scope=scope,
                 _ent=ent,
             )
@@ -794,7 +794,7 @@ class Project:
             _kind=234,  # Java Open
             _file=importing_ent.get_id(),
             _line=ref_dict["line"],
-            _column=ref_dict["column"],
+            _column=col_1based(ref_dict["column"]),
             _ent=imported_ent.get_id(),
             _scope=importing_ent.get_id(),
         )
@@ -802,7 +802,7 @@ class Project:
             _kind=235,  # Java OpenBy
             _file=importing_ent.get_id(),
             _line=ref_dict["line"],
-            _column=ref_dict["column"],
+            _column=col_1based(ref_dict["column"]),
             _ent=importing_ent.get_id(),
             _scope=imported_ent.get_id(),
         )
@@ -812,7 +812,7 @@ class Project:
             _kind=206,  # Java Import
             _file=importing_ent.get_id(),
             _line=ref_dict["line"],
-            _column=ref_dict["column"],
+            _column=col_1based(ref_dict["column"]),
             _ent=imported_ent.get_id(),
             _scope=importing_ent.get_id(),
         )
@@ -820,7 +820,7 @@ class Project:
             _kind=207,  # Java Importby
             _file=importing_ent.get_id(),
             _line=ref_dict["line"],
-            _column=ref_dict["column"],
+            _column=col_1based(ref_dict["column"]),
             _ent=importing_ent.get_id(),
             _scope=imported_ent.get_id(),
         )
@@ -860,7 +860,7 @@ class Project:
                 _kind=204,
                 _file=file_path,
                 _line=i["line"],
-                _column=i["col"],
+                _column=col_1based(i["col"]),
                 _ent=ent.get_id(),
                 _scope=file_path,
             )
@@ -870,7 +870,7 @@ class Project:
             _kind=KindModel.get_or_none(_name="Java Extend Couple Implicit")._id,
             _file_id=importing_ent._id,
             _line=cls_data.line,
-            _column=cls_data.column,
+            _column=col_1based(cls_data.column),
             _ent_id=imported_ent._id,
             _scope_id=importing_ent._id,
         )
@@ -878,7 +878,7 @@ class Project:
             _kind=KindModel.get_or_none(_name="Java Extend Coupleby Implicit")._id,
             _file_id=importing_ent._id,
             _line=cls_data.line,
-            _column=cls_data.column,
+            _column=col_1based(cls_data.column),
             _ent_id=importing_ent._id,
             _scope_id=imported_ent._id,
         )
@@ -939,7 +939,7 @@ class Project:
                     _kind=190,
                     _file=file_ent,
                     _line=ref_dict["line"],
-                    _column=ref_dict["col"],
+                    _column=col_1based(ref_dict["col"]),
                     _scope=scope,
                     _ent=ent,
                 )
@@ -948,7 +948,7 @@ class Project:
                     _kind=191,
                     _file=file_ent,
                     _line=ref_dict["line"],
-                    _column=ref_dict["col"],
+                    _column=col_1based(ref_dict["col"]),
                     _scope=ent,
                     _ent=scope,
                 )
@@ -1123,7 +1123,7 @@ class Project:
                                         _kind=211,
                                         _file=file_ent,
                                         _line=x["line"],
-                                        _column=x["col"],
+                                        _column=col_1based(x["col"]),
                                         _ent=ent[0],
                                         _scope=scope[0],
                                     )
@@ -1131,7 +1131,7 @@ class Project:
                                         _kind=212,
                                         _file=fe,
                                         _line=y["line"],
-                                        _column=y["col"],
+                                        _column=col_1based(y["col"]),
                                         _ent=scope[0],
                                         _scope=ent[0],
                                     )
@@ -1156,7 +1156,7 @@ class Project:
                                 _kind=211,
                                 _file=file_ent,
                                 _line=x["line"],
-                                _column=x["col"],
+                                _column=col_1based(x["col"]),
                                 _ent=ent[0],
                                 _scope=scope[0],
                             )
@@ -1179,7 +1179,7 @@ class Project:
             _kind_id=KindModel.get_or_none(_name="Java Define")._id,
             _file_id=file_entity._id,
             _line=package_name["line"],
-            _column=package_name["column"],
+            _column=col_1based(package_name["column"]),
             _ent_id=file_entity._id,
             _scope_id=created_entity._id,
         )
@@ -1187,7 +1187,7 @@ class Project:
             _kind_id=KindModel.get_or_none(_name="Java Definein")._id,
             _file_id=file_entity._id,
             _line=package_name["line"],
-            _column=package_name["column"],
+            _column=col_1based(package_name["column"]),
             _ent_id=created_entity._id,
             _scope_id=file_entity._id,
         )
@@ -1274,7 +1274,7 @@ class Project:
                 _kind_id=KindModel.get_or_none(_name="Java Unknown Module")._id,
                 _file_id=file_entity._id,
                 _line=item["line"],
-                _column=item["col"],
+                _column=col_1based(item["col"]),
                 _ent_id=item["ent"],
                 _scope_id=item["scope"],
             )
@@ -1290,7 +1290,7 @@ class Project:
                 _kind_id=KindModel.get_or_none(_name="Java Unresolved Module")._id,
                 _file_id=file_entity._id,
                 _line=item["line"],
-                _column=item["col"],
+                _column=col_1based(item["col"]),
                 _ent_id=item["ent"],
                 _scope_id=item["scope"],
             )
@@ -1306,7 +1306,7 @@ class Project:
                 _kind_id=KindModel.get_or_none(_name="Java ModuleUse")._id,
                 _file_id=file_entity._id,
                 _line=item["line"],
-                _column=item["col"],
+                _column=col_1based(item["col"]),
                 _ent_id=item["ent"],
                 _scope_id=item["scope"],
             )
@@ -1314,7 +1314,7 @@ class Project:
                 _kind_id=KindModel.get_or_none(_name="Java ModuleUseby")._id,
                 _file_id=file_entity._id,
                 _line=item["line"],
-                _column=item["col"],
+                _column=col_1based(item["col"]),
                 _ent_id=item["scope"],
                 _scope_id=item["ent"],
             )
@@ -1375,7 +1375,7 @@ class Project:
                 _kind_id=KindModel.get_or_none(_name="Java Define")._id,
                 _file_id=reference_file._id,
                 _line=reference_line,
-                _column=reference_column,
+                _column=col_1based(reference_column),
                 _ent_id=model_parent._id,
                 _scope_id=created_entity._id,
             )
@@ -1383,7 +1383,7 @@ class Project:
                 _kind_id=KindModel.get_or_none(_name="Java Definein")._id,
                 _file_id=reference_file._id,
                 _line=reference_line,
-                _column=reference_column,
+                _column=col_1based(reference_column),
                 _ent_id=created_entity._id,
                 _scope_id=model_parent._id,
             )
@@ -1423,7 +1423,7 @@ class Project:
                 _kind=id1,
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _ent=ent,
                 _scope=scope,
             )
@@ -1431,7 +1431,7 @@ class Project:
                 _kind=id2,
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _ent=scope,
                 _scope=ent,
             )
@@ -1460,7 +1460,7 @@ class Project:
                                 _longname=c1["scope_longname"],
                                 _contents=c1["scope_contents"])
                             CoupleBy_ref = ReferenceModel.get_or_create(_kind=180, _file=file_ent2, _line=c["line"],
-                                                                        _column=c["col"], _ent=scope[0], _scope=ent[0])
+                                                                        _column=col_1based(c["col"]), _ent=scope[0], _scope=ent[0])
 
                         else:
                             kw = key.split('.')
@@ -1470,7 +1470,7 @@ class Project:
                                                             _longname=key,
                                                             )
                         Couple_ref = ReferenceModel.get_or_create(_kind=179, _file=file_ent, _line=c["line"],
-                                                                  _column=c["col"], _ent=ent[0], _scope=scope[0])
+                                                                  _column=col_1based(c["col"]), _ent=ent[0], _scope=scope[0])
 
     # for c in couples:
         #     ent = self.getImplementEntity(
@@ -1489,7 +1489,7 @@ class Project:
         #         _kind=180,
         #         _file=file_ent,
         #         _line=c["line"],
-        #         _column=c["col"],
+        #         _column=col_1based(c["col"]),
         #         _ent=ent,
         #         _scope=scope,
         #     )
@@ -1497,7 +1497,7 @@ class Project:
         #         _kind=181,
         #         _file=file_ent,
         #         _line=c["line"],
-        #         _column=c["col"],
+        #         _column=col_1based(c["col"]),
         #         _ent=scope,
         #         _scope=ent,
         #     )
@@ -1544,7 +1544,7 @@ class Project:
                                     _kind=180,
                                     _file=file_ent2,
                                     _line=c["line"],
-                                    _column=c["col"],
+                                    _column=col_1based(c["col"]),
                                     _ent=scope[0],
                                     _scope=ent[0],
                                 )
@@ -1562,7 +1562,7 @@ class Project:
                                 _kind=179,
                                 _file=file_ent,
                                 _line=c["line"],
-                                _column=c["col"],
+                                _column=col_1based(c["col"]),
                                 _ent=ent[0],
                                 _scope=scope[0],
                             )

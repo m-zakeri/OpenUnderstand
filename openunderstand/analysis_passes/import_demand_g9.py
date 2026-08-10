@@ -3,7 +3,7 @@ from antlr4 import *
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel
+from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel, col_1based
 
 PRJ_INDEX = 0
 REF_NAME = "import demand"
@@ -147,7 +147,7 @@ def main():
                 _kind=204,
                 _file=file_path,
                 _line=i["line"],
-                _column=i["col"],
+                _column=col_1based(i["col"]),
                 _ent=ent.get_id(),
                 _scope=file_path,
             )

@@ -128,7 +128,9 @@ class overridelistener(JavaParserLabeledListener):
                     "MethodIs": mymethod[0],
                     "scope_kind": "Method",
                     "scope_name": ctx.IDENTIFIER().getText(),
-                    "scope_longname": self.packageName + "." + scope_longname,
+                    # findParents() already includes the package components;
+                    # prefixing packageName here repeated it ("org.json.org.json").
+                    "scope_longname": scope_longname,
                     "scope_parent": (
                         scope_parents[-2] if len(scope_parents) >= 2 else None
                     ),
