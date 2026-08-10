@@ -179,3 +179,4 @@ openunderstand/gen/java8speedy/*.so
 scripts
 .claude
 CLAUDE.md
+.DS_Store

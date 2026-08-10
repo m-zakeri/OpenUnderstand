@@ -73,13 +73,11 @@ names is in [Kinds](kinds.md).
 If you have Understand installed and licensed, the comparison harness builds
 both databases from the same source and reports every difference:
 
-```bash
-bash scripts/fetch_benchmarks.sh JSON
-bash scripts/compare/run_all.sh --fixture JSON
-```
+The harness builds both databases from the same source and produces a ranked
+defect report. It needs a licensed Understand install, so it is kept outside
+this repository — ask if you want to run it.
 
-It writes a ranked defect report to `scripts/compare/out/JSON/report.md`. This
-is the project's test suite: there are no unit tests, because the only
+This is the project's test suite: there are no unit tests, because the only
 specification that matters is the real tool's output.
 
 ## Where to go next
