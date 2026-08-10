@@ -1178,21 +1178,7 @@ class Ent:
                     & (KindModel._name.contains(item))
                     & (fn.Lower(KindModel._name) == (f"Java {item}").lower())
                 )
-                if len(mlist) > 0:
-                    print(kinds.count())
-                    for k in kinds:
-                        print("kin : ", k._name)
-                        print(k._id)
-                    q = ReferenceModel.select().where(ReferenceModel._kind.in_(kinds))
-                    for it in query:
-                        print("it : ", it._kind)
-                        if str(it._kind) != "Java Define":
-                            print("X :", it._kind)
-                            print("X :", "Java Define")
-
                 query = query.where(ReferenceModel._kind.in_(kinds))
-                if len(mlist) > 0:
-                    print(query.count())
 
             if entkindstring:
                 kinds = KindModel.select().where(

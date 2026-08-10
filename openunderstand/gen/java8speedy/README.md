@@ -1,8 +1,15 @@
 # speedy-antlr C++ parse accelerator
 
-Optional. Parses Java ~8x faster than the pure-Python ANTLR runtime while
+Optional. Parses Java ~8.6x faster than the pure-Python ANTLR runtime while
 producing a structurally identical parse tree, so the existing listeners walk it
 unchanged.
+
+**Set expectations: parsing is not the bottleneck.** On the 22-file
+`benchmark/JSON` fixture, parse-only drops from 3.79s to 0.44s, but a full
+analysis run takes ~43s — the 23 listener passes and the database writes
+dominate. Enabling the accelerator is worth roughly 9% end-to-end. Measured
+per-pass costs after each build are in `build.log`; aggregate the
+`timer_decorator` lines to see where the time actually goes.
 
 ## Build
 
