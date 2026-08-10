@@ -24,10 +24,9 @@ class implementListener(JavaParserLabeledListener):
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         name = ctx.IDENTIFIER().getText()
         scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        if len(scope_parents) == 1:
-            scope_longname = scope_parents[0]
-        else:
-            scope_longname = ".".join(scope_parents)
+        # findParents() stops at the enclosing scopes, so the class's own name
+        # has to be appended -- otherwise a class's longname is its package.
+        scope_longname = ".".join(scope_parents + [ctx.IDENTIFIER().__str__()])
 
         EntityClass = ClassEntities(
             name,

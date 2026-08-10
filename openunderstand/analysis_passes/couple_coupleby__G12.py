@@ -65,10 +65,10 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
     def enterClassDeclaration(self, ctx:JavaParserLabeled.ClassDeclarationContext):
         if (True):
             scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-            if len(scope_parents) == 1:
-                scope_longname = scope_parents[0]
-            else:
-                scope_longname = ".".join(scope_parents)
+            # findParents() stops at the enclosing scopes, so the class's own
+            # name has to be appended -- otherwise a class's longname is its
+            # package ("org.json" for class CDL) and matches nothing.
+            scope_longname = ".".join(scope_parents + [ctx.IDENTIFIER().__str__()])
             [line, col] = str(ctx.start).split(",")[3].split(":")
             self.classlongname =  scope_longname
             self.dic = {"scope_kind": "Class", "scope_name": ctx.IDENTIFIER().__str__(),

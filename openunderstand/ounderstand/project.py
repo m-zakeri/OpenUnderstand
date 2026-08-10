@@ -1012,7 +1012,7 @@ class Project:
                 _kind=kind,
                 _name=props["name"],
                 _longname=props["longname"],
-                _parent=props["parent"] if props["parent"] is not None else file_ent,
+                _parent=resolve_entity_ref(props["parent"], file_ent),
                 _contents=props["contents"],
             )
         return ent[0]
@@ -1029,7 +1029,7 @@ class Project:
                 _kind=kind,
                 _name=props["name"],
                 _longname=props["longname"],
-                _parent=props["parent"] if props["parent"] is not None else file_ent,
+                _parent=resolve_entity_ref(props["parent"], file_ent),
                 _contents=props["contents"],
             )
         return ent[0]
