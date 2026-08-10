@@ -26,6 +26,28 @@ def col_1based(column):
         return column
 
 
+def resolve_entity_ref(value, fallback=None):
+    """Coerce whatever a listener produced into something a foreign key accepts.
+
+    The analysis passes hand over a mixture: an EntityModel, a primary key, a
+    bare name string such as "Builder" taken from a parent-scope list, a
+    sentinel like "NOT FOUND", or an empty string. SQLite will happily store
+    every one of those in an INTEGER column, so the corruption is silent --
+    ``_parent_id`` ends up holding class names and ``_ent_id`` holds "".
+
+    Strings are looked up by longname and then by name; anything that cannot be
+    resolved becomes ``fallback`` rather than being written through.
+    """
+    if value is None or isinstance(value, (int, Model)):
+        return value if value is not None else fallback
+    text = str(value).strip()
+    if not text or text in {"NOT FOUND", "None", "null"}:
+        return fallback
+    found = (EntityModel.get_or_none(EntityModel._longname == text)
+             or EntityModel.get_or_none(EntityModel._name == text))
+    return found if found is not None else fallback
+
+
 class KindModel(Model):
     """
     This table will fill automatically.

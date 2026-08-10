@@ -24,7 +24,7 @@ __version__ = "1.0.0"
 
 import os.path
 
-from openunderstand.oudb.models import EntityModel, KindModel
+from openunderstand.oudb.models import EntityModel, KindModel, resolve_entity_ref
 from antlr4 import *
 
 # Listeners
@@ -33,7 +33,6 @@ from openunderstand.analysis_passes.class_properties import (
     ClassPropertiesListener,
     InterfacePropertiesListener,
 )
-from openunderstand.oudb.models import KindModel
 
 # Constants
 FILE_KIND_ID = 1
@@ -306,8 +305,11 @@ class EntityGenerator:
                 _kind=kind,
                 _name=props["name"],
                 _longname=props["longname"],
-                _parent=(
-                    props["parent"] if props["parent"] is not None else file_address
+                # props["parent"] is a bare name and file_address is a path
+                # string; both used to be written straight into the integer
+                # _parent foreign key. Resolve them to real entity rows.
+                _parent=resolve_entity_ref(
+                    props["parent"], resolve_entity_ref(file_address)
                 ),
                 _contents=props["contents"],
             )
@@ -325,8 +327,11 @@ class EntityGenerator:
                 _kind=kind,
                 _name=props["name"],
                 _longname=props["longname"],
-                _parent=(
-                    props["parent"] if props["parent"] is not None else file_address
+                # props["parent"] is a bare name and file_address is a path
+                # string; both used to be written straight into the integer
+                # _parent foreign key. Resolve them to real entity rows.
+                _parent=resolve_entity_ref(
+                    props["parent"], resolve_entity_ref(file_address)
                 ),
                 _contents=props["contents"],
             )

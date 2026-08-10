@@ -23,7 +23,11 @@ def append_java_ref_kind(kind: str, inverse: str, ref: str) -> int:
     ref_kind, _ = KindModel.get_or_create(_name=ref, is_ent_kind=False)
     inv = ref.replace(kind, inverse)
     inv_kind, _ = KindModel.get_or_create(_name=inv, is_ent_kind=False, _inv=ref_kind)
-    ref_kind.inverse = inv_kind
+    # `_inv`, not `inverse`. KindModel has no field called `inverse`, so this
+    # assignment used to set a stray attribute that save() ignored -- leaving
+    # every forward reference kind with a NULL inverse, and Kind.inv() unable
+    # to resolve forward -> inverse.
+    ref_kind._inv = inv_kind
     return ref_kind.save()
 
 
