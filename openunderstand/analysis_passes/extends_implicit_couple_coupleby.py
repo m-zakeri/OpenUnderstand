@@ -5,7 +5,7 @@ from antlr4 import *
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel, col_1based
+from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel, col_1based, kind_id
 
 PRJ_INDEX = 4
 
@@ -199,7 +199,7 @@ class Project:
             _longname=cls_data.get_long_name(),
             _contents=cls_data.get_contents(),
         )
-        entity_kind_object = 84
+        entity_kind_object = kind_id("Java Unknown Class Type Member")
         java_lang_entity, _ = EntityModel.get_or_create(
             _kind=entity_kind_object,
             _parent=None,
@@ -242,7 +242,7 @@ def add_references(importing_ent, imported_ent, cls_data: ClassTypeData, file_pa
     )
 
     inverse_ref, _ = ReferenceModel.get_or_create(
-        _kind=KindModel.get_or_none(_name="Java Extend Coupleby Implicit")._id,
+        _kind=KindModel.get_or_none(_name="Java Extendby Coupleby Implicit")._id,
         _file_id=importing_ent._id,
         _line=cls_data.line,
         _column=col_1based(cls_data.column),

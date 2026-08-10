@@ -1,117 +1,61 @@
-Call (Callby)
+# Java reference kinds, verbatim from SciTools Understand 7.0.1217
+# (understand.Kind.list_reference("Java"), paired via Kind.inv()).
+#
+# Format: "<forward> | <inverse>", one pair per line. The inverse used to be
+# derived by string substitution from a section header, which cannot express
+# Understand's real pairings -- Extend Couple/Extendby Coupleby, Use Cast/Useby
+# Castby, Overrides/Overriddenby. Lines not starting with "Java" are ignored.
 
-Java Call Nondynamic
-Java Call
-
-
-Cast (Castby)
-
-Java Cast
-
-
-Contain (Containin)
-
-Java Contain
-
-
-Couple (Coupleby)
-
-Java Extend Couple
-Java Couple
-Java Extend Couple External
-Java Extend Couple Implicit External
-Java Extend Couple Implicit
-Java Implement Couple
-
-
-Create (Createby)
-
-Java Create
-
-
-Declare (Declarein)
-
-Java Declare
-
-
-Define (Definein)
-
-Java Define
-Java Define Implicit
-
-
-DotRef (DotRefby)
-
-Java DotRef
-
-
-End (Endby)
-
-Java End
-
-
-Export (Exportby)
-
-Java Export
-
-
-Import (Importby)
-
-Java Import Demand
-Java Import
-
-
-Modify (Modifyby)
-
-Java Modify
-
-
-ModuleUse (ModuleUseby)
-
-Java ModuleUse
-
-
-Override (Overrideby)
-
-Java Override
-
-
-Provide (Provideby)
-
-Java Provide
-
-
-Require (Requireby)
-
-Java Require
-
-
-Set (Setby)
-
-Java Set Init
-Java Set Partial
-Java Set
-
-
-Typed (Typedby)
-
-Java Typed
-
-
-Use (Useby)
-
-Java Use
-Java Use Partial
-Java Use Ptr
-Java Use Return
-
-
-Open (Openby)
-
-Java Open
-
-
-Throw (Throwby)
-
-Java Throw
-
+Java Begin | Java Beginby
+Java Call | Java Callby
+Java Call Nondynamic | Java Callby Nondynamic
+Java Call Nondynamic Implicit | Java Callby Nondynamic Implicit
+Java Contain | Java Containin
+Java Couple | Java Coupleby
+Java Create | Java Createby
+Java Declare | Java Declarein
+Java Define | Java Definein
+Java Define Implicit | Java Definein Implicit
+Java DotRef | Java DotRefby
+Java End | Java Endby
+Java Export | Java Exportby
+Java Extend Couple | Java Extendby Coupleby
+Java Extend Couple External | Java Extendby Coupleby External
+Java Extend Couple Implicit | Java Extendby Coupleby Implicit
+Java Extend Couple Implicit External | Java Extendby Coupleby Implicit External
+Java HasRepository | Java Repositoryfor
+Java Implement Couple | Java Implementby Coupleby
+Java Import | Java Importby
+Java Import Demand | Java Importby Demand
+Java Manytomany Relation | Java Manytomanyby Relation
+Java Manytoone Relation | Java Manytooneby Relation
+Java Mapstojava Copy Implicit | Java Mapstospring Copy Implicit
+Java Mapstojava Implicit | Java Mapstospring Implicit
+Java Modify | Java Modifyby
+Java Modify Deref Partial | Java Modifyby Deref Partial
+Java ModuleUse | Java ModuleUseby
+Java Onetomany Relation | Java Onetomanyby Relation
+Java Onetoone Relation | Java Onetooneby Relation
+Java Open | Java Openby
+Java Overrides | Java Overriddenby
+Java Permit Couple | Java Permitby Coupleby
+Java Provide | Java Provideby
+Java Require | Java Requireby
+Java Set | Java Setby
+Java Set Deref Partial | Java Setby Deref Partial
+Java Set Implicit | Java Setby Implicit
+Java Set Init | Java Setby Init
+Java Throw | Java Throwby
+Java Typed | Java Typedby
+Java Typed GenericArgument | Java Typedby GenericArgument
+Java Typed Implicit | Java Typedby Implicit
+Java Use | Java Useby
+Java Use Annotation | Java Useby Annotation
+Java Use BeanQualifier | Java Useby BeanQualifier
+Java Use Cast | Java Useby Castby
+Java Use Constrains Couple | Java Useby Constrains Coupleby
+Java Use Deref Partial | Java Useby Deref Partial
+Java Use GenericArgument | Java Useby GenericArgument
+Java Use Implicit | Java Useby Implicit
+Java Use Ptr | Java Useby Ptr
+Java Use Return | Java Useby Return

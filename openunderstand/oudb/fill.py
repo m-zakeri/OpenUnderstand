@@ -14,15 +14,14 @@ def append_java_ent_kinds(path_dir: str = ""):
     with open(path_dir, "r") as f:
         for line in f.readlines():
             if line.startswith("Java"):
-                query = line.strip()
-                kind, _ = KindModel.get_or_create(_name=query)
-                print(f"Created ({_}): {kind}")
+                KindModel.get_or_create(_name=line.strip())
 
 
-def append_java_ref_kind(kind: str, inverse: str, ref: str) -> int:
-    ref_kind, _ = KindModel.get_or_create(_name=ref, is_ent_kind=False)
-    inv = ref.replace(kind, inverse)
-    inv_kind, _ = KindModel.get_or_create(_name=inv, is_ent_kind=False, _inv=ref_kind)
+def append_java_ref_kind(forward: str, inverse: str) -> int:
+    ref_kind, _ = KindModel.get_or_create(_name=forward, is_ent_kind=False)
+    inv_kind, _ = KindModel.get_or_create(
+        _name=inverse, is_ent_kind=False, _inv=ref_kind
+    )
     # `_inv`, not `inverse`. KindModel has no field called `inverse`, so this
     # assignment used to set a stray attribute that save() ignored -- leaving
     # every forward reference kind with a NULL inverse, and Kind.inv() unable
@@ -32,27 +31,28 @@ def append_java_ref_kind(kind: str, inverse: str, ref: str) -> int:
 
 
 def append_java_ref_kinds(path_dir: str = ""):
-    kind, inv_kind = "", ""
+    """Seed reference kinds from "<forward> | <inverse>" lines.
+
+    The inverse used to be derived by substituting one word for another out of
+    a section header, which cannot express the pairings Understand actually
+    uses -- Extend Couple/Extendby Coupleby, Use Cast/Useby Castby,
+    Overrides/Overriddenby all have inverses that change more than one token.
+    """
     current_directory = os.path.abspath(os.path.dirname(__file__))
     path_dir = os.path.join(current_directory, "java_ref_kinds.txt")
     with open(path_dir, "r") as f:
         for line in f.readlines():
             line = line.strip()
-            if line.startswith("Java"):
-                try:
-                    if append_java_ref_kind(kind, inv_kind, line):
-                        print(f"Created: {line}")
-                        continue
-                    else:
-                        raise ConnectionError(
-                            "Database disconnected, please try again!"
-                        )
-                except peewee.IntegrityError:
-                    print(f"KindModel exists: {line}")
-            else:
-                if line:
-                    kind, inv_kind = line.split()
-                    inv_kind = inv_kind[1:-1]
+            if not line.startswith("Java"):
+                continue
+            if "|" not in line:
+                raise ValueError(f"reference kind line has no inverse: {line!r}")
+            forward, inverse = (part.strip() for part in line.split("|", 1))
+            try:
+                if not append_java_ref_kind(forward, inverse):
+                    raise ConnectionError("Database disconnected, please try again!")
+            except peewee.IntegrityError:
+                print(f"KindModel exists: {line}")
 
 
 def append_entities_with_understand(udb_path: str):

@@ -1,132 +1,47 @@
-File
-
-Java File
-Java File Jar
-
-
-Method
-
-Java Method Constructor Member Default
-Java Method Constructor Member Protected
-Java Method Constructor Member Private
-Java Method Constructor Member Public
-Java Static Final Method Default Member
-Java Static Final Method Private Member
-Java Static Final Method Protected Member
-Java Static Final Method Public Member
-Java Static Final Generic Method Default Member
-Java Static Final Generic Method Private Member
-Java Static Final Generic Method Protected Member
-Java Final Method Default Member
-Java Static Final Generic Method Public Member
-Java Final Method Private Member
-Java Final Method Protected Member
-Java Final Method Public Member
-Java Generic Final Method Default Member
-Java Generic Final Method Private Member
-Java Static Method Default Member
-Java Final Generic Method Protected Member
-Java Static Method Private Member
-Java Final Generic Method Public Member
-Java Static Method Protected Member
-Java Static Method Public Member
-Java Static Generic Method Default Member
-Java Static Generic Method Private Member
-Java Static Generic Method Protected Member
-Java Static Generic Method Public Member
-Java Static Method Public Main Member
-Java Unknown Method Member
-Java Method Default Member
-Java Method Lambda
-Java Method Private Member
-Java Unresolved Method
-Java Method Protected Member
-Java Unresolved External Final Method Default Member
-Java Method Public Member
-Java Unresolved External Final Method Private Member
-Java Implicit Method Public Member
-Java Unresolved External Final Method Protected Member
-Java Abstract Method Default Member
-Java Generic Method Default Member
-Java Unresolved External Final Method Public Member
-Java Generic Method Private Member
-Java Abstract Method Protected Member
-Java Unresolved External Method Default Member
-Java Generic Method Protected Member
-Java Abstract Method Public Member
-Java Unresolved External Method Private Member
-Java Generic Method Public Member
-Java Abstract Generic Method Default Member
-Java Unresolved External Method Protected Member
-Java Abstract Generic Method Protected Member
-Java Unresolved External Method Public Member
-Java Abstract Generic Method Public Member
-Java Unresolved External Static Final Method Default Member
-Java Unresolved External Static Final Method Private Member
-Java Unresolved Extermal Static Final Method Protected Member
-Java Unresolved External Static Final Method Public Member
-Java Unresolved External Static Method Default Member
-Java Unresolved External Static Method Private Member
-Java Unresolved External Static Method Protected Member
-Java Unresolved External Static Method Public Member
-Java Unresolved External Static Method Public Main Member
-
-
-Module
-
-Java Unknown Module
-Java Unresolved Module
-Java Module
-
-
-Package
-
-Java Unknown Package
-Java Unresolved Package
-Java Package
-Java Package Unnamed
-
-
-Parameter
-
-Java Catch Parameter
-Java Parameter
-
-
-Type
+# Java entity kinds, verbatim from SciTools Understand 7.0.1217
+# (understand.Kind.list_entity("Java")).
+#
+# fill.py seeds KindModel from this file with an AutoField, so ids follow file
+# order. Nothing hard-codes those ids any more -- resolve kinds by name with
+# openunderstand.oudb.models.kind_id(). Lines not starting with "Java" are
+# ignored, so comments are free.
 
 Java Abstract Class Type Default Member
 Java Abstract Class Type Private Member
 Java Abstract Class Type Protected Member
 Java Abstract Class Type Public Member
-Java Abstract Generic Class Type Default Member
-Java Abstract Generic Class Type Private Member
-Java Class Type TypeVariable
-Java Abstract Generic Class Type Protected Member
-Java Unknown Class Type Member
-Java Abstract Generic Class Type Public Member
 Java Abstract Enum Type Default Member
 Java Abstract Enum Type Private Member
 Java Abstract Enum Type Protected Member
 Java Abstract Enum Type Public Member
+Java Abstract Generic Class Type Default Member
+Java Abstract Generic Class Type Private Member
+Java Abstract Generic Class Type Protected Member
+Java Abstract Generic Class Type Public Member
+Java Abstract Generic Method Default Member
+Java Abstract Generic Method Protected Member
+Java Abstract Generic Method Public Member
+Java Abstract Method Default Member
+Java Abstract Method Protected Member
+Java Abstract Method Public Member
 Java Annotation Interface Type Default
 Java Annotation Interface Type Private
 Java Annotation Interface Type Protected
 Java Annotation Interface Type Public
+Java Bean Primary Variable
+Java Bean Variable
+Java Catch Parameter
 Java Class Type Anonymous Member
 Java Class Type Default Member
 Java Class Type Private Member
 Java Class Type Protected Member
 Java Class Type Public Member
-Java Generic Class Type Default Member
-Java Generic Class Type Private Member
-Java Generic Class Type Protected Member
-Java Generic Class Type Public Member
-Java Unresolved Type
 Java Enum Class Type Default Member
 Java Enum Class Type Private Member
 Java Enum Class Type Protected Member
 Java Enum Class Type Public Member
+Java File
+Java File Jar
 Java Final Class Type Default Member
 Java Final Class Type Private Member
 Java Final Class Type Protected Member
@@ -135,14 +50,90 @@ Java Final Generic Class Type Default Member
 Java Final Generic Class Type Private Member
 Java Final Generic Class Type Protected Member
 Java Final Generic Class Type Public Member
-Java Interface Type Default
-Java Interface Type Private
-Java Interface Type Protected
-Java Interface Type Public
+Java Final Generic Method Protected Member
+Java Final Generic Method Public Member
+Java Final Method Default Member
+Java Final Method Private Member
+Java Final Method Protected Member
+Java Final Method Public Member
+Java Final Parameter
+Java Final Variable Default Member
+Java Final Variable Local
+Java Final Variable Private Member
+Java Final Variable Protected Member
+Java Final Variable Public Member
+Java Framework
+Java Generic Class Type Default Member
+Java Generic Class Type Private Member
+Java Generic Class Type Protected Member
+Java Generic Class Type Public Member
+Java Generic Final Method Default Member
+Java Generic Final Method Private Member
 Java Generic Interface Type Default
 Java Generic Interface Type Private
 Java Generic Interface Type Protected
 Java Generic Interface Type Public
+Java Generic Method Default Member
+Java Generic Method Private Member
+Java Generic Method Protected Member
+Java Generic Method Public Member
+Java Generic Record Class Type Default Member
+Java Generic Record Class Type Private Member
+Java Generic Record Class Type Protected Member
+Java Generic Record Class Type Public Member
+Java GenericParameter Type
+Java Implicit Final Variable Public Member
+Java Implicit Method Public Member
+Java Interface Type Default
+Java Interface Type Private
+Java Interface Type Protected
+Java Interface Type Public
+Java Method Constructor Member Default
+Java Method Constructor Member Private
+Java Method Constructor Member Protected
+Java Method Constructor Member Public
+Java Method Default Member
+Java Method Lambda
+Java Method Private Member
+Java Method Protected Member
+Java Method Public Member
+Java Module
+Java Package
+Java Package Unnamed
+Java Parameter
+Java Record Class Type Default Member
+Java Record Class Type Private Member
+Java Record Class Type Protected Member
+Java Record Class Type Public Member
+Java Sealed Abstract Class Type Default Member
+Java Sealed Abstract Class Type Private Member
+Java Sealed Abstract Class Type Protected Member
+Java Sealed Abstract Class Type Public Member
+Java Sealed Abstract Generic Class Type Default Member
+Java Sealed Abstract Generic Class Type Private Member
+Java Sealed Abstract Generic Class Type Protected Member
+Java Sealed Abstract Generic Class Type Public Member
+Java Sealed Class Type Default Member
+Java Sealed Class Type Private Member
+Java Sealed Class Type Protected Member
+Java Sealed Class Type Public Member
+Java Sealed Generic Class Type Default Member
+Java Sealed Generic Class Type Private Member
+Java Sealed Generic Class Type Protected Member
+Java Sealed Generic Class Type Public Member
+Java Sealed Generic Interface Type Private
+Java Sealed Generic Interface Type Protected
+Java Sealed Generic Interface Type Public
+Java Sealed Interface Type Default
+Java Sealed Interface Type Private
+Java Sealed Interface Type Protected
+Java SealedGeneric Interface Type Default
+Java SealedInterface Type Public
+Java Spring Column
+Java Spring Column Id
+Java Spring Embeddable Table
+Java Spring Mappedsuperclass Table
+Java Spring Table
 Java Static Abstract Class Type Default Member
 Java Static Abstract Class Type Private Member
 Java Static Abstract Class Type Protected Member
@@ -155,10 +146,6 @@ Java Static Class Type Default Member
 Java Static Class Type Private Member
 Java Static Class Type Protected Member
 Java Static Class Type Public Member
-Java Static Generic Class Type Default Member
-Java Static Class Generic Type Private Member
-Java Static Generic Class Type Protected Member
-Java Static Generic Class Type Public Member
 Java Static Final Class Type Default Member
 Java Static Final Class Type Private Member
 Java Static Final Class Type Protected Member
@@ -167,30 +154,92 @@ Java Static Final Generic Class Type Default Member
 Java Static Final Generic Class Type Private Member
 Java Static Final Generic Class Type Protected Member
 Java Static Final Generic Class Type Public Member
-
-
-Variable
-
+Java Static Final Generic Method Default Member
+Java Static Final Generic Method Private Member
+Java Static Final Generic Method Protected Member
+Java Static Final Generic Method Public Member
+Java Static Final Method Default Member
+Java Static Final Method Private Member
+Java Static Final Method Protected Member
+Java Static Final Method Public Member
 Java Static Final Variable Default Member
 Java Static Final Variable Private Member
 Java Static Final Variable Protected Member
 Java Static Final Variable Public Member
+Java Static Generic Class Type Default Member
+Java Static Generic Class Type Private Member
+Java Static Generic Class Type Protected Member
+Java Static Generic Class Type Public Member
+Java Static Generic Method Default Member
+Java Static Generic Method Private Member
+Java Static Generic Method Protected Member
+Java Static Generic Method Public Member
+Java Static Generic Record Class Type Default Member
+Java Static Generic Record Class Type Protected Member
+Java Static Generic Record Class Type Public Member
+Java Static Method Default Member
+Java Static Method Private Member
+Java Static Method Protected Member
+Java Static Method Public Main Member
+Java Static Method Public Member
+Java Static Record Class Generic Type Private Member
+Java Static Record Class Type Default Member
+Java Static Record Class Type Private Member
+Java Static Record Class Type Protected Member
+Java Static Record Class Type Public Member
+Java Static Sealed Abstract Class Type Default Member
+Java Static Sealed Abstract Class Type Private Member
+Java Static Sealed Abstract Class Type Protected Member
+Java Static Sealed Abstract Class Type Public Member
+Java Static Sealed Abstract Generic Class Type Default Member
+Java Static Sealed Abstract Generic Class Type Private Member
+Java Static Sealed Abstract Generic Class Type Protected Member
+Java Static Sealed Abstract Generic Class Type Public Member
+Java Static Sealed Class Type Default Member
+Java Static Sealed Class Type Private Member
+Java Static Sealed Class Type Protected Member
+Java Static Sealed Class Type Public Member
+Java Static Sealed Generic Class Type Default Member
+Java Static Sealed Generic Class Type Private Member
+Java Static Sealed Generic Class Type Protected Member
+Java Static Sealed Generic Class Type Public Member
+Java Static Variable Default Member
+Java Static Variable Private Member
+Java Static Variable Protected Member
+Java Static Variable Public Member
+Java Unknown Annotation Interface Type Member
+Java Unknown Class Type Member
+Java Unknown Method Member
+Java Unknown Module
+Java Unknown Package
+Java Unknown Variable Member
+Java Unresolved Bean
+Java Unresolved External Final Method Default Member
+Java Unresolved External Final Method Private Member
+Java Unresolved External Final Method Protected Member
+Java Unresolved External Final Method Public Member
+Java Unresolved External Method Default Member
+Java Unresolved External Method Private Member
+Java Unresolved External Method Protected Member
+Java Unresolved External Method Public Member
+Java Unresolved External Static Final Method Default Member
+Java Unresolved External Static Final Method Private Member
+Java Unresolved External Static Final Method Protected Member
+Java Unresolved External Static Final Method Public Member
+Java Unresolved External Static Method Default Member
+Java Unresolved External Static Method Private Member
+Java Unresolved External Static Method Protected Member
+Java Unresolved External Static Method Public Main Member
+Java Unresolved External Static Method Public Member
+Java Unresolved Method
+Java Unresolved Module
+Java Unresolved Package
+Java Unresolved Spring Table
+Java Unresolved Type
 Java Unresolved Variable
 Java Variable Default Member
+Java Variable EnumConstant Public Member
 Java Variable Local
 Java Variable Private Member
 Java Variable Protected Member
 Java Variable Public Member
-Java Static Variable Default Member
-Java Final Variable Default Member
-Java Static Variable Private Member
-Java Final Variable Local
-Java Static Variable Protected Member
-Java Final Variable Private Member
-Java Static Variable Public Member
-Java Final Variable Protected Member
-Java Final Variable Public Member
-Java Implicit Final Variable Public Member
-Java Unknown Variable Member
-Java Variable EnumConstant Public Member
-

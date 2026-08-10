@@ -43,6 +43,8 @@ import os
 from pathlib import Path
 import traceback
 
+from openunderstand.oudb.models import kind_id
+
 
 class ListenersAndParsers:
     def __init__(self):
@@ -287,7 +289,8 @@ class ListenersAndParsers:
             listener = Throws_TrowsBy()
             p.Walk(listener, tree)
             p.addThrows_TrowsByRefs(
-                listener.implement, file_ent, file_address, 236, 237, True
+                listener.implement, file_ent, file_address,
+                kind_id("Java Throw"), kind_id("Java Throwby"), True
             )
             self.logger.info("Throws success ")
         except Exception as e:
@@ -306,7 +309,8 @@ class ListenersAndParsers:
             listener = DotRef_DotRefBy()
             p.Walk(listener, tree)
             p.addThrows_TrowsByRefs(
-                listener.implement, file_ent, file_address, 198, 199, False
+                listener.implement, file_ent, file_address,
+                kind_id("Java DotRef"), kind_id("Java DotRefby"), False
             )
             self.logger.info("DotRef success ")
         except Exception as e:

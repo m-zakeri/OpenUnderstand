@@ -4,6 +4,7 @@ from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel, col_1based
+from openunderstand.oudb.models import kind_id
 
 PRJ_INDEX = 0
 REF_NAME = "import demand"
@@ -136,7 +137,7 @@ def main():
         for i in listener.repository:
             path = file_path.replace("/", "\\")
             ent, _ = EntityModel.get_or_create(
-                _kind=1,
+                _kind=kind_id("Java File"),
                 _parent="None",
                 _name=path,
                 _longname=i["longname"],
@@ -144,7 +145,7 @@ def main():
             )
 
             ReferenceModel.get_or_create(
-                _kind=204,
+                _kind=kind_id("Java Import Demand"),
                 _file=file_path,
                 _line=i["line"],
                 _column=col_1based(i["col"]),

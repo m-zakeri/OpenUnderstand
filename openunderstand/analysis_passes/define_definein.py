@@ -7,6 +7,102 @@ import os
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 import openunderstand.analysis_passes.class_properties as class_properties
+from openunderstand.utils import kind_names as K
+
+
+# Rules that carry the modifier list for a declaration nested inside them.
+# A member's modifiers hang off classBodyDeclaration/interfaceBodyDeclaration,
+# two levels above the declaration itself, so they have to be walked to.
+_MODIFIER_ACCESSORS = ("modifier", "classOrInterfaceModifier", "variableModifier",
+                       "interfaceMethodModifier")
+
+
+def _modifiers_at(ctx):
+    """Modifier keywords attached directly to `ctx`, lowercased.
+
+    Annotations are skipped: `classOrInterfaceModifier` matches `annotation`
+    too, and `@Override` is not a modifier.
+    """
+    for accessor in _MODIFIER_ACCESSORS:
+        getter = getattr(ctx, accessor, None)
+        if getter is None:
+            continue
+        try:
+            nodes = getter()
+        except TypeError:
+            continue
+        if not nodes:
+            continue
+        out = []
+        for node in nodes:
+            text = node.getText()
+            if text.startswith("@"):
+                continue
+            out.append(text.lower())
+        if out:
+            return out
+    return []
+
+
+def _enclosing_modifiers(ctx, depth=3):
+    """Modifiers of a declaration, searched up through its wrapper rules.
+
+    `classDeclaration` sits under `typeDeclaration` (top level),
+    `memberDeclaration7 -> classBodyDeclaration2` (nested), or
+    `interfaceMemberDeclaration5 -> interfaceBodyDeclaration`. Rather than
+    enumerate every wrapper, walk up a bounded number of levels and take the
+    first that carries modifiers.
+    """
+    current = ctx.parentCtx
+    for _ in range(depth):
+        if current is None:
+            return []
+        found = _modifiers_at(current)
+        if found:
+            return found
+        current = current.parentCtx
+    return []
+
+
+# Context class names (labelled alternatives get a numeric suffix, hence the
+# prefix match) that wrap a declaration together with its modifier list.
+_SPAN_WRAPPERS = (
+    "TypeDeclarationContext", "ClassBodyDeclaration", "MemberDeclaration",
+    "InterfaceBodyDeclarationContext", "InterfaceMemberDeclaration",
+    "LocalTypeDeclarationContext", "GenericMethodDeclarationContext",
+    "GenericConstructorDeclarationContext", "GenericInterfaceMethodDeclarationContext",
+)
+
+
+def _body_span(ctx):
+    """(begin, end) positions of a declaration that has a braced body.
+
+    Understand reports a Begin reference where the declaration starts -- at its
+    first modifier, not at its name -- and an End reference at the matching
+    closing brace. Returns None for declarations with no body (an abstract or
+    interface method ends in `;`), which get neither reference.
+    """
+    stop = ctx.stop
+    if stop is None or stop.text != "}":
+        return None
+    start = ctx.start
+    current = ctx.parentCtx
+    # Climb only through the rules that wrap a declaration together with its
+    # modifiers. Climbing blindly reaches compilationUnit and reports every
+    # method as beginning at line 1.
+    while current is not None and type(current).__name__.startswith(_SPAN_WRAPPERS):
+        if current.start is not None and current.start.tokenIndex < start.tokenIndex:
+            start = current.start
+        current = current.parentCtx
+    return (start.line, start.column), (stop.line, stop.column)
+
+
+def _is_generic(ctx):
+    getter = getattr(ctx, "typeParameters", None)
+    try:
+        return getter is not None and getter() is not None
+    except TypeError:
+        return False
 
 
 class DefineListener(JavaParserLabeledListener):
@@ -31,6 +127,9 @@ class DefineListener(JavaParserLabeledListener):
             {
                 "contents": ctx.getText(),
                 "type": "Package",
+                "decl": K.PACKAGE,
+                "modifiers": [],
+                "span": None,
                 "parent": self.file_address,
                 "scope": None,
                 "ent": ent_name,
@@ -42,7 +141,8 @@ class DefineListener(JavaParserLabeledListener):
         )
 
     def add_define_info(
-        self, ent, ent_parents, ent_name=None, type=None, contents=None
+        self, ent, ent_parents, ent_name=None, type=None, contents=None,
+        decl=None, modifiers=(), span=None,
     ):
         if ent_name is None:
             ent_name = ent.getText()
@@ -61,6 +161,9 @@ class DefineListener(JavaParserLabeledListener):
             {
                 "contents": contents,
                 "type": type,
+                "decl": decl,
+                "modifiers": list(modifiers),
+                "span": span,
                 "parent": ".".join(self.package),
                 "scope": scope_name,
                 "ent": ent_name,
@@ -71,28 +174,100 @@ class DefineListener(JavaParserLabeledListener):
             }
         )
 
+    @staticmethod
+    def _type_modifiers(ctx):
+        modifiers = _enclosing_modifiers(ctx)
+        if _is_generic(ctx):
+            modifiers = modifiers + ["generic"]
+        return modifiers
+
+    @staticmethod
+    def _method_modifiers(ctx):
+        # A generic method is `typeParameters methodDeclaration`, so the
+        # `<T>` lives on the parent rule, not on the declaration itself.
+        modifiers = _enclosing_modifiers(ctx)
+        parent = ctx.parentCtx
+        if parent is not None and _is_generic(parent):
+            modifiers = modifiers + ["generic"]
+        return modifiers
+
+    @staticmethod
+    def _variable_context(ctx):
+        """Whether a variableDeclarator is a field or a local, and its modifiers.
+
+        `variableDeclarator` is shared by `fieldDeclaration` and
+        `localVariableDeclaration`; only the grandparent tells them apart, and
+        they resolve to completely different kinds (`Java Variable Public
+        Member` vs `Java Variable Local`).
+        """
+        declaration = ctx.parentCtx.parentCtx if ctx.parentCtx is not None else None
+        if isinstance(declaration, JavaParserLabeled.LocalVariableDeclarationContext):
+            return K.LOCAL, _modifiers_at(declaration)
+        return K.FIELD, _enclosing_modifiers(declaration or ctx)
+
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        self.add_define_info(ent=ent, ent_parents=ent_parents, type="Class")
+        self.add_define_info(
+            ent=ent,
+            ent_parents=ent_parents,
+            type="Class",
+            decl=K.CLASS,
+            span=_body_span(ctx),
+            modifiers=self._type_modifiers(ctx),
+        )
 
     def enterInterfaceDeclaration(
         self, ctx: JavaParserLabeled.InterfaceDeclarationContext
     ):
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        self.add_define_info(ent=ent, ent_parents=ent_parents, type="Interface")
+        self.add_define_info(
+            ent=ent,
+            ent_parents=ent_parents,
+            type="Interface",
+            decl=K.INTERFACE,
+            span=_body_span(ctx),
+            modifiers=self._type_modifiers(ctx),
+        )
 
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        # print("METHOD Type : ", ctx.typeTypeOrVoid().getText())
-        # print("METHOD contents : ", ctx.getText())
         self.add_define_info(
             ent=ent,
             ent_parents=ent_parents,
             type=ctx.typeTypeOrVoid().getText(),
             contents=ctx.getText(),
+            decl=K.METHOD,
+            span=_body_span(ctx),
+            modifiers=self._method_modifiers(ctx),
+        )
+
+    def enterInterfaceMethodDeclaration(
+        self, ctx: JavaParserLabeled.InterfaceMethodDeclarationContext
+    ):
+        """Interface methods do not go through `methodDeclaration`.
+
+        `interfaceMethodDeclaration` is its own rule with its own modifier
+        list, so without this callback no interface method was ever defined.
+        They are implicitly public, and abstract unless declared `default`.
+        """
+        ent = ctx.IDENTIFIER()
+        ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
+        modifiers = ["public"] + _modifiers_at(ctx)
+        if "default" not in modifiers and "static" not in modifiers:
+            modifiers.append("abstract")
+        if ctx.typeParameters() is not None:
+            modifiers.append("generic")
+        self.add_define_info(
+            ent=ent,
+            ent_parents=ent_parents,
+            type=ctx.typeTypeOrVoid().getText(),
+            contents=ctx.getText(),
+            decl=K.METHOD,
+            span=_body_span(ctx),
+            modifiers=modifiers,
         )
 
     def enterAnnotationTypeDeclaration(
@@ -101,7 +276,13 @@ class DefineListener(JavaParserLabeledListener):
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
         self.add_define_info(
-            ent=ent, ent_parents=ent_parents, type="Annotation", contents=ctx.getText()
+            ent=ent,
+            ent_parents=ent_parents,
+            type="Annotation",
+            contents=ctx.getText(),
+            decl=K.ANNOTATION,
+            span=_body_span(ctx),
+            modifiers=self._type_modifiers(ctx),
         )
 
     def enterConstructorDeclaration(
@@ -110,88 +291,110 @@ class DefineListener(JavaParserLabeledListener):
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
         self.add_define_info(
-            ent=ent, ent_parents=ent_parents, type="Constructor", contents=ctx.getText()
+            ent=ent,
+            ent_parents=ent_parents,
+            type="Constructor",
+            contents=ctx.getText(),
+            decl=K.CONSTRUCTOR,
+            span=_body_span(ctx),
+            modifiers=_enclosing_modifiers(ctx),
         )
 
     def enterVariableDeclarator(self, ctx: JavaParserLabeled.VariableDeclaratorContext):
         ent = ctx.variableDeclaratorId().IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
 
+        decl, modifiers = self._variable_context(ctx)
         self.add_define_info(
             ent=ent,
             ent_parents=ent_parents,
             type=ctx.parentCtx.parentCtx.typeType().getText(),
             contents=ctx.getText(),
+            decl=decl,
+            modifiers=modifiers,
         )
 
     def enterEnumConstant(self, ctx: JavaParserLabeled.EnumConstantContext):
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
         self.add_define_info(
-            ent=ent, ent_parents=ent_parents, type="EnumConst", contents=ctx.getText()
+            ent=ent,
+            ent_parents=ent_parents,
+            type="EnumConst",
+            contents=ctx.getText(),
+            decl=K.ENUM_CONSTANT,
         )
 
     def enterEnumDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        self.add_define_info(ent, ent_parents, type="Enum", contents=ctx.getText())
         self.add_define_info(
-            ent,
-            ent_parents + [ent.getText()],
-            "values",
-            type="Enum",
-            contents=ctx.getText(),
+            ent, ent_parents, type="Enum", contents=ctx.getText(),
+            decl=K.ENUM, modifiers=self._type_modifiers(ctx), span=_body_span(ctx),
         )
-        self.add_define_info(
-            ent,
-            ent_parents + [ent.getText()],
-            "valueOf",
-            type="Enum",
-            contents=ctx.getText(),
-        )
+        # values()/valueOf() are compiler-generated statics on every enum.
+        for synthetic in ("values", "valueOf"):
+            self.add_define_info(
+                ent,
+                ent_parents + [ent.getText()],
+                synthetic,
+                type="Enum",
+                contents=ctx.getText(),
+                decl=K.METHOD,
+            span=_body_span(ctx),
+                modifiers=["public", "static"],
+            )
 
-    def enterFormalParameter(self, ctx: JavaParserLabeled.FormalParametersContext):
+    def enterFormalParameter(self, ctx: JavaParserLabeled.FormalParameterContext):
         ent = ctx.variableDeclaratorId().IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        self.add_define_info(ent, ent_parents)
+        self.add_define_info(
+            ent, ent_parents, decl=K.PARAMETER, modifiers=_modifiers_at(ctx)
+        )
 
     def enterLambdaParameters0(self, ctx: JavaParserLabeled.LambdaParameters0Context):
         self.lambda_expression_count += 1
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
         ent_name = f"(lambda_expr_{self.lambda_expression_count})"
-        self.add_define_info(ent, ent_parents, ent_name)
-        self.add_define_info(ent, ent_parents + [ent_name])
+        self.add_define_info(ent, ent_parents, ent_name, decl=K.LAMBDA)
+        self.add_define_info(ent, ent_parents + [ent_name], decl=K.PARAMETER)
 
     def enterLambdaParameters2(self, ctx: JavaParserLabeled.LambdaParameters2Context):
         self.lambda_expression_count += 1
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
         ent_name = f"(lambda_expr_{self.lambda_expression_count})"
         identifiers = ctx.IDENTIFIER()
-        self.add_define_info(identifiers[0], ent_parents, ent_name)
+        self.add_define_info(identifiers[0], ent_parents, ent_name, decl=K.LAMBDA)
         for ent in identifiers:
-            self.add_define_info(ent, ent_parents + [ent_name])
+            self.add_define_info(ent, ent_parents + [ent_name], decl=K.PARAMETER)
 
     def enterEnhancedForControl(self, ctx: JavaParserLabeled.EnhancedForControlContext):
         ent = ctx.variableDeclaratorId().IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        self.add_define_info(ent, ent_parents)
+        self.add_define_info(
+            ent, ent_parents, decl=K.LOCAL, modifiers=_modifiers_at(ctx)
+        )
 
     def enterCatchClause(self, ctx: JavaParserLabeled.CatchClauseContext):
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        self.add_define_info(ent, ent_parents)
+        self.add_define_info(ent, ent_parents, decl=K.CATCH_PARAMETER)
 
     def enterTypeParameter(self, ctx: JavaParserLabeled.TypeParameterContext):
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        self.add_define_info(ent, ent_parents)
+        self.add_define_info(ent, ent_parents, decl=K.TYPE_PARAMETER)
 
     def enterConstantDeclarator(self, ctx: JavaParserLabeled.ConstantDeclaratorContext):
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
         self.add_define_info(
-            ent=ent, ent_parents=ent_parents, type="Constant", contents=ctx.getText()
+            ent=ent,
+            ent_parents=ent_parents,
+            type="Constant",
+            contents=ctx.getText(),
+            decl=K.CONSTANT,
         )
 
     def enterLastFormalParameter(
@@ -199,4 +402,6 @@ class DefineListener(JavaParserLabeledListener):
     ):
         ent = ctx.variableDeclaratorId().IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        self.add_define_info(ent, ent_parents)
+        self.add_define_info(
+            ent, ent_parents, decl=K.PARAMETER, modifiers=_modifiers_at(ctx)
+        )
