@@ -88,30 +88,24 @@ any SQLite tool if you want to poke at the rows directly.
 
 ## How correct is it?
 
-Honestly measured, not claimed. `scripts/compare/` builds a database with
-OpenUnderstand and one with real Understand from the same source, then diffs
-them.
+Honestly measured, not claimed. Every release is compared against a licensed
+SciTools Understand install on the same source, entity by entity, reference by
+reference, metric by metric.
 
-On the `org.json` benchmark (22 files), current agreement:
+Current agreement, on three benchmarks:
 
-| | |
-| --- | ---: |
-| Entities Understand finds that OpenUnderstand also finds | 1030 / 1236 |
-| References reproduced at the exact same position | 47% |
-| Reference precision | 0.36 |
+| | calculator_app | org.json | TheAlgorithms |
+| --- | ---: | ---: | ---: |
+| Java files | 8 | 22 | 228 |
+| Metric values matching Understand | 80% | 72% | 73% |
+| References reproduced at the exact position | 0.62 | 0.50 | 0.46 |
 
-[docs/parity.md](docs/parity.md) has the per-kind breakdown, and
-`scripts/compare/out/<fixture>/report.md` ranks every remaining defect.
+[docs/parity.md](docs/parity.md) has the per-kind breakdown.
 
-If you have Understand installed and licensed, run it yourself:
-
-```bash
-bash scripts/fetch_benchmarks.sh JSON
-bash scripts/compare/run_all.sh --fixture JSON
-```
-
-This is the test suite. There are no unit tests, because the only
-specification that matters is what the real tool outputs.
+This is the test suite: there are no unit tests, because the only
+specification that matters is what the real tool outputs. The comparison
+harness needs a licensed Understand install, so it is not part of this
+repository — ask if you want to run it.
 
 ## Use it from an assistant
 
@@ -160,10 +154,11 @@ Published at
 Read [docs/architecture.md](docs/architecture.md) first — particularly the rule
 that kind ids are positions and must always be resolved by name.
 
-Then: make the change, run
-`bash scripts/compare/run_all.sh --fixture calculator_app`, and report recall
-*and* precision before and after. A change that raises recall by tanking
-precision is not an improvement.
+Changes to the analysis are judged against Understand, not against opinion.
+If you can run the comparison, report recall **and** precision before and
+after — a change that raises recall by tanking precision is not an
+improvement. If you cannot, say what you expect to change and it will be
+measured for you.
 
 Pull requests target the `dev` branch.
 

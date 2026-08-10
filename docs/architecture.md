@@ -102,17 +102,17 @@ line in a `.txt` file silently repointed them all.
 3. Add a `*_listener` method to `ListenersAndParsers` wiring the two together.
 4. Add it to the `listeners` list in `parsing_process.py`. **Order matters** —
    later passes rely on entities earlier ones created.
-5. Run `bash scripts/compare/run_all.sh --fixture calculator_app` and check that
-   the new kind's row count moved toward Understand's.
+5. Have the change measured against Understand: the new kind's row count
+   should move toward Understand's without hurting precision.
 
 ## Adding a metric
 
 1. Write a module in `metrics/` exposing `metric_name(ent_model)`.
 2. Import it in `api.py` and add an `elif` branch to `Ent.metric()`.
 3. Add the name to `Ent.metrics()`.
-4. `python scripts/compare/06_dump_ou_api.py --fixture calculator_app` classifies
-   every metric name by what it actually does — the new one should come back
-   `value`, not `raises`.
+4. Check the metric against Understand's own value for the same entity, and
+   read its definition in Understand's `metrics.pdf` first. Six metrics here
+   were written from guesswork and every one of them was wrong.
 
 ## The grammar
 
@@ -155,13 +155,14 @@ The installed package is `openunderstand`; everything imports fully qualified
   falls back to defaults, so the library works with no configuration.
 
 An installed wheel is expected to do the whole job with only `antlr4-runtime`
-and `peewee`. `scripts/` has the check that proves it — build the wheel,
-install it in a clean venv, analyse a project and query it.
+and `peewee`. `.github/workflows/parity.yml` proves it on every push — build
+the wheel, check the seed files ship and nothing leaks to top level, install
+into a clean venv, then analyse Java and query the result.
 
 ## The comparison harness
 
-`scripts/compare/` is the test suite. It builds both databases from the same
-source and diffs them at three levels:
+The comparison harness is the test suite. It builds a database with each
+tool from the same source and diffs them at three levels:
 
 - **(a) raw SQLite** — what the passes actually wrote, `api.py` out of the picture
 - **(b) through `api.py`** — what a user sees
@@ -171,7 +172,5 @@ source and diffs them at three levels:
 fingerprint guards refactors: a change that should not alter output must
 reproduce the baseline digest byte for byte.
 
-```bash
-bash scripts/compare/run_all.sh --fixture calculator_app   # ~1 minute
-bash scripts/compare/run_all.sh --fixture JSON             # acceptance
-```
+The harness needs a licensed Understand install and is kept outside this
+repository.
