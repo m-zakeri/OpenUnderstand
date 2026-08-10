@@ -15,8 +15,8 @@ __author__ = "zahra habibolah, G4"
 # __version__ = "0.1.0"
 
 # Omitted imports and other code for brevity
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 import openunderstand.analysis_passes.class_properties as class_properties
 
 
@@ -159,8 +159,13 @@ class CreateAndCreateBy(JavaParserLabeledListener):
                 createdName = creator.createdName()
                 all_parents = class_properties.ClassPropertiesListener.findParents(ctx)
                 scope_name = all_parents[-1]
-                scope_longname = self.package_long_name + "." + ".".join(all_parents)
-                [line, col] = str(ctx.start).split(",")[3].split(":")
+                # findParents() already includes the package components.
+                scope_longname = ".".join(all_parents)
+                # The token carries its own position. Scraping it out of the
+                # token's repr broke on tokens whose text contains a comma or
+                # a colon -- `new int[24]` yielded the column "24]", which went
+                # straight into an integer column as text.
+                line, col = ctx.start.line, ctx.start.column
 
                 # if creator.arrayCreatorRest() or creator.classCreatorRest():
                 # If we're in the correct context for creator1, then check for createdName0
@@ -179,8 +184,8 @@ class CreateAndCreateBy(JavaParserLabeledListener):
                         "parent_type": parent_type,
                         "scopereturntype": methodreturn,
                         "scopecontent": methodcontext,
-                        "line": line.strip(),
-                        "col": col.strip(),
+                        "line": line,
+                        "col": col,
                         "refent": createdName.getText(),
                         "scope_parent": (
                             all_parents[-2] if len(all_parents) > 1 else None

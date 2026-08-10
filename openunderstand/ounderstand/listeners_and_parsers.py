@@ -15,6 +15,8 @@ from openunderstand.analysis_passes.import_importby_g10_2 import ImportListener,
 from openunderstand.analysis_passes.import_demand_g9 import ImportListenerDemand
 
 from openunderstand.analysis_passes.define_definein import DefineListener
+from openunderstand.analysis_passes.use_variants import UseVariantListener
+from openunderstand.analysis_passes.method_calls import MethodCallListener
 
 # from analysis_passes.define_and_definin_g6 import DefineListener
 from openunderstand.analysis_passes.modify_modifyby import ModifyListener
@@ -42,6 +44,8 @@ from openunderstand.utils.utilities import setup_logger, timer_decorator
 import os
 from pathlib import Path
 import traceback
+
+from openunderstand.oudb.models import kind_id
 
 
 class ListenersAndParsers:
@@ -73,14 +77,16 @@ class ListenersAndParsers:
         try:
             listener = VariableListener()
             p.Walk(listener, tree)
+            # One generator for the whole file. This used to be constructed
+            # inside each loop, i.e. once per variable -- and every
+            # construction re-walks the tree for package entities and
+            # re-creates the file entity. On the JSON fixture that was 825
+            # constructions for 22 files and 14% of total build time.
+            generator = self.entity_gen(file_address=file_address, parse_tree=tree)
             for item in listener.var:
-                self.entity_gen(
-                    file_address=file_address, parse_tree=tree
-                ).get_or_create_variable_entity(res_dict=item)
+                generator.get_or_create_variable_entity(res_dict=item)
             for item in listener.var_const:
-                self.entity_gen(
-                    file_address=file_address, parse_tree=tree
-                ).get_or_create_variable_entity(res_dict=item)
+                generator.get_or_create_variable_entity(res_dict=item)
             self.logger.info("variable refs success ")
         except Exception as e:
             self.logger.error(
@@ -146,6 +152,36 @@ class ListenersAndParsers:
         except Exception as e:
             self.logger.error(
                 "An Error occurred in file create refs :" + file_address + "\n" + str(e)
+            )
+
+    @timer_decorator()
+    def method_call_listener(self, tree, file_ent, file_address, p):
+        try:
+            listener = MethodCallListener(file_address)
+            p.Walk(listener, tree)
+            p.addMethodCallRefs(listener.calls, file_ent)
+            self.logger.info("method calls success")
+        except Exception as e:
+            self.logger.error(
+                "An Error occurred in method calls in file :"
+                + file_address + "\n" + str(e) + "\n" + traceback.format_exc()
+            )
+
+    @timer_decorator()
+    def use_variant_listener(self, tree, file_ent, file_address, p):
+        try:
+            listener = UseVariantListener(file_address)
+            p.Walk(listener, tree)
+            p.addUseVariantRefs(listener.uses, file_ent)
+            self.logger.info("use variants success")
+        except Exception as e:
+            self.logger.error(
+                "An Error occurred in use variants in file :"
+                + file_address
+                + "\n"
+                + str(e)
+                + "\n"
+                + traceback.format_exc()
             )
 
     @timer_decorator()
@@ -285,7 +321,8 @@ class ListenersAndParsers:
             listener = Throws_TrowsBy()
             p.Walk(listener, tree)
             p.addThrows_TrowsByRefs(
-                listener.implement, file_ent, file_address, 236, 237, True
+                listener.implement, file_ent, file_address,
+                kind_id("Java Throw"), kind_id("Java Throwby"), True
             )
             self.logger.info("Throws success ")
         except Exception as e:
@@ -304,7 +341,8 @@ class ListenersAndParsers:
             listener = DotRef_DotRefBy()
             p.Walk(listener, tree)
             p.addThrows_TrowsByRefs(
-                listener.implement, file_ent, file_address, 198, 199, False
+                listener.implement, file_ent, file_address,
+                kind_id("Java DotRef"), kind_id("Java DotRefby"), False
             )
             self.logger.info("DotRef success ")
         except Exception as e:

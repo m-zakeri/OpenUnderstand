@@ -1,8 +1,9 @@
 from antlr4 import *
+from openunderstand.metrics import context
 from openunderstand.oudb.models import EntityModel
-from gen.javaLabeled.JavaLexer import JavaLexer
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 
 
 class CyclomaticModifiedListener(JavaParserLabeledListener):
@@ -66,11 +67,7 @@ def get_sum_cyclomatic_modified(ent_model=None):
 
     for file_content in files:
         if file_content is not None:
-            file_stream = InputStream(file_content)
-            lexer = JavaLexer(file_stream)
-            tokens = CommonTokenStream(lexer)
-            parser = JavaParserLabeled(tokens)
-            parse_tree = parser.compilationUnit()
+            parse_tree = context.parse(file_content)
             walker = ParseTreeWalker()
             walker.walk(listener=listener, t=parse_tree)
     return listener.get_sum_cyclomatic_modified

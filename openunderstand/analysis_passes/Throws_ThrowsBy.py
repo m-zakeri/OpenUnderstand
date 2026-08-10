@@ -1,7 +1,7 @@
 import os
 
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 import openunderstand.analysis_passes.class_properties as class_properties
 from openunderstand.oudb.models import ProjectModel, EntityModel
 
@@ -70,7 +70,7 @@ class Throws_TrowsBy(JavaParserLabeledListener):
     #                                        "scope_modifiers":
     #                                            class_properties.ClassPropertiesListener.findClassOrInterfaceModifiers(ctx),
     #                                        "line": line,
-    #                                        "col": col[:-1],
+    #                                        "col": col,
     #                                        "type_ent_longname": myType_longname})
 
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
@@ -90,8 +90,7 @@ class Throws_TrowsBy(JavaParserLabeledListener):
                 )
                 if is_here is not None:
                     refEntName = is_here + "." + refEntName
-                [line, col] = str(ctx.start).split(",")[3].split(":")
-
+                line, col = ctx.start.line, ctx.start.column
                 self.implement.append(
                     {
                         "scopename": refent,
@@ -100,7 +99,7 @@ class Throws_TrowsBy(JavaParserLabeledListener):
                         "scopereturntype": mothodedreturn,
                         "scopecontent": methodcontext,
                         "line": line,
-                        "col": col[:-1],
+                        "col": col,
                         "refent": refEntName,
                         "scope_parent": allrefs[-2] if len(allrefs) > 2 else None,
                         "potential_refent": ".".join(allrefs[:-1]) + "." + refEntName,
@@ -126,8 +125,7 @@ class Throws_TrowsBy(JavaParserLabeledListener):
                 )
                 if is_here is not None:
                     refEntName = is_here + "." + refEntName
-                [line, col] = str(ctx.start).split(",")[3].split(":")
-
+                line, col = ctx.start.line, ctx.start.column
                 self.implement.append(
                     {
                         "scopename": refent,
@@ -136,7 +134,7 @@ class Throws_TrowsBy(JavaParserLabeledListener):
                         "scopereturntype": mothodedreturn,
                         "scopecontent": methodcontext,
                         "line": line,
-                        "col": col[:-1],
+                        "col": col,
                         "refent": refEntName,
                         "scope_parent": allrefs[-2] if len(allrefs) > 2 else None,
                         "potential_refent": ".".join(allrefs[:-1]) + "." + refEntName,
@@ -162,8 +160,7 @@ class Throws_TrowsBy(JavaParserLabeledListener):
                 )
                 if is_here is not None:
                     refEntName = is_here + "." + refEntName
-                [line, col] = str(ctx.start).split(",")[3].split(":")
-
+                line, col = ctx.start.line, ctx.start.column
                 self.implement.append(
                     {
                         "scopename": refent,
@@ -172,7 +169,7 @@ class Throws_TrowsBy(JavaParserLabeledListener):
                         "scopereturntype": mothodedreturn,
                         "scopecontent": methodcontext,
                         "line": line,
-                        "col": col[:-1],
+                        "col": col,
                         "refent": refEntName,
                         "scope_parent": allrefs[-2] if len(allrefs) > 2 else None,
                         "potential_refent": ".".join(allrefs[:-1]) + "." + refEntName,

@@ -1,5 +1,5 @@
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 import openunderstand.analysis_passes.class_properties as class_properties
 
 
@@ -31,8 +31,7 @@ class ContainAndContainBy(JavaParserLabeledListener):
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         name = ctx.IDENTIFIER().getText()
-        [line, col] = str(ctx.start).split(",")[3].split(":")  # line, column
-        col = col[:-1]
+        line, col = ctx.start.line, ctx.start.column
         scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
 
         if len(scope_parents) == 1:
@@ -40,10 +39,14 @@ class ContainAndContainBy(JavaParserLabeledListener):
         else:
             scope_longname = ".".join(scope_parents)
 
-        scope_longname = "." + scope_longname
+        # findParents() already yields the package components followed by any
+        # enclosing types, but stops short of this class. So the fully
+        # qualified name is those parents plus this class's own name --
+        # prefixing packageLongName here produced "org.json.org.json", and
+        # omitting `name` left the class's longname pointing at its package.
+        scope_longname = ".".join(scope_parents + [name])
         packageName = self.packageInfo[0]["name"]
         packageLongName = self.packageInfo[0]["longname"]
-        scope_longname = packageLongName + scope_longname
         packageKind = self.packageInfo[0]["kind"]
         packageContent = self.packageInfo[0]["contents"]
         packageParent = self.packageInfo[0]["parent"]

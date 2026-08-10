@@ -1,0 +1,84 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openunderstand"
+version = "0.1.0"
+description = "An open-source implementation of the SciTools Understand Python API for Java"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.9"
+authors = [
+    { name = "Morteza Zakeri", email = "m-zakeri@live.com" },
+    { name = "Amin HassanZarei" },
+    { name = "Ali Ayati" },
+]
+maintainers = [
+    { name = "Morteza Zakeri", email = "m-zakeri@live.com" },
+]
+keywords = ["understand", "scitools", "static-analysis", "java", "antlr", "metrics"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Java",
+    "Topic :: Software Development :: Quality Assurance",
+]
+
+# Runtime only. pybind11 and speedy-antlr-tool used to be listed here, but they
+# build the optional C++ accelerator -- they are not needed to import or use
+# this package, and forcing a compiler toolchain on every user for a component
+# most never build is not reasonable.
+dependencies = [
+    "antlr4-python3-runtime==4.13.2",
+    "peewee>=3.17,<4",
+]
+
+[project.optional-dependencies]
+# The speedy-antlr C++ parser: roughly 8x faster at parsing, though parsing is
+# only a few percent of a full analysis. Build it with
+# `python -m openunderstand.gen.java8speedy.build` after installing.
+speedy = ["pybind11>=2.11.1", "speedy-antlr-tool>=1.4"]
+metrics = ["pandas>=1.1.5", "GitPython>=3.1.32"]
+# An MCP server exposing the analysis as tools, for assistants.
+mcp = ["mcp>=1.2"]
+dev = ["pytest>=7", "black", "build", "twine"]
+
+[project.urls]
+Homepage = "https://github.com/m-zakeri/OpenUnderstand"
+Documentation = "https://m-zakeri.github.io/OpenUnderstand"
+Source = "https://github.com/m-zakeri/OpenUnderstand"
+Issues = "https://github.com/m-zakeri/OpenUnderstand/issues"
+
+[project.scripts]
+openunderstand = "openunderstand.ounderstand.openunderstand:parse_arguments"
+openunderstand-mcp = "openunderstand.mcp_server:main"
+
+[tool.setuptools.packages.find]
+# From the repository root, so the installed package is `openunderstand` and
+# its subpackages. The previous layout set package_dir to "openunderstand",
+# which installed `oudb`, `gen`, `metrics` and `utils` at top level -- names
+# that collide with other projects -- while every import in this codebase says
+# `openunderstand.oudb...`, so the installed package could not import itself.
+where = ["."]
+include = ["openunderstand*"]
+exclude = ["openunderstand.gen.java8speedy.build-cache*"]
+
+[tool.setuptools.package-data]
+# The seed files are load-bearing: fill.py reads them to populate the kind
+# tables, and without them a database has no vocabulary. The .interp/.tokens
+# files ship with the generated parsers.
+"openunderstand.oudb" = ["*.txt"]
+"openunderstand.gen.javaLabeled" = ["*.interp", "*.tokens"]
+"openunderstand.gen.java8speedy" = ["*.md"]
+
+[tool.black]
+line-length = 88

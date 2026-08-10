@@ -1,90 +1,85 @@
-import ctypes
-from os.path import join
-from os import getcwd
-from antlr4 import InputStream, Token
+"""Optional C++ parse accelerator.
+
+Wraps the ``sa_javalabeled_cpp_parser`` extension built by
+``openunderstand/gen/java8speedy/build.py``. The extension is not in version
+control and may not be present; every entry point here degrades to the
+pure-Python ANTLR parser instead of failing.
+
+The accelerator is ~8x faster and produces a structurally identical parse tree,
+so the analysis listeners walk it unchanged. That works because the generated
+C++ translator resolves each parse-tree context class by name off the
+``parser_cls`` argument at runtime -- and we hand it the real, listener-enabled
+``gen.javaLabeled.JavaParserLabeled``. Passing the accelerator's own internal
+parser class instead would build a tree whose contexts have no enterRule/
+exitRule, and every listener would silently see nothing.
+"""
+
+from __future__ import annotations
+
+import logging
+
+from antlr4 import CommonTokenStream, InputStream
 from antlr4.tree.Tree import ParseTree
-from antlr4.error.ErrorListener import ErrorListener
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+
+logger = logging.getLogger(__name__)
+
+try:
+    from openunderstand.gen.java8speedy import sa_javalabeled_cpp_parser as _accelerator
+except ImportError:  # not built -- expected, and fine
+    _accelerator = None
+
+_warned = False
 
 
-class SA_ErrorListener:
-    """
-    Base callback class to handle Antlr syntax errors.
-
-    Not able to do a 1-to-1 bridge of Antlr's error listener
-    Instead, this class provides roughly equivalent functionality.
-
-    """
-
-    def syntaxError(
-        self,
-        input_stream: InputStream,
-        offendingSymbol: Token,
-        char_index: int,
-        line: int,
-        column: int,
-        msg: str,
-    ):
-        """
-        Called when lexer or parser encountered a syntax error.
-
-        Parameters
-        ----------
-        input_stream:InputStream
-            Reference to the original input stream that this error is from
-
-        offendingSymbol:Token
-            If available, denotes the erronous token
-
-        char_index:int
-            Character offset of the error within the input stream
-
-        line:int
-            Line number of the error
-
-        column:int
-            Character offset within the line
-
-        msg:str
-            Antlr error message
-        """
-        pass
+def is_available() -> bool:
+    return _accelerator is not None
 
 
-# antlr_lib = ctypes.cdll.LoadLibrary(
-#     join(
-#         getcwd(),
-#         "gen",
-#         "java8speedy",
-#         "antlr4-runtime",
-#         "src",
-#         "sa_javalabeled.cpython-310-x86_64-linux-gnu.so",
-#     )
-# )  # Replace with the actual path to your shared library
-# from .sa_javalabeled_cpp_parser import JavaLabeledParser
-import sa_javalabeled
+def unavailable_reason() -> str:
+    if _accelerator is not None:
+        return ""
+    return ("C++ accelerator not built; run "
+            "`python openunderstand/gen/java8speedy/build.py`")
 
-antlr_lib = sa_javalabeled
+
+def _py_parse(stream: InputStream, entry_rule_name: str = "compilationUnit") -> ParseTree:
+    parser = JavaParserLabeled(CommonTokenStream(JavaLexer(stream)))
+    return getattr(parser, entry_rule_name)()
 
 
 def _cpp_parse(
     stream: InputStream,
     entry_rule_name: str = "compilationUnit",
-    sa_err_listener: ErrorListener = None,
-    java_parser_labeld: SA_ErrorListener = None,
+    sa_err_listener=None,
+    java_parser_labeld=JavaParserLabeled,
 ) -> ParseTree:
-    # Validate input types here before handing over to C++
-    if not isinstance(stream, InputStream):
-        raise TypeError("'stream' shall be an Antlr InputStream")
-    if not isinstance(entry_rule_name, str):
-        raise TypeError("'entry_rule_name' shall be a string")
-    if sa_err_listener is not None and not isinstance(
-        sa_err_listener, SA_ErrorListener
-    ):
-        raise TypeError(
-            "'sa_err_listener' shall be an instance of SA_ErrorListener or None"
-        )
-    print(dir(antlr_lib))
-    return antlr_lib.do_parse(
+    """Parse with the C++ accelerator. Raises RuntimeError if it is missing.
+
+    ``java_parser_labeld`` keeps its original (misspelled) name because
+    project.py already calls it by keyword.
+    """
+    if _accelerator is None:
+        raise RuntimeError(unavailable_reason())
+    return _accelerator.do_parse(
         java_parser_labeld, stream, entry_rule_name, sa_err_listener
     )
+
+
+def parse(stream: InputStream, entry_rule_name: str = "compilationUnit",
+          prefer_cpp: bool = True) -> ParseTree:
+    """Parse, using the accelerator when it is available and wanted.
+
+    Falls back to pure Python if the extension is missing, warning once so the
+    fallback is visible in the log without flooding it -- this runs once per
+    file per listener pass.
+    """
+    global _warned
+    if prefer_cpp and _accelerator is not None:
+        return _cpp_parse(stream, entry_rule_name)
+    if prefer_cpp and not _warned:
+        _warned = True
+        logger.warning("%s; falling back to the Python parser", unavailable_reason())
+    return _py_parse(stream, entry_rule_name)

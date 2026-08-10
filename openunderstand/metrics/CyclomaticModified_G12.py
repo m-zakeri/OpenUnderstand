@@ -1,7 +1,8 @@
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from antlr4 import *
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaLexer import JavaLexer
+from openunderstand.metrics import context
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
 from openunderstand.ounderstand.project import Project
 from openunderstand.analysis_passes import class_properties
 
@@ -135,9 +136,6 @@ class CyclomaticModifiedListener(JavaParserLabeledListener):
 def cyclomatic_modified(ent_model=None):
     p = Project()
     listener = CyclomaticModifiedListener()
-    lexer = JavaLexer(InputStream(ent_model.contents()))
-    tokens = CommonTokenStream(lexer)
-    parser = JavaParserLabeled(tokens)
-    return_tree = parser.compilationUnit()
+    return_tree = context.parse(ent_model.contents())
     p.Walk(reference_listener=listener, parse_tree=return_tree)
     return listener.method_count_Cyclomatic

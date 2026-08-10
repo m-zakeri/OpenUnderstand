@@ -1,7 +1,8 @@
 from antlr4 import *
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaLexer import JavaLexer
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.metrics import context
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from openunderstand.ounderstand.project import Project
 
 
@@ -188,10 +189,7 @@ class MinEssentialKnots(JavaParserLabeledListener):
 def min_max_essential_knots(ent_model=None, enable: bool = True):
     p = Project()
     listener = MinEssentialKnots()
-    lexer = JavaLexer(InputStream(ent_model.contents()))
-    tokens = CommonTokenStream(lexer)
-    parser = JavaParserLabeled(tokens)
-    return_tree = parser.compilationUnit()
+    return_tree = context.parse(ent_model.contents())
     p.Walk(reference_listener=listener, parse_tree=return_tree)
     if enable:
         return listener.method_counter

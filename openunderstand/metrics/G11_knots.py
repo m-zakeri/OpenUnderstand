@@ -16,9 +16,10 @@ __version__ = "1.0.0"
 
 from openunderstand.ounderstand.project import Project
 from antlr4 import *
-from gen.javaLabeled.JavaLexer import JavaLexer
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.metrics import context
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from openunderstand.analysis_passes.entity_manager_g11 import (
     get_created_entity_longname,
     get_all_files,
@@ -213,9 +214,7 @@ class KnotsMetricListener(JavaParserLabeledListener):
 def knot(ent_model=None):
     p = Project()
     listener = KnotsMetricListener()
-    lexer = JavaLexer(InputStream(ent_model.contents()))
-    tokens = CommonTokenStream(lexer)
-    parser = JavaParserLabeled(tokens)
-    return_tree = parser.compilationUnit()
+    return_tree = context.parse(ent_model.contents())
     p.Walk(reference_listener=listener, parse_tree=return_tree)
-    return listener.count_essential_metric
+    # The listener counts knots, not essential complexity.
+    return listener.count_knots_metric

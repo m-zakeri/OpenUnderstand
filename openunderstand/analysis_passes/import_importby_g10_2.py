@@ -1,10 +1,11 @@
 import os
 from antlr4 import *
 from pathlib import Path
-from gen.javaLabeled.JavaLexer import JavaLexer
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel, ProjectModel
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel, ProjectModel, col_1based
+from openunderstand.oudb.models import kind_id
 
 PRJ_INDEX = 3
 REF_NAME = "import"
@@ -149,7 +150,7 @@ def get_parent(parent_file_name, files):
     parent_file_index = file_names.index(parent_file_name)
     parent_file_path = file_paths[parent_file_index]
     parent_entity = EntityModel.get_or_none(
-        _kind=1,  # Java File
+        _kind=kind_id("Java File"),  # Java File
         _name=parent_file_name,
         _longname=parent_file_path,
     )
@@ -159,7 +160,7 @@ def get_parent(parent_file_name, files):
 def add_imported_entity(i, files):
     if i["is_built_in"]:
         imported_entity, _ = EntityModel.get_or_create(
-            _kind=84,  # Java Unknown Class Type Member
+            _kind=kind_id("Java Unknown Class Type Member"),  # Java Unknown Class Type Member
             _parent=None,
             _name=i["imported_class_name"],
             _longname=i["imported_class_longname"],
@@ -240,9 +241,8 @@ def get_kind_name(prefixes, kind):
 
 
 def add_java_file_entity(file_path, file_name):
-    kind_id = 1  # Java File
     obj, _ = EntityModel.get_or_create(
-        _kind=kind_id,
+        _kind=kind_id("Java File"),
         _name=file_name,
         _longname=file_path,
         _contents=FileStream(file_path, encoding="utf-8"),
@@ -252,18 +252,18 @@ def add_java_file_entity(file_path, file_name):
 
 def add_references(importing_ent, imported_ent, ref_dict):
     ref, _ = ReferenceModel.get_or_create(
-        _kind=206,  # Java Import
+        _kind=kind_id("Java Import"),  # Java Import
         _file=importing_ent.get_id(),
         _line=ref_dict["line"],
-        _column=ref_dict["column"],
+        _column=col_1based(ref_dict["column"]),
         _ent=imported_ent.get_id(),
         _scope=importing_ent.get_id(),
     )
     inverse_ref, _ = ReferenceModel.get_or_create(
-        _kind=207,  # Java Importby
+        _kind=kind_id("Java Importby"),  # Java Importby
         _file=importing_ent.get_id(),
         _line=ref_dict["line"],
-        _column=ref_dict["column"],
+        _column=col_1based(ref_dict["column"]),
         _ent=importing_ent.get_id(),
         _scope=imported_ent.get_id(),
     )

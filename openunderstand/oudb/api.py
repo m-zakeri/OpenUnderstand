@@ -38,8 +38,12 @@ from openunderstand.metrics.MaxCalculator_G12 import max_cyclomatic_stricts
 from openunderstand.metrics.max_nesting import MaxNesting
 from openunderstand.metrics.max_inheritance import FindAllInheritances
 from openunderstand.metrics.knots_inheritance_nesting import get_knot_inheritance_nested
-from openunderstand.metrics.knots_inheritance_nesting import get_max_inheritance
-from openunderstand.metrics.Lineofcode import get_line_of_codes
+from openunderstand.metrics.knots_inheritance_nesting import (
+    max_inheritance_tree,
+    max_nesting,
+)
+from openunderstand.metrics import context as metric_context
+from openunderstand.metrics import graph_metrics
 from openunderstand.metrics.count_stmt_exe import statement_counter_exe
 from openunderstand.metrics.cyclomatic import cyclomatic
 from openunderstand.metrics.CyclomaticStrict_G12 import cyclomatic_strict
@@ -268,17 +272,99 @@ STRING = "String"
 WHITESPACE = "Whitespace"
 
 import os
-import git
 from openunderstand.oudb.models import EntityModel, ReferenceModel
 
 
+def update_files(paths, source_root: str = ""):
+    """Re-analyse specific files in an open database.
+
+    Fast because it touches only the files given -- on a 228-file project a
+    full analysis takes minutes, one file takes well under a second.
+
+    Each file's previous contribution is deleted before it is re-analysed.
+    Without that the update only adds: rename a method and the database keeps
+    both names, because the passes dedupe against what is present and know
+    nothing about what has gone.
+
+    Files that no longer exist are purged and not re-analysed, so deleting a
+    source file does the right thing.
+
+    Returns a summary dict.
+    """
+    from openunderstand.oudb.models import (dependent_files, purge_file,
+                                            merge_placeholder_entities,
+                                            relabel_nondynamic_calls)
+    from openunderstand.ounderstand.parsing_process import process_file
+    from openunderstand.ounderstand import symbol_table
+
+    requested = [os.path.abspath(p) for p in paths]
+
+    # Expand to the files that depend on these, before anything is purged --
+    # purging deletes the references the dependency graph is derived from.
+    seeds = [e._id for e in
+             (EntityModel.get_or_none(EntityModel._longname == p) for p in requested)
+             if e is not None]
+    affected = dependent_files(seeds)
+    # Filter to real file entities: some passes still record a non-file entity
+    # as a reference's _file, and following those would drag in things that
+    # are not files at all.
+    file_kind = kind_id("Java File")
+    dependents = [
+        e._longname for e in
+        EntityModel.select().where(EntityModel._id.in_(affected))
+        if e._kind_id == file_kind
+    ] if affected else []
+    paths = sorted({*requested, *dependents})
+
+    removed_entities = removed_refs = 0
+    for path in paths:
+        file_ent = EntityModel.get_or_none(EntityModel._longname == path)
+        if file_ent is not None:
+            ents, refs = purge_file(file_ent._id)
+            removed_entities += ents
+            removed_refs += refs
+            if not os.path.exists(path):
+                file_ent.delete_instance()
+
+    # The index feeds cross-file name resolution, so it has to see the new
+    # source before the passes run.
+    if source_root:
+        symbol_table.build(source_root)
+
+    reanalysed = [p for p in paths if os.path.exists(p)]
+    for path in reanalysed:
+        process_file(path)
+
+    merged = merge_placeholder_entities()
+    relabelled = relabel_nondynamic_calls()
+    return {
+        "requested": len(requested),
+        "files": len(paths),
+        "reanalysed": len(reanalysed),
+        "deleted": len(paths) - len(reanalysed),
+        "entities_removed": removed_entities,
+        "references_removed": removed_refs,
+        "placeholders_merged": merged,
+        "calls_relabelled": relabelled,
+    }
+
+
 def update_db(repo_path: str = "", branch: str = "origin/master"):
-    for file in [
-        file
-        for file in git.Repo(repo_path).git.diff(branch, name_only=True).split("\n")
-        if file.endswith(".java")
-    ]:
-        process_file(file_address=file)
+    """Re-analyse the .java files that differ from `branch`.
+
+    Paths from `git diff` are repository-relative; they are resolved against
+    `repo_path` so this works from any working directory.
+    """
+    # Imported here, not at module scope: GitPython is only needed by this
+    # one function, and importing it at the top made it a hard runtime
+    # dependency of the whole API.
+    import git
+
+    repo_path = os.path.abspath(repo_path)
+    changed = git.Repo(repo_path).git.diff(branch, name_only=True).split("\n")
+    paths = [os.path.join(repo_path, name)
+             for name in changed if name.endswith(".java")]
+    return update_files(paths, source_root=repo_path)
 
 
 def create_db(
@@ -336,7 +422,12 @@ def open(dbname):  # real signature unknown; restored from __doc__
 
     db.bind([KindModel, EntityModel, ReferenceModel, ProjectModel])
 
-    obj = ProjectModel.get_or_none(db_path=dbname)
+    # db_path is whatever absolute path the database was built at, so an exact
+    # match fails as soon as the file is copied or opened by a different route,
+    # and Db.__init__ then dies on None. A database holds one project.
+    obj = ProjectModel.get_or_none(db_path=dbname) or ProjectModel.select().first()
+    if obj is None:
+        raise UnderstandError()
     return Db(db_obj=obj)
 
 
@@ -347,6 +438,43 @@ def version():  # real signature unknown; restored from __doc__
     Return the current build number for this module
     """
     return "0.1.0"
+
+
+def kind_matches(kind_name, kindstring):
+    """Understand's kind filter grammar.
+
+    A filter is a comma-separated list of alternatives; an entity matches if
+    it matches any one of them. Within an alternative, space-separated words
+    are ANDed, and a word prefixed with "~" must be absent.
+
+    Words match whole tokens of the kind name, which is what makes
+    ``refs("Call")`` also return ``Java Call Nondynamic`` -- every call site in
+    this API used to compare kind names for equality, so a filter matched only
+    the one kind spelled exactly that way.
+    """
+    if not kindstring:
+        return True
+    tokens = set(str(kind_name).lower().split())
+    for alternative in str(kindstring).split(","):
+        words = alternative.split()
+        if not words:
+            continue
+        if all(
+            (word.lstrip("~").lower() in tokens) != word.startswith("~")
+            for word in words
+            if word.lstrip("~")
+        ):
+            return True
+    return False
+
+
+def _kinds_matching(kindstring, is_ent_kind):
+    """Ids of the seeded kinds a filter string selects."""
+    return [
+        k._id
+        for k in KindModel.select().where(KindModel.is_ent_kind == is_ent_kind)
+        if kind_matches(k._name, kindstring)
+    ]
 
 
 # classes
@@ -408,26 +536,14 @@ class Db:
         must be open or a UnderstandError will be thrown.
         """
 
-        all_ents = set()
-
-        if kindstring is None:
-            query = EntityModel.select()
-        else:
-            # TODO: Complete this later
-            kindstrings = kindstring.split(" ")
-            query = EntityModel.select()
-            conditions = []
-            for item in kindstrings:
-                kinds = KindModel.select().where(KindModel._name.contains(item))
-                conditions.append(EntityModel._kind.in_(kinds))
-            if conditions:
-                query = query.where(reduce(lambda a, b: a | b, conditions)).where(
-                    reduce(lambda a, b: a & b, conditions)
-                )
-        for ent in query:
-            my_ent = Ent(**ent.__dict__.get("__data__"))
-            all_ents.add(my_ent)
-        return all_ents
+        # A list, not a set: Understand returns every entity, and a set silently
+        # collapsed entities that compare equal.
+        query = EntityModel.select()
+        if kindstring is not None:
+            query = query.where(
+                EntityModel._kind.in_(_kinds_matching(kindstring, True))
+            )
+        return [Ent(**ent.__dict__.get("__data__")) for ent in query]
 
     def ent_from_id(self, id: int):  # real signature unknown; restored from __doc__
         """
@@ -482,22 +598,22 @@ class Db:
         would return a list of file entities containing "Test" (case sensitive)
         in their names.
         """
-        ents = []
         query = EntityModel.select()
         if kindstring:
-            kinds = KindModel.select().where(
-                fn.Lower(KindModel._name).contains(kindstring.lower())
+            query = query.where(
+                EntityModel._kind.in_(_kinds_matching(kindstring, True))
             )
-            query = query.where(EntityModel._kind.in_(kinds))
 
-        query = query.where(
-            (EntityModel._name.contains(name)) | (EntityModel._longname.contains(name))
-        )
-
-        for ent in query:
-            if re.search(f'Java\\s+{kindstring}'.lower(), str(ent._kind._name).lower()):
-                ents.append(Ent(**ent.__dict__.get("__data__")))
-        return ents
+        # name is a regular expression, compiled or not -- the old code did a
+        # substring query and then re-tested every row against the regex
+        # "java\s+<kindstring>", which is not a kind name, so a lookup without
+        # a kindstring could never return anything.
+        pattern = name if hasattr(name, "search") else re.compile(name)
+        return [
+            Ent(**ent.__dict__.get("__data__"))
+            for ent in query
+            if pattern.search(ent._name or "") or pattern.search(ent._longname or "")
+        ]
 
     def lookup_uniquename(
         self, uniquename
@@ -590,6 +706,11 @@ class Ent:
     _value: str
     _type: str
     _contents: str
+    # Declaration position. Ent is constructed by splatting an EntityModel row,
+    # so a column added to the model without a field here makes every
+    # db.ents() call raise TypeError.
+    _line: int = None
+    _column: int = None
 
     def contents(self):  # real signature unknown; restored from __doc__
         """
@@ -801,18 +922,39 @@ class Ent:
         as strings. If the metric is not available, it's value will be None.
         """
         metrics = {}
+        known = set(self.metrics())
+
+        # A package has no source of its own: Understand reports the roll-up
+        # over the files it spans. Doing this before the dispatch chain keeps
+        # every metric's own definition untouched.
+        members = graph_metrics.container_members(self)
+        if members:
+            nested = graph_metrics.container_methods(self)
+            for item in metric_list:
+                if item not in known or item in graph_metrics._NOT_AGGREGATED:
+                    continue
+                over = nested if graph_metrics.aggregates_over_methods(item) else members
+                metrics[item] = graph_metrics.aggregate(
+                    item, [Ent(**row.__dict__.get("__data__")).metric([item]).get(item)
+                           for row in over])
+            metric_list = [m for m in metric_list if m not in metrics]
         for item in metric_list:
-            if item not in self.metrics():
-                raise ValueError(f"metric {item} is not in metric list")
+            # The docstring promises None for an unrecognised metric.
+            if item not in known:
+                metrics[item] = None
         for item in metric_list:
             if item == "CountDeclMethodAll":
                 metrics.update({"CountDeclMethodAll": count_decl_method_all(self)})
             elif item == "CountDeclClassVariable":
                 metrics.update(
-                    {"CountDeclClassVariable": declare_class_variables(self)}
+                    {"CountDeclClassVariable":
+                         graph_metrics.count_decl_class_variable(self)}
                 )
             elif item == "AvgCyclomatic":
-                metrics.update({"AvgCyclomatic": avg_cyclomatic(self)})
+                # The mean over the entity's own methods. This used to return a
+                # raw count over whatever it managed to parse.
+                metrics.update({"AvgCyclomatic":
+                                metric_context.cyclomatic_summary(self)["avg"]})
             elif item == "AvgCyclomaticModified":
                 metrics.update({"AvgCyclomaticModified": avg_cyclomatic_modified(self)})
             elif item == "AvgCyclomaticStrict":
@@ -820,63 +962,51 @@ class Ent:
             elif item == "AvgEssential":
                 metrics.update({"AvgEssential": avg_essential(self)})
             elif item == "CountDeclClassMethod":
-                metrics.update({"CountDeclClassMethod": declare_method_count(self)})
-            elif item == "AvgLine":
-                raise NotImplementedError("metric AvgLine is not implemented")
-            elif item == "AvgLineBlank":
-                raise NotImplementedError("metric AvgLineBlank is not implemented")
-            elif item == "AvgLineCode":
-                raise NotImplementedError("metric AvgLineCode is not implemented")
-            elif item == "AvgLineComment":
-                raise NotImplementedError("metric AvgLineComment is not implemented")
+                metrics.update({"CountDeclClassMethod":
+                                graph_metrics.count_decl_class_method(self)})
+            elif item == "AvgCountLine":
+                metrics.update({"AvgCountLine":
+                                graph_metrics.average_line_counts(self)["total"]})
+            elif item == "AvgCountLineBlank":
+                metrics.update({"AvgCountLineBlank":
+                                graph_metrics.average_line_counts(self)["blank"]})
+            elif item == "AvgCountLineCode":
+                metrics.update({"AvgCountLineCode":
+                                graph_metrics.average_line_counts(self)["code"]})
+            elif item == "AvgCountLineComment":
+                metrics.update({"AvgCountLineComment":
+                                graph_metrics.average_line_counts(self)["comment"]})
             elif item == "CountClassBase":
-                raise NotImplementedError("metric CountClassBase is not implemented")
+                metrics.update({"CountClassBase": graph_metrics.count_class_base(self)})
             elif item == "CountClassCoupled":
-                raise NotImplementedError("metric CountClassCoupled is not implemented")
+                metrics.update({"CountClassCoupled": graph_metrics.count_class_coupled(self)})
             elif item == "CountClassCoupledModified":
-                raise NotImplementedError(
-                    "metric CountClassCoupledModified is not implemented"
-                )
+                metrics.update({"CountClassCoupledModified":
+                                graph_metrics.count_class_coupled(self, True)})
             elif item == "CountClassDerived":
-                raise NotImplementedError("metric CountClassDerived is not implemented")
+                metrics.update({"CountClassDerived": graph_metrics.count_class_derived(self)})
             elif item == "CountDeclClass":
-                raise NotImplementedError("metric CountDeclClass is not implemented")
+                metrics.update({"CountDeclClass": graph_metrics.count_decl_class(self)})
             elif item == "CountDeclFile":
-                metrics.update({"CountDeclFile": declare_file(self)})
-            elif item == "CountDeclClassMethod":
-                raise NotImplementedError(
-                    "metric CountDeclClassMethod is not implemented"
-                )
+                metrics.update({"CountDeclFile": graph_metrics.count_decl_file(self)})
             elif item == "CountDeclExecutableUnit":
                 metrics.update(
                     {"CountDeclExecutableUnit": declare_executable_unit(self)}
                 )
             elif item == "CountDeclFunction":
-                raise NotImplementedError("metric CountDeclFunction is not implemented")
+                metrics.update({"CountDeclFunction": graph_metrics.count_decl_function(self)})
             elif item == "CountDeclInstanceMethod":
-                raise NotImplementedError(
-                    "metric CountDeclInstanceMethod is not implemented"
-                )
+                metrics.update({"CountDeclInstanceMethod": graph_metrics.count_decl_instance_method(self)})
             elif item == "CountDeclInstanceVariable":
-                raise NotImplementedError(
-                    "metric CountDeclInstanceVariable is not implemented"
-                )
+                metrics.update({"CountDeclInstanceVariable": graph_metrics.count_decl_instance_variable(self)})
             elif item == "CountDeclInstanceVariablePrivate":
-                raise NotImplementedError(
-                    "metric CountDeclInstanceVariablePrivate is not implemented"
-                )
+                metrics.update({"CountDeclInstanceVariablePrivate": graph_metrics.count_decl_instance_variable(self, "private")})
             elif item == "CountDeclInstanceVariableProtected":
-                raise NotImplementedError(
-                    "metric CountDeclInstanceVariableProtected is not implemented"
-                )
+                metrics.update({"CountDeclInstanceVariableProtected": graph_metrics.count_decl_instance_variable(self, "protected")})
             elif item == "CountDeclInstanceVariablePublic":
-                raise NotImplementedError(
-                    "metric CountDeclInstanceVariablePublic is not implemented"
-                )
+                metrics.update({"CountDeclInstanceVariablePublic": graph_metrics.count_decl_instance_variable(self, "public")})
             elif item == "CountDeclMethod":
-                raise NotImplementedError("metric CountDeclMethod is not implemented")
-            elif item == "CountDeclMethodAll":
-                metrics.update({"CountDeclMethodAll": count_decl_method_all(self)})
+                metrics.update({"CountDeclMethod": graph_metrics.count_decl_method(self)})
             elif item == "CountDeclMethodDefault":
                 metrics.update(
                     {"CountDeclMethodDefault": count_decl_method_default(self)}
@@ -890,67 +1020,48 @@ class Ent:
                     {"CountDeclMethodPrivate": count_decl_method_private(self)}
                 )
             elif item == "CountDeclMethodPublic":
-                raise NotImplementedError(
-                    "metric CountDeclMethodPublic is not implementd"
-                )
+                metrics.update({"CountDeclMethodPublic":
+                                graph_metrics.count_decl_method_public(self)})
             elif item == "CountInput":
-                raise NotImplementedError("metric CountInput is not implemented")
+                metrics.update({"CountInput": graph_metrics.count_input(self)})
             elif item == "CountLine":
-                raise NotImplementedError("metric CountLine is not implemented")
+                metrics.update({"CountLine": metric_context.line_counts(
+                    self.contents())["total"]})
             elif item == "CountLineBlank":
-                raise NotImplementedError("metric CountLineBlank is not implemented")
+                metrics.update({"CountLineBlank": metric_context.line_counts(
+                    self.contents())["blank"]})
             elif item == "CountLineCode":
-                # check for number of line method objects
-                metrics.update(
-                    {
-                        "CountLineCode": sum(
-                            get_line_of_codes(self).class_countLineCode
-                        )
-                        + sum(get_line_of_codes(self).method_countLineCode)
-                    }
-                )
+                # Counted from the entity's own source. The listener this used
+                # to call was constructed but never walked, so the sums were
+                # always over empty lists.
+                metrics.update({"CountLineCode": metric_context.line_counts(
+                    self.contents())["code"]})
             elif item == "CountLineCodeDecl":
-                metrics.update(
-                    {
-                        "CountLineCodeDecl": sum(
-                            get_line_of_codes(self).class_countLineDecl
-                        )
-                        + sum(get_line_of_codes(self).method_countLineDecl)
-                    }
-                )
+                metrics.update({"CountLineCodeDecl":
+                                metric_context.statement_counts(self)["line_decl"]})
             elif item == "CountLineCodeExe":
-                # check for number of line method objects
-                metrics.update(
-                    {
-                        "CountLineCodeExe": sum(
-                            get_line_of_codes(self).class_countLineExec
-                        )
-                        + sum(get_line_of_codes(self).method_countLineExec)
-                    }
-                )
+                metrics.update({"CountLineCodeExe":
+                                metric_context.statement_counts(self)["line_exe"]})
             elif item == "CountLineComment":
-                metrics.update(
-                    {
-                        "CountLineComment": sum(
-                            get_line_of_codes(self).class_countLineComment
-                        )
-                        + sum(get_line_of_codes(self).method_countLineComment)
-                    }
-                )
+                metrics.update({"CountLineComment": metric_context.line_counts(
+                    self.contents())["comment"]})
             elif item == "CountOutput":
-                raise NotImplementedError("metric CountOutput is not implemented")
+                metrics.update({"CountOutput": graph_metrics.count_output(self)})
             elif item == "CountPath":
                 raise NotImplementedError("metric CountPath is not implemented")
             elif item == "CountPathLog":
                 raise NotImplementedError("metric CountPathLog is not implemented")
             elif item == "CountSemicolon":
-                raise NotImplementedError("metric CountSemicolon not implemented")
+                metrics.update({"CountSemicolon": graph_metrics.count_semicolon(self)})
             elif item == "CountStmt":
-                metrics.update({"CountStmt": statement_counter(self)})
+                metrics.update({"CountStmt":
+                                metric_context.statement_counts(self)["stmt"]})
             elif item == "CountStmtDecl":
-                metrics.update({"CountStmtDecl": statement_counter_delc(self)})
+                metrics.update({"CountStmtDecl":
+                                metric_context.statement_counts(self)["stmt_decl"]})
             elif item == "CountStmtExe":
-                metrics.update({"CountStmtExe": statement_counter_exe(self)})
+                metrics.update({"CountStmtExe":
+                                metric_context.statement_counts(self)["stmt_exe"]})
             elif item == "Cyclomatic":
                 metrics.update({"Cyclomatic": cyclomatic(self)})
             elif item == "CyclomaticModified":
@@ -962,7 +1073,7 @@ class Ent:
             elif item == "Knots":
                 metrics.update({"Knots": knot(self)})
             elif item == "MaxCyclomatic":
-                metrics.update({"MaxCyclomatic": max_cyclomatic(self)})
+                metrics.update({"MaxCyclomatic": metric_context.cyclomatic_summary(self)["max"]})
             elif item == "MaxCyclomaticModified":
                 metrics.update({"MaxCyclomaticModified": max_cyclomatic_modified(self)})
             elif item == "MaxCyclomaticStrict":
@@ -974,9 +1085,9 @@ class Ent:
                     {"MaxEssentialKnots": min_max_essential_knots(self, False)}
                 )
             elif item == "MaxInheritanceTree":
-                metrics.update({"MaxInheritanceTree": get_max_inheritance(self)})
+                metrics.update({"MaxInheritanceTree": max_inheritance_tree(self)})
             elif item == "MaxNesting":
-                metrics.update({"MaxNesting": MaxNesting(self)})
+                metrics.update({"MaxNesting": max_nesting(self)})
             elif item == "MinEssentialKnots":
                 metrics.update(
                     {"MinEssentialKnots": min_max_essential_knots(self, True)}
@@ -994,9 +1105,15 @@ class Ent:
                     }
                 )
             elif item == "RatioCommentToCode":
-                metrics.update({"RatioCommentToCode": get_ratio_comment_to_code(self)})
+                # Understand reports this to two decimal places as a string.
+                # Returning a full-precision float meant a value that was
+                # arithmetically right still compared unequal.
+                counts = metric_context.line_counts(self.contents())
+                metrics.update({"RatioCommentToCode": (
+                    f"{counts['comment'] / counts['code']:.2f}"
+                    if counts["code"] else "0.00")})
             elif item == "SumCyclomatic":
-                metrics.update({"SumCyclomatic": get_sum_of_cyclomatics(self)})
+                metrics.update({"SumCyclomatic": metric_context.cyclomatic_summary(self)["sum"]})
             elif item == "SumCyclomaticModified":
                 metrics.update(
                     {"SumCyclomaticModified": get_sum_cyclomatic_modified(self)}
@@ -1013,7 +1130,9 @@ class Ent:
         Return a list of metric names defined for the entity.
         """
 
-        return [
+        # dict.fromkeys, not set(): the order is the documented order, and the
+        # list carried CountDeclClassMethod and CountDeclMethodAll twice.
+        return list(dict.fromkeys([
             "CountDeclMethodAll",
             "CountDeclClassVariable",
             "AvgCyclomatic",
@@ -1021,10 +1140,10 @@ class Ent:
             "AvgCyclomaticStrict",
             "AvgEssential",
             "CountDeclClassMethod",
-            "AvgLine",
-            "AvgLineBlank",
-            "AvgLineCode",
-            "AvgLineComment",
+            "AvgCountLine",
+            "AvgCountLineBlank",
+            "AvgCountLineCode",
+            "AvgCountLineComment",
             "CountClassBase",
             "CountClassCoupled",
             "CountClassCoupledModified",
@@ -1044,7 +1163,8 @@ class Ent:
             "CountDeclMethodDefault",
             "CountDeclMethodPrivate",
             "CountDeclMethodProtected",
-            "CountDeclMethodPublic" "CountInput",
+            "CountDeclMethodPublic",
+            "CountInput",
             "CountLine",
             "CountLineBlank",
             "CountLineCode",
@@ -1078,7 +1198,7 @@ class Ent:
             "SumCyclomaticModified",
             "SumCyclomaticStrict",
             "SumEssential",
-        ]
+        ]))
 
     def name(self):  # real signature unknown; restored from __doc__
         """
@@ -1148,7 +1268,10 @@ class Ent:
 
         This is the same as ent.refs()[:1]
         """
-        return self.refs(*args, **kwargs)[:1]
+        # A single Ref or None -- this returned a list, so every caller that
+        # used the documented shape (ref.line(), ref.ent()) got an AttributeError.
+        refs = self.refs(*args, **kwargs)
+        return refs[0] if refs else None
 
     def refs(
         self, refkindstring=None, entkindstring=None, unique=None
@@ -1166,51 +1289,35 @@ class Ent:
         true, only the first matching reference to each unique entity is
         returned
         """
-        # TODO : check nested references
-        mlist = [j.strip() for j in refkindstring.split(",")]
-        # print(mlist)
-        refs = []
-        for item in mlist:
-            query = ReferenceModel.select().where(ReferenceModel._scope == self._id)
-            if item:
-                kinds = KindModel.select().where(
-                    (KindModel.is_ent_kind == False)
-                    & (KindModel._name.contains(item))
-                    & (fn.Lower(KindModel._name) == (f"Java {item}").lower())
-                )
-                if len(mlist) > 0:
-                    print(kinds.count())
-                    for k in kinds:
-                        print("kin : ", k._name)
-                        print(k._id)
-                    q = ReferenceModel.select().where(ReferenceModel._kind.in_(kinds))
-                    for it in query:
-                        print("it : ", it._kind)
-                        if str(it._kind) != "Java Define":
-                            print("X :", it._kind)
-                            print("X :", "Java Define")
+        query = ReferenceModel.select().where(ReferenceModel._scope == self._id)
+        # refkindstring is optional -- this used to split None and raise
+        # AttributeError, so ent.refs() with no arguments never worked at all.
+        if refkindstring:
+            query = query.where(
+                ReferenceModel._kind.in_(_kinds_matching(refkindstring, False))
+            )
+        if entkindstring:
+            ents = EntityModel.select().where(
+                EntityModel._kind.in_(_kinds_matching(entkindstring, True))
+            )
+            query = query.where(ReferenceModel._ent.in_(ents))
 
-                query = query.where(ReferenceModel._kind.in_(kinds))
-                if len(mlist) > 0:
-                    print(query.count())
-
-            if entkindstring:
-                kinds = KindModel.select().where(
-                    (KindModel.is_ent_kind == True)
-                    & (KindModel._name.contains(entkindstring))
-                )
-                ents = EntityModel.select().where(EntityModel._kind.in_(kinds))
-                query = query.where(ReferenceModel._ent.in_(ents))
-
-            for ref in query:
-                refs.append(Ref(**ref.__dict__.get("__data__")))
-        # Remove duplicates from 'refs' and store unique references in 'references' list
         references = []
-        for ref in refs:
-            if ref not in references:
-                references.append(ref)
-        if unique:
-            references = references[:1]
+        seen_refs = set()
+        seen_ents = set()
+        for row in query:
+            data = row.__dict__.get("__data__")
+            key = tuple(sorted(data.items(), key=lambda kv: kv[0]))
+            if key in seen_refs:
+                continue
+            seen_refs.add(key)
+            # unique keeps the first reference per referenced entity -- it used
+            # to truncate the whole list to one element.
+            if unique:
+                if data.get("_ent") in seen_ents:
+                    continue
+                seen_ents.add(data.get("_ent"))
+            references.append(Ref(**data))
         return references
 
     def relname(self):  # real signature unknown; restored from __doc__
@@ -1351,7 +1458,7 @@ class Kind(object):
 
         Return true if the kind matches the filter string kindstring.
         """
-        return kindstring.lower() in self.name().lower()
+        return kind_matches(self._name, kindstring)
 
     def inv(self):  # real signature unknown; restored from __doc__
         """
@@ -1362,8 +1469,11 @@ class Kind(object):
         """
         if self.is_ent_kind:
             raise UnderstandError()
-        inverse = KindModel.get_by_id(pk=self._inv)
-        return Kind(**inverse.__data__.get("__data__"))
+        if self._inv is None:
+            return None
+        inverse = KindModel.get_by_id(self._inv)
+        # __data__ is the field dict itself, not a dict containing one.
+        return Kind(**inverse.__data__)
 
     @staticmethod
     def list_entity(entkind=""):  # real signature unknown; restored from __doc__

@@ -1,7 +1,7 @@
 from antlr4 import *
-from gen.javaLabeled.JavaLexer import JavaLexer
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from openunderstand.analysis_passes import class_properties
 
 
@@ -70,8 +70,10 @@ class overridelistener(JavaParserLabeledListener):
 
     def extract_original_text(self, ctx):
         try:
-            token_source = ctx.start.getTokenSource()
-            input_stream = token_source.inputStream
+            # getInputStream() rather than getTokenSource().inputStream: both
+            # return the same stream under the Python parser, but the C++
+            # accelerator leaves the token-source slot empty.
+            input_stream = ctx.start.getInputStream()
             start, stop = ctx.start.start, ctx.stop.stop
             return input_stream.getText(start, stop)
         except Exception as e:
@@ -115,7 +117,7 @@ class overridelistener(JavaParserLabeledListener):
                 else:
                     scope_longname = ".".join(scope_parents)
 
-                [line, col] = str(ctx.start).split(",")[3].split(":")
+                line, col = ctx.start.line, ctx.start.column
                 ##############
 
                 string = ""
@@ -126,14 +128,16 @@ class overridelistener(JavaParserLabeledListener):
                     "MethodIs": mymethod[0],
                     "scope_kind": "Method",
                     "scope_name": ctx.IDENTIFIER().getText(),
-                    "scope_longname": self.packageName + "." + scope_longname,
+                    # findParents() already includes the package components;
+                    # prefixing packageName here repeated it ("org.json.org.json").
+                    "scope_longname": scope_longname,
                     "scope_parent": (
                         scope_parents[-2] if len(scope_parents) >= 2 else None
                     ),
                     "scope_contents": self.extract_original_text(ctx),
                     "scope_modifiers": list(reversed(self.modifiers)),
                     "line": line,
-                    "col": col[:-1],
+                    "col": col,
                     "type_ent_longname": self.packageName + "." + self.class_Name,
                     "File": self.FileName,
                     "is_overrided": self.isoverride,

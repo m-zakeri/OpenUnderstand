@@ -8,8 +8,8 @@ __author__ = "Shaghayegh Mobasher , Setayesh kouloubandi ,Parisa Alaie, Zakeri"
 __version__ = "0.1.1"
 
 
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from antlr4 import *
 
 
@@ -26,32 +26,70 @@ class ClassPropertiesListener(JavaParserLabeledListener):
             list(reversed(self.class_longname))
         )
 
+    # Rules that name an enclosing scope. Each one carries an IDENTIFIER.
+    #
+    # RULE_typeDeclaration is deliberately absent: it is only a wrapper around
+    # classDeclaration / interfaceDeclaration / enumDeclaration, it has no
+    # IDENTIFIER of its own, and the rule it wraps already contributes the
+    # name. While it was listed here it fell through to the package branch
+    # below and appended the entire class body as a name component, producing
+    # longnames like "org.json.classJSONML{privatestaticObjectparse(...".
+    _SCOPE_RULES = frozenset({
+        JavaParserLabeled.RULE_classDeclaration,
+        JavaParserLabeled.RULE_methodDeclaration,
+        JavaParserLabeled.RULE_enumDeclaration,
+        JavaParserLabeled.RULE_interfaceDeclaration,
+        JavaParserLabeled.RULE_constructorDeclaration,
+        JavaParserLabeled.RULE_annotationTypeDeclaration,
+        JavaParserLabeled.RULE_genericInterfaceMethodDeclaration,
+    })
+
     @staticmethod
-    def findParents(c: ParserRuleContext):  # includes the ctx identifier
+    def _package_components(compilation_unit):
+        """Dotted components of the file's package declaration, or []."""
+        try:
+            pkg = compilation_unit.packageDeclaration()
+        except AttributeError:
+            return []
+        if pkg is None:
+            return []
+        try:
+            return [str(i) for i in pkg.qualifiedName().IDENTIFIER()]
+        except AttributeError:
+            return []
+
+    @staticmethod
+    def findParents(c: ParserRuleContext):
+        """Names of the scopes enclosing ``c``, outermost first.
+
+        Starts at ``c.parentCtx``, so the result does NOT include ``c``'s own
+        identifier -- callers wanting a fully qualified name must append it.
+
+        The package contributes each of its dotted components as a separate
+        entry, so a method in class ``CDL`` in ``package org.json`` yields
+        ``["org", "json", "CDL"]``.
+
+        Note the package is read from the compilation unit at the end rather
+        than found during the walk: ``packageDeclaration`` is a *sibling* of
+        ``typeDeclaration`` under ``compilationUnit``, never an ancestor, so
+        walking up from a declaration never reaches it. This previously worked
+        only by accident -- ``typeDeclaration`` has no IDENTIFIER, so it raised
+        and a fallback re-parsed ``parentCtx.getChild(0)`` as package text.
+        That fallback also fired for contexts where child 0 was not the package
+        declaration, splicing whole class bodies into longnames.
+        """
         parents = []
         current = c.parentCtx
+        root = None
         while current is not None:
-            if current.getRuleIndex() in [
-                JavaParserLabeled.RULE_classDeclaration,
-                JavaParserLabeled.RULE_methodDeclaration,
-                JavaParserLabeled.RULE_enumDeclaration,
-                JavaParserLabeled.RULE_interfaceDeclaration,
-                JavaParserLabeled.RULE_constructorDeclaration,
-                JavaParserLabeled.RULE_annotationTypeDeclaration,
-                JavaParserLabeled.RULE_annotationTypeDeclaration,
-                JavaParserLabeled.RULE_genericInterfaceMethodDeclaration,
-                JavaParserLabeled.RULE_packageDeclaration,
-                JavaParserLabeled.RULE_typeDeclaration
-            ]:
-                try:
-                    parents.append(current.IDENTIFIER().getText())
-                except Exception as e:
-                    txt = current.parentCtx.getChild(0).getText()
-                    txt = txt.replace("package", "").replace(";", "").split(".")
-                    for item in txt:
-                        parents.append(item)
+            if current.getRuleIndex() in ClassPropertiesListener._SCOPE_RULES:
+                identifier = current.IDENTIFIER()
+                if identifier is not None:
+                    parents.append(identifier.getText())
+            root = current
             current = current.parentCtx
-        return list(reversed(parents))
+        parents.reverse()
+        return ClassPropertiesListener._package_components(root) + parents
 
     @staticmethod
     def findClassOrInterfaceModifiers(c):

@@ -1,6 +1,7 @@
 from antlr4 import *
-from gen.javaLabeled.JavaLexer import JavaLexer
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.metrics import context
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from openunderstand.oudb.models import EntityModel
 import os
 from fnmatch import fnmatch
@@ -54,10 +55,7 @@ class MaxCyclomatic:
 
     def calculate_classes_value(self, input: str = ""):
         content = InputStream(input)
-        lexer = JavaLexer(content)
-        tokens = CommonTokenStream(lexer)
-        parser = JavaParserLabeled(tokens)
-        tree = parser.compilationUnit()
+        tree = context.parse(content)
         walker = ParseTreeWalker()
         walker.walk(self.listener, tree)
         return self.listener.get_classes, self.listener.get_packagename
@@ -192,13 +190,13 @@ def run_with_database(path_):
 
 
 def max_cyclomatic_modified(ent_model=None) -> int:
-    Cyclomatic_listener = CyclomaticModifiedListener(ent_model.contents())
+    Cyclomatic_listener = CyclomaticModifiedListener()
     max_cyclomatic_ = MaxCyclomatic(Cyclomatic_listener)
     return max_cyclomatic_.return_package_max(content=ent_model.contents())
 
 
 def max_cyclomatic_stricts(ent_model=None) -> int:
-    Cyclomatic_listener = CyclomaticStrictListener(ent_model.contents())
+    Cyclomatic_listener = CyclomaticStrictListener()
     max_cyclomatic_ = MaxCyclomatic(Cyclomatic_listener)
     return max_cyclomatic_.return_package_max(content=ent_model.contents())
 

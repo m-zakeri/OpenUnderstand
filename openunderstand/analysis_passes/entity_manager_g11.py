@@ -24,7 +24,7 @@ __version__ = "1.0.0"
 
 import os.path
 
-from openunderstand.oudb.models import EntityModel, KindModel
+from openunderstand.oudb.models import EntityModel, KindModel, resolve_entity_ref
 from antlr4 import *
 
 # Listeners
@@ -33,10 +33,10 @@ from openunderstand.analysis_passes.class_properties import (
     ClassPropertiesListener,
     InterfacePropertiesListener,
 )
-from openunderstand.oudb.models import KindModel
+from openunderstand.oudb.models import kind_id
 
 # Constants
-FILE_KIND_ID = 1
+
 
 
 def get_created_entity(name):
@@ -84,8 +84,10 @@ class EntityGenerator:
 
     @staticmethod
     def extract_original_text(ctx):
-        token_source = ctx.start.getTokenSource()
-        input_stream = token_source.inputStream
+        # getInputStream() rather than getTokenSource().inputStream: both return
+        # the same stream under the Python parser, but the C++ accelerator
+        # leaves the token-source slot empty, so the indirect route is None.
+        input_stream = ctx.start.getInputStream()
         start, stop = ctx.start.start, ctx.stop.stop
         return input_stream.getText(start, stop)
 
@@ -291,7 +293,7 @@ class EntityGenerator:
         props = self.getClassProperties(class_longname)
         if not props:  # This class is unknown, unknown class id: 84
             ent = EntityModel.get_or_create(
-                _kind=84,
+                _kind=kind_id("Java Unknown Class Type Member"),
                 _name=class_longname.split(".")[-1],
                 _longname=class_longname,
                 _contents="",
@@ -304,8 +306,11 @@ class EntityGenerator:
                 _kind=kind,
                 _name=props["name"],
                 _longname=props["longname"],
-                _parent=(
-                    props["parent"] if props["parent"] is not None else file_address
+                # props["parent"] is a bare name and file_address is a path
+                # string; both used to be written straight into the integer
+                # _parent foreign key. Resolve them to real entity rows.
+                _parent=resolve_entity_ref(
+                    props["parent"], resolve_entity_ref(file_address)
                 ),
                 _contents=props["contents"],
             )
@@ -323,8 +328,11 @@ class EntityGenerator:
                 _kind=kind,
                 _name=props["name"],
                 _longname=props["longname"],
-                _parent=(
-                    props["parent"] if props["parent"] is not None else file_address
+                # props["parent"] is a bare name and file_address is a path
+                # string; both used to be written straight into the integer
+                # _parent foreign key. Resolve them to real entity rows.
+                _parent=resolve_entity_ref(
+                    props["parent"], resolve_entity_ref(file_address)
                 ),
                 _contents=props["contents"],
             )
@@ -372,7 +380,7 @@ class FileEntityManager:
     def get_or_create_file_entity(self):
         """Create or get if it exists a file entity and return it according to object fields."""
         file_ent, success = EntityModel.get_or_create(
-            _kind=FILE_KIND_ID,
+            _kind=kind_id("Java File"),
             _name=self.name,
             _longname=self.longname,
             _contents=self.contents,
@@ -382,7 +390,7 @@ class FileEntityManager:
     @staticmethod
     def get_file_entity(longname):
         """get or return none for a file entity abased on its longname as address."""
-        file_ent = EntityModel.get_or_none(_kind=FILE_KIND_ID, _longname=longname)
+        file_ent = EntityModel.get_or_none(_kind=kind_id("Java File"), _longname=longname)
         return file_ent
 
 
@@ -418,7 +426,7 @@ class PackageEntityManager:
                     longname = parent_package["package_longname"] if i > 0 else ""
                     parent_package_entity = EntityModel.get_or_none(_longname=longname)
                     package_ent, success = EntityModel.get_or_create(
-                        _kind=72,
+                        _kind=kind_id("Java Package"),
                         _name=package["package_name"],
                         _longname=package["package_longname"],
                         _parent=parent_package_entity,
@@ -432,7 +440,7 @@ class PackageEntityManager:
                     result.append((self.path, package_ent, package["package_longname"]))
         else:
             package_ent, success = EntityModel.get_or_create(
-                _kind=73,
+                _kind=kind_id("Java Package Unnamed"),
                 _name="Unnamed Package",
                 _longname="Unnamed Package",
                 _parent=self.file_ent,
@@ -446,6 +454,6 @@ class PackageEntityManager:
     def get_package_entity(name, longname):
         """get or return none for a package entity abased on its longname as address."""
         package_ent = EntityModel.get_or_none(
-            _kind=73 if name == "" else 72, _longname=longname
+            _kind=kind_id("Java Package Unnamed") if name == "" else 72, _longname=longname
         )
         return package_ent

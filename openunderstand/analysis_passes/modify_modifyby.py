@@ -1,5 +1,5 @@
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from openunderstand.analysis_passes.entity_manager_g11 import get_created_entity_longname
 
 
@@ -50,8 +50,7 @@ class ModifyListener(JavaParserLabeledListener):
 
     def enterExpression6(self, ctx: JavaParserLabeled.Expression6Context):
 
-        [line, col] = str(ctx.start).split(",")[3].split(":")
-
+        line, col = ctx.start.line, ctx.start.column
         parents = self.entity_manager.get_or_create_parent_entities(ctx)
         try:
             parent = parents[-1][1]
@@ -81,8 +80,7 @@ class ModifyListener(JavaParserLabeledListener):
 
     def enterExpression7(self, ctx: JavaParserLabeled.Expression7Context):
 
-        [line, col] = str(ctx.start).split(",")[3].split(":")
-
+        line, col = ctx.start.line, ctx.start.column
         parents = self.entity_manager.get_or_create_parent_entities(ctx)
         try:
             parent = parents[-1][1]
@@ -129,8 +127,7 @@ class ModifyListener(JavaParserLabeledListener):
 
             longname = self.package + "." + self.parent + "." + name
 
-            [line, col] = str(ctx.start).split(",")[3].split(":")
-
+            line, col = ctx.start.line, ctx.start.column
             parents = self.entity_manager.get_or_create_parent_entities(ctx)
             try:
                 parent = parents[-1][1]

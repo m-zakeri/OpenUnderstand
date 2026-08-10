@@ -1,7 +1,7 @@
 __author__ = "Ali Rasouli, G4"
 
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 
 
 class DeclareAndDeclareinListener(JavaParserLabeledListener):

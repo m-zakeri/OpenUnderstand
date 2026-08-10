@@ -8,9 +8,9 @@ __author__ = "AminHZ Dev"
 __version__ = "0.1.0"
 
 from antlr4 import *
-from gen.javaLabeled.JavaLexer import JavaLexer
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from openunderstand.analysis_passes import class_properties
 
 class CoupleAndCoupleBy(JavaParserLabeledListener):
@@ -54,8 +54,10 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         return self.classes
 
     def extract_original_text(self, ctx):
-        token_source = ctx.start.getTokenSource()
-        input_stream = token_source.inputStream
+        # getInputStream() rather than getTokenSource().inputStream: both return
+        # the same stream under the Python parser, but the C++ accelerator
+        # leaves the token-source slot empty, so the indirect route is None.
+        input_stream = ctx.start.getInputStream()
         start, stop = ctx.start.start, ctx.stop.stop
         return input_stream.getText(start, stop)
 
@@ -63,17 +65,17 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
     def enterClassDeclaration(self, ctx:JavaParserLabeled.ClassDeclarationContext):
         if (True):
             scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-            if len(scope_parents) == 1:
-                scope_longname = scope_parents[0]
-            else:
-                scope_longname = ".".join(scope_parents)
-            [line, col] = str(ctx.start).split(",")[3].split(":")
-            self.classlongname =  self.packageName + '.' + scope_longname
+            # findParents() stops at the enclosing scopes, so the class's own
+            # name has to be appended -- otherwise a class's longname is its
+            # package ("org.json" for class CDL) and matches nothing.
+            scope_longname = ".".join(scope_parents + [ctx.IDENTIFIER().__str__()])
+            line, col = ctx.start.line, ctx.start.column
+            self.classlongname =  scope_longname
             self.dic = {"scope_kind": "Class", "scope_name": ctx.IDENTIFIER().__str__(),
-                                           "scope_longname": self.packageName + '.' + scope_longname,
+                                           "scope_longname": scope_longname,
                                            "scope_parent": scope_parents[-2] if len(scope_parents) >= 2 else None,
                                            "scope_contents": self.extract_original_text(ctx),
-                                           "scope_modifiers": self.Modifiers , 'File' : self.file , 'line':line ,  'col' : col[:-1] }
+                                           "scope_modifiers": self.Modifiers , 'File' : self.file , 'line':line ,  'col' : col }
             if(ctx.EXTENDS() != None):
                 self.extend = True
                 self.classx = True

@@ -1,9 +1,11 @@
 import os
 from antlr4 import *
-from gen.javaLabeled.JavaLexer import JavaLexer
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel, col_1based
+from openunderstand.oudb.models import kind_id
+import openunderstand.analysis_passes.class_properties as class_properties
 
 PRJ_INDEX = 8
 REF_NAME = "import"
@@ -70,106 +72,20 @@ class OpenListener(JavaParserLabeledListener):
         self.repository = []
         self.files = files
 
-    def _get_class_long_name(self, ctx):
-        type_declaration_ctx = ctx.parentCtx
-        if type(type_declaration_ctx) != JavaParserLabeled.TypeDeclarationContext:
-            type_declaration_ctx = type_declaration_ctx.parentCtx
-            modifiers = type_declaration_ctx.modifier()
-        else:
-            modifiers = type_declaration_ctx.classOrInterfaceModifier()
-        class_or_interface_modifier = " ".join(
-            [modifier.getText() for modifier in modifiers]
-        )
-        class_modifier = ctx.CLASS().getText()
-        identifier = ctx.IDENTIFIER().getText()
-        if ctx.EXTENDS():
-            extends = []
-            extend_identifiers = ctx.typeType().classOrInterfaceType().IDENTIFIER()
-            for i in extend_identifiers:
-                extends.append(i.getText())
-            extends = ", ".join(extends)
-            extends_modifier = ctx.EXTENDS().getText() + f" {extends}"
-        else:
-            extends_modifier = ""
+    @staticmethod
+    def _qualified_name(ctx):
+        """Package-qualified dotted name of a type declaration.
 
-        if ctx.IMPLEMENTS():
-            implements = []
-            for typeType in ctx.typeList().typeType():
-                implements_identifiers = typeType.classOrInterfaceType().IDENTIFIER()
-                for i in implements_identifiers:
-                    implements.append(i.getText())
-            implements = ",".join(implements)
-            implements_modifier = ctx.IMPLEMENTS().getText() + f" {implements}"
-        else:
-            implements_modifier = ""
-        name_list = [
-            class_modifier,
-            identifier,
-        ]
-        if class_or_interface_modifier:
-            name_list.insert(0, class_or_interface_modifier)
-        if extends_modifier:
-            name_list.append(extends_modifier)
-        if implements_modifier:
-            name_list.append(implements_modifier)
-        return " ".join(name_list)
-
-    def _get_interface_long_name(self, ctx):
-        type_declaration_ctx = ctx.parentCtx
-        if type(type_declaration_ctx) != JavaParserLabeled.TypeDeclarationContext:
-            type_declaration_ctx = type_declaration_ctx.parentCtx
-            modifiers = type_declaration_ctx.modifier()
-        else:
-            modifiers = type_declaration_ctx.classOrInterfaceModifier()
-        class_or_interface_modifier = " ".join(
-            [modifier.getText() for modifier in modifiers]
-        )
-        interface_modifier = ctx.INTERFACE().getText()
-        if ctx.EXTENDS():
-            extends = []
-            for typeType in ctx.typeList().typeType():
-                extend_identifiers = typeType.classOrInterfaceType().IDENTIFIER()
-                for i in extend_identifiers:
-                    extends.append(i.getText())
-            extends = ",".join(extends)
-            extends_modifier = ctx.EXTENDS().getText() + f" {extends}"
-        else:
-            extends_modifier = ""
-        identifier = ctx.IDENTIFIER().getText()
-        return " ".join(
-            [
-                class_or_interface_modifier,
-                interface_modifier,
-                identifier,
-                extends_modifier,
-            ]
-        )
-
-    def _get_enum_long_name(self, ctx):
-        type_declaration_ctx = ctx.parentCtx
-        class_or_interface_modifier = " ".join(
-            [
-                modifier.getText()
-                for modifier in type_declaration_ctx.classOrInterfaceModifier()
-            ]
-        )
-        enum_modifier = ctx.ENUM().getText()
-        if ctx.IMPLEMENTS():
-            implements_modifier = ctx.IMPLEMENTS().getText()
-        else:
-            implements_modifier = ""
-        identifier = ctx.IDENTIFIER().getText()
-        return " ".join(
-            [
-                class_or_interface_modifier,
-                enum_modifier,
-                implements_modifier,
-                identifier,
-            ]
-        )
+        These three helpers used to return the declaration *signature* --
+        "public class print_fail extends X" -- as the entity's longname, so
+        nothing this pass created could ever join to the entity the define
+        pass created for the same class.
+        """
+        parents = class_properties.ClassPropertiesListener.findParents(ctx)
+        return ".".join(parents + [ctx.IDENTIFIER().getText()])
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
-        class_longname = self._get_class_long_name(ctx)
+        class_longname = self._qualified_name(ctx)
         class_name = ctx.IDENTIFIER().getText()
         line = ctx.children[0].symbol.line
         col = ctx.children[0].symbol.column
@@ -186,7 +102,7 @@ class OpenListener(JavaParserLabeledListener):
         )
 
     def enterEnumDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
-        enum_longname = self._get_enum_long_name(ctx)
+        enum_longname = self._qualified_name(ctx)
         enum_name = enum_longname.split(".")[-1]
         line = ctx.children[0].symbol.line
         col = ctx.children[0].symbol.column
@@ -205,7 +121,7 @@ class OpenListener(JavaParserLabeledListener):
     def enterInterfaceDeclaration(
         self, ctx: JavaParserLabeled.InterfaceDeclarationContext
     ):
-        interface_longname = self._get_interface_long_name(ctx)
+        interface_longname = self._qualified_name(ctx)
         interface_name = ctx.IDENTIFIER().getText()
         line = ctx.children[0].symbol.line
         col = ctx.children[0].symbol.column
@@ -226,7 +142,7 @@ def get_parent(parent_file_name, files):
     parent_file_index = file_names.index(parent_file_name)
     parent_file_path = file_paths[parent_file_index]
     parent_entity = EntityModel.get_or_none(
-        _kind=1,  # Java File
+        _kind=kind_id("Java File"),
         _name=parent_file_name,
         _longname=parent_file_path,
     )
@@ -285,9 +201,8 @@ def get_kind_name(prefixes, kind):
 
 
 def add_java_file_entity(file_path, file_name):
-    kind_id = 1  # Java File
     obj, _ = EntityModel.get_or_create(
-        _kind=kind_id,
+        _kind=kind_id("Java File"),
         _name=file_name,
         _longname=file_path,
         _contents=FileStream(file_path, encoding="utf-8"),
@@ -297,18 +212,18 @@ def add_java_file_entity(file_path, file_name):
 
 def add_references(importing_ent, imported_ent, ref_dict):
     ref, _ = ReferenceModel.get_or_create(
-        _kind=234,  # Java Open
+        _kind=kind_id("Java Open"),
         _file=importing_ent.get_id(),
         _line=ref_dict["line"],
-        _column=ref_dict["column"],
+        _column=col_1based(ref_dict["column"]),
         _ent=imported_ent.get_id(),
         _scope=importing_ent.get_id(),
     )
     inverse_ref, _ = ReferenceModel.get_or_create(
-        _kind=235,  # Java OpenBy
+        _kind=kind_id("Java Openby"),
         _file=importing_ent.get_id(),
         _line=ref_dict["line"],
-        _column=ref_dict["column"],
+        _column=col_1based(ref_dict["column"]),
         _ent=importing_ent.get_id(),
         _scope=imported_ent.get_id(),
     )

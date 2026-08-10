@@ -5,9 +5,10 @@ import logging
 import os
 from fnmatch import fnmatch
 from antlr4 import *
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaLexer import JavaLexer
-from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
+from openunderstand.oudb.models import (KindModel, EntityModel, ReferenceModel,
+                                        col_1based, resolve_entity_ref, kind_family)
 from openunderstand.analysis_passes.modify_modifyby import ModifyListener
 from openunderstand.analysis_passes.g6_class_properties import (
     ClassPropertiesListener,
@@ -15,8 +16,50 @@ from openunderstand.analysis_passes.g6_class_properties import (
 )
 
 from openunderstand.utils.utilities import ClassTypeData
+from openunderstand.utils import antler_parser, utilities
+from openunderstand.oudb.models import kind_id
+from openunderstand.utils import kind_names
+from openunderstand.ounderstand import symbol_table
 
-# from utils.antler_parser import _cpp_parse
+_ENGINE = None
+
+
+def _use_cpp_engine():
+    """Whether config.ini asked for the C++ parser, cached after the first read.
+
+    Read once rather than per file: Project is constructed for every source
+    file, and setup_config() re-parses config.ini on each call.
+
+    Historically `engine_core` was written by the CLI but never read anywhere,
+    so choosing "C++" did nothing. It now selects the accelerator -- and still
+    falls back to the Python parser, with one warning, if it was never built.
+    """
+    global _ENGINE
+    if _ENGINE is None:
+        try:
+            # Resolved through the module, not `from ... import`, so a caller
+            # that swaps utilities.setup_config still wins regardless of import
+            # order.
+            requested = utilities.setup_config()["Config"]["engine_core"]
+        except Exception:
+            requested = "Python"
+        # The CLI default is "Python", config.ini has said "Python3", and the
+        # README says "C++ or Python". Accept anything that starts with a "c".
+        _ENGINE = requested.strip().lower().startswith("c")
+    return _ENGINE
+
+
+def resolved_longname(simple_name, fallback, scope_longname=""):
+    """Long name for a simple name, preferring the project-wide index.
+
+    The type, set and use passes build a long name by gluing the current
+    package in front of whatever identifier they saw -- so a type declared in
+    another package became `org.json.String`, matched nothing, and left a
+    placeholder behind. The index knows where a name is actually declared and
+    refuses ambiguous ones, so the fallback is still used when it cannot say.
+    """
+    resolved = symbol_table.resolve(simple_name, scope_longname)
+    return resolved or fallback
 
 
 class Project:
@@ -33,13 +76,9 @@ class Project:
 
     def Parse(self, fileAddress):
         file_stream = FileStream(fileAddress, encoding="utf8")
-        lexer = JavaLexer(file_stream)
-        tokens = CommonTokenStream(lexer)
-        parser = JavaParserLabeled(tokens)
-        return_tree = parser.compilationUnit()
-        # return_tree = _cpp_parse(
-        #     stream=file_stream, java_parser_labeld=JavaParserLabeled
-        # )
+        return_tree = antler_parser.parse(
+            file_stream, "compilationUnit", prefer_cpp=_use_cpp_engine()
+        )
         self.tree = return_tree
         return return_tree
 
@@ -64,7 +103,7 @@ class Project:
         # kind id: 1
         file = open(path, mode="r")
         file_ent = EntityModel.get_or_create(
-            _kind=1, _name=name, _longname=path, _contents=file.read()
+            _kind=kind_id("Java File"), _name=name, _longname=path, _contents=file.read()
         )[0]
         file.close()
         print("processing file:", file_ent)
@@ -88,20 +127,20 @@ class Project:
 
             # Declare: kind id 192
             declare_ref = ReferenceModel.get_or_create(
-                _kind=192,
+                _kind=kind_id("Java Declare"),
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _ent=ent,
                 _scope=scope,
             )
 
             # Declarein: kind id 193
             declarein_ref = ReferenceModel.get_or_create(
-                _kind=193,
+                _kind=kind_id("Java Declarein"),
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _scope=ent,
                 _ent=scope,
             )
@@ -109,17 +148,20 @@ class Project:
     def addTypeRefs(self, d_type, file_ent, stream: str = ""):
         for type_tuple in d_type["typedBy"]:
             ent, h_c1 = EntityModel.get_or_create(
-                _kind=224,
+                # was the reference kind Java Typed, written into an entity row; the referenced type
+                _kind=kind_id("Java Unknown Class Type Member"),
                 _parent=None,
                 _name=type_tuple[1],
-                _longname=type_tuple[6] + "." + type_tuple[1],
+                _longname=resolved_longname(
+                    type_tuple[1], type_tuple[6] + "." + type_tuple[1], type_tuple[6]),
                 _value=None,
                 _type=None,
                 _contents=stream,
             )
 
             scope, h_c2 = EntityModel.get_or_create(
-                _kind=225,
+                # was the reference kind Java Typedby, written into an entity row; the declared variable
+                _kind=kind_id("Java Unknown Variable Member"),
                 _parent=None,
                 _name=type_tuple[0],
                 _longname=type_tuple[6] + "." + type_tuple[0],
@@ -128,21 +170,22 @@ class Project:
                 _contents=stream,
             )
 
-            # 224		Java Typed
+            # _file is the file the reference occurs in -- it used to be set to
+            # the referenced entity, and the inverse to the declaration's own
+            # position, so neither direction landed where Understand puts it.
             typed_ref = ReferenceModel.get_or_create(
-                _kind=224,
-                _file=scope,
+                _kind=kind_id("Java Typed"),
+                _file=file_ent,
                 _line=type_tuple[4],
-                _column=type_tuple[5],
+                _column=col_1based(type_tuple[5]),
                 _ent=ent,
                 _scope=scope,
             )
-            # 225    	Java Typedby
             typedby_ref = ReferenceModel.get_or_create(
-                _kind=225,
-                _file=ent,
-                _line=type_tuple[2],
-                _column=type_tuple[3],
+                _kind=kind_id("Java Typedby"),
+                _file=file_ent,
+                _line=type_tuple[4],
+                _column=col_1based(type_tuple[5]),
                 _ent=scope,
                 _scope=ent,
             )
@@ -153,7 +196,8 @@ class Project:
             par = EntityModel.get(_name=type_tuple[7])
             ss = str(type_tuple[1]).rfind(".")
             ent, h_c1 = EntityModel.get_or_create(
-                _kind=222,
+                # was the reference kind Java Set, written into an entity row; the variable being set
+                _kind=kind_id("Java Unknown Variable Member"),
                 _parent=par._id,
                 _name=type_tuple[0],
                 _longname=type_tuple[1],
@@ -163,7 +207,8 @@ class Project:
             )
 
             scope, h_c2 = EntityModel.get_or_create(
-                _kind=223,
+                # was the reference kind Java Setby, written into an entity row; the setting scope
+                _kind=kind_id("Java Unknown Method Member"),
                 _parent=None,
                 _name=type_tuple[10],  # PROBLEM
                 _longname=str(type_tuple[1])[:ss],
@@ -173,19 +218,19 @@ class Project:
             )
             # 222: Java Set
             set_ref = ReferenceModel.get_or_create(
-                _kind=222,
-                _file=scope,
+                _kind=kind_id("Java Set"),
+                _file=file_ent,
                 _line=type_tuple[4],
-                _column=type_tuple[5],
+                _column=col_1based(type_tuple[5]),
                 _ent=ent,
                 _scope=scope,
             )
             # 223: Java Setby
             setby_ref = ReferenceModel.get_or_create(
-                _kind=223,
-                _file=ent,
+                _kind=kind_id("Java Setby"),
+                _file=file_ent,
                 _line=type_tuple[4],
-                _column=type_tuple[5],
+                _column=col_1based(type_tuple[5]),
                 _ent=scope,
                 _scope=ent,
             )
@@ -195,7 +240,8 @@ class Project:
             ss = str(type_tuple[1]).rfind(".")
             par = EntityModel.get(_name=type_tuple[7])
             ent, h_c1 = EntityModel.get_or_create(
-                _kind=218,
+                # was the reference kind Java Set Init, written into an entity row; the variable being init-set
+                _kind=kind_id("Java Unknown Variable Member"),
                 _parent=par._id,
                 _name=type_tuple[0],
                 _longname=type_tuple[1],
@@ -205,7 +251,8 @@ class Project:
             )
 
             scope, h_c2 = EntityModel.get_or_create(
-                _kind=219,
+                # was the reference kind Java Setby Init, written into an entity row; the setting scope
+                _kind=kind_id("Java Unknown Method Member"),
                 _parent=None,
                 _name=type_tuple[10],  # PROBLEM
                 _longname=str(type_tuple[1])[:ss],
@@ -215,19 +262,19 @@ class Project:
             )
             # 222: Java SetInit
             set_init_ref = ReferenceModel.get_or_create(
-                _kind=218,
-                _file=scope,
+                _kind=kind_id("Java Set Init"),
+                _file=file_ent,
                 _line=type_tuple[5],
-                _column=type_tuple[6],
+                _column=col_1based(type_tuple[6]),
                 _ent=ent,
                 _scope=scope,
             )
             # 223: Java SetInitby
             setby_init_ref = ReferenceModel.get_or_create(
-                _kind=219,
-                _file=ent,
+                _kind=kind_id("Java Setby Init"),
+                _file=file_ent,
                 _line=type_tuple[5],
-                _column=type_tuple[6],
+                _column=col_1based(type_tuple[6]),
                 _ent=scope,
                 _scope=ent,
             )
@@ -238,7 +285,8 @@ class Project:
             ss = str(type_tuple[1]).rfind(".")
             par = EntityModel.get(_name=type_tuple[7])
             ent, h_c1 = EntityModel.get_or_create(
-                _kind=220,
+                # was the reference kind Java Set Partial, written into an entity row; the variable being partially set
+                _kind=kind_id("Java Unknown Variable Member"),
                 _parent=par._id,
                 _name=type_tuple[0],
                 _longname=type_tuple[1],
@@ -248,7 +296,8 @@ class Project:
             )
 
             scope, h_c2 = EntityModel.get_or_create(
-                _kind=221,
+                # was the reference kind Java Setby Partial, written into an entity row; the setting scope
+                _kind=kind_id("Java Unknown Method Member"),
                 _parent=None,
                 _name=type_tuple[7],  # PROBLEM
                 _longname=str(type_tuple[1])[:ss],
@@ -258,19 +307,19 @@ class Project:
             )
             # 222: Java Set Partial
             set_partial_ref = ReferenceModel.get_or_create(
-                _kind=220,
-                _file=scope,
+                _kind=kind_id("Java Set Deref Partial"),
+                _file=file_ent,
                 _line=type_tuple[4],
-                _column=type_tuple[5],
+                _column=col_1based(type_tuple[5]),
                 _ent=ent,
                 _scope=scope,
             )
             # 223: Java Setby Partial
             setby_partial_ref = ReferenceModel.get_or_create(
-                _kind=221,
-                _file=ent,
+                _kind=kind_id("Java Setby Deref Partial"),
+                _file=file_ent,
                 _line=type_tuple[4],
-                _column=type_tuple[5],
+                _column=col_1based(type_tuple[5]),
                 _ent=scope,
                 _scope=ent,
             )
@@ -278,101 +327,248 @@ class Project:
     def addUseRefs(self, d_use, file_ent, stream: str = ""):
         for use_tuple in d_use:
             ent, h_c1 = EntityModel.get_or_create(
-                _kind=226,
+                # was the reference kind Java Use, written into an entity row; the used entity
+                _kind=kind_id("Java Unknown Variable Member"),
                 _parent=None,
                 _name=use_tuple[1],
-                _longname=use_tuple[6] + "." + use_tuple[1],
+                _longname=resolved_longname(
+                    use_tuple[1], use_tuple[6] + "." + use_tuple[1], use_tuple[6]),
                 _value=None,
                 _type=None,
                 _contents=stream,
             )
 
             scope, h_c2 = EntityModel.get_or_create(
-                _kind=227,
+                # was the reference kind Java Useby, written into an entity row; the using scope
+                _kind=kind_id("Java Unknown Method Member"),
                 _parent=None,
                 _name=use_tuple[0],
-                _longname=use_tuple[6] + "." + use_tuple[0],
+                _longname=resolved_longname(
+                    use_tuple[0], use_tuple[6] + "." + use_tuple[0], use_tuple[6]),
                 _value=None,
                 _type=None,
                 _contents=stream,
             )
 
-            # 226		Java Use
             use_ref = ReferenceModel.get_or_create(
-                _kind=226,
+                _kind=kind_id("Java Use"),
                 _file=file_ent,
                 _line=use_tuple[4],
-                _column=use_tuple[5],
+                _column=col_1based(use_tuple[5]),
                 _ent=ent,
                 _scope=scope,
             )
-            # 227	 	Java Useby
+            # The inverse is the same reference read backwards, so it sits at
+            # the same place in the same file. Pointing it at the declaration
+            # instead made the two directions dedupe differently -- 903 Use
+            # rows against 2771 Useby -- and put every inverse at a position
+            # Understand never reports one at.
             useby_ref = ReferenceModel.get_or_create(
-                _kind=227,
+                _kind=kind_id("Java Useby"),
                 _file=file_ent,
-                _line=use_tuple[2],
-                _column=use_tuple[3],
+                _line=use_tuple[4],
+                _column=col_1based(use_tuple[5]),
                 _ent=scope,
                 _scope=ent,
             )
 
     def addDefineRefs(self, ref_dicts, file_ent):
+        """Create every declared entity, with the kind Understand would give it.
 
+        This is the pass that decides what most entities *are*. It used to route
+        both sides of every Define reference through getPackageEntity(), which
+        hard-codes Java Package -- so 964 of 2626 entities on the JSON benchmark
+        claimed to be packages, including every parameter and local variable,
+        while the parameter, constructor and annotation kinds had no rows at all.
+        """
         for ref_dict in ref_dicts:
-            if ref_dict["scope"] is None:  # the scope is the file
+            if ref_dict["scope"] is None:  # a top-level declaration: scope is the file
                 scope = file_ent
-            else:  # a normal package
-                scope = self.getPackageEntity(
+            else:
+                scope = self.getScopeEntity(
                     file_ent, ref_dict["scope"], ref_dict["scope_longname"]
                 )
 
-            ent = self.getPackageEntity(
-                file_ent, ref_dict["ent"], ref_dict["ent_longname"]
-            )
-            # print("ref_dict[parent] : ", ref_dict["parent"])
-            # print("ref_dict[parent] : ", type(ref_dict["parent"]))
-            par = EntityModel.get(_longname=ref_dict["parent"])
-            ent, h_c1 = EntityModel.get_or_create(
-                _kind=194,
-                _parent=par._id,
+            ent, _ = EntityModel.get_or_create(
+                _kind=kind_names.resolve(
+                    ref_dict.get("decl"),
+                    ref_dict.get("modifiers") or (),
+                    ref_dict["ent"],
+                ),  # re-resolved below when an earlier pass already made the row
+                # The enclosing scope, not the package: Understand's parent of a
+                # method is its class, and of a local its method.
+                _parent=scope,
                 _name=ref_dict["ent"],
                 _longname=ref_dict["ent_longname"],
                 _value=None,
                 _type=ref_dict["type"],
                 _contents=ref_dict["contents"],
+                # The declaration site. Two same-named declarations at
+                # different positions are two entities, which is how overloads
+                # stay distinct.
+                _line=ref_dict["line"],
+                _column=col_1based(ref_dict["col"]),
             )
 
-            # scope, h_c2 = EntityModel.get_or_create(
-            #     _kind=195,
-            #     _parent=None,
-            #     _name=type_tuple[10],  # PROBLEM
-            #     _longname=str(type_tuple[1])[:ss],
-            #     _value=None,
-            #     _type=type_tuple[3],
-            #     _contents=type_tuple[8],
-            # )
-            if file_ent._name == "JSONML.java":
-                print("file_ent : ", file_ent._name)
-                print("scope : ", scope._name)
-            # Define: kind id 194
+            # The define pass is the only one that reads the declaration
+            # itself -- its modifiers, its real source. Other passes run
+            # before it and guess, and get_or_create keeps whichever row came
+            # first, so `public class fibonacci extends basic_operation` was
+            # left labelled Default by an earlier pass's guess. Declarations
+            # are this pass's authority: it overwrites both.
+            declared_kind = kind_names.resolve(
+                ref_dict.get("decl"), ref_dict.get("modifiers") or (), ref_dict["ent"]
+            )
+            dirty = False
+            if ref_dict["contents"] and ent._contents != ref_dict["contents"]:
+                ent._contents = ref_dict["contents"]
+                dirty = True
+            if declared_kind is not None and ent._kind_id != declared_kind:
+                ent._kind = declared_kind
+                dirty = True
+            if dirty:
+                ent.save()
+
             define_ref = ReferenceModel.get_or_create(
-                _kind=194,
+                _kind=kind_id("Java Define"),
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _ent=ent,
                 _scope=scope,
             )
 
             # Definein: kind id 195
             definein_ref = ReferenceModel.get_or_create(
-                _kind=195,
+                _kind=kind_id("Java Definein"),
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _scope=ent,
                 _ent=scope,
             )
+
+            # Understand marks the extent of every braced declaration with a
+            # Begin at its first token and an End at its closing brace, both
+            # referring to the entity itself.
+            span = ref_dict.get("span")
+            if span:
+                for kind, (line, column) in zip(("Begin", "End"), span):
+                    for name in (f"Java {kind}", f"Java {kind}by"):
+                        ReferenceModel.get_or_create(
+                            _kind=kind_id(name),
+                            _file=file_ent,
+                            _line=line,
+                            _column=col_1based(column),
+                            _ent=ent,
+                            _scope=ent,
+                        )
+
+    def addMethodCallRefs(self, ref_dicts, file_ent):
+        """Write Call/Callby for every call site, resolving what it can locally.
+
+        A name that resolves to nothing here becomes an Unknown placeholder;
+        merge_placeholder_entities() folds it into the real method once every
+        file has been parsed, which is what makes cross-file calls resolve at
+        all.
+        """
+        for ref_dict in ref_dicts:
+            scope = EntityModel.get_or_none(
+                EntityModel._longname == ref_dict["scope_longname"]
+            )
+            if scope is None:
+                continue
+
+            name = ref_dict["name"]
+            ent = EntityModel.get_or_none(
+                EntityModel._longname == f"{ref_dict['scope_longname']}.{name}"
+            )
+            if ent is None:
+                # The declaration may be in another file, which this pass
+                # cannot see. The project-wide index built before the passes
+                # ran can answer that; it refuses ambiguous names rather than
+                # guessing.
+                resolved = symbol_table.resolve(name, ref_dict["scope_longname"])
+                if resolved:
+                    ent = EntityModel.get_or_none(EntityModel._longname == resolved)
+            if ent is None:
+                ent, _ = EntityModel.get_or_create(
+                    _kind=kind_id("Java Unknown Method Member"),
+                    _name=name,
+                    _parent=file_ent,
+                    _longname=name,
+                    _contents="",
+                )
+            if ent._id == scope._id:
+                continue
+
+            for kind, (a, b) in (("Java Call", (ent, scope)),
+                                 ("Java Callby", (scope, ent))):
+                ReferenceModel.get_or_create(
+                    _kind=kind_id(kind),
+                    _file=file_ent,
+                    _line=ref_dict["line"],
+                    _column=col_1based(ref_dict["col"]),
+                    _ent=a,
+                    _scope=b,
+                )
+
+    def addUseVariantRefs(self, ref_dicts, file_ent):
+        """Write the qualified Use/Typed variants collected by use_variants.py.
+
+        Each is resolved against the entity the define pass already created for
+        the enclosing scope; a name that resolves to nothing becomes an Unknown
+        placeholder, which merge_placeholder_entities() folds in afterwards.
+        """
+        for ref_dict in ref_dicts:
+            scope_longname = ref_dict["scope_longname"]
+            scope = EntityModel.get_or_none(EntityModel._longname == scope_longname)
+            if scope is None:
+                continue
+
+            name = ref_dict["name"]
+            ent = EntityModel.get_or_none(
+                EntityModel._longname == f"{scope_longname}.{name}"
+            )
+            if ent is None:
+                resolved = symbol_table.resolve(name, scope_longname)
+                if resolved:
+                    ent = EntityModel.get_or_none(EntityModel._longname == resolved)
+            if ent is None:
+                ent = EntityModel.get_or_none(EntityModel._name == name)
+
+            # A dereference is only "partial" when the receiver is a variable.
+            # `JSONObject.NULL` reads the same way syntactically but names a
+            # type, and Understand labels that differently -- without this the
+            # pass emitted 1379 rows where Understand emits 788.
+            if ref_dict["kind"] == "Java Use Deref Partial":
+                if ent is None or kind_family(ent._kind_id) != "variable":
+                    continue
+
+            if ent is None:
+                ent, _ = EntityModel.get_or_create(
+                    _kind=kind_id("Java Unknown Class Type Member"),
+                    _name=name,
+                    _parent=file_ent,
+                    _longname=name,
+                    _contents="",
+                )
+
+            forward = ref_dict["kind"]
+            inverse = KindModel.get_or_none(_name=forward)
+            if inverse is None or inverse._inv_id is None:
+                continue
+            for kind, (a, b) in ((forward, (ent, scope)),
+                                 (KindModel.get_by_id(inverse._inv_id)._name,
+                                  (scope, ent))):
+                ReferenceModel.get_or_create(
+                    _kind=kind_id(kind),
+                    _file=file_ent,
+                    _line=ref_dict["line"],
+                    _column=col_1based(ref_dict["col"]),
+                    _ent=a,
+                    _scope=b,
+                )
 
     def addImplementOrImplementByRefs(self, ref_dicts, file_ent, file_address):
         pass
@@ -384,11 +580,7 @@ class Project:
                     ref_dict["scope_kind"], ref_dict["scope_modifiers"]
                 ),
                 _name=ref_dict["scope_name"],
-                _parent=(
-                    ref_dict["scope_parent"]
-                    if ref_dict["scope_parent"] is not None
-                    else file_ent
-                ),
+                _parent=resolve_entity_ref(ref_dict["scope_parent"], file_ent),
                 _longname=ref_dict["scope_longname"],
                 _contents=ref_dict["scope_contents"],
             )[0]
@@ -396,18 +588,18 @@ class Project:
                 ref_dict["type_ent_longname"], file_address, file_ent
             )
             implement_ref = ReferenceModel.get_or_create(
-                _kind=188,
+                _kind=kind_id("Java Implement Couple"),
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _ent=ent,
                 _scope=scope,
             )
             implementBy_ref = ReferenceModel.get_or_create(
-                _kind=189,
+                _kind=kind_id("Java Implementby Coupleby"),
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _ent=scope,
                 _scope=ent,
             )
@@ -419,15 +611,15 @@ class Project:
             _kind=KindModel.get_or_none(_name="Java Extend Couple Implicit")._id,
             _file_id=importing_ent._id,
             _line=cls_data.line,
-            _column=cls_data.column,
+            _column=col_1based(cls_data.column),
             _ent_id=imported_ent._id,
             _scope_id=importing_ent._id,
         )
         inverse_ref, _ = ReferenceModel.get_or_create(
-            _kind=KindModel.get_or_none(_name="Java Extend Coupleby Implicit")._id,
+            _kind=KindModel.get_or_none(_name="Java Extendby Coupleby Implicit")._id,
             _file_id=importing_ent._id,
             _line=cls_data.line,
-            _column=cls_data.column,
+            _column=col_1based(cls_data.column),
             _ent_id=importing_ent._id,
             _scope_id=imported_ent._id,
         )
@@ -439,11 +631,7 @@ class Project:
                     ref_dict["scope_kind"], ref_dict["scope_modifiers"]
                 ),
                 _name=ref_dict["scope_name"],
-                _parent=(
-                    ref_dict["scope_parent"]
-                    if ref_dict["scope_parent"] is not None
-                    else file_ent
-                ),
+                _parent=resolve_entity_ref(ref_dict["scope_parent"], file_ent),
                 _longname=ref_dict["scope_longname"],
                 _contents=ref_dict["scope_contents"],
             )[0]
@@ -451,34 +639,37 @@ class Project:
                 ref_dict["type_ent_longname"], file_address, file_ent
             )
             extend_ref = ReferenceModel.get_or_create(
-                _kind=178,
+                _kind=kind_id("Java Extend Couple"),
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _ent=ent,
                 _scope=scope,
             )
             extendBy_ref = ReferenceModel.get_or_create(
-                _kind=179,
+                _kind=kind_id("Java Extendby Coupleby"),
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _ent=scope,
                 _scope=ent,
             )
 
     def addCallOrCallByRefs(self, ref_dicts, file_ent, file_address):
         for ref_dict in ref_dicts:
+            # NOTE: this listener reports the enclosing *package* as the
+            # scope's long name while naming the method, which leaves a
+            # class-kinded row shadowing each package -- the last 3 kind
+            # disagreements against Understand. Repairing the name here was
+            # measured to cost 1.6 points of reference recall, because every
+            # other pass still uses the unrepaired form; the fix belongs in
+            # call_callby.py, using findParents() as the define pass does.
             scope = EntityModel.get_or_create(
                 _kind=self.findKindWithKeywords(
                     ref_dict["scope_kind"], ref_dict["scope_modifiers"]
                 ),
                 _name=ref_dict["scope_name"],
-                _parent=(
-                    ref_dict["scope_parent"]
-                    if ref_dict["scope_parent"] is not None
-                    else file_ent
-                ),
+                _parent=resolve_entity_ref(ref_dict["scope_parent"], file_ent),
                 _longname=ref_dict["scope_longname"],
                 _contents=ref_dict["scope_contents"],
             )[0]
@@ -486,18 +677,18 @@ class Project:
                 ref_dict["type_ent_longname"], file_address, file_ent
             )
             call_ref = ReferenceModel.get_or_create(
-                _kind=172,
+                _kind=kind_id("Java Call"),
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _ent=ent,
                 _scope=scope,
             )
             callBy_ref = ReferenceModel.get_or_create(
-                _kind=173,
+                _kind=kind_id("Java Callby"),
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _ent=scope,
                 _scope=ent,
             )
@@ -508,21 +699,27 @@ class Project:
             longname = ref_dict["ent"]
             ent = ModifyListener.get_different_combinations(longname)
             scope = ref_dict["scope"]
+            if ent is None:
+                # This used to store the literal string "NOT FOUND" in _ent /
+                # _scope, which SQLite accepts in an INTEGER column. A
+                # reference whose endpoint cannot be resolved carries no
+                # information, so drop it rather than write a corrupt row.
+                continue
             _, _ = ReferenceModel.get_or_create(
-                _kind=208,
+                _kind=kind_id("Java Modify"),
                 _file=ref_dict["file"],
                 _line=ref_dict["line"],
-                _column=ref_dict["column"],
-                _ent=ent if ent is not None else "NOT FOUND",
+                _column=col_1based(ref_dict["column"]),
+                _ent=ent,
                 _scope=scope,
             )
             _, _ = ReferenceModel.get_or_create(
-                _kind=209,
+                _kind=kind_id("Java Modifyby"),
                 _file=ref_dict["file"],
                 _line=ref_dict["line"],
-                _column=ref_dict["column"],
+                _column=col_1based(ref_dict["column"]),
                 _ent=scope,
-                _scope=ent if ent is not None else "NOT FOUND",
+                _scope=ent,
             )
 
     def addCallNonDynamicOrCallNonDynamicByRefs(
@@ -534,11 +731,7 @@ class Project:
                     ref_dict["scope_kind"], ref_dict["scope_modifiers"]
                 ),
                 _name=ref_dict["scope_name"],
-                _parent=(
-                    ref_dict["scope_parent"]
-                    if ref_dict["scope_parent"] is not None
-                    else file_ent
-                ),
+                _parent=resolve_entity_ref(ref_dict["scope_parent"], file_ent),
                 _longname=ref_dict["scope_longname"],
                 _contents=ref_dict["scope_contents"],
             )[0]
@@ -546,18 +739,18 @@ class Project:
                 ref_dict["type_ent_longname"], file_address, file_ent
             )
             call_ref = ReferenceModel.get_or_create(
-                _kind=170,
+                _kind=kind_id("Java Call Nondynamic"),
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _ent=ent,
                 _scope=scope,
             )
             callBy_ref = ReferenceModel.get_or_create(
-                _kind=171,
+                _kind=kind_id("Java Callby Nondynamic"),
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _ent=scope,
                 _scope=ent,
             )
@@ -569,29 +762,25 @@ class Project:
                     ref_dicts["p_kind"], ref_dicts["p_modifier"]
                 ),
                 _name=ref_dicts["p_name"],
-                _parent=(
-                    ref_dicts["p_parent"]
-                    if ref_dicts["p_parent"] is not None
-                    else file_ent
-                ),
+                _parent=resolve_entity_ref(ref_dicts["p_parent"], file_ent),
                 _longname=ref_dicts["p_longname"],
                 _contents=ref_dicts["p_content"],
             )[0]
             ent = self.getImplementEntity(ref_dicts["longname"], file_address, file_ent)
 
             cast = ReferenceModel.get_or_create(
-                _kind=174,
+                _kind=kind_id("Java Use Cast"),
                 _file=file_ent,
                 _line=ref_dicts["line"],
-                _column=ref_dicts["col"],
+                _column=col_1based(ref_dicts["col"]),
                 _scope=scope,
                 _ent=ent,
             )
             castby = ReferenceModel.get_or_create(
-                _kind=175,
+                _kind=kind_id("Java Useby Castby"),
                 _file=file_ent,
                 _line=ref_dicts["line"],
-                _column=ref_dicts["col"],
+                _column=col_1based(ref_dicts["col"]),
                 _scope=ent,
                 _ent=scope,
             )
@@ -603,9 +792,7 @@ class Project:
                     ref_dict["kind"], ref_dict["modifiers"]
                 ),
                 _name=ref_dict["name"],
-                _parent=(
-                    ref_dict["parent"] if ref_dict["parent"] is not None else file_ent
-                ),
+                _parent=resolve_entity_ref(ref_dict["parent"], file_ent),
                 _longname=ref_dict["longname"],
                 _contents=ref_dict["content"],
             )[0]
@@ -613,19 +800,19 @@ class Project:
                 ref_dict["package_type"], file_address, file_ent
             )
             contain = ReferenceModel.get_or_create(
-                _kind=176,
+                _kind=kind_id("Java Contain"),
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _scope=ent,
                 _ent=scope,
             )
 
             containin = ReferenceModel.get_or_create(
-                _kind=177,
+                _kind=kind_id("Java Containin"),
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _scope=scope,
                 _ent=ent,
             )
@@ -676,7 +863,7 @@ class Project:
 
     def get_parent_import(self, parent_file_name, file):
         parent_entity, _ = EntityModel.get_or_create(
-            _kind=1,  # Java File
+            _kind=kind_id("Java File"),
             _name=parent_file_name,
             _longname=file,
         )
@@ -769,36 +956,36 @@ class Project:
 
     def add_references_opend(self, importing_ent, imported_ent, ref_dict):
         ref, _ = ReferenceModel.get_or_create(
-            _kind=234,  # Java Open
+            _kind=kind_id("Java Open"),
             _file=importing_ent.get_id(),
             _line=ref_dict["line"],
-            _column=ref_dict["column"],
+            _column=col_1based(ref_dict["column"]),
             _ent=imported_ent.get_id(),
             _scope=importing_ent.get_id(),
         )
         inverse_ref, _ = ReferenceModel.get_or_create(
-            _kind=235,  # Java OpenBy
+            _kind=kind_id("Java Openby"),
             _file=importing_ent.get_id(),
             _line=ref_dict["line"],
-            _column=ref_dict["column"],
+            _column=col_1based(ref_dict["column"]),
             _ent=importing_ent.get_id(),
             _scope=imported_ent.get_id(),
         )
 
     def add_references_import(self, importing_ent, imported_ent, ref_dict):
         ref, _ = ReferenceModel.get_or_create(
-            _kind=206,  # Java Import
+            _kind=kind_id("Java Import"),
             _file=importing_ent.get_id(),
             _line=ref_dict["line"],
-            _column=ref_dict["column"],
+            _column=col_1based(ref_dict["column"]),
             _ent=imported_ent.get_id(),
             _scope=importing_ent.get_id(),
         )
         inverse_ref, _ = ReferenceModel.get_or_create(
-            _kind=207,  # Java Importby
+            _kind=kind_id("Java Importby"),
             _file=importing_ent.get_id(),
             _line=ref_dict["line"],
-            _column=ref_dict["column"],
+            _column=col_1based(ref_dict["column"]),
             _ent=importing_ent.get_id(),
             _scope=imported_ent.get_id(),
         )
@@ -806,7 +993,7 @@ class Project:
     def add_imported_entity(self, i, files, import_entity_listener):
         if i["is_built_in"]:
             imported_entity, _ = EntityModel.get_or_create(
-                _kind=84,  # Java Unknown Class Type Member
+                _kind=kind_id("Java Unknown Class Type Member"),
                 _parent=None,
                 _name=i["imported_class_name"],
                 _longname=i["imported_class_longname"],
@@ -816,7 +1003,11 @@ class Project:
                 i["imported_class_file_name"], files
             )
             imported_entity, _ = EntityModel.get_or_create(
-                _kind=KindModel.get_or_none(_name="Java Import").get_id(),
+                # "Java Import" is a REFERENCE kind; it was being stored as this
+                # entity's kind. The entity is a type pulled in from elsewhere,
+                # so the unknown-class placeholder is the honest label -- and
+                # it now upgrades itself if a pass later identifies the type.
+                _kind=kind_id("Java Unknown Class Type Member"),
                 _parent=parent_entity.get_id(),
                 _name=i["imported_class_name"],
                 _longname=i["imported_class_longname"],
@@ -827,7 +1018,7 @@ class Project:
     def add_import_demand(self, ents, file_path):
         for i in ents:
             ent, _ = EntityModel.get_or_create(
-                _kind=1,
+                _kind=kind_id("Java File"),
                 _parent="None",
                 _name=i["name"],
                 _longname=i["longname"],
@@ -835,10 +1026,10 @@ class Project:
             )
 
             ReferenceModel.get_or_create(
-                _kind=204,
+                _kind=kind_id("Java Import Demand"),
                 _file=file_path,
                 _line=i["line"],
-                _column=i["col"],
+                _column=col_1based(i["col"]),
                 _ent=ent.get_id(),
                 _scope=file_path,
             )
@@ -848,15 +1039,15 @@ class Project:
             _kind=KindModel.get_or_none(_name="Java Extend Couple Implicit")._id,
             _file_id=importing_ent._id,
             _line=cls_data.line,
-            _column=cls_data.column,
+            _column=col_1based(cls_data.column),
             _ent_id=imported_ent._id,
             _scope_id=importing_ent._id,
         )
         inverse_ref, _ = ReferenceModel.get_or_create(
-            _kind=KindModel.get_or_none(_name="Java Extend Coupleby Implicit")._id,
+            _kind=KindModel.get_or_none(_name="Java Extendby Coupleby Implicit")._id,
             _file_id=importing_ent._id,
             _line=cls_data.line,
-            _column=cls_data.column,
+            _column=col_1based(cls_data.column),
             _ent_id=importing_ent._id,
             _scope_id=imported_ent._id,
         )
@@ -876,7 +1067,7 @@ class Project:
                 _longname=cls_data.get_long_name(),
                 _contents=cls_data.get_contents(),
             )
-        entity_kind_object = 84
+        entity_kind_object = kind_id("Java Unknown Class Type Member")
         java_lang_entity, _ = EntityModel.get_or_create(
             _kind=entity_kind_object,
             _parent=None,
@@ -897,13 +1088,13 @@ class Project:
                     ),
                     _name=ref_dict["scopename"],
                     _type=ref_dict["scopereturntype"],
-                    _parent=(
-                        ref_dict["scope_parent"]
-                        if ref_dict["scope_parent"] is not None
-                        else file_ent
-                    ),
+                    _parent=resolve_entity_ref(ref_dict["scope_parent"], file_ent),
                     _longname=ref_dict["scopelongname"],
-                    _contents=["scopecontent"],
+                    # A missing subscript: this stored the literal list
+                    # ["scopecontent"], so every entity this pass created first
+                    # carried the string "['scopecontent']" as its source, and
+                    # every metric that reparses contents returned 0.
+                    _contents=ref_dict["scopecontent"],
                 )[0]
 
                 ent = self.getCreatedClassEntity(
@@ -914,19 +1105,19 @@ class Project:
                 )
 
                 Create = ReferenceModel.get_or_create(
-                    _kind=190,
+                    _kind=kind_id("Java Create"),
                     _file=file_ent,
                     _line=ref_dict["line"],
-                    _column=ref_dict["col"],
+                    _column=col_1based(ref_dict["col"]),
                     _scope=scope,
                     _ent=ent,
                 )
 
                 Createby = ReferenceModel.get_or_create(
-                    _kind=191,
+                    _kind=kind_id("Java Createby"),
                     _file=file_ent,
                     _line=ref_dict["line"],
-                    _column=ref_dict["col"],
+                    _column=col_1based(ref_dict["col"]),
                     _scope=ent,
                     _ent=scope,
                 )
@@ -935,16 +1126,39 @@ class Project:
                 print("error message : ", e)
 
     def getPackageEntity(self, file_ent, name, longname):
-        # package kind id: 72
-        ent = EntityModel.get_or_create(
-            _kind=72, _name=name, _parent=file_ent, _longname=longname, _contents=""
+        # A package is not declared *in* a file -- it spans every file that
+        # names it, so parenting it to whichever file got there first made the
+        # parent chain of every type in the package point at the wrong file.
+        ent, _ = EntityModel.get_or_create(
+            _kind=kind_id("Java Package"), _name=name, _parent=None,
+            _longname=longname, _contents="",
         )
-        return ent[0]
+        return ent
+
+    def getScopeEntity(self, file_ent, name, longname):
+        """The enclosing entity of a declaration.
+
+        Walk order is pre-order, so a class is defined before its methods and a
+        method before its locals -- the scope almost always already exists with
+        its real kind. When it does not, an Unknown kind is used, which
+        EntityModel.get_or_create treats as a placeholder and upgrades in place.
+        """
+        existing = EntityModel.get_or_none(EntityModel._longname == longname)
+        if existing is not None:
+            return existing
+        ent, _ = EntityModel.get_or_create(
+            _kind=kind_id("Java Unknown Class Type Member"),
+            _name=name,
+            _parent=file_ent,
+            _longname=longname,
+            _contents="",
+        )
+        return ent
 
     def getUnnamedPackageEntity(self, file_ent):
         # unnamed package kind id: 73
         ent = EntityModel.get_or_create(
-            _kind=73,
+            _kind=kind_id("Java Package Unnamed"),
             _name="(Unnamed_Package)",
             _parent=file_ent,
             _longname="(Unnamed_Package)",
@@ -979,7 +1193,7 @@ class Project:
         props = self.getClassProperties(class_longname, file_address)
         if not props:  # This class is unknown, unknown class id: 84
             ent = EntityModel.get_or_create(
-                _kind=84,
+                _kind=kind_id("Java Unknown Class Type Member"),
                 _name=class_longname.split(".")[-1],
                 _longname=class_longname,
                 _contents="",
@@ -992,7 +1206,7 @@ class Project:
                 _kind=kind,
                 _name=props["name"],
                 _longname=props["longname"],
-                _parent=props["parent"] if props["parent"] is not None else file_ent,
+                _parent=resolve_entity_ref(props["parent"], file_ent),
                 _contents=props["contents"],
             )
         return ent[0]
@@ -1009,7 +1223,7 @@ class Project:
                 _kind=kind,
                 _name=props["name"],
                 _longname=props["longname"],
-                _parent=props["parent"] if props["parent"] is not None else file_ent,
+                _parent=resolve_entity_ref(props["parent"], file_ent),
                 _contents=props["contents"],
             )
         return ent[0]
@@ -1058,11 +1272,7 @@ class Project:
                         scope = EntityModel.get_or_create(
                             _kind=kindx,
                             _name=x["scope_name"],
-                            _parent=(
-                                x["scope_parent"]
-                                if x["scope_parent"] is not None
-                                else file_ent
-                            ),
+                            _parent=resolve_entity_ref(x["scope_parent"], file_ent),
                             _longname=x["scope_longname"],
                             _contents=x["scope_contents"],
                             _type=x["Methodkind"],
@@ -1087,29 +1297,25 @@ class Project:
                                     ent = EntityModel.get_or_create(
                                         _kind=kind,
                                         _name=y["scope_name"],
-                                        _parent=(
-                                            y["scope_parent"]
-                                            if y["scope_parent"] is not None
-                                            else fe
-                                        ),
+                                        _parent=resolve_entity_ref(y["scope_parent"], fe),
                                         _longname=y["scope_longname"],
                                         _contents=y["scope_contents"],
                                         _type=y["Methodkind"],
                                     )
 
                                     override_ref = ReferenceModel.get_or_create(
-                                        _kind=211,
+                                        _kind=kind_id("Java Overrides"),
                                         _file=file_ent,
                                         _line=x["line"],
-                                        _column=x["col"],
+                                        _column=col_1based(x["col"]),
                                         _ent=ent[0],
                                         _scope=scope[0],
                                     )
                                     overrideBy_ref = ReferenceModel.get_or_create(
-                                        _kind=212,
+                                        _kind=kind_id("Java Overriddenby"),
                                         _file=fe,
                                         _line=y["line"],
-                                        _column=y["col"],
+                                        _column=col_1based(y["col"]),
                                         _ent=scope[0],
                                         _scope=ent[0],
                                     )
@@ -1124,17 +1330,17 @@ class Project:
                         if overrideword[0] not in classes:
 
                             ent = EntityModel.get_or_create(
-                                _kind=32,
+                                _kind=kind_id("Java Unknown Method Member"),
                                 _name=overrideword[1],
                                 _parent=file_ent,
                                 _longname=overrideword,
                                 _contents="",
                             )
                             override_ref = ReferenceModel.get_or_create(
-                                _kind=211,
+                                _kind=kind_id("Java Overrides"),
                                 _file=file_ent,
                                 _line=x["line"],
-                                _column=x["col"],
+                                _column=col_1based(x["col"]),
                                 _ent=ent[0],
                                 _scope=scope[0],
                             )
@@ -1157,7 +1363,7 @@ class Project:
             _kind_id=KindModel.get_or_none(_name="Java Define")._id,
             _file_id=file_entity._id,
             _line=package_name["line"],
-            _column=package_name["column"],
+            _column=col_1based(package_name["column"]),
             _ent_id=file_entity._id,
             _scope_id=created_entity._id,
         )
@@ -1165,7 +1371,7 @@ class Project:
             _kind_id=KindModel.get_or_none(_name="Java Definein")._id,
             _file_id=file_entity._id,
             _line=package_name["line"],
-            _column=package_name["column"],
+            _column=col_1based(package_name["column"]),
             _ent_id=created_entity._id,
             _scope_id=file_entity._id,
         )
@@ -1239,63 +1445,51 @@ class Project:
         file_address: str = "",
     ) -> None:
         file_entity = self.get_parent_entity(file_address)
-        for item in unknown_module:
-            created_entity, _ = EntityModel.get_or_create(
-                _kind_id=KindModel.get_or_none(_name="Java Module")._id,
-                _parent_id=file_entity._id,
-                _name=item["name"].split(".")[-1],
-                _longname=item["package"],
-                _contents="",
-            )
+        use_kind = KindModel.get_or_none(_name="Java ModuleUse")._id
+        useby_kind = KindModel.get_or_none(_name="Java ModuleUseby")._id
 
-            ReferenceModel.get_or_create(
-                _kind_id=KindModel.get_or_none(_name="Java Unknown Module")._id,
-                _file_id=file_entity._id,
-                _line=item["line"],
-                _column=item["col"],
-                _ent_id=item["ent"],
-                _scope_id=item["scope"],
-            )
-        for item in unresolved_module:
-            created_entity, _ = EntityModel.get_or_create(
-                _kind_id=KindModel.get_or_none(_name="Java Module")._id,
-                _parent_id=file_entity._id,
-                _name=item["name"].split(".")[-1],
-                _longname=item["package"],
-                _contents="",
-            )
-            ReferenceModel.get_or_create(
-                _kind_id=KindModel.get_or_none(_name="Java Unresolved Module")._id,
-                _file_id=file_entity._id,
-                _line=item["line"],
-                _column=item["col"],
-                _ent_id=item["ent"],
-                _scope_id=item["scope"],
-            )
-        for item in use_module:
-            created_entity, _ = EntityModel.get_or_create(
-                _kind_id=KindModel.get_or_none(_name="Java Module")._id,
-                _parent_id=file_entity._id,
-                _name=item["name"].split(".")[-1],
-                _longname=item["package"],
-                _contents="",
-            )
-            ReferenceModel.get_or_create(
-                _kind_id=KindModel.get_or_none(_name="Java ModuleUse")._id,
-                _file_id=file_entity._id,
-                _line=item["line"],
-                _column=item["col"],
-                _ent_id=item["ent"],
-                _scope_id=item["scope"],
-            )
-            ReferenceModel.get_or_create(
-                _kind_id=KindModel.get_or_none(_name="Java ModuleUseby")._id,
-                _file_id=file_entity._id,
-                _line=item["line"],
-                _column=item["col"],
-                _ent_id=item["scope"],
-                _scope_id=item["ent"],
-            )
+        # "Java Unknown Module" and "Java Unresolved Module" are ENTITY kinds.
+        # They used to be written into ReferenceModel._kind, labelling the
+        # reference with an entity kind. The resolution state describes the
+        # module, so it belongs on the entity; the reference is a module use
+        # either way.
+        for items, entity_kind_name in (
+            (unknown_module or [], "Java Unknown Module"),
+            (unresolved_module or [], "Java Unresolved Module"),
+            (use_module or [], "Java Module"),
+        ):
+            entity_kind = KindModel.get_or_none(_name=entity_kind_name)
+            if entity_kind is None:
+                continue
+            for item in items:
+                created_entity, _ = EntityModel.get_or_create(
+                    _kind_id=entity_kind._id,
+                    _parent_id=file_entity._id,
+                    _name=item["name"].split(".")[-1],
+                    _longname=item["package"],
+                    _contents="",
+                )
+                # item["ent"] / item["scope"] arrive as name strings; writing
+                # them straight into the integer foreign keys stored text in
+                # _ent_id and _scope_id. The referenced module is the entity we
+                # just created, and the using scope defaults to the file.
+                scope_entity = resolve_entity_ref(item.get("scope"), file_entity)
+                ReferenceModel.get_or_create(
+                    _kind_id=use_kind,
+                    _file_id=file_entity._id,
+                    _line=item["line"],
+                    _column=col_1based(item["col"]),
+                    _ent_id=created_entity._id,
+                    _scope_id=scope_entity._id,
+                )
+                ReferenceModel.get_or_create(
+                    _kind_id=useby_kind,
+                    _file_id=file_entity._id,
+                    _line=item["line"],
+                    _column=col_1based(item["col"]),
+                    _ent_id=scope_entity._id,
+                    _scope_id=created_entity._id,
+                )
 
     def check_and_create_record(self, name, kind):
         existing_record = EntityModel.select().where(EntityModel._name == name).first()
@@ -1315,7 +1509,8 @@ class Project:
             )
 
             kind_name = KindModel.get_or_none(_name=kind_str)
-            kind_id = kind_name._id if kind_name else 1
+            # Not `kind_id` -- that name is the module-level lookup helper.
+            resolved_kind = kind_name._id if kind_name else kind_id("Java File")
 
             model_name = entity_values["name"]
             model_type = entity_values["type"]
@@ -1336,7 +1531,7 @@ class Project:
             )
 
             created_entity, _ = EntityModel.get_or_create(
-                _kind_id=kind_id,
+                _kind_id=resolved_kind,
                 _name=model_name,
                 _type=model_type,
                 _value=model_value,
@@ -1353,7 +1548,7 @@ class Project:
                 _kind_id=KindModel.get_or_none(_name="Java Define")._id,
                 _file_id=reference_file._id,
                 _line=reference_line,
-                _column=reference_column,
+                _column=col_1based(reference_column),
                 _ent_id=model_parent._id,
                 _scope_id=created_entity._id,
             )
@@ -1361,7 +1556,7 @@ class Project:
                 _kind_id=KindModel.get_or_none(_name="Java Definein")._id,
                 _file_id=reference_file._id,
                 _line=reference_line,
-                _column=reference_column,
+                _column=col_1based(reference_column),
                 _ent_id=created_entity._id,
                 _scope_id=model_parent._id,
             )
@@ -1375,23 +1570,34 @@ class Project:
     def addThrows_TrowsByRefs(self, ref_dicts, file_ent, file_address, id1, id2, Throw):
         for ref_dict in ref_dicts:
 
-            scope = EntityModel.get_or_create(
-                _kind=self.findKindWithKeywords("Method", ref_dict["scopemodifiers"]),
-                _name=ref_dict["scopename"],
-                _parent=(
-                    ref_dict["scope_parent"]
-                    if ref_dict["scope_parent"] is not None
-                    else file_ent
-                ),
-                _longname=ref_dict["scopelongname"],
-                _contents=ref_dict["scopecontent"],
-            )[0]
+            # Prefer the entity the define pass already declared. Guessing a
+            # Method kind here created a second row for names that are really
+            # classes -- an `org.json.CDL` in the method family alongside the
+            # real one in the type family, which do not merge by design.
+            scope = EntityModel.get_or_none(
+                EntityModel._longname == ref_dict["scopelongname"]
+            )
+            if scope is None:
+                scope = EntityModel.get_or_create(
+                    _kind=self.findKindWithKeywords(
+                        "Method", ref_dict["scopemodifiers"]
+                    ),
+                    _name=ref_dict["scopename"],
+                    _parent=resolve_entity_ref(ref_dict["scope_parent"], file_ent),
+                    _longname=ref_dict["scopelongname"],
+                    _contents=ref_dict["scopecontent"],
+                )[0]
 
             if not Throw:
                 if ref_dict["refent"] is None:
-                    ent = self.getUnnamedPackageEntity(file_ent)
+                    # No target: skip. Pointing these at the unnamed-package
+                    # entity made one row the sink for every unresolved
+                    # dereference in the project -- on a 228-file benchmark
+                    # that was 52,588 of 59,213 DotRef references, two thirds
+                    # of the whole database, and most of the build time.
+                    continue
                 else:
-                    ent = self.getPackageEntity(
+                    ent = self.getScopeEntity(
                         file_ent, ref_dict["refent"], ref_dict["refent"]
                     )
             else:
@@ -1401,7 +1607,7 @@ class Project:
                 _kind=id1,
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _ent=ent,
                 _scope=scope,
             )
@@ -1409,7 +1615,7 @@ class Project:
                 _kind=id2,
                 _file=file_ent,
                 _line=ref_dict["line"],
-                _column=ref_dict["col"],
+                _column=col_1based(ref_dict["col"]),
                 _ent=scope,
                 _scope=ent,
             )
@@ -1420,7 +1626,7 @@ class Project:
             file_ent = self.getFileEntity(c['File'])
             scope = EntityModel.get_or_create(_kind=self.findKindWithKeywords(c["scope_kind"], c["scope_modifiers"]),
                                               _name=c["scope_name"],
-                                              _parent=c["scope_parent"] if c["scope_parent"] is not None else file_ent,
+                                              _parent=resolve_entity_ref(c["scope_parent"], file_ent),
                                               _longname=c["scope_longname"],
                                               _contents=c["scope_contents"])
             if 'type_ent_longname' in c:
@@ -1434,21 +1640,24 @@ class Project:
                             ent = EntityModel.get_or_create(
                                 _kind=self.findKindWithKeywords(c1["scope_kind"], c1["scope_modifiers"]),
                                 _name=c1["scope_name"],
-                                _parent=c1["scope_parent"] if c1["scope_parent"] is not None else file_ent2,
+                                _parent=resolve_entity_ref(c1["scope_parent"], file_ent2),
                                 _longname=c1["scope_longname"],
                                 _contents=c1["scope_contents"])
-                            CoupleBy_ref = ReferenceModel.get_or_create(_kind=180, _file=file_ent2, _line=c["line"],
-                                                                        _column=c["col"], _ent=scope[0], _scope=ent[0])
+                            CoupleBy_ref = ReferenceModel.get_or_create(_kind=kind_id("Java Coupleby"), _file=file_ent2, _line=c["line"],
+                                                                        _column=col_1based(c["col"]), _ent=scope[0], _scope=ent[0])
 
                         else:
                             kw = key.split('.')
-                            keykind = "Unknown Class"
-                            ent = EntityModel.get_or_create(_kind="Unknown Class", _name=kw[-1],
+                            # 84 = Java Unknown Class Type Member. This was the
+                            # string "Unknown Class", written into an integer
+                            # foreign-key column.
+                            keykind = kind_id("Java Unknown Class Type Member")
+                            ent = EntityModel.get_or_create(_kind=keykind, _name=kw[-1],
                                                             _parent=file_ent,
                                                             _longname=key,
                                                             )
-                        Couple_ref = ReferenceModel.get_or_create(_kind=179, _file=file_ent, _line=c["line"],
-                                                                  _column=c["col"], _ent=ent[0], _scope=scope[0])
+                        Couple_ref = ReferenceModel.get_or_create(_kind=kind_id("Java Couple"), _file=file_ent, _line=c["line"],
+                                                                  _column=col_1based(c["col"]), _ent=ent[0], _scope=scope[0])
 
     # for c in couples:
         #     ent = self.getImplementEntity(
@@ -1464,18 +1673,18 @@ class Project:
         #         _contents=c["scope_contents"],
         #     )[0]
         #     Couple_ref = ReferenceModel.get_or_create(
-        #         _kind=180,
+        #         _kind=kind_id("Java Couple"),
         #         _file=file_ent,
         #         _line=c["line"],
-        #         _column=c["col"],
+        #         _column=col_1based(c["col"]),
         #         _ent=ent,
         #         _scope=scope,
         #     )
         #     CoupleBy_ref = ReferenceModel.get_or_create(
-        #         _kind=181,
+        #         _kind=kind_id("Java Coupleby"),
         #         _file=file_ent,
         #         _line=c["line"],
-        #         _column=c["col"],
+        #         _column=col_1based(c["col"]),
         #         _ent=scope,
         #         _scope=ent,
         #     )
@@ -1489,9 +1698,7 @@ class Project:
                         c["scope_kind"], c["scope_modifiers"]
                     ),
                     _name=c["scope_name"],
-                    _parent=(
-                        c["scope_parent"] if c["scope_parent"] is not None else file_ent
-                    ),
+                    _parent=resolve_entity_ref(c["scope_parent"], file_ent),
                     _longname=c["scope_longname"],
                     _contents=c["scope_contents"],
                 )
@@ -1510,39 +1717,37 @@ class Project:
                                         c1["scope_kind"], c1["scope_modifiers"]
                                     ),
                                     _name=c1["scope_name"],
-                                    _parent=(
-                                        c1["scope_parent"]
-                                        if c1["scope_parent"] is not None
-                                        else file_ent2
-                                    ),
+                                    _parent=resolve_entity_ref(c1["scope_parent"], file_ent2),
                                     _longname=c1["scope_longname"],
                                     _contents=c1["scope_contents"],
                                 )
-                                CoupleBy_ref = ReferenceModel.get_or_create(
-                                    _kind=180,
-                                    _file=file_ent2,
-                                    _line=c["line"],
-                                    _column=c["col"],
-                                    _ent=scope[0],
-                                    _scope=ent[0],
-                                )
-
                             else:
                                 kw = key.split(".")
-                                keykind = 84
                                 ent = EntityModel.get_or_create(
-                                    _kind=keykind,
+                                    _kind=kind_id("Java Unknown Class Type Member"),
                                     _name=kw[-1],
                                     _parent=file_ent,
                                     _longname=key,
                                 )
                             Couple_ref = ReferenceModel.get_or_create(
-                                _kind=179,
+                                _kind=kind_id("Java Couple"),
                                 _file=file_ent,
                                 _line=c["line"],
-                                _column=c["col"],
+                                _column=col_1based(c["col"]),
                                 _ent=ent[0],
                                 _scope=scope[0],
+                            )
+                            # The inverse used to live inside the `key in
+                            # classes` branch, so a couple to a class this file
+                            # had not catalogued produced a forward reference
+                            # with no inverse: 364 Couple rows against 3.
+                            CoupleBy_ref = ReferenceModel.get_or_create(
+                                _kind=kind_id("Java Coupleby"),
+                                _file=file_ent,
+                                _line=c["line"],
+                                _column=col_1based(c["col"]),
+                                _ent=scope[0],
+                                _scope=ent[0],
                             )
 
             except Exception as e:

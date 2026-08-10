@@ -1,5 +1,5 @@
 from antlr4 import *
-from gen.javaLabeled.JavaLexer import JavaLexer
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
 
 
 def get_ratio_comment_to_code(ent_model=None) -> float:

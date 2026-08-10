@@ -1,8 +1,9 @@
 from antlr4 import *
+from openunderstand.metrics import context
 from openunderstand.oudb.models import EntityModel
-from gen.javaLabeled.JavaLexer import JavaLexer
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 
 
 class NAMMListener(JavaParserLabeledListener):
@@ -97,10 +98,7 @@ def get_namm(ent_model=None, type_namm: str = "Mutator_num") -> int:
 
     for file_content in files:
         file_stream = InputStream(file_content)
-        lexer = JavaLexer(file_stream)
-        tokens = CommonTokenStream(lexer)
-        parser = JavaParserLabeled(tokens)
-        parse_tree = parser.compilationUnit()
+        parse_tree = context.parse(file_stream)
         walker = ParseTreeWalker()
         walker.walk(listener=listener, t=parse_tree)
     return listener.get_NAMM[type_namm]

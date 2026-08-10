@@ -85,6 +85,9 @@ def start_parsing(
     from openunderstand.oudb.api import create_db
     from openunderstand.oudb.fill import fill
     from openunderstand.ounderstand.runner import runner
+    from openunderstand.ounderstand import symbol_table
+    from openunderstand.oudb.models import (merge_placeholder_entities,
+                                            relabel_nondynamic_calls)
 
     if (
         repo_address is not None
@@ -113,7 +116,17 @@ def start_parsing(
         db_path=config["Config"]["db_address"],
     )
     fill(udb_path=config["Config"]["db_address"])
+    # Index every declaration first: the per-file passes cannot resolve a
+    # name declared in another file without it.
+    symbol_table.build(config["Config"]["repo_address"])
+
     runner(path_project=config["Config"]["repo_address"])
+
+    # Passes run in a fixed order, and several create placeholder entities
+    # before the define pass has declared the real ones. Fold them together
+    # once everything has been written.
+    merge_placeholder_entities()
+    relabel_nondynamic_calls()
 
 
 if __name__ == "__main__":

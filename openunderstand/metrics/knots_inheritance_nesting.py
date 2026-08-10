@@ -1,6 +1,7 @@
 from antlr4 import *
-from gen.javaLabeled.JavaLexer import JavaLexer
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.metrics import context
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from openunderstand.metrics.max_inheritance import FindAllInheritances
 from openunderstand.metrics.max_inheritance import FindAllClasses
 from openunderstand.metrics.max_nesting import MaxNesting
@@ -23,6 +24,40 @@ def get_max_inheritance(inheritances, key):
             current_classs = inheritances[current_classs][0]
 
     return level
+
+
+def _parse(ent_model):
+    return context.parse(ent_model.contents() or "")
+
+
+def max_inheritance_tree(ent_model):
+    """MaxInheritanceTree for one entity.
+
+    api.py dispatched this to get_max_inheritance(), which takes an
+    inheritance map and a class name, not an entity -- so asking for the
+    metric raised TypeError. The map has to be built first.
+    """
+    tree = _parse(ent_model)
+    walker = ParseTreeWalker()
+    finder = FindAllClasses()
+    walker.walk(t=tree, listener=finder)
+    classes = {name: [] for name in finder.class_names}
+    inheritances = FindAllInheritances(classes)
+    walker.walk(t=tree, listener=inheritances)
+    # +1 for java.lang.Object: every class has it as an ancestor, and
+    # Understand counts that level even though no JDK is analysed here.
+    return get_max_inheritance(inheritances.classes, ent_model.name()) + 1
+
+
+def max_nesting(ent_model):
+    """MaxNesting for one entity.
+
+    MaxNesting is a listener class, and api.py called it as MaxNesting(ent),
+    which its zero-argument constructor rejected.
+    """
+    listener = MaxNesting()
+    ParseTreeWalker().walk(t=_parse(ent_model), listener=listener)
+    return listener.max_nesting
 
 
 def getListOfFiles(dirName):

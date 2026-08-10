@@ -1,0 +1,10 @@
+include LICENSE
+include README.md
+include openunderstand/oudb/*.txt
+include openunderstand/gen/javaLabeled/*.interp
+include openunderstand/gen/javaLabeled/*.tokens
+recursive-include grammars *.g4
+prune openunderstand/gen/java8speedy/.build-cache
+prune benchmark
+prune scripts/compare/out
+global-exclude *.pyc __pycache__/*

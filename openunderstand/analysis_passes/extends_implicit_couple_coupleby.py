@@ -2,10 +2,10 @@ import os
 
 from antlr4 import *
 
-from gen.javaLabeled.JavaLexer import JavaLexer
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel
+from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel, col_1based, kind_id
 
 PRJ_INDEX = 4
 
@@ -51,7 +51,12 @@ class ClassTypeData:
         self.prefixes = prefix_list
 
     def get_long_name(self) -> str:
-        return self.package_name + "." + self.childClass.getText()
+        # IDENTIFIER(), not getText(): getText() on a class declaration is the
+        # whole class body, which ended up spliced into longnames as
+        # "org.json.classJSONML{privatestaticObjectparse(...". get_name() below
+        # already uses the right accessor; get_contents() genuinely wants the
+        # body text.
+        return self.package_name + "." + str(self.childClass.IDENTIFIER())
 
     def get_type(self) -> str:
         return "extends" + " " + self.parentClass
@@ -194,7 +199,7 @@ class Project:
             _longname=cls_data.get_long_name(),
             _contents=cls_data.get_contents(),
         )
-        entity_kind_object = 84
+        entity_kind_object = kind_id("Java Unknown Class Type Member")
         java_lang_entity, _ = EntityModel.get_or_create(
             _kind=entity_kind_object,
             _parent=None,
@@ -231,16 +236,16 @@ def add_references(importing_ent, imported_ent, cls_data: ClassTypeData, file_pa
         _kind=KindModel.get_or_none(_name="Java Extend Couple Implicit")._id,
         _file_id=importing_ent._id,
         _line=cls_data.line,
-        _column=cls_data.column,
+        _column=col_1based(cls_data.column),
         _ent_id=imported_ent._id,
         _scope_id=importing_ent._id,
     )
 
     inverse_ref, _ = ReferenceModel.get_or_create(
-        _kind=KindModel.get_or_none(_name="Java Extend Coupleby Implicit")._id,
+        _kind=KindModel.get_or_none(_name="Java Extendby Coupleby Implicit")._id,
         _file_id=importing_ent._id,
         _line=cls_data.line,
-        _column=cls_data.column,
+        _column=col_1based(cls_data.column),
         _ent_id=importing_ent._id,
         _scope_id=imported_ent._id,
     )

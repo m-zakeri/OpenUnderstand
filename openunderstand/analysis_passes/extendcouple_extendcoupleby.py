@@ -11,8 +11,8 @@ This module find all OpenUnderstand call and callby references in a Java project
 __author__ = "Shaghayegh Mobasher , Setayesh kouloubandi ,Parisa Alaie"
 __version__ = "0.1.0"
 
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 import openunderstand.analysis_passes.class_properties as class_properties
 
 
@@ -29,10 +29,9 @@ class ExtendCoupleAndExtendCoupleBy(JavaParserLabeledListener):
         # if ctx.IMPLEMENTS():
         scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
 
-        if len(scope_parents) == 1:
-            scope_longname = scope_parents[0]
-        else:
-            scope_longname = ".".join(scope_parents)
+        # findParents() stops at the enclosing scopes, so the class's own name
+        # has to be appended -- otherwise a class's longname is its package.
+        scope_longname = ".".join(scope_parents + [ctx.IDENTIFIER().__str__()])
 
         line = ctx.children[0].symbol.line
         col = ctx.children[0].symbol.column

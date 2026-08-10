@@ -9,8 +9,8 @@ __author__ = (
 __version__ = "0.1.0"
 
 
-from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from antlr4 import *
 
 
@@ -52,8 +52,10 @@ class ClassPropertiesListener(JavaParserLabeledListener):
         return parents[::-1]
 
     def extractOriginalText(self, ctx: JavaParserLabeled.ClassDeclarationContext):
-        token_source = ctx.start.getTokenSource()
-        input_stream = token_source.inputStream
+        # getInputStream() rather than getTokenSource().inputStream: both return
+        # the same stream under the Python parser, but the C++ accelerator
+        # leaves the token-source slot empty, so the indirect route is None.
+        input_stream = ctx.start.getInputStream()
         start, stop = ctx.start.start, ctx.stop.stop
         return input_stream.getText(start, stop)
 
