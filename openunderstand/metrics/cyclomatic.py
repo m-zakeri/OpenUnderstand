@@ -4,6 +4,7 @@ from antlr4 import *
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from openunderstand.metrics.utils_g10 import get_method_prefixes
+from openunderstand.metrics import context
 from gen.javaLabeled.JavaLexer import JavaLexer
 
 
@@ -205,24 +206,22 @@ class CyclomaticListener(JavaParserLabeledListener):
 
 
 def cyclomatic(ent_model):
-    p = Project()
-    listener = CyclomaticListener()
-    lexer = JavaLexer(InputStream(ent_model.contents()))
-    tokens = CommonTokenStream(lexer)
-    parser = JavaParserLabeled(tokens)
-    return_tree = parser.compilationUnit()
-    p.Walk(reference_listener=listener, parse_tree=return_tree)
-    cyclomatic_listener = listener
-    cyclomatic_list = []
-    ent_kind_set = set()
-    cyclomatic_counter = Counter(cyclomatic_listener.repository)
-    for ctx in cyclomatic_counter:
-        cyclomatic = cyclomatic_counter[ctx]
-        if type(ctx).__name__ == "EnumDeclarationContext":
-            cyclomatic_list.extend(make_enum_scope())
-        else:
-            cyclomatic_obj = make_method_scope(ctx)
-            cyclomatic_obj["val"] = cyclomatic
-            cyclomatic_list.append(cyclomatic_obj)
-            ent_kind_set.add(cyclomatic_obj["kind"])
-    return cyclomatic_listener.project_cyclomatic
+    """Cyclomatic complexity of one entity.
+
+    Understand reports this per method: decision points plus one. This used to
+    parse the entity's own contents as a compilation unit -- which fails for a
+    method, since a bare method is not one -- and then return the whole file's
+    total regardless. It agreed with Understand on 0 of 14 methods.
+    """
+    listener = context.walk_file(ent_model, CyclomaticListener())
+    counts = Counter(listener.repository)
+
+    if context.is_file(ent_model):
+        return listener.project_cyclomatic
+
+    name = ent_model.name()
+    for ctx, count in counts.items():
+        if context.declared_name(ctx) == name:
+            # A method with no branches still has complexity 1.
+            return count
+    return 1

@@ -44,7 +44,9 @@ def max_inheritance_tree(ent_model):
     classes = {name: [] for name in finder.class_names}
     inheritances = FindAllInheritances(classes)
     walker.walk(t=tree, listener=inheritances)
-    return get_max_inheritance(inheritances.classes, ent_model.name())
+    # +1 for java.lang.Object: every class has it as an ancestor, and
+    # Understand counts that level even though no JDK is analysed here.
+    return get_max_inheritance(inheritances.classes, ent_model.name()) + 1
 
 
 def max_nesting(ent_model):

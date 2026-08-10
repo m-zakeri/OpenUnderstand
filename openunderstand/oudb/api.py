@@ -43,6 +43,7 @@ from openunderstand.metrics.knots_inheritance_nesting import (
     max_nesting,
 )
 from openunderstand.metrics.Lineofcode import get_line_of_codes
+from openunderstand.metrics import context as metric_context
 from openunderstand.metrics.count_stmt_exe import statement_counter_exe
 from openunderstand.metrics.cyclomatic import cyclomatic
 from openunderstand.metrics.CyclomaticStrict_G12 import cyclomatic_strict
@@ -925,19 +926,17 @@ class Ent:
             elif item == "CountInput":
                 raise NotImplementedError("metric CountInput is not implemented")
             elif item == "CountLine":
-                raise NotImplementedError("metric CountLine is not implemented")
+                metrics.update({"CountLine": metric_context.line_counts(
+                    self.contents())["total"]})
             elif item == "CountLineBlank":
-                raise NotImplementedError("metric CountLineBlank is not implemented")
+                metrics.update({"CountLineBlank": metric_context.line_counts(
+                    self.contents())["blank"]})
             elif item == "CountLineCode":
-                # check for number of line method objects
-                metrics.update(
-                    {
-                        "CountLineCode": sum(
-                            get_line_of_codes(self).class_countLineCode
-                        )
-                        + sum(get_line_of_codes(self).method_countLineCode)
-                    }
-                )
+                # Counted from the entity's own source. The listener this used
+                # to call was constructed but never walked, so the sums were
+                # always over empty lists.
+                metrics.update({"CountLineCode": metric_context.line_counts(
+                    self.contents())["code"]})
             elif item == "CountLineCodeDecl":
                 metrics.update(
                     {
@@ -958,14 +957,8 @@ class Ent:
                     }
                 )
             elif item == "CountLineComment":
-                metrics.update(
-                    {
-                        "CountLineComment": sum(
-                            get_line_of_codes(self).class_countLineComment
-                        )
-                        + sum(get_line_of_codes(self).method_countLineComment)
-                    }
-                )
+                metrics.update({"CountLineComment": metric_context.line_counts(
+                    self.contents())["comment"]})
             elif item == "CountOutput":
                 raise NotImplementedError("metric CountOutput is not implemented")
             elif item == "CountPath":
@@ -991,7 +984,7 @@ class Ent:
             elif item == "Knots":
                 metrics.update({"Knots": knot(self)})
             elif item == "MaxCyclomatic":
-                metrics.update({"MaxCyclomatic": max_cyclomatic(self)})
+                metrics.update({"MaxCyclomatic": metric_context.cyclomatic_summary(self)["max"]})
             elif item == "MaxCyclomaticModified":
                 metrics.update({"MaxCyclomaticModified": max_cyclomatic_modified(self)})
             elif item == "MaxCyclomaticStrict":
@@ -1025,7 +1018,7 @@ class Ent:
             elif item == "RatioCommentToCode":
                 metrics.update({"RatioCommentToCode": get_ratio_comment_to_code(self)})
             elif item == "SumCyclomatic":
-                metrics.update({"SumCyclomatic": get_sum_of_cyclomatics(self)})
+                metrics.update({"SumCyclomatic": metric_context.cyclomatic_summary(self)["sum"]})
             elif item == "SumCyclomaticModified":
                 metrics.update(
                     {"SumCyclomaticModified": get_sum_cyclomatic_modified(self)}

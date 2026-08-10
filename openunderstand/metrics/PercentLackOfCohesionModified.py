@@ -1,5 +1,6 @@
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from antlr4 import *
+from openunderstand.metrics import context
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 
@@ -99,7 +100,9 @@ class UseAndUseByListener(JavaParserLabeledListener):
 
 
 def get_percent_lack_of_cohesion_modified(ent_model=None):
-    stream = InputStream(ent_model.contents())
+    # The file, not the entity: a class's own contents parses, but a
+    # method's does not, and the listener needs the whole class anyway.
+    stream = InputStream(context.file_source(ent_model))
     lexer = JavaLexer(stream)
     token_string = CommonTokenStream(lexer)
     parser = JavaParserLabeled(token_string)
@@ -116,8 +119,10 @@ def get_percent_lack_of_cohesion_modified(ent_model=None):
             if item[1] not in table[item[0]]:
                 table[item[0]].append(item[1])
     alluse = []
-    if my_listener.method_count == 0:
-        return 100
+    # Cohesion is undefined for a class with no methods or no fields;
+    # Understand reports 0 there, not total lack of cohesion.
+    if my_listener.method_count == 0 or not my_listener.class_members:
+        return 0
     for t in table:
         alluse.append(len(table[t]) / my_listener.method_count)
     try:

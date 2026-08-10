@@ -388,6 +388,14 @@ class Project:
                 _contents=ref_dict["contents"],
             )
 
+            # The define pass is the only one that has the declaration's real
+            # source, but create_listener and type_listener run before it and
+            # may already have made the row -- and get_or_create keeps the
+            # first. Metrics reparse contents, so the better text has to win.
+            if ref_dict["contents"] and ent._contents != ref_dict["contents"]:
+                ent._contents = ref_dict["contents"]
+                ent.save()
+
             define_ref = ReferenceModel.get_or_create(
                 _kind=kind_id("Java Define"),
                 _file=file_ent,
@@ -1028,7 +1036,11 @@ class Project:
                     _type=ref_dict["scopereturntype"],
                     _parent=resolve_entity_ref(ref_dict["scope_parent"], file_ent),
                     _longname=ref_dict["scopelongname"],
-                    _contents=["scopecontent"],
+                    # A missing subscript: this stored the literal list
+                    # ["scopecontent"], so every entity this pass created first
+                    # carried the string "['scopecontent']" as its source, and
+                    # every metric that reparses contents returned 0.
+                    _contents=ref_dict["scopecontent"],
                 )[0]
 
                 ent = self.getCreatedClassEntity(
@@ -1060,8 +1072,11 @@ class Project:
                 print("error message : ", e)
 
     def getPackageEntity(self, file_ent, name, longname):
+        # A package is not declared *in* a file -- it spans every file that
+        # names it, so parenting it to whichever file got there first made the
+        # parent chain of every type in the package point at the wrong file.
         ent, _ = EntityModel.get_or_create(
-            _kind=kind_id("Java Package"), _name=name, _parent=file_ent,
+            _kind=kind_id("Java Package"), _name=name, _parent=None,
             _longname=longname, _contents="",
         )
         return ent

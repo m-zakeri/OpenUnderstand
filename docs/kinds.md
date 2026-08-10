@@ -265,13 +265,13 @@ once in each direction, at the same file, line and column.
 | `Java Call` | `Java Callby` | yes |
 | `Java Call Nondynamic` | `Java Callby Nondynamic` | yes |
 | `Java Call Nondynamic Implicit` | `Java Callby Nondynamic Implicit` | — |
-| `Java Contain` | `Java Containin` | yes |
-| `Java Couple` | `Java Coupleby` | yes |
+| `Java Contain` | `Java Containin` | — |
+| `Java Couple` | `Java Coupleby` | — |
 | `Java Create` | `Java Createby` | yes |
 | `Java Declare` | `Java Declarein` | yes |
 | `Java Define` | `Java Definein` | yes |
 | `Java Define Implicit` | `Java Definein Implicit` | — |
-| `Java DotRef` | `Java DotRefby` | yes |
+| `Java DotRef` | `Java DotRefby` | — |
 | `Java End` | `Java Endby` | yes |
 | `Java Export` | `Java Exportby` | — |
 | `Java Extend Couple` | `Java Extendby Coupleby` | yes |
@@ -286,7 +286,7 @@ once in each direction, at the same file, line and column.
 | `Java Manytoone Relation` | `Java Manytooneby Relation` | — |
 | `Java Mapstojava Copy Implicit` | `Java Mapstospring Copy Implicit` | — |
 | `Java Mapstojava Implicit` | `Java Mapstospring Implicit` | — |
-| `Java Modify` | `Java Modifyby` | yes |
+| `Java Modify` | `Java Modifyby` | — |
 | `Java Modify Deref Partial` | `Java Modifyby Deref Partial` | — |
 | `Java ModuleUse` | `Java ModuleUseby` | yes |
 | `Java Onetomany Relation` | `Java Onetomanyby Relation` | — |
@@ -300,7 +300,7 @@ once in each direction, at the same file, line and column.
 | `Java Set Deref Partial` | `Java Setby Deref Partial` | yes |
 | `Java Set Implicit` | `Java Setby Implicit` | — |
 | `Java Set Init` | `Java Setby Init` | yes |
-| `Java Throw` | `Java Throwby` | yes |
+| `Java Throw` | `Java Throwby` | — |
 | `Java Typed` | `Java Typedby` | yes |
 | `Java Typed GenericArgument` | `Java Typedby GenericArgument` | yes |
 | `Java Typed Implicit` | `Java Typedby Implicit` | — |

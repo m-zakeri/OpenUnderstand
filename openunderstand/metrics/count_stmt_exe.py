@@ -1,5 +1,6 @@
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from antlr4 import *
+from openunderstand.metrics import context
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaLexer import JavaLexer
 from openunderstand.ounderstand.project import Project
@@ -52,9 +53,6 @@ class StatementListener(JavaParserLabeledListener):
 def statement_counter_exe(ent_model=None):
     p = Project()
     listener = StatementListener()
-    lexer = JavaLexer(InputStream(ent_model.contents()))
-    tokens = CommonTokenStream(lexer)
-    parser = JavaParserLabeled(tokens)
-    return_tree = parser.compilationUnit()
+    return_tree = context.parse_entity(ent_model.contents() or "")
     p.Walk(reference_listener=listener, parse_tree=return_tree)
     return listener.counter

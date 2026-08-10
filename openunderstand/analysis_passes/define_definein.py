@@ -97,6 +97,27 @@ def _body_span(ctx):
     return (start.line, start.column), (stop.line, stop.column)
 
 
+def source_text(ctx):
+    """The declaration's original source, whitespace and all.
+
+    `ctx.getText()` concatenates token text, so a method comes back as
+    `publicvoidmain(String[]args){...}` -- which is not Java and cannot be
+    reparsed. Every metric that works by reparsing `ent.contents()`
+    (Cyclomatic, CountStmt, CountLineCode, MaxNesting, …) was therefore
+    returning 0. The input stream still holds the real characters.
+    """
+    start, stop = ctx.start, ctx.stop
+    if start is None or stop is None:
+        return ctx.getText()
+    stream = start.getInputStream()
+    if stream is None:
+        return ctx.getText()
+    try:
+        return stream.getText(start.start, stop.stop)
+    except Exception:
+        return ctx.getText()
+
+
 def _is_generic(ctx):
     getter = getattr(ctx, "typeParameters", None)
     try:
@@ -212,6 +233,7 @@ class DefineListener(JavaParserLabeledListener):
             ent=ent,
             ent_parents=ent_parents,
             type="Class",
+            contents=source_text(ctx),
             decl=K.CLASS,
             span=_body_span(ctx),
             modifiers=self._type_modifiers(ctx),
@@ -226,6 +248,7 @@ class DefineListener(JavaParserLabeledListener):
             ent=ent,
             ent_parents=ent_parents,
             type="Interface",
+            contents=source_text(ctx),
             decl=K.INTERFACE,
             span=_body_span(ctx),
             modifiers=self._type_modifiers(ctx),
@@ -238,7 +261,7 @@ class DefineListener(JavaParserLabeledListener):
             ent=ent,
             ent_parents=ent_parents,
             type=ctx.typeTypeOrVoid().getText(),
-            contents=ctx.getText(),
+            contents=source_text(ctx),
             decl=K.METHOD,
             span=_body_span(ctx),
             modifiers=self._method_modifiers(ctx),
@@ -264,7 +287,7 @@ class DefineListener(JavaParserLabeledListener):
             ent=ent,
             ent_parents=ent_parents,
             type=ctx.typeTypeOrVoid().getText(),
-            contents=ctx.getText(),
+            contents=source_text(ctx),
             decl=K.METHOD,
             span=_body_span(ctx),
             modifiers=modifiers,
@@ -279,7 +302,7 @@ class DefineListener(JavaParserLabeledListener):
             ent=ent,
             ent_parents=ent_parents,
             type="Annotation",
-            contents=ctx.getText(),
+            contents=source_text(ctx),
             decl=K.ANNOTATION,
             span=_body_span(ctx),
             modifiers=self._type_modifiers(ctx),
@@ -294,7 +317,7 @@ class DefineListener(JavaParserLabeledListener):
             ent=ent,
             ent_parents=ent_parents,
             type="Constructor",
-            contents=ctx.getText(),
+            contents=source_text(ctx),
             decl=K.CONSTRUCTOR,
             span=_body_span(ctx),
             modifiers=_enclosing_modifiers(ctx),
@@ -309,7 +332,7 @@ class DefineListener(JavaParserLabeledListener):
             ent=ent,
             ent_parents=ent_parents,
             type=ctx.parentCtx.parentCtx.typeType().getText(),
-            contents=ctx.getText(),
+            contents=source_text(ctx),
             decl=decl,
             modifiers=modifiers,
         )
@@ -321,7 +344,7 @@ class DefineListener(JavaParserLabeledListener):
             ent=ent,
             ent_parents=ent_parents,
             type="EnumConst",
-            contents=ctx.getText(),
+            contents=source_text(ctx),
             decl=K.ENUM_CONSTANT,
         )
 
@@ -329,7 +352,7 @@ class DefineListener(JavaParserLabeledListener):
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
         self.add_define_info(
-            ent, ent_parents, type="Enum", contents=ctx.getText(),
+            ent, ent_parents, type="Enum", contents=source_text(ctx),
             decl=K.ENUM, modifiers=self._type_modifiers(ctx), span=_body_span(ctx),
         )
         # values()/valueOf() are compiler-generated statics on every enum.
@@ -339,7 +362,7 @@ class DefineListener(JavaParserLabeledListener):
                 ent_parents + [ent.getText()],
                 synthetic,
                 type="Enum",
-                contents=ctx.getText(),
+                contents=source_text(ctx),
                 decl=K.METHOD,
             span=_body_span(ctx),
                 modifiers=["public", "static"],
@@ -393,7 +416,7 @@ class DefineListener(JavaParserLabeledListener):
             ent=ent,
             ent_parents=ent_parents,
             type="Constant",
-            contents=ctx.getText(),
+            contents=source_text(ctx),
             decl=K.CONSTANT,
         )
 
