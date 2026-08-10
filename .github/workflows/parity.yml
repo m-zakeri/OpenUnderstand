@@ -1,9 +1,16 @@
 name: parity
 
-# The comparison harness is this project's test suite, but the ground-truth
-# half needs a licensed Understand install, which CI does not have. What CI
-# *can* do is prove the package still builds, installs and analyses -- which
-# is what caught the layout bug that made the package unusable.
+# What CI can actually check.
+#
+# The full comparison harness needs a licensed Understand install, which CI
+# does not have. What it *can* prove is that the package builds, installs and
+# analyses Java -- which is the check that would have caught the layout bug
+# that made this package impossible to install and use.
+#
+# Deliberately self-contained: no files from scripts/, and no cloning a
+# third-party project for a fixture. A few lines of generated Java prove the
+# installed package can parse and query exactly as well as a real project, and
+# nobody else's outage can break this build.
 
 on:
   pull_request:
@@ -14,14 +21,112 @@ jobs:
   install:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.9", "3.11", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: { python-version: "${{ matrix.python-version }}" }
-      - run: python -m pip install --upgrade pip build
-      - name: Fetch a fixture
-        run: bash scripts/fetch_benchmarks.sh JSON
-      - name: Build, install and analyse
-        run: PY=python bash scripts/test_install.sh benchmark/JSON
+        with:
+          python-version: "${{ matrix.python-version }}"
+
+      - name: Build the wheel
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build --wheel --outdir dist
+
+      - name: Package data must ship
+        # fill.py reads these to seed the kind tables; a wheel without them
+        # builds a database with no vocabulary at all.
+        run: |
+          listing=$(python -c "
+          import zipfile, glob
+          print('\n'.join(zipfile.ZipFile(glob.glob('dist/*.whl')[0]).namelist()))")
+          for pattern in java_ent_kinds.txt java_ref_kinds.txt .interp .tokens; do
+            grep -qF -- "$pattern" <<<"$listing" \
+              || { echo "missing from wheel: $pattern"; exit 1; }
+          done
+          echo "seed files and parser data present"
+
+      - name: Nothing may leak to top level
+        # The package used to install `oudb`, `gen`, `metrics` and `utils` as
+        # top-level names, colliding with other projects.
+        run: |
+          top=$(python -c "
+          import zipfile, glob
+          z = zipfile.ZipFile(glob.glob('dist/*.whl')[0])
+          name = [n for n in z.namelist() if n.endswith('top_level.txt')][0]
+          print(z.read(name).decode().strip())")
+          [ "$top" = "openunderstand" ] \
+            || { echo "top_level.txt is '$top', expected 'openunderstand'"; exit 1; }
+          echo "top_level.txt = openunderstand"
+
+      - name: Install into a clean environment
+        run: |
+          python -m venv /tmp/clean
+          # --force-reinstall, and not --quiet: a quiet pip that declines to
+          # install says nothing, and the next step then imports the source
+          # tree instead and passes regardless.
+          /tmp/clean/bin/pip install --force-reinstall dist/*.whl
+          # From /tmp, not the checkout: in the repository root Python finds
+          # openunderstand/ on disk and this proves nothing about the wheel.
+          cd /tmp && /tmp/clean/bin/python -c \
+            "import openunderstand, sys; \
+             assert 'site-packages' in openunderstand.__file__, openunderstand.__file__; \
+             print('installed:', openunderstand.__version__, openunderstand.__file__)"
+
+      - name: Analyse Java and query the result
+        run: |
+          mkdir -p /tmp/src/com/example
+          cat > /tmp/src/com/example/Greeter.java <<'JAVA'
+          package com.example;
+
+          /** Says hello. */
+          public class Greeter {
+              private String name;
+
+              public Greeter(String name) {
+                  this.name = name;
+              }
+
+              public String greet(int times) {
+                  StringBuilder out = new StringBuilder();
+                  for (int i = 0; i < times; i++) {
+                      if (i > 0) {
+                          out.append(" ");
+                      }
+                      out.append("hello ").append(name);
+                  }
+                  return out.toString();
+              }
+          }
+          JAVA
+          # Run from elsewhere: inside the checkout Python would import the
+          # source tree and this would prove nothing about the wheel.
+          cd /tmp && /tmp/clean/bin/python - <<'PY'
+          import contextlib, io, os, tempfile
+          from openunderstand.oudb.api import create_db, open as ou_open
+          from openunderstand.oudb.fill import fill
+          from openunderstand.ounderstand.parsing_process import process_file
+
+          src, out = "/tmp/src", tempfile.mkdtemp()
+          with contextlib.redirect_stdout(io.StringIO()), \
+               contextlib.redirect_stderr(io.StringIO()):
+              create_db(dbname="ci.udb", project_dir=src, db_path=out)
+              fill(udb_path=out)
+              for root, _, files in os.walk(src):
+                  for f in files:
+                      if f.endswith(".java"):
+                          process_file(os.path.join(root, f))
+              db = ou_open(os.path.join(out, "ci.udb"))
+              classes = db.ents("Class")
+              greeter = next(e for e in classes if e.name() == "Greeter")
+              methods = greeter.refs("Define", "Method")
+              cyclomatic = greeter.metric(["SumCyclomatic"])["SumCyclomatic"]
+
+          assert classes, "no classes found"
+          assert methods, "Greeter declares no methods"
+          assert cyclomatic and cyclomatic > 1, f"SumCyclomatic looks wrong: {cyclomatic}"
+          print(f"{len(classes)} classes; Greeter declares {len(methods)} methods; "
+                f"SumCyclomatic {cyclomatic}")
+          PY

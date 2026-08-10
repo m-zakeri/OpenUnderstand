@@ -37,7 +37,28 @@ jobs:
 
       - name: The wheel must install and work
         # PyPI versions cannot be reused, so a broken release is permanent.
-        run: bash scripts/test_install.sh
+        # Self-contained for the same reason parity.yml is: a release must not
+        # depend on files that may not be in the repository, nor on a third
+        # party being reachable.
+        run: |
+          python -m venv /tmp/clean
+          /tmp/clean/bin/pip install --force-reinstall dist/*.whl
+          mkdir -p /tmp/src && printf 'public class T { public int f(int a) { return a > 0 ? a : -a; } }\n' > /tmp/src/T.java
+          cd /tmp && /tmp/clean/bin/python - <<'PY'
+          import contextlib, io, os, tempfile
+          from openunderstand.oudb.api import create_db, open as ou_open
+          from openunderstand.oudb.fill import fill
+          from openunderstand.ounderstand.parsing_process import process_file
+          out = tempfile.mkdtemp()
+          with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+              create_db(dbname="r.udb", project_dir="/tmp/src", db_path=out)
+              fill(udb_path=out)
+              process_file("/tmp/src/T.java")
+              db = ou_open(os.path.join(out, "r.udb"))
+              classes = db.ents("Class")
+          assert classes, "installed wheel found no classes"
+          print("wheel installs and analyses:", len(classes), "classes")
+          PY
 
       - run: python -m twine check dist/*
 
