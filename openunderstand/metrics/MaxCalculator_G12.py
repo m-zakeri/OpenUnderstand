@@ -1,4 +1,5 @@
 from antlr4 import *
+from openunderstand.metrics import context
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from openunderstand.oudb.models import EntityModel
@@ -54,10 +55,7 @@ class MaxCyclomatic:
 
     def calculate_classes_value(self, input: str = ""):
         content = InputStream(input)
-        lexer = JavaLexer(content)
-        tokens = CommonTokenStream(lexer)
-        parser = JavaParserLabeled(tokens)
-        tree = parser.compilationUnit()
+        tree = context.parse(content)
         walker = ParseTreeWalker()
         walker.walk(self.listener, tree)
         return self.listener.get_classes, self.listener.get_packagename

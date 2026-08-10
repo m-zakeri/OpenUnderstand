@@ -1,5 +1,6 @@
 from gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from antlr4 import *
+from openunderstand.metrics import context
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaLexer import JavaLexer
 from openunderstand.ounderstand.project import Project
@@ -174,9 +175,6 @@ class EssentialListener(JavaParserLabeledListener):
 def avg_essential(ent_model=None):
     p = Project()
     listener = EssentialListener()
-    lexer = JavaLexer(InputStream(ent_model.contents()))
-    tokens = CommonTokenStream(lexer)
-    parser = JavaParserLabeled(tokens)
-    return_tree = parser.compilationUnit()
+    return_tree = context.parse(ent_model.contents())
     p.Walk(reference_listener=listener, parse_tree=return_tree)
     return listener.count

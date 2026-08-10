@@ -3,6 +3,7 @@ from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from gen.javaLabeled.JavaLexer import JavaLexer
 from openunderstand.ounderstand.project import Project
 from antlr4 import *
+from openunderstand.metrics import context
 from openunderstand.analysis_passes import class_properties
 
 
@@ -169,9 +170,6 @@ class EssentialMetricListener(JavaParserLabeledListener):
 def essential(ent_model=None):
     p = Project()
     listener = EssentialMetricListener()
-    lexer = JavaLexer(InputStream(ent_model.contents()))
-    tokens = CommonTokenStream(lexer)
-    parser = JavaParserLabeled(tokens)
-    return_tree = parser.compilationUnit()
+    return_tree = context.parse(ent_model.contents())
     p.Walk(reference_listener=listener, parse_tree=return_tree)
     return listener.count_essential_metric

@@ -74,6 +74,23 @@ _SPAN_WRAPPERS = (
 )
 
 
+def _declaration_start(ctx):
+    """First token of a declaration, including its modifiers.
+
+    `ctx.start` on a methodDeclaration is the return type -- the modifiers sit
+    on the wrapper rule -- so anything measured from it starts too late.
+    """
+    start = ctx.start
+    current = ctx.parentCtx
+    # Climb only through the rules that wrap a declaration together with its
+    # modifiers. Climbing blindly reaches compilationUnit.
+    while current is not None and type(current).__name__.startswith(_SPAN_WRAPPERS):
+        if current.start is not None and current.start.tokenIndex < start.tokenIndex:
+            start = current.start
+        current = current.parentCtx
+    return start
+
+
 def _body_span(ctx):
     """(begin, end) positions of a declaration that has a braced body.
 
@@ -85,15 +102,7 @@ def _body_span(ctx):
     stop = ctx.stop
     if stop is None or stop.text != "}":
         return None
-    start = ctx.start
-    current = ctx.parentCtx
-    # Climb only through the rules that wrap a declaration together with its
-    # modifiers. Climbing blindly reaches compilationUnit and reports every
-    # method as beginning at line 1.
-    while current is not None and type(current).__name__.startswith(_SPAN_WRAPPERS):
-        if current.start is not None and current.start.tokenIndex < start.tokenIndex:
-            start = current.start
-        current = current.parentCtx
+    start = _declaration_start(ctx)
     return (start.line, start.column), (stop.line, stop.column)
 
 
@@ -106,26 +115,46 @@ def source_text(ctx):
     (Cyclomatic, CountStmt, CountLineCode, MaxNesting, …) was therefore
     returning 0. The input stream still holds the real characters.
     """
-    start, stop = ctx.start, ctx.stop
+    start, stop = _declaration_start(ctx), ctx.stop
     if start is None or stop is None:
         return ctx.getText()
     stream = start.getInputStream()
     if stream is None:
         return ctx.getText()
     try:
-        return stream.getText(_doc_comment_start(stream, start.start), stop.stop)
+        return stream.getText(start.start, _line_end(stream, stop.stop))
     except Exception:
         return ctx.getText()
 
 
-def _doc_comment_start(stream, begin):
-    """Extend a declaration's start back over its documentation comment.
+def _line_end(stream, stop):
+    """Extend to include the newline terminating the declaration's last line.
 
-    Understand treats the comment block immediately above a declaration as part
-    of it: on JSONObject that is 53 lines, which is exactly how far CountLine
-    and CountLineComment were short. Only whitespace may separate the comment
-    from the declaration, so a comment belonging to something else is not
-    swallowed.
+    Understand counts line *terminators*: a class whose closing brace is the
+    last character of a file with no trailing newline reports one line fewer
+    than its brace-to-brace span. Carrying the terminator in the entity's own
+    text makes that fall out of a plain count instead of needing a special
+    case -- every entity in calculator_app matches once it does.
+    """
+    try:
+        text = stream.strdata
+    except AttributeError:
+        return stop
+    i = stop + 1
+    while i < len(text) and text[i] == "\r":
+        i += 1
+    if i < len(text) and text[i] == "\n":
+        return i
+    return stop
+
+
+def _doc_comment_start(stream, begin):
+    """Start offset of the comment block immediately above a declaration.
+
+    Not used for an entity's extent: Understand reports CountLine 13 for
+    `Main.main`, which is its declaration line through its closing brace with
+    the comment above it excluded. Kept because the attribution is still the
+    right one for anything that wants a declaration's documentation.
     """
     try:
         text = stream.strdata

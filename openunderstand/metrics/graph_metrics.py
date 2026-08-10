@@ -137,7 +137,9 @@ def count_class_base(ent_model):
             if parent._id not in seen:
                 seen.add(parent._id)
                 pending.append(parent._id)
-    return len(seen)
+    # +1 for java.lang.Object, which Understand counts even though no JDK is
+    # analysed here -- the same adjustment MaxInheritanceTree needs.
+    return len(seen) + 1
 
 
 def count_class_derived(ent_model):
@@ -159,6 +161,28 @@ def count_class_coupled(ent_model):
             if target._id != entity._id:
                 coupled.add(target._id)
     return len(coupled)
+
+
+def count_decl_file(ent_model):
+    """Files that contribute declarations to this entity.
+
+    For a package that is the number of source files declaring into it, which
+    is what Understand reports; the previous implementation counted the
+    entity's own file and so answered 1 for every package.
+    """
+    entity = _entity(ent_model)
+    if entity is None:
+        return 0
+    define = KindModel.get_or_none(_name="Java Define")
+    if define is None:
+        return 0
+    return len({
+        ref._file_id
+        for ref in ReferenceModel.select().where(
+            (ReferenceModel._kind == define._id)
+            & (ReferenceModel._scope == entity._id)
+        )
+    })
 
 
 def count_semicolon(ent_model):

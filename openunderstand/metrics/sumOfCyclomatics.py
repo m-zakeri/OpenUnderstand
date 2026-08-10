@@ -1,4 +1,5 @@
 from antlr4 import *
+from openunderstand.metrics import context
 import os
 from fnmatch import fnmatch
 from gen.javaLabeled.JavaLexer import JavaLexer
@@ -92,14 +93,7 @@ def getListOfFiles(dirName):
 
 def get_sum_of_cyclomatics(ent_model=None):
     # at first we should Stream text from input file
-    inputfile = InputStream(ent_model.contents())
-    # then we must use lexer
-    lex = JavaLexer(inputfile)
-    # then we should tokenize that
-    toked = CommonTokenStream(lex)
-    # at last we should parse tokenized
-    parsed = JavaParserLabeled(toked)
-    ptree = parsed.compilationUnit()
+    ptree = context.parse(ent_model.contents() or "")
 
     listener = Cyclomatics()
     treewalker = ParseTreeWalker()

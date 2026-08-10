@@ -880,7 +880,7 @@ class Ent:
             elif item == "CountDeclClass":
                 metrics.update({"CountDeclClass": graph_metrics.count_decl_class(self)})
             elif item == "CountDeclFile":
-                metrics.update({"CountDeclFile": declare_file(self)})
+                metrics.update({"CountDeclFile": graph_metrics.count_decl_file(self)})
             elif item == "CountDeclExecutableUnit":
                 metrics.update(
                     {"CountDeclExecutableUnit": declare_executable_unit(self)}
@@ -929,24 +929,11 @@ class Ent:
                 metrics.update({"CountLineCode": metric_context.line_counts(
                     self.contents())["code"]})
             elif item == "CountLineCodeDecl":
-                metrics.update(
-                    {
-                        "CountLineCodeDecl": sum(
-                            get_line_of_codes(self).class_countLineDecl
-                        )
-                        + sum(get_line_of_codes(self).method_countLineDecl)
-                    }
-                )
+                metrics.update({"CountLineCodeDecl":
+                                metric_context.statement_counts(self)["line_decl"]})
             elif item == "CountLineCodeExe":
-                # check for number of line method objects
-                metrics.update(
-                    {
-                        "CountLineCodeExe": sum(
-                            get_line_of_codes(self).class_countLineExec
-                        )
-                        + sum(get_line_of_codes(self).method_countLineExec)
-                    }
-                )
+                metrics.update({"CountLineCodeExe":
+                                metric_context.statement_counts(self)["line_exe"]})
             elif item == "CountLineComment":
                 metrics.update({"CountLineComment": metric_context.line_counts(
                     self.contents())["comment"]})
@@ -959,11 +946,14 @@ class Ent:
             elif item == "CountSemicolon":
                 metrics.update({"CountSemicolon": graph_metrics.count_semicolon(self)})
             elif item == "CountStmt":
-                metrics.update({"CountStmt": statement_counter(self)})
+                metrics.update({"CountStmt":
+                                metric_context.statement_counts(self)["stmt"]})
             elif item == "CountStmtDecl":
-                metrics.update({"CountStmtDecl": statement_counter_delc(self)})
+                metrics.update({"CountStmtDecl":
+                                metric_context.statement_counts(self)["stmt_decl"]})
             elif item == "CountStmtExe":
-                metrics.update({"CountStmtExe": statement_counter_exe(self)})
+                metrics.update({"CountStmtExe":
+                                metric_context.statement_counts(self)["stmt_exe"]})
             elif item == "Cyclomatic":
                 metrics.update({"Cyclomatic": cyclomatic(self)})
             elif item == "CyclomaticModified":

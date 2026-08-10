@@ -1,4 +1,5 @@
 from antlr4 import *
+from openunderstand.metrics import context
 from gen.javaLabeled.JavaLexer import JavaLexer
 from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from openunderstand.metrics.max_inheritance import FindAllInheritances
@@ -26,8 +27,7 @@ def get_max_inheritance(inheritances, key):
 
 
 def _parse(ent_model):
-    lexer = JavaLexer(InputStream(ent_model.contents() or ""))
-    return JavaParserLabeled(CommonTokenStream(lexer)).compilationUnit()
+    return context.parse(ent_model.contents() or "")
 
 
 def max_inheritance_tree(ent_model):

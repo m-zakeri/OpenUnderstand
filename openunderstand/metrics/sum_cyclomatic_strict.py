@@ -1,4 +1,5 @@
 from antlr4 import *
+from openunderstand.metrics import context
 
 from gen.javaLabeled.JavaLexer import JavaLexer
 from openunderstand.oudb.models import kind_id, EntityModel
@@ -87,11 +88,7 @@ def get_sum_cyclomatic_strict(ent_model=None):
     files = _enclosing_file_contents(entity_longname)
 
     for file_content in files:
-        file_stream = InputStream(file_content)
-        lexer = JavaLexer(file_stream)
-        tokens = CommonTokenStream(lexer)
-        parser = JavaParserLabeled(tokens)
-        parse_tree = parser.compilationUnit()
+        parse_tree = context.parse(file_content)
 
         walker = ParseTreeWalker()
         walker.walk(listener=listener, t=parse_tree)

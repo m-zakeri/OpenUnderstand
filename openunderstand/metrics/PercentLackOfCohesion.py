@@ -80,12 +80,7 @@ def get_percent_lack_of_cohesion(ent_model=None) -> int:
     # stream files
     # The file, not the entity: a class's own contents parses, but a
     # method's does not, and the listener needs the whole class anyway.
-    stream = InputStream(context.file_source(ent_model))
-    # lex and tokenize
-    lexer = JavaLexer(stream)
-    token_string = CommonTokenStream(lexer)
-    parser = JavaParserLabeled(token_string)
-    pars_tree = parser.compilationUnit()
+    pars_tree = context.parse(context.file_source(ent_model))
     my_listener = UseAndUseByListener(ent_model.longname())
     walker = ParseTreeWalker()
     walker.walk(t=pars_tree, listener=my_listener)

@@ -71,6 +71,11 @@ def parse(source):
     return JavaParserLabeled(CommonTokenStream(lexer)).compilationUnit()
 
 
+#: Name of the synthetic class parse_entity() wraps a member in, so the
+#: classifiers can tell it apart from a real declaration.
+_WRAPPER = "__OpenUnderstandScope"
+
+
 @lru_cache(maxsize=256)
 def parse_entity(source):
     """Parse an entity's own source, whatever kind of declaration it is.
@@ -89,7 +94,7 @@ def parse_entity(source):
         def syntaxError(self, *_args):
             self.failed = True
 
-    for candidate in (source, f"class __Scope {{\n{source}\n}}"):
+    for candidate in (source, f"class {_WRAPPER} {{\n{source}\n}}"):
         lexer = JavaLexer(InputStream(candidate))
         parser = JavaParserLabeled(CommonTokenStream(lexer))
         detector = _Failed()
@@ -193,6 +198,124 @@ def cyclomatic_summary(ent_model) -> dict:
             "avg": round(sum(values) / len(values))}
 
 
+# Derived from Understand's own numbers for `Main.main` (CountStmt 9,
+# CountStmtDecl 4, CountStmtExe 8, CountLineCodeDecl 4, CountLineCodeExe 8)
+# over a 13-line method with 3 initialised locals and 5 call statements:
+#
+#   * the declaration itself counts as one declarative statement;
+#   * a local declaration counts as declarative, and *also* as executable when
+#     it has an initialiser -- which is why Decl + Exe exceeds CountStmt;
+#   * a declaration's lines are its signature only, since its body is made of
+#     statements counted in their own right.
+_DECLARATIVE = (
+    "LocalVariableDeclarationContext", "FieldDeclarationContext",
+    "MethodDeclarationContext", "ConstructorDeclarationContext",
+    "ClassDeclarationContext", "InterfaceDeclarationContext",
+    "EnumDeclarationContext", "AnnotationTypeDeclarationContext",
+    "ConstDeclarationContext", "InterfaceMethodDeclarationContext",
+)
+# Every `statement` alternative except a bare block (#statement0), an empty
+# statement (#statement14) and a label (#statement16), which do nothing.
+_EXECUTABLE = tuple(
+    f"Statement{n}Context" for n in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15)
+)
+
+
+class _StatementClassifier:
+    """Splits an entity's statements and code lines into declarative and executable."""
+
+    def __init__(self):
+        self.statements = 0
+        self.decl_statements = 0
+        self.exe_statements = 0
+        self.decl_lines = set()
+        self.exe_lines = set()
+
+    def visit(self, ctx):
+        name = type(ctx).__name__
+        if name == "ClassDeclarationContext" and declared_name(ctx) == _WRAPPER:
+            # The wrapper parse_entity() adds is not part of the entity.
+            for child in getattr(ctx, "children", None) or ():
+                if hasattr(child, "getRuleIndex"):
+                    self.visit(child)
+            return
+        if name in _DECLARATIVE:
+            self.statements += 1
+            self.decl_statements += 1
+            self._add_signature_lines(ctx, self.decl_lines)
+            if name == "LocalVariableDeclarationContext" and _has_initialiser(ctx):
+                # `int x = f();` both declares and executes.
+                self.exe_statements += 1
+                if ctx.start is not None:
+                    self.exe_lines.add(ctx.start.line)
+        elif name in _EXECUTABLE:
+            self.statements += 1
+            self.exe_statements += 1
+            if ctx.start is not None:
+                self.exe_lines.add(ctx.start.line)
+        for child in getattr(ctx, "children", None) or ():
+            if hasattr(child, "getRuleIndex"):
+                self.visit(child)
+
+    @staticmethod
+    def _add_signature_lines(ctx, target):
+        if ctx.start is None:
+            return
+        last = ctx.start.line
+        parameters = getattr(ctx, "formalParameters", None)
+        if parameters is not None:
+            try:
+                params = parameters()
+            except TypeError:
+                params = None
+            if params is not None and params.stop is not None:
+                last = params.stop.line
+        elif ctx.stop is not None and type(ctx).__name__ in (
+            "LocalVariableDeclarationContext", "FieldDeclarationContext",
+            "ConstDeclarationContext",
+        ):
+            last = ctx.stop.line
+        target.update(range(ctx.start.line, last + 1))
+
+
+def _has_initialiser(ctx):
+    for declarator in _descend(ctx, "VariableDeclaratorContext"):
+        if getattr(declarator, "variableInitializer", None) is not None:
+            try:
+                if declarator.variableInitializer() is not None:
+                    return True
+            except TypeError:
+                pass
+    return False
+
+
+def _descend(ctx, type_name):
+    for child in getattr(ctx, "children", None) or ():
+        if not hasattr(child, "getRuleIndex"):
+            continue
+        if type(child).__name__ == type_name:
+            yield child
+        yield from _descend(child, type_name)
+
+
+def statement_counts(ent_model) -> dict:
+    """Understand's four statement/code-line counts for an entity.
+
+    They used to come from a listener that was constructed but never walked --
+    so CountLineCodeDecl and CountLineCodeExe were 0 everywhere -- and from a
+    statement counter that did not distinguish declarative from executable.
+    """
+    classifier = _StatementClassifier()
+    classifier.visit(parse_entity(ent_model.contents() or ""))
+    return {
+        "stmt": classifier.statements,
+        "stmt_decl": classifier.decl_statements,
+        "stmt_exe": classifier.exe_statements,
+        "line_decl": len(classifier.decl_lines),
+        "line_exe": len(classifier.exe_lines),
+    }
+
+
 def line_counts(source: str) -> dict:
     """Understand's line metrics for a block of source.
 
@@ -206,7 +329,10 @@ def line_counts(source: str) -> dict:
     """
     total = blank = code = comment = 0
     in_block = False
-    for raw in (source or "").splitlines():
+    # split(), not splitlines(): the last element is the text after the final
+    # newline, which Understand does not count as a line unless it is
+    # terminated. Dropping it makes both cases uniform.
+    for raw in (source or "").split("\n")[:-1]:
         total += 1
         line = raw.strip()
         if not line:

@@ -2,6 +2,10 @@ from openunderstand.oudb.models import (EntityModel, KindModel, ReferenceModel,
                                         kind_family, kind_id)
 
 
+#: java.lang.Object's declared methods, plus Object().
+_OBJECT_METHODS = 13
+
+
 def _defined_methods(entity_id):
     """Ids of the methods an entity declares, via its Define references."""
     define = kind_id("Java Define")
@@ -60,4 +64,8 @@ def count_decl_method_all(ent_model=None) -> int:
         seen.add(current)
         methods |= _defined_methods(current)
         pending.extend(_superclasses(current))
-    return len(methods)
+    # Every class inherits java.lang.Object: 12 methods plus its constructor.
+    # Understand counts them; no JDK is analysed here, so they are added as a
+    # constant. Verified against Understand on the four calculator_app classes
+    # that extend nothing -- local + 13 matches exactly.
+    return len(methods) + _OBJECT_METHODS
