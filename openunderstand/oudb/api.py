@@ -44,6 +44,7 @@ from openunderstand.metrics.knots_inheritance_nesting import (
 )
 from openunderstand.metrics.Lineofcode import get_line_of_codes
 from openunderstand.metrics import context as metric_context
+from openunderstand.metrics import graph_metrics
 from openunderstand.metrics.count_stmt_exe import statement_counter_exe
 from openunderstand.metrics.cyclomatic import cyclomatic
 from openunderstand.metrics.CyclomaticStrict_G12 import cyclomatic_strict
@@ -848,7 +849,10 @@ class Ent:
                     {"CountDeclClassVariable": declare_class_variables(self)}
                 )
             elif item == "AvgCyclomatic":
-                metrics.update({"AvgCyclomatic": avg_cyclomatic(self)})
+                # The mean over the entity's own methods. This used to return a
+                # raw count over whatever it managed to parse.
+                metrics.update({"AvgCyclomatic":
+                                metric_context.cyclomatic_summary(self)["avg"]})
             elif item == "AvgCyclomaticModified":
                 metrics.update({"AvgCyclomaticModified": avg_cyclomatic_modified(self)})
             elif item == "AvgCyclomaticStrict":
@@ -866,17 +870,15 @@ class Ent:
             elif item == "AvgLineComment":
                 raise NotImplementedError("metric AvgLineComment is not implemented")
             elif item == "CountClassBase":
-                raise NotImplementedError("metric CountClassBase is not implemented")
+                metrics.update({"CountClassBase": graph_metrics.count_class_base(self)})
             elif item == "CountClassCoupled":
-                raise NotImplementedError("metric CountClassCoupled is not implemented")
+                metrics.update({"CountClassCoupled": graph_metrics.count_class_coupled(self)})
             elif item == "CountClassCoupledModified":
-                raise NotImplementedError(
-                    "metric CountClassCoupledModified is not implemented"
-                )
+                metrics.update({"CountClassCoupledModified": graph_metrics.count_class_coupled(self)})
             elif item == "CountClassDerived":
-                raise NotImplementedError("metric CountClassDerived is not implemented")
+                metrics.update({"CountClassDerived": graph_metrics.count_class_derived(self)})
             elif item == "CountDeclClass":
-                raise NotImplementedError("metric CountDeclClass is not implemented")
+                metrics.update({"CountDeclClass": graph_metrics.count_decl_class(self)})
             elif item == "CountDeclFile":
                 metrics.update({"CountDeclFile": declare_file(self)})
             elif item == "CountDeclExecutableUnit":
@@ -884,29 +886,19 @@ class Ent:
                     {"CountDeclExecutableUnit": declare_executable_unit(self)}
                 )
             elif item == "CountDeclFunction":
-                raise NotImplementedError("metric CountDeclFunction is not implemented")
+                metrics.update({"CountDeclFunction": graph_metrics.count_decl_function(self)})
             elif item == "CountDeclInstanceMethod":
-                raise NotImplementedError(
-                    "metric CountDeclInstanceMethod is not implemented"
-                )
+                metrics.update({"CountDeclInstanceMethod": graph_metrics.count_decl_instance_method(self)})
             elif item == "CountDeclInstanceVariable":
-                raise NotImplementedError(
-                    "metric CountDeclInstanceVariable is not implemented"
-                )
+                metrics.update({"CountDeclInstanceVariable": graph_metrics.count_decl_instance_variable(self)})
             elif item == "CountDeclInstanceVariablePrivate":
-                raise NotImplementedError(
-                    "metric CountDeclInstanceVariablePrivate is not implemented"
-                )
+                metrics.update({"CountDeclInstanceVariablePrivate": graph_metrics.count_decl_instance_variable(self, "private")})
             elif item == "CountDeclInstanceVariableProtected":
-                raise NotImplementedError(
-                    "metric CountDeclInstanceVariableProtected is not implemented"
-                )
+                metrics.update({"CountDeclInstanceVariableProtected": graph_metrics.count_decl_instance_variable(self, "protected")})
             elif item == "CountDeclInstanceVariablePublic":
-                raise NotImplementedError(
-                    "metric CountDeclInstanceVariablePublic is not implemented"
-                )
+                metrics.update({"CountDeclInstanceVariablePublic": graph_metrics.count_decl_instance_variable(self, "public")})
             elif item == "CountDeclMethod":
-                raise NotImplementedError("metric CountDeclMethod is not implemented")
+                metrics.update({"CountDeclMethod": graph_metrics.count_decl_method(self)})
             elif item == "CountDeclMethodDefault":
                 metrics.update(
                     {"CountDeclMethodDefault": count_decl_method_default(self)}
@@ -920,11 +912,10 @@ class Ent:
                     {"CountDeclMethodPrivate": count_decl_method_private(self)}
                 )
             elif item == "CountDeclMethodPublic":
-                raise NotImplementedError(
-                    "metric CountDeclMethodPublic is not implementd"
-                )
+                metrics.update({"CountDeclMethodPublic":
+                                graph_metrics.count_decl_method_public(self)})
             elif item == "CountInput":
-                raise NotImplementedError("metric CountInput is not implemented")
+                metrics.update({"CountInput": graph_metrics.count_input(self)})
             elif item == "CountLine":
                 metrics.update({"CountLine": metric_context.line_counts(
                     self.contents())["total"]})
@@ -960,13 +951,13 @@ class Ent:
                 metrics.update({"CountLineComment": metric_context.line_counts(
                     self.contents())["comment"]})
             elif item == "CountOutput":
-                raise NotImplementedError("metric CountOutput is not implemented")
+                metrics.update({"CountOutput": graph_metrics.count_output(self)})
             elif item == "CountPath":
                 raise NotImplementedError("metric CountPath is not implemented")
             elif item == "CountPathLog":
                 raise NotImplementedError("metric CountPathLog is not implemented")
             elif item == "CountSemicolon":
-                raise NotImplementedError("metric CountSemicolon not implemented")
+                metrics.update({"CountSemicolon": graph_metrics.count_semicolon(self)})
             elif item == "CountStmt":
                 metrics.update({"CountStmt": statement_counter(self)})
             elif item == "CountStmtDecl":

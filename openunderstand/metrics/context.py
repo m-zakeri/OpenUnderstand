@@ -185,9 +185,12 @@ def cyclomatic_summary(ent_model) -> dict:
     counts, listener = scoped_counts(ent_model, CyclomaticListener)
     if is_file(ent_model):
         values = list(counts.values())
-        return {"sum": listener.project_cyclomatic, "max": max(values, default=0)}
+        return {"sum": listener.project_cyclomatic,
+                "max": max(values, default=0),
+                "avg": round(sum(values) / len(values)) if values else 0}
     values = list(counts.values()) or [1]
-    return {"sum": sum(values), "max": max(values)}
+    return {"sum": sum(values), "max": max(values),
+            "avg": round(sum(values) / len(values))}
 
 
 def line_counts(source: str) -> dict:

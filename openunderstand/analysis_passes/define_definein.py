@@ -113,9 +113,49 @@ def source_text(ctx):
     if stream is None:
         return ctx.getText()
     try:
-        return stream.getText(start.start, stop.stop)
+        return stream.getText(_doc_comment_start(stream, start.start), stop.stop)
     except Exception:
         return ctx.getText()
+
+
+def _doc_comment_start(stream, begin):
+    """Extend a declaration's start back over its documentation comment.
+
+    Understand treats the comment block immediately above a declaration as part
+    of it: on JSONObject that is 53 lines, which is exactly how far CountLine
+    and CountLineComment were short. Only whitespace may separate the comment
+    from the declaration, so a comment belonging to something else is not
+    swallowed.
+    """
+    try:
+        text = stream.strdata
+    except AttributeError:
+        return begin
+
+    i = begin - 1
+    while i >= 0 and text[i] in " \t\r\n":
+        i -= 1
+    if i < 1:
+        return begin
+
+    if text[i - 1:i + 1] == "*/":
+        opening = text.rfind("/*", 0, i)
+        return opening if opening != -1 else begin
+
+    # A run of // lines directly above the declaration.
+    end_of_run = i
+    start_of_run = None
+    while True:
+        line_start = text.rfind("\n", 0, end_of_run) + 1
+        if not text[line_start:end_of_run + 1].lstrip().startswith("//"):
+            break
+        start_of_run = line_start
+        end_of_run = line_start - 1
+        while end_of_run >= 0 and text[end_of_run] in " \t\r\n":
+            end_of_run -= 1
+        if end_of_run < 0:
+            break
+    return start_of_run if start_of_run is not None else begin
 
 
 def _is_generic(ctx):
