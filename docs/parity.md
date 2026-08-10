@@ -17,7 +17,7 @@ scope, file, line, column).
 
 - Entities matched: **1031** of 1236
 - Entities with no Understand counterpart: 788
-- Open findings: 52
+- Open findings: 65
 
 ### Entities by kind family
 
@@ -29,8 +29,8 @@ scope, file, line, column).
 | constructor | 38 | 5 | -33 |
 | class | 22 | 164 | +142 |
 | unknown | 8 | 4 | -4 |
-| package | 2 | 2 | +0 |
 | annotation | 2 | 2 | +0 |
+| package | 2 | 2 | +0 |
 | interface | 2 | 2 | +0 |
 | file | 0 | 22 | +22 |
 | module | 0 | 1 | +1 |
@@ -41,14 +41,14 @@ scope, file, line, column).
 | --- | ---: | ---: | ---: |
 | `Java Use` | 1683 | 903 | +780 |
 | `Java Useby` | 1683 | 903 | +780 |
-| `Java Throwby` | 141 | 0 | +141 |
 | `Java Throw` | 141 | 0 | +141 |
-| `Java DotRefby` | 102 | 0 | +102 |
+| `Java Throwby` | 141 | 0 | +141 |
 | `Java DotRef` | 102 | 0 | +102 |
-| `Java Call Nondynamic` | 210 | 108 | +102 |
 | `Java Callby Nondynamic` | 210 | 108 | +102 |
-| `Java Couple` | 63 | 0 | +63 |
+| `Java DotRefby` | 102 | 0 | +102 |
+| `Java Call Nondynamic` | 210 | 108 | +102 |
 | `Java Coupleby` | 63 | 0 | +63 |
+| `Java Couple` | 63 | 0 | +63 |
 
 ### Open findings
 
@@ -58,14 +58,14 @@ scope, file, line, column).
 | 12.7 | missing-data | 7030 references Understand finds are absent, ignoring position (recall 47%) |
 | 11.9 | wrong-data | 68 references written as 'Java Import', which Understand never emits here |
 | 11.9 | wrong-data | 68 references written as 'Java Importby', which Understand never emits here |
-| 11.9 | wrong-data | CountLineCode disagrees with Understand on 239 of 240 entities (0% agreement) |
-| 11.9 | wrong-data | CountStmt disagrees with Understand on 239 of 240 entities (0% agreement) |
-| 11.9 | wrong-data | CountStmtDecl disagrees with Understand on 239 of 240 entities (0% agreement) |
-| 11.9 | wrong-data | CountLineCodeDecl disagrees with Understand on 237 of 240 entities (1% agreement) |
-| 11.8 | wrong-data | CountLineCodeExe disagrees with Understand on 233 of 240 entities (3% agreement) |
-| 11.8 | wrong-data | CountStmtExe disagrees with Understand on 233 of 240 entities (3% agreement) |
-| 11.8 | wrong-data | SumCyclomatic disagrees with Understand on 233 of 241 entities (3% agreement) |
-| 11.8 | wrong-data | CountLineComment disagrees with Understand on 225 of 240 entities (6% agreement) |
+| 11.8 | wrong-data | RatioCommentToCode disagrees with Understand on 223 of 240 entities (7% agreement) |
+| 11.7 | wrong-data | CountLine disagrees with Understand on 221 of 240 entities (8% agreement) |
+| 11.7 | wrong-data | CountLineComment disagrees with Understand on 220 of 240 entities (8% agreement) |
+| 11.6 | wrong-data | 59 duplicate entity rows across 43 logical entities |
+| 11.5 | wrong-data | CountInput disagrees with Understand on 196 of 214 entities (8% agreement) |
+| 11.4 | wrong-data | 56 references match only once ent and scope are swapped |
+| 11.3 | wrong-data | CountOutput disagrees with Understand on 185 of 214 entities (14% agreement) |
+| 10.8 | wrong-data | MaxNesting disagrees with Understand on 140 of 241 entities (42% agreement) |
 
 ## calculator_app
 
@@ -75,7 +75,7 @@ scope, file, line, column).
 
 - Entities matched: **65** of 72
 - Entities with no Understand counterpart: 68
-- Open findings: 45
+- Open findings: 54
 
 ### Entities by kind family
 
@@ -99,10 +99,10 @@ scope, file, line, column).
 | `Java Couple` | 7 | 0 | +7 |
 | `Java Modify` | 5 | 0 | +5 |
 | `Java Modifyby` | 5 | 0 | +5 |
-| `Java DotRef` | 3 | 0 | +3 |
-| `Java Use Return` | 4 | 1 | +3 |
 | `Java DotRefby` | 3 | 0 | +3 |
+| `Java Use Return` | 4 | 1 | +3 |
 | `Java Useby Return` | 4 | 1 | +3 |
+| `Java DotRef` | 3 | 0 | +3 |
 
 ### Open findings
 
@@ -110,13 +110,13 @@ scope, file, line, column).
 | ---: | --- | --- |
 | 10.1 | wrong-data | 68 of 133 OpenUnderstand entities have no Understand counterpart |
 | 7.4 | missing-data | 178 references Understand finds are absent, ignoring position (recall 65%) |
-| 7.2 | wrong-data | 12 references written as 'Java Importby', which Understand never emits here |
 | 7.2 | wrong-data | 12 references written as 'Java Import', which Understand never emits here |
-| 7.1 | wrong-data | CountLineCodeDecl disagrees with Understand on 25 of 28 entities (11% agreement) |
-| 7.1 | wrong-data | CountLineCodeExe disagrees with Understand on 25 of 28 entities (11% agreement) |
+| 7.2 | wrong-data | 12 references written as 'Java Importby', which Understand never emits here |
 | 6.8 | wrong-data | 10 references match only once ent and scope are swapped |
-| 6.7 | wrong-data | CountStmtExe disagrees with Understand on 21 of 28 entities (25% agreement) |
-| 6.5 | wrong-data | CountStmtDecl disagrees with Understand on 19 of 28 entities (32% agreement) |
 | 6.5 | wrong-data | 9 references written as 'Java ModuleUseby', which Understand never emits here |
 | 6.5 | wrong-data | 9 references written as 'Java ModuleUse', which Understand never emits here |
 | 6.5 | wrong-data | 14 references have the right line but the wrong column (312 of 326 match once the column is included) |
+| 6.2 | wrong-data | 8 references written as 'Java Open', which Understand never emits here |
+| 6.2 | wrong-data | 8 references written as 'Java Openby', which Understand never emits here |
+| 5.5 | wrong-data | 6 duplicate entity rows across 6 logical entities |
+| 5.4 | wrong-data | SumCyclomatic disagrees with Understand on 11 of 28 entities (61% agreement) |

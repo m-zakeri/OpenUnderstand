@@ -190,7 +190,7 @@ is one kind, not five attributes.
 | `Java Static Method Default Member` | yes |
 | `Java Static Method Private Member` | yes |
 | `Java Static Method Protected Member` | yes |
-| `Java Static Method Public Main Member` | — |
+| `Java Static Method Public Main Member` | yes |
 | `Java Static Method Public Member` | yes |
 | `Java Static Record Class Generic Type Private Member` | — |
 | `Java Static Record Class Type Default Member` | — |

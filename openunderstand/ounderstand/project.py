@@ -377,7 +377,7 @@ class Project:
                     ref_dict.get("decl"),
                     ref_dict.get("modifiers") or (),
                     ref_dict["ent"],
-                ),
+                ),  # re-resolved below when an earlier pass already made the row
                 # The enclosing scope, not the package: Understand's parent of a
                 # method is its class, and of a local its method.
                 _parent=scope,
@@ -388,12 +388,23 @@ class Project:
                 _contents=ref_dict["contents"],
             )
 
-            # The define pass is the only one that has the declaration's real
-            # source, but create_listener and type_listener run before it and
-            # may already have made the row -- and get_or_create keeps the
-            # first. Metrics reparse contents, so the better text has to win.
+            # The define pass is the only one that reads the declaration
+            # itself -- its modifiers, its real source. Other passes run
+            # before it and guess, and get_or_create keeps whichever row came
+            # first, so `public class fibonacci extends basic_operation` was
+            # left labelled Default by an earlier pass's guess. Declarations
+            # are this pass's authority: it overwrites both.
+            declared_kind = kind_names.resolve(
+                ref_dict.get("decl"), ref_dict.get("modifiers") or (), ref_dict["ent"]
+            )
+            dirty = False
             if ref_dict["contents"] and ent._contents != ref_dict["contents"]:
                 ent._contents = ref_dict["contents"]
+                dirty = True
+            if declared_kind is not None and ent._kind_id != declared_kind:
+                ent._kind = declared_kind
+                dirty = True
+            if dirty:
                 ent.save()
 
             define_ref = ReferenceModel.get_or_create(
