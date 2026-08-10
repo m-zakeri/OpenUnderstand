@@ -1,0 +1,78 @@
+name: release
+
+# Publishes to PyPI when a v* tag is pushed.
+#
+# Uses Trusted Publishing (OIDC) -- no API token is stored anywhere. Set it up
+# once at pypi.org -> Your projects -> Publishing -> Add a pending publisher,
+# with owner/repository/workflow matching this file. A "pending" publisher is
+# what lets the first release create the project.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+
+      - name: Build
+        run: |
+          python -m pip install --upgrade pip build twine
+          python -m build
+
+      - name: The tag must match the package version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          VERSION=$(python -c "import re,pathlib; \
+            print(re.search(r'__version__ = \"([^\"]+)\"', \
+            pathlib.Path('openunderstand/__init__.py').read_text()).group(1))")
+          echo "tag=$TAG package=$VERSION"
+          [ "$TAG" = "$VERSION" ] || { echo "tag and version disagree" >&2; exit 1; }
+        if: startsWith(github.ref, 'refs/tags/')
+
+      - name: The wheel must install and work
+        # PyPI versions cannot be reused, so a broken release is permanent.
+        # Self-contained for the same reason parity.yml is: a release must not
+        # depend on files that may not be in the repository, nor on a third
+        # party being reachable.
+        run: |
+          python -m venv /tmp/clean
+          /tmp/clean/bin/pip install --force-reinstall dist/*.whl
+          mkdir -p /tmp/src && printf 'public class T { public int f(int a) { return a > 0 ? a : -a; } }\n' > /tmp/src/T.java
+          cd /tmp && /tmp/clean/bin/python - <<'PY'
+          import contextlib, io, os, tempfile
+          from openunderstand.oudb.api import create_db, open as ou_open
+          from openunderstand.oudb.fill import fill
+          from openunderstand.ounderstand.parsing_process import process_file
+          out = tempfile.mkdtemp()
+          with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+              create_db(dbname="r.udb", project_dir="/tmp/src", db_path=out)
+              fill(udb_path=out)
+              process_file("/tmp/src/T.java")
+              db = ou_open(os.path.join(out, "r.udb"))
+              classes = db.ents("Class")
+          assert classes, "installed wheel found no classes"
+          print("wheel installs and analyses:", len(classes), "classes")
+          PY
+
+      - run: python -m twine check dist/*
+
+      - uses: actions/upload-artifact@v4
+        with: { name: dist, path: dist/ }
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    environment: pypi
+    permissions:
+      id-token: write        # required for Trusted Publishing
+    steps:
+      - uses: actions/download-artifact@v4
+        with: { name: dist, path: dist/ }
+      - uses: pypa/gh-action-pypi-publish@release/v1

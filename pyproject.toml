@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "openunderstand"
-version = "0.1.0"
+dynamic = ["version"]
 description = "An open-source implementation of the SciTools Understand Python API for Java"
 readme = "README.md"
 license = "MIT"
@@ -61,6 +61,10 @@ Issues = "https://github.com/m-zakeri/OpenUnderstand/issues"
 [project.scripts]
 openunderstand = "openunderstand.ounderstand.openunderstand:parse_arguments"
 openunderstand-mcp = "openunderstand.mcp_server:main"
+
+[tool.setuptools.dynamic]
+# One place only: openunderstand/__init__.py.
+version = { attr = "openunderstand.__version__" }
 
 [tool.setuptools.packages.find]
 # From the repository root, so the installed package is `openunderstand` and
