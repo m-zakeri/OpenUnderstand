@@ -1,0 +1,27 @@
+name: parity
+
+# The comparison harness is this project's test suite, but the ground-truth
+# half needs a licensed Understand install, which CI does not have. What CI
+# *can* do is prove the package still builds, installs and analyses -- which
+# is what caught the layout bug that made the package unusable.
+
+on:
+  pull_request:
+  push:
+    branches: [master, dev]
+
+jobs:
+  install:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "${{ matrix.python-version }}" }
+      - run: python -m pip install --upgrade pip build
+      - name: Fetch a fixture
+        run: bash scripts/fetch_benchmarks.sh JSON
+      - name: Build, install and analyse
+        run: PY=python bash scripts/test_install.sh benchmark/JSON
