@@ -131,7 +131,8 @@ class Project:
     def addTypeRefs(self, d_type, file_ent, stream: str = ""):
         for type_tuple in d_type["typedBy"]:
             ent, h_c1 = EntityModel.get_or_create(
-                _kind=224,
+                # was _kind=224, a REFERENCE kind written into an entity row; the referenced type
+                _kind=84,
                 _parent=None,
                 _name=type_tuple[1],
                 _longname=type_tuple[6] + "." + type_tuple[1],
@@ -141,7 +142,8 @@ class Project:
             )
 
             scope, h_c2 = EntityModel.get_or_create(
-                _kind=225,
+                # was _kind=225, a REFERENCE kind written into an entity row; the declared variable
+                _kind=168,
                 _parent=None,
                 _name=type_tuple[0],
                 _longname=type_tuple[6] + "." + type_tuple[0],
@@ -175,7 +177,8 @@ class Project:
             par = EntityModel.get(_name=type_tuple[7])
             ss = str(type_tuple[1]).rfind(".")
             ent, h_c1 = EntityModel.get_or_create(
-                _kind=222,
+                # was _kind=222, a REFERENCE kind written into an entity row; the variable being set
+                _kind=168,
                 _parent=par._id,
                 _name=type_tuple[0],
                 _longname=type_tuple[1],
@@ -185,7 +188,8 @@ class Project:
             )
 
             scope, h_c2 = EntityModel.get_or_create(
-                _kind=223,
+                # was _kind=223, a REFERENCE kind written into an entity row; the setting scope
+                _kind=32,
                 _parent=None,
                 _name=type_tuple[10],  # PROBLEM
                 _longname=str(type_tuple[1])[:ss],
@@ -217,7 +221,8 @@ class Project:
             ss = str(type_tuple[1]).rfind(".")
             par = EntityModel.get(_name=type_tuple[7])
             ent, h_c1 = EntityModel.get_or_create(
-                _kind=218,
+                # was _kind=218, a REFERENCE kind written into an entity row; the variable being init-set
+                _kind=168,
                 _parent=par._id,
                 _name=type_tuple[0],
                 _longname=type_tuple[1],
@@ -227,7 +232,8 @@ class Project:
             )
 
             scope, h_c2 = EntityModel.get_or_create(
-                _kind=219,
+                # was _kind=219, a REFERENCE kind written into an entity row; the setting scope
+                _kind=32,
                 _parent=None,
                 _name=type_tuple[10],  # PROBLEM
                 _longname=str(type_tuple[1])[:ss],
@@ -260,7 +266,8 @@ class Project:
             ss = str(type_tuple[1]).rfind(".")
             par = EntityModel.get(_name=type_tuple[7])
             ent, h_c1 = EntityModel.get_or_create(
-                _kind=220,
+                # was _kind=220, a REFERENCE kind written into an entity row; the variable being partially set
+                _kind=168,
                 _parent=par._id,
                 _name=type_tuple[0],
                 _longname=type_tuple[1],
@@ -270,7 +277,8 @@ class Project:
             )
 
             scope, h_c2 = EntityModel.get_or_create(
-                _kind=221,
+                # was _kind=221, a REFERENCE kind written into an entity row; the setting scope
+                _kind=32,
                 _parent=None,
                 _name=type_tuple[7],  # PROBLEM
                 _longname=str(type_tuple[1])[:ss],
@@ -300,7 +308,8 @@ class Project:
     def addUseRefs(self, d_use, file_ent, stream: str = ""):
         for use_tuple in d_use:
             ent, h_c1 = EntityModel.get_or_create(
-                _kind=226,
+                # was _kind=226, a REFERENCE kind written into an entity row; the used entity
+                _kind=168,
                 _parent=None,
                 _name=use_tuple[1],
                 _longname=use_tuple[6] + "." + use_tuple[1],
@@ -310,7 +319,8 @@ class Project:
             )
 
             scope, h_c2 = EntityModel.get_or_create(
-                _kind=227,
+                # was _kind=227, a REFERENCE kind written into an entity row; the using scope
+                _kind=32,
                 _parent=None,
                 _name=use_tuple[0],
                 _longname=use_tuple[6] + "." + use_tuple[0],
@@ -355,7 +365,8 @@ class Project:
             # print("ref_dict[parent] : ", type(ref_dict["parent"]))
             par = EntityModel.get(_longname=ref_dict["parent"])
             ent, h_c1 = EntityModel.get_or_create(
-                _kind=194,
+                # was _kind=194, a REFERENCE kind written into an entity row; the defined entity
+                _kind=84,
                 _parent=par._id,
                 _name=ref_dict["ent"],
                 _longname=ref_dict["ent_longname"],
@@ -1120,7 +1131,7 @@ class Project:
                                     )
 
                                     override_ref = ReferenceModel.get_or_create(
-                                        _kind=211,
+                                        _kind=212,  # Java Override (was 211 = Java ModuleUseby)
                                         _file=file_ent,
                                         _line=x["line"],
                                         _column=col_1based(x["col"]),
@@ -1128,7 +1139,7 @@ class Project:
                                         _scope=scope[0],
                                     )
                                     overrideBy_ref = ReferenceModel.get_or_create(
-                                        _kind=212,
+                                        _kind=213,  # Java Overrideby (was 212 = Java Override)
                                         _file=fe,
                                         _line=y["line"],
                                         _column=col_1based(y["col"]),
@@ -1153,7 +1164,7 @@ class Project:
                                 _contents="",
                             )
                             override_ref = ReferenceModel.get_or_create(
-                                _kind=211,
+                                _kind=212,  # Java Override (was 211 = Java ModuleUseby)
                                 _file=file_ent,
                                 _line=x["line"],
                                 _column=col_1based(x["col"]),
@@ -1459,17 +1470,17 @@ class Project:
                                 _parent=c1["scope_parent"] if c1["scope_parent"] is not None else file_ent2,
                                 _longname=c1["scope_longname"],
                                 _contents=c1["scope_contents"])
-                            CoupleBy_ref = ReferenceModel.get_or_create(_kind=180, _file=file_ent2, _line=c["line"],
+                            CoupleBy_ref = ReferenceModel.get_or_create(_kind=181,  # Java Coupleby (was 180 = Java Couple) _file=file_ent2, _line=c["line"],
                                                                         _column=col_1based(c["col"]), _ent=scope[0], _scope=ent[0])
 
                         else:
                             kw = key.split('.')
                             keykind = "Unknown Class"
-                            ent = EntityModel.get_or_create(_kind="Unknown Class", _name=kw[-1],
+                            ent = EntityModel.get_or_create(_kind=84  # Java Unknown Class Type Member (was the string "Unknown Class"), _name=kw[-1],
                                                             _parent=file_ent,
                                                             _longname=key,
                                                             )
-                        Couple_ref = ReferenceModel.get_or_create(_kind=179, _file=file_ent, _line=c["line"],
+                        Couple_ref = ReferenceModel.get_or_create(_kind=180,  # Java Couple (was 179 = Java Extend Coupleby) _file=file_ent, _line=c["line"],
                                                                   _column=col_1based(c["col"]), _ent=ent[0], _scope=scope[0])
 
     # for c in couples:
@@ -1541,7 +1552,7 @@ class Project:
                                     _contents=c1["scope_contents"],
                                 )
                                 CoupleBy_ref = ReferenceModel.get_or_create(
-                                    _kind=180,
+                                    _kind=181,  # Java Coupleby (was 180 = Java Couple)
                                     _file=file_ent2,
                                     _line=c["line"],
                                     _column=col_1based(c["col"]),
@@ -1559,7 +1570,7 @@ class Project:
                                     _longname=key,
                                 )
                             Couple_ref = ReferenceModel.get_or_create(
-                                _kind=179,
+                                _kind=180,  # Java Couple (was 179 = Java Extend Coupleby)
                                 _file=file_ent,
                                 _line=c["line"],
                                 _column=col_1based(c["col"]),

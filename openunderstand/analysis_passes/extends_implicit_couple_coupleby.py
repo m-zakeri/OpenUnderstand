@@ -51,7 +51,12 @@ class ClassTypeData:
         self.prefixes = prefix_list
 
     def get_long_name(self) -> str:
-        return self.package_name + "." + self.childClass.getText()
+        # IDENTIFIER(), not getText(): getText() on a class declaration is the
+        # whole class body, which ended up spliced into longnames as
+        # "org.json.classJSONML{privatestaticObjectparse(...". get_name() below
+        # already uses the right accessor; get_contents() genuinely wants the
+        # body text.
+        return self.package_name + "." + str(self.childClass.IDENTIFIER())
 
     def get_type(self) -> str:
         return "extends" + " " + self.parentClass
