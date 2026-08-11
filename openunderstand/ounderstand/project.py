@@ -9,7 +9,6 @@ from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
 from openunderstand.oudb.models import (KindModel, EntityModel, ReferenceModel,
                                         col_1based, resolve_entity_ref, kind_family)
-from openunderstand.analysis_passes.modify_modifyby import ModifyListener
 from openunderstand.analysis_passes.g6_class_properties import (
     ClassPropertiesListener,
     InterfacePropertiesListener,
@@ -726,15 +725,28 @@ class Project:
     @staticmethod
     def add_modify_and_modifyby_reference(ref_dicts):
         for ref_dict in ref_dicts:
-            longname = ref_dict["ent"]
-            ent = ModifyListener.get_different_combinations(longname)
-            scope = ref_dict["scope"]
-            if ent is None:
-                # This used to store the literal string "NOT FOUND" in _ent /
-                # _scope, which SQLite accepts in an INTEGER column. A
-                # reference whose endpoint cannot be resolved carries no
-                # information, so drop it rather than write a corrupt row.
-                continue
+            scope_longname = ref_dict["scope_longname"]
+            resolve_scope = ref_dict["resolve_scope"]
+            name = ref_dict["name"]
+            # The scope used to come from the entity manager, which resolved to
+            # the enclosing *class* -- org.json.JSONObject for a modification
+            # inside its constructor, where Understand reports
+            # org.json.JSONObject.JSONObject.
+            ent = EntityModel.get_or_create(
+                _kind=kind_id("Java Unknown Variable Member"),
+                _parent=None,
+                _name=name,
+                _longname=resolved_longname(
+                    name, resolve_scope + "." + name, resolve_scope),
+                _contents="",
+            )[0]
+            scope = EntityModel.get_or_create(
+                _kind=kind_id("Java Unknown Method Member"),
+                _parent=None,
+                _name=scope_longname.rsplit(".", 1)[-1],
+                _longname=scope_longname,
+                _contents="",
+            )[0]
             _, _ = ReferenceModel.get_or_create(
                 _kind=kind_id("Java Modify"),
                 _file=ref_dict["file"],
