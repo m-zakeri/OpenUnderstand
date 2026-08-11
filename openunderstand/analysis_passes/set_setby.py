@@ -118,108 +118,20 @@ class SetAndSetByListener(JavaParserLabeledListener):
                     )
                 else:
                     if ctx.children[1].getText() == "=":
-                        if ctx.children[0].children[1].getText() == "[":
-                            if ctx.children[0].children[0].getChildCount() > 1:
-                                line = (
-                                    ctx.children[0].children[0].children[2].symbol.line
-                                )
-                                column = (
-                                    ctx.children[0]
-                                    .children[0]
-                                    .children[2]
-                                    .symbol.column
-                                )
-                                node = ctx
-                                node = self.get_parent_node(node, (25, 20, 7))
-                                set_long_name = (
-                                    self.package_name
-                                    + "."
-                                    + node.children[1].getText()
-                                    + "."
-                                    + ctx.children[0].children[0].children[0].getText()
-                                )
-                                self.add_set_by_entry(
-                                    set_short_name,
-                                    set_long_name,
-                                    name_of_file,
-                                    line,
-                                    column,
-                                    ctx,
-                                )
-                            else:
-                                while node.getChildCount() != 0:
-                                    node = node.children[0]
-                                line = node.symbol.line
-                                column = node.symbol.column
-                                node = ctx
-                                node = self.get_parent_node(node, (25, 20, 7))
-                                set_long_name = (
-                                    self.package_name
-                                    + "."
-                                    + node.children[1].getText()
-                                    + "."
-                                    + node.children[1].getText()
-                                    + "."
-                                    + ctx.children[0].children[0].getText()
-                                )
-                                self.add_set_by_entry(
-                                    set_short_name,
-                                    set_long_name,
-                                    name_of_file,
-                                    line,
-                                    column,
-                                    ctx,
-                                )
-                        elif (
-                            ctx.children[0].children[1].getText() == "."
-                            and ctx.children[0].children[0].getText() != "this"
-                        ):
-                            while node.getChildCount() != 0:
-                                node = node.children[0]
-                            node1 = ctx
-                            node1 = self.get_parent_node(node1, (7, 25, 20))
-                            self.ss = node1.children[0].getText()
-                            set_long_name = (
-                                self.package_name
-                                + "."
-                                + node1.children[0].getText()
-                                + "."
-                                + node1.children[1].getText()
-                                + "."
-                                + ctx.children[0].children[0].getText()
-                            )
-                            line = node.symbol.line
-                            column = node.symbol.column
-                            set_short_name = ctx.children[0].children[0].getText()
-                            self.add_set_by_entry(
-                                set_short_name,
-                                set_long_name,
-                                name_of_file,
-                                line,
-                                column,
-                                ctx,
-                            )
-                            set_short_name = (
-                                node1.children[0].getText()
-                                + "."
-                                + ctx.children[0].children[2].getText()
-                            )
-                            set_long_name = (
-                                self.package_name
-                                + "."
-                                + node1.children[0].getText()
-                                + "."
-                                + ctx.children[0].children[2].getText()
-                            )
-                            self.add_set_by_entry(
-                                set_short_name,
-                                set_long_name,
-                                name_of_file,
-                                line,
-                                column,
-                                ctx,
-                            )
-
+                        # `a[i] = x` and `obj.field = x` set only part of
+                        # what a / obj refer to. Understand reports those as
+                        # Java Set Deref Partial against the dereferenced
+                        # variable and emits no plain Java Set at all, so they
+                        # belong to setpartial_setpartialby. Emitting them here
+                        # too was 580 of this pass's 627 false positives on the
+                        # TheAlgorithms benchmark.
+                        target = ctx.children[0]
+                        dereferenced = target.children[1].getText() == "[" or (
+                            target.children[1].getText() == "."
+                            and target.children[0].getText() != "this"
+                        )
+                        if dereferenced:
+                            pass
                         else:
                             node = self.get_parent_node(ctx, (7, 25, 20))
                             self.ss = node.children[0].getText()

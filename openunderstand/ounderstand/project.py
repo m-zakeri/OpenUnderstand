@@ -297,17 +297,16 @@ class Project:
 
     def addSetPartialRefs(self, d, file_ent, stream: str = ""):
 
-        for type_tuple in d:
-            ss = str(type_tuple[1]).rfind(".")
-            par = EntityModel.get(_name=type_tuple[7])
+        for ref_dict in d:
+            scope_longname = ref_dict["scope_longname"]
+            name = ref_dict["name"]
             ent, h_c1 = EntityModel.get_or_create(
                 # was the reference kind Java Set Partial, written into an entity row; the variable being partially set
                 _kind=kind_id("Java Unknown Variable Member"),
-                _parent=par._id,
-                _name=type_tuple[0],
-                _longname=type_tuple[1],
-                _value=type_tuple[3],
-                _type=type_tuple[8],
+                _parent=None,
+                _name=name,
+                _longname=resolved_longname(
+                    name, scope_longname + "." + name, scope_longname),
                 _contents="",
             )
 
@@ -315,18 +314,16 @@ class Project:
                 # was the reference kind Java Setby Partial, written into an entity row; the setting scope
                 _kind=kind_id("Java Unknown Method Member"),
                 _parent=None,
-                _name=type_tuple[7],  # PROBLEM
-                _longname=str(type_tuple[1])[:ss],
-                _value=None,
-                _type=type_tuple[3],
-                _contents=type_tuple[9],
+                _name=scope_longname.rsplit(".", 1)[-1],
+                _longname=scope_longname,
+                _contents=stream,
             )
             # 222: Java Set Partial
             set_partial_ref = ReferenceModel.get_or_create(
                 _kind=kind_id("Java Set Deref Partial"),
                 _file=file_ent,
-                _line=type_tuple[4],
-                _column=col_1based(type_tuple[5]),
+                _line=ref_dict["line"],
+                _column=col_1based(ref_dict["column"]),
                 _ent=ent,
                 _scope=scope,
             )
@@ -334,8 +331,8 @@ class Project:
             setby_partial_ref = ReferenceModel.get_or_create(
                 _kind=kind_id("Java Setby Deref Partial"),
                 _file=file_ent,
-                _line=type_tuple[4],
-                _column=col_1based(type_tuple[5]),
+                _line=ref_dict["line"],
+                _column=col_1based(ref_dict["column"]),
                 _ent=scope,
                 _scope=ent,
             )
