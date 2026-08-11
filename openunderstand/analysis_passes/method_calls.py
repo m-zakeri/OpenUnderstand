@@ -28,6 +28,8 @@ class MethodCallListener(JavaParserLabeledListener):
         #: of which precede any call inside them.
         self.field_types = {}
         self.local_types = {}
+        #: Explicitly imported types, by simple name.
+        self.imports = {}
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         body = ctx.classBody()
@@ -40,11 +42,40 @@ class MethodCallListener(JavaParserLabeledListener):
     def enterConstructorDeclaration(self, ctx: JavaParserLabeled.ConstructorDeclarationContext):
         self.local_types = declared_types.collect(ctx)
 
+    def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
+        longname = ctx.qualifiedName().getText()
+        if ctx.getText().rstrip(";").endswith(".*"):
+            return          # a package, not a type
+        self.imports[longname.split(".")[-1]] = longname
+
     def declared_type(self, name):
         """Simple name of `name`'s declared type: a local first, then a field."""
         if not name:
             return None
         return self.local_types.get(name) or self.field_types.get(name)
+
+    def owner_longname(self, receiver, scope_longname):
+        """Long name of the type a call on `receiver` lands on, or None.
+
+        The receiver's declared type is a simple name; placing it needs the
+        same resolution order the couple and dotref passes use. A JDK type is
+        as valid a call target as a project one -- Understand reports
+        `sb.append(...)` as a call to java.lang.StringBuilder.append -- so
+        stopping at project types alone would drop most calls in the file.
+        """
+        from openunderstand.ounderstand import symbol_table
+
+        type_name = self.declared_type(receiver)
+        if not type_name:
+            return None
+        if type_name in self.imports:
+            return self.imports[type_name]
+        in_project = symbol_table.resolve_type(type_name, scope_longname)
+        if in_project:
+            return in_project
+        if type_name in symbol_table.JAVA_LANG_TYPES:
+            return "java.lang." + type_name
+        return None
 
     def enterMethodCall0(self, ctx: JavaParserLabeled.MethodCall0Context):
         identifier = ctx.IDENTIFIER()
@@ -58,6 +89,8 @@ class MethodCallListener(JavaParserLabeledListener):
             expression = parent.expression()
             if expression is not None:
                 receiver = expression.getText()
+        scope_longname = ".".join(
+            class_properties.ClassPropertiesListener.findParents(ctx))
         self.calls.append({
             "name": identifier.getText(),
             "receiver": receiver,
@@ -66,11 +99,10 @@ class MethodCallListener(JavaParserLabeledListener):
             # resolved project-wide and `entry.getValue()` on a Map.Entry
             # became a call to org.json.CDL.getValue, the only getValue the
             # project declares.
-            "receiver_type": self.declared_type(
-                receiver if receiver and receiver.isidentifier() else None),
-            "scope_longname": ".".join(
-                class_properties.ClassPropertiesListener.findParents(ctx)
-            ),
+            "owner_longname": self.owner_longname(
+                receiver if receiver and receiver.isidentifier() else None,
+                scope_longname),
+            "scope_longname": scope_longname,
             "line": identifier.symbol.line,
             "col": identifier.symbol.column,
         })

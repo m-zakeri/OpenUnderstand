@@ -507,7 +507,7 @@ class Project:
 
             name = ref_dict["name"]
             receiver = ref_dict.get("receiver")
-            receiver_type = ref_dict.get("receiver_type")
+            owner = ref_dict.get("owner_longname")
             if receiver:
                 # A call on a receiver is a call on that receiver's type, and
                 # nothing else. Resolving the bare name project-wide instead
@@ -515,14 +515,10 @@ class Project:
                 # org.json.CDL.getValue -- the only getValue the project
                 # declares -- inventing four callers for it and putting its
                 # CountInput at 5 against Understand's 2.
-                if not receiver_type:
-                    # A chained call, or a JDK type this project does not
-                    # index. The call happened, but naming its target would be
-                    # a guess, and a wrong target is worse than none.
-                    continue
-                owner = symbol_table.resolve_type(
-                    receiver_type, ref_dict["scope_longname"])
-                if owner is None:
+                if not owner:
+                    # A chained call, or a type this project neither declares
+                    # nor imports. The call happened, but naming its target
+                    # would be a guess, and a wrong target is worse than none.
                     continue
                 longname = f"{owner}.{name}"
                 ent = EntityModel.get_or_none(EntityModel._longname == longname)
