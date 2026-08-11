@@ -108,6 +108,24 @@ JAVA_LANG_TYPES = frozenset(
     Throwable Void""".split()
 )
 
+#: Declared type of well-known JDK fields, keyed by (owning type, field).
+#:
+#: Understand resolves a field access to the field's *declared* type and
+#: couples to that as well as to the owner, so `System.out.println(...)` gives
+#: both java.lang.System and java.io.PrintStream. Reproducing that in general
+#: needs a model of the JDK's members, which this project has no access to;
+#: these are the ones that actually occur. On TheAlgorithms, System.out alone
+#: accounts for 144 of Understand's 1182 couples.
+#:
+#: ponytail: a hand-written table, so it covers exactly what is listed and
+#: nothing else. System.in is deliberately absent -- no file in either
+#: benchmark uses it, so there is no measurement to say whether Understand
+#: couples it, and a guess here would be indistinguishable from a fix.
+JDK_FIELD_TYPES = {
+    ("java.lang.System", "out"): "java.io.PrintStream",
+    ("java.lang.System", "err"): "java.io.PrintStream",
+}
+
 
 def build(root: str) -> _DeclarationIndex:
     """Index every declaration under `root`. Safe to call more than once."""

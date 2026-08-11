@@ -222,7 +222,28 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         receiver = ctx.expression().getText()
         if not receiver.isidentifier():
             return
-        self.add(self.lookup_receiver(receiver))
+        owner = self.lookup_receiver(receiver)
+        self.add(owner)
+        self.add(self.field_type(owner, ctx))
+
+    @staticmethod
+    def field_type(owner, ctx):
+        """Declared type of the field being read, for the JDK fields we know.
+
+        Understand couples to a field's declared type as well as to its owner,
+        so `System.out.println(...)` yields java.lang.System *and*
+        java.io.PrintStream -- 144 of TheAlgorithms' 1182 couples, and every
+        one of them missed here because the type of `out` is not derivable
+        from the source being analysed.
+        """
+        from openunderstand.ounderstand import symbol_table
+
+        if owner is None:
+            return None
+        member = ctx.IDENTIFIER()
+        if member is None:
+            return None
+        return symbol_table.JDK_FIELD_TYPES.get((owner, member.getText()))
 
     def lookup_receiver(self, name):
         """Long name if `name` denotes a type, else None. No guessing."""
