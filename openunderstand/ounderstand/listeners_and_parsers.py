@@ -340,10 +340,7 @@ class ListenersAndParsers:
         try:
             listener = DotRef_DotRefBy()
             p.Walk(listener, tree)
-            p.addThrows_TrowsByRefs(
-                listener.implement, file_ent, file_address,
-                kind_id("Java DotRef"), kind_id("Java DotRefby"), False
-            )
+            p.addDotRefRefs(listener.implement, file_ent)
             self.logger.info("DotRef success ")
         except Exception as e:
             self.logger.error(

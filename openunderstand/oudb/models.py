@@ -438,10 +438,16 @@ def drop_shadowed_use_refs():
 
     Returns the number of references deleted.
     """
-    # Any other kind at the identical position and endpoints wins. Enumerating
-    # the variants instead would silently stop shadowing the day a new one is
-    # added; measured against Understand this deletes 926 rows on JSON and not
-    # one of them is a reference Understand reports as a plain Use.
+    # Any other kind at the identical position wins, whatever its endpoints.
+    # Matching endpoints too was stricter than Understand: a DotRef resolves
+    # its receiver to java.lang.Character where the use pass leaves an
+    # unresolved placeholder, so the two rows describe the same fact under
+    # different names and the plain Use survived. Position is the rule --
+    # Understand emits no plain Use at a position carrying a variant, 0 of 1810
+    # on JSON. Enumerating the variants instead would silently stop shadowing
+    # the day a new one is added. Measured: this drops 110 rows on JSON and 895
+    # on TheAlgorithms, and not one of them is a reference Understand reports
+    # as a plain Use.
     cursor = ReferenceModel._meta.database.execute_sql(
         """
         DELETE FROM referencemodel
@@ -451,8 +457,6 @@ def drop_shadowed_use_refs():
                         WHERE other._file_id  = referencemodel._file_id
                           AND other._line     = referencemodel._line
                           AND other._column   = referencemodel._column
-                          AND other._ent_id   = referencemodel._ent_id
-                          AND other._scope_id = referencemodel._scope_id
                           AND other._kind_id NOT IN
                               (SELECT _id FROM kindmodel
                                 WHERE _name IN ('Java Use', 'Java Useby')))

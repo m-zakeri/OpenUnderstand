@@ -79,6 +79,20 @@ class _DeclarationIndex:
 #: Populated by build(); read by the passes through resolve().
 INDEX = _DeclarationIndex()
 
+#: java.lang is imported implicitly, so a bare `Integer` or `Character` carries
+#: no import to resolve it against and is declared nowhere in the project. Only
+#: the names that actually turn up are listed -- this is a lookup table, not a
+#: model of the JDK.
+#: ponytail: a name outside this set, outside the imports and outside the
+#: project is left unresolved rather than guessed. Widen it if parity shows a
+#: type being missed.
+JAVA_LANG_TYPES = frozenset(
+    """Boolean Byte Character Class ClassLoader Comparable Double Enum Error
+    Exception Float Integer Iterable Long Math Number Object Override Package
+    Process Runtime Short String StringBuffer StringBuilder System Thread
+    Throwable Void""".split()
+)
+
 
 def build(root: str) -> _DeclarationIndex:
     """Index every declaration under `root`. Safe to call more than once."""

@@ -1615,6 +1615,51 @@ class Project:
             ent = self.getClassEntity(longname, file_address, file_ent)
         return ent
 
+    def addDotRefRefs(self, ref_dicts, file_ent):
+        """Java DotRef / DotRefby.
+
+        Split out of addThrows_TrowsByRefs: the two kinds share a shape but not
+        a way of resolving their target. A throw names an exception type the
+        throw pass has already located; a DotRef names a type used as a
+        receiver, which the pass resolves through the file's imports.
+        """
+        for ref_dict in ref_dicts:
+            scope_longname = ref_dict["scope_longname"]
+            # Prefer the entity the define pass declared, so the reference
+            # attaches to the real method rather than a second placeholder.
+            scope = EntityModel.get_or_none(
+                EntityModel._longname == scope_longname
+            )
+            if scope is None:
+                scope = EntityModel.get_or_create(
+                    _kind=kind_id("Java Unknown Method Member"),
+                    _name=scope_longname.rsplit(".", 1)[-1],
+                    _parent=None,
+                    _longname=scope_longname,
+                )[0]
+            ent = EntityModel.get_or_create(
+                _kind=kind_id("Java Unknown Class Type Member"),
+                _name=ref_dict["refent_name"],
+                _parent=None,
+                _longname=ref_dict["refent_longname"],
+            )[0]
+            ReferenceModel.get_or_create(
+                _kind=kind_id("Java DotRef"),
+                _file=file_ent,
+                _line=ref_dict["line"],
+                _column=col_1based(ref_dict["col"]),
+                _ent=ent,
+                _scope=scope,
+            )
+            ReferenceModel.get_or_create(
+                _kind=kind_id("Java DotRefby"),
+                _file=file_ent,
+                _line=ref_dict["line"],
+                _column=col_1based(ref_dict["col"]),
+                _ent=scope,
+                _scope=ent,
+            )
+
     def addThrows_TrowsByRefs(self, ref_dicts, file_ent, file_address, id1, id2, Throw):
         for ref_dict in ref_dicts:
 
