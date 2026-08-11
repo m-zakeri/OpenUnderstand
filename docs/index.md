@@ -77,8 +77,20 @@ The harness builds both databases from the same source and produces a ranked
 defect report. It needs a licensed Understand install, so it is kept outside
 this repository — ask if you want to run it.
 
-This is the project's test suite: there are no unit tests, because the only
-specification that matters is the real tool's output.
+The comparison is the specification: the only thing that decides whether a
+reference is right is what the real tool reports for it.
+
+Alongside it, `tests/` holds unit tests for the passes whose rules were derived
+from that comparison — what counts as a `Set` against a dereferenced target,
+where a `Modify` sits on `++i`, which names a type resolves to. Each runs in
+about a second and needs no database:
+
+```bash
+for t in tests/test_*.py; do .venv/bin/python -W ignore "$t"; done
+```
+
+They exist to stop a rule regressing between comparison runs, not to replace
+one — a pass can satisfy every test here and still disagree with Understand.
 
 ## Where to go next
 

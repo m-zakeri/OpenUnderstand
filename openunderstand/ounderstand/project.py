@@ -9,7 +9,6 @@ from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
 from openunderstand.oudb.models import (KindModel, EntityModel, ReferenceModel,
                                         col_1based, resolve_entity_ref, kind_family)
-from openunderstand.analysis_passes.modify_modifyby import ModifyListener
 from openunderstand.analysis_passes.g6_class_properties import (
     ClassPropertiesListener,
     InterfacePropertiesListener,
@@ -194,13 +193,30 @@ class Project:
 
         for type_tuple in d:
             par = EntityModel.get(_name=type_tuple[7])
-            ss = str(type_tuple[1]).rfind(".")
+            # The scope is the enclosing method, which is not the entity's long
+            # name minus its last segment: `this.usePrevious = false` inside
+            # JSONTokener.next sets org.json.JSONTokener.usePrevious -- a field
+            # of the class -- from scope org.json.JSONTokener.next. Trimming
+            # the entity gave org.json.JSONTokener for the scope.
+            scope_longname = type_tuple[11]
+            # `this.map = ...` arrives with the short name already qualified
+            # ("JSONObject.map"). Resolving that verbatim never matches, and the
+            # fallback glued it onto the scope:
+            # org.json.JSONObject.JSONObject.JSONObject.map.
+            simple_name = str(type_tuple[0]).rsplit(".", 1)[-1]
+            # Where to start looking for that name. Same as the scope except
+            # for a `this.` target, which must skip the method's own locals.
+            resolve_scope = type_tuple[12]
             ent, h_c1 = EntityModel.get_or_create(
                 # was the reference kind Java Set, written into an entity row; the variable being set
                 _kind=kind_id("Java Unknown Variable Member"),
                 _parent=par._id,
-                _name=type_tuple[0],
-                _longname=type_tuple[1],
+                _name=simple_name,
+                # Innermost scope outwards: a local in this method wins, then a
+                # field of its class. The pass could only glue the package on
+                # the front, which named every `c` in the project org.json.c.
+                _longname=resolved_longname(
+                    simple_name, resolve_scope + "." + simple_name, resolve_scope),
                 _value=type_tuple[3],
                 _type=type_tuple[9],
                 _contents="",
@@ -210,8 +226,8 @@ class Project:
                 # was the reference kind Java Setby, written into an entity row; the setting scope
                 _kind=kind_id("Java Unknown Method Member"),
                 _parent=None,
-                _name=type_tuple[10],  # PROBLEM
-                _longname=str(type_tuple[1])[:ss],
+                _name=scope_longname.rsplit(".", 1)[-1],
+                _longname=scope_longname,
                 _value=None,
                 _type=type_tuple[3],
                 _contents=type_tuple[8],
@@ -281,17 +297,16 @@ class Project:
 
     def addSetPartialRefs(self, d, file_ent, stream: str = ""):
 
-        for type_tuple in d:
-            ss = str(type_tuple[1]).rfind(".")
-            par = EntityModel.get(_name=type_tuple[7])
+        for ref_dict in d:
+            scope_longname = ref_dict["scope_longname"]
+            name = ref_dict["name"]
             ent, h_c1 = EntityModel.get_or_create(
                 # was the reference kind Java Set Partial, written into an entity row; the variable being partially set
                 _kind=kind_id("Java Unknown Variable Member"),
-                _parent=par._id,
-                _name=type_tuple[0],
-                _longname=type_tuple[1],
-                _value=type_tuple[3],
-                _type=type_tuple[8],
+                _parent=None,
+                _name=name,
+                _longname=resolved_longname(
+                    name, scope_longname + "." + name, scope_longname),
                 _contents="",
             )
 
@@ -299,18 +314,16 @@ class Project:
                 # was the reference kind Java Setby Partial, written into an entity row; the setting scope
                 _kind=kind_id("Java Unknown Method Member"),
                 _parent=None,
-                _name=type_tuple[7],  # PROBLEM
-                _longname=str(type_tuple[1])[:ss],
-                _value=None,
-                _type=type_tuple[3],
-                _contents=type_tuple[9],
+                _name=scope_longname.rsplit(".", 1)[-1],
+                _longname=scope_longname,
+                _contents=stream,
             )
             # 222: Java Set Partial
             set_partial_ref = ReferenceModel.get_or_create(
                 _kind=kind_id("Java Set Deref Partial"),
                 _file=file_ent,
-                _line=type_tuple[4],
-                _column=col_1based(type_tuple[5]),
+                _line=ref_dict["line"],
+                _column=col_1based(ref_dict["column"]),
                 _ent=ent,
                 _scope=scope,
             )
@@ -318,33 +331,46 @@ class Project:
             setby_partial_ref = ReferenceModel.get_or_create(
                 _kind=kind_id("Java Setby Deref Partial"),
                 _file=file_ent,
-                _line=type_tuple[4],
-                _column=col_1based(type_tuple[5]),
+                _line=ref_dict["line"],
+                _column=col_1based(ref_dict["column"]),
                 _ent=scope,
                 _scope=ent,
             )
 
     def addUseRefs(self, d_use, file_ent, stream: str = ""):
-        for use_tuple in d_use:
+        """Write Java Use / Java Useby.
+
+        The two endpoints used to be the wrong way round: `ent` was built from
+        the enclosing method's name and `scope` from the identifier being read,
+        so Understand's
+            scope=org.json.CDL.getValue  ent=org.json.CDL.getValue.c
+        came out as
+            scope=org.json.c             ent=org.json.CDL.getValue
+        -- reversed, and with a long name (`org.json.c`) shared by every `c` in
+        the project.
+        """
+        for use in d_use:
+            scope_longname = use["scope_longname"]
             ent, h_c1 = EntityModel.get_or_create(
-                # was the reference kind Java Use, written into an entity row; the used entity
+                # The entity being read. Unknown is a placeholder kind: it
+                # matches any family and is upgraded in place once the pass
+                # that declares this entity has run.
                 _kind=kind_id("Java Unknown Variable Member"),
                 _parent=None,
-                _name=use_tuple[1],
+                _name=use["name"],
                 _longname=resolved_longname(
-                    use_tuple[1], use_tuple[6] + "." + use_tuple[1], use_tuple[6]),
+                    use["name"], scope_longname + "." + use["name"], scope_longname),
                 _value=None,
                 _type=None,
                 _contents=stream,
             )
 
             scope, h_c2 = EntityModel.get_or_create(
-                # was the reference kind Java Useby, written into an entity row; the using scope
+                # The method (or class) the read sits in.
                 _kind=kind_id("Java Unknown Method Member"),
                 _parent=None,
-                _name=use_tuple[0],
-                _longname=resolved_longname(
-                    use_tuple[0], use_tuple[6] + "." + use_tuple[0], use_tuple[6]),
+                _name=scope_longname.rsplit(".", 1)[-1],
+                _longname=scope_longname,
                 _value=None,
                 _type=None,
                 _contents=stream,
@@ -353,8 +379,8 @@ class Project:
             use_ref = ReferenceModel.get_or_create(
                 _kind=kind_id("Java Use"),
                 _file=file_ent,
-                _line=use_tuple[4],
-                _column=col_1based(use_tuple[5]),
+                _line=use["line"],
+                _column=col_1based(use["column"]),
                 _ent=ent,
                 _scope=scope,
             )
@@ -366,8 +392,8 @@ class Project:
             useby_ref = ReferenceModel.get_or_create(
                 _kind=kind_id("Java Useby"),
                 _file=file_ent,
-                _line=use_tuple[4],
-                _column=col_1based(use_tuple[5]),
+                _line=use["line"],
+                _column=col_1based(use["column"]),
                 _ent=scope,
                 _scope=ent,
             )
@@ -480,25 +506,58 @@ class Project:
                 continue
 
             name = ref_dict["name"]
-            ent = EntityModel.get_or_none(
-                EntityModel._longname == f"{ref_dict['scope_longname']}.{name}"
-            )
-            if ent is None:
-                # The declaration may be in another file, which this pass
-                # cannot see. The project-wide index built before the passes
-                # ran can answer that; it refuses ambiguous names rather than
-                # guessing.
-                resolved = symbol_table.resolve(name, ref_dict["scope_longname"])
-                if resolved:
-                    ent = EntityModel.get_or_none(EntityModel._longname == resolved)
-            if ent is None:
-                ent, _ = EntityModel.get_or_create(
-                    _kind=kind_id("Java Unknown Method Member"),
-                    _name=name,
-                    _parent=file_ent,
-                    _longname=name,
-                    _contents="",
+            receiver = ref_dict.get("receiver")
+            owner = ref_dict.get("owner_longname")
+            if receiver:
+                # A call on a receiver is a call on that receiver's type, and
+                # nothing else. Resolving the bare name project-wide instead
+                # sent every `entry.getValue()` on a java.util.Map.Entry to
+                # org.json.CDL.getValue -- the only getValue the project
+                # declares -- inventing four callers for it and putting its
+                # CountInput at 5 against Understand's 2.
+                if not owner:
+                    # A chained call, or a type this project neither declares
+                    # nor imports. The call happened, but naming its target
+                    # would be a guess, and a wrong target is worse than none.
+                    continue
+                # Understand attributes the call to the class that *declares*
+                # the method, not to the receiver's static type: XMLTokener
+                # extends JSONTokener, so x.next() on an XMLTokener is a call
+                # to org.json.JSONTokener.next. Falls back to the static type
+                # when nothing in the chain declares it, which is every method
+                # inherited from the JDK.
+                owner = symbol_table.declaring_type(owner, name) or owner
+                longname = f"{owner}.{name}"
+                ent = EntityModel.get_or_none(EntityModel._longname == longname)
+                if ent is None:
+                    ent, _ = EntityModel.get_or_create(
+                        _kind=kind_id("Java Unknown Method Member"),
+                        _name=name,
+                        _parent=file_ent,
+                        _longname=longname,
+                        _contents="",
+                    )
+            else:
+                # No receiver: a call on the enclosing class.
+                ent = EntityModel.get_or_none(
+                    EntityModel._longname == f"{ref_dict['scope_longname']}.{name}"
                 )
+                if ent is None:
+                    # The declaration may be in another file, which this pass
+                    # cannot see. The project-wide index built before the
+                    # passes ran can answer that; it refuses ambiguous names
+                    # rather than guessing.
+                    resolved = symbol_table.resolve(name, ref_dict["scope_longname"])
+                    if resolved:
+                        ent = EntityModel.get_or_none(EntityModel._longname == resolved)
+                if ent is None:
+                    ent, _ = EntityModel.get_or_create(
+                        _kind=kind_id("Java Unknown Method Member"),
+                        _name=name,
+                        _parent=file_ent,
+                        _longname=name,
+                        _contents="",
+                    )
             if ent._id == scope._id:
                 continue
 
@@ -696,15 +755,28 @@ class Project:
     @staticmethod
     def add_modify_and_modifyby_reference(ref_dicts):
         for ref_dict in ref_dicts:
-            longname = ref_dict["ent"]
-            ent = ModifyListener.get_different_combinations(longname)
-            scope = ref_dict["scope"]
-            if ent is None:
-                # This used to store the literal string "NOT FOUND" in _ent /
-                # _scope, which SQLite accepts in an INTEGER column. A
-                # reference whose endpoint cannot be resolved carries no
-                # information, so drop it rather than write a corrupt row.
-                continue
+            scope_longname = ref_dict["scope_longname"]
+            resolve_scope = ref_dict["resolve_scope"]
+            name = ref_dict["name"]
+            # The scope used to come from the entity manager, which resolved to
+            # the enclosing *class* -- org.json.JSONObject for a modification
+            # inside its constructor, where Understand reports
+            # org.json.JSONObject.JSONObject.
+            ent = EntityModel.get_or_create(
+                _kind=kind_id("Java Unknown Variable Member"),
+                _parent=None,
+                _name=name,
+                _longname=resolved_longname(
+                    name, resolve_scope + "." + name, resolve_scope),
+                _contents="",
+            )[0]
+            scope = EntityModel.get_or_create(
+                _kind=kind_id("Java Unknown Method Member"),
+                _parent=None,
+                _name=scope_longname.rsplit(".", 1)[-1],
+                _longname=scope_longname,
+                _contents="",
+            )[0]
             _, _ = ReferenceModel.get_or_create(
                 _kind=kind_id("Java Modify"),
                 _file=ref_dict["file"],
@@ -1235,8 +1307,17 @@ class Project:
         return ent
 
     def findKindWithKeywords(self, type, modifiers):
+        # An annotation is not a modifier. `@SuppressWarnings("boxing") public
+        # class XML` arrived here with '@SuppressWarnings("boxing")' in the
+        # list; no kind name contains that, so every candidate was rejected and
+        # this returned None. None went on to _kind, failed the NOT NULL
+        # constraint, and the caller's `except: print(e)` dropped the whole
+        # class -- org.json.XML and org.json.XMLParserConfiguration produced no
+        # references of any kind. Rebinding rather than mutating also stops the
+        # "default" below leaking back into the caller's list.
+        modifiers = [m for m in modifiers if not m.startswith("@")]
         if len(modifiers) == 0:
-            modifiers.append("default")
+            modifiers = ["default"]
         leastspecific_kind_selected = None
         for kind in KindModel.select().where(KindModel._name.contains(type)):
             if self.checkModifiersInKind(modifiers, kind):
@@ -1567,6 +1648,51 @@ class Project:
             ent = self.getClassEntity(longname, file_address, file_ent)
         return ent
 
+    def addDotRefRefs(self, ref_dicts, file_ent):
+        """Java DotRef / DotRefby.
+
+        Split out of addThrows_TrowsByRefs: the two kinds share a shape but not
+        a way of resolving their target. A throw names an exception type the
+        throw pass has already located; a DotRef names a type used as a
+        receiver, which the pass resolves through the file's imports.
+        """
+        for ref_dict in ref_dicts:
+            scope_longname = ref_dict["scope_longname"]
+            # Prefer the entity the define pass declared, so the reference
+            # attaches to the real method rather than a second placeholder.
+            scope = EntityModel.get_or_none(
+                EntityModel._longname == scope_longname
+            )
+            if scope is None:
+                scope = EntityModel.get_or_create(
+                    _kind=kind_id("Java Unknown Method Member"),
+                    _name=scope_longname.rsplit(".", 1)[-1],
+                    _parent=None,
+                    _longname=scope_longname,
+                )[0]
+            ent = EntityModel.get_or_create(
+                _kind=kind_id("Java Unknown Class Type Member"),
+                _name=ref_dict["refent_name"],
+                _parent=None,
+                _longname=ref_dict["refent_longname"],
+            )[0]
+            ReferenceModel.get_or_create(
+                _kind=kind_id("Java DotRef"),
+                _file=file_ent,
+                _line=ref_dict["line"],
+                _column=col_1based(ref_dict["col"]),
+                _ent=ent,
+                _scope=scope,
+            )
+            ReferenceModel.get_or_create(
+                _kind=kind_id("Java DotRefby"),
+                _file=file_ent,
+                _line=ref_dict["line"],
+                _column=col_1based(ref_dict["col"]),
+                _ent=scope,
+                _scope=ent,
+            )
+
     def addThrows_TrowsByRefs(self, ref_dicts, file_ent, file_address, id1, id2, Throw):
         for ref_dict in ref_dicts:
 
@@ -1729,11 +1855,16 @@ class Project:
                                     _parent=file_ent,
                                     _longname=key,
                                 )
+                            # Couple is a class-level fact, not a source event:
+                            # Understand stores every one of them at line 0,
+                            # column 0. Writing the class declaration's
+                            # position here made every row miss on position
+                            # even when the coupled pair was right.
                             Couple_ref = ReferenceModel.get_or_create(
                                 _kind=kind_id("Java Couple"),
                                 _file=file_ent,
-                                _line=c["line"],
-                                _column=col_1based(c["col"]),
+                                _line=0,
+                                _column=0,
                                 _ent=ent[0],
                                 _scope=scope[0],
                             )
@@ -1744,8 +1875,8 @@ class Project:
                             CoupleBy_ref = ReferenceModel.get_or_create(
                                 _kind=kind_id("Java Coupleby"),
                                 _file=file_ent,
-                                _line=c["line"],
-                                _column=col_1based(c["col"]),
+                                _line=0,
+                                _column=0,
                                 _ent=scope[0],
                                 _scope=ent[0],
                             )

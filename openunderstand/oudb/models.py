@@ -421,6 +421,50 @@ def merge_placeholder_entities():
 _NONDYNAMIC_TOKENS = {"static", "private", "final", "constructor"}
 
 
+def drop_shadowed_use_refs():
+    """Delete plain Java Use/Useby where a more specific kind sits on it.
+
+    Understand reports exactly one reference kind per (entity, scope,
+    position): `x` in `x.next()` is a Use Deref Partial, an assignment target
+    is a Set, `i++` is a Modify -- and in none of those cases does it also
+    report a plain Use. Measured on the JSON benchmark: 0 of 1810 Use
+    references share a position with a variant.
+
+    The Use pass cannot make this call itself. It walks one file and runs
+    before set/dotref/modify have written anything, so the more specific fact
+    does not exist yet. Deciding it here, after every pass over every file, is
+    what makes it answerable -- the same reason relabel_nondynamic_calls()
+    lives here.
+
+    Returns the number of references deleted.
+    """
+    # Any other kind at the identical position wins, whatever its endpoints.
+    # Matching endpoints too was stricter than Understand: a DotRef resolves
+    # its receiver to java.lang.Character where the use pass leaves an
+    # unresolved placeholder, so the two rows describe the same fact under
+    # different names and the plain Use survived. Position is the rule --
+    # Understand emits no plain Use at a position carrying a variant, 0 of 1810
+    # on JSON. Enumerating the variants instead would silently stop shadowing
+    # the day a new one is added. Measured: this drops 110 rows on JSON and 895
+    # on TheAlgorithms, and not one of them is a reference Understand reports
+    # as a plain Use.
+    cursor = ReferenceModel._meta.database.execute_sql(
+        """
+        DELETE FROM referencemodel
+         WHERE _kind_id IN (SELECT _id FROM kindmodel
+                             WHERE _name IN ('Java Use', 'Java Useby'))
+           AND EXISTS (SELECT 1 FROM referencemodel other
+                        WHERE other._file_id  = referencemodel._file_id
+                          AND other._line     = referencemodel._line
+                          AND other._column   = referencemodel._column
+                          AND other._kind_id NOT IN
+                              (SELECT _id FROM kindmodel
+                                WHERE _name IN ('Java Use', 'Java Useby')))
+        """
+    )
+    return cursor.rowcount if cursor.rowcount and cursor.rowcount > 0 else 0
+
+
 def relabel_nondynamic_calls():
     """Split Java Call into Call/Call Nondynamic once targets are known.
 

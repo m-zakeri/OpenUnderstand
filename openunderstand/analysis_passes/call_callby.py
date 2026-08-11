@@ -8,6 +8,7 @@ from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserL
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 import openunderstand.analysis_passes.class_properties as class_properties
 from openunderstand.analysis_passes.general_scope_listener import GeneralScopeListener
+from openunderstand.analysis_passes import declared_types
 
 
 class CallAndCallBy(JavaParserLabeledListener):
@@ -39,11 +40,18 @@ class CallAndCallBy(JavaParserLabeledListener):
         self.local_method_variables = {}
         self.implement = []
         self.classes_repo = []
+        #: Declared type of every name in scope for the method being walked.
+        self.declared_types = {}
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         try:
             bodies = ctx.classBody().classBodyDeclaration()
             if bodies is not None:
+                # Gathered here rather than from listener callbacks: this pass
+                # walks each method's body itself, from enterClassDeclaration,
+                # so the walker has not yet reached the declarations inside
+                # them and callback-collected types would still be empty.
+                field_types = declared_types.collect(ctx.classBody())
                 for body in bodies:
                     member = getattr(body, "memberDeclaration", None)
                     if member is not None:
@@ -52,9 +60,56 @@ class CallAndCallBy(JavaParserLabeledListener):
                         if method is not None:
                             method = method()
                             block = method.methodBody().block()
+                            self.declared_types = dict(field_types)
+                            self.declared_types.update(declared_types.collect(method))
                             self.dfs(block, method, ctx)
         except Exception as e:
             print("ERROR enterClassDeclaration : ", e)
+
+    def callee_longname(self, called, receiver, cls, context):
+        """Long name of the method being called, or None if it cannot be placed.
+
+        The callee used to be stored as the bare identifier -- "next",
+        "getValue" -- and merge_placeholder_entities() then folded that name
+        into whichever project method uniquely shared it. That is how
+        `entry.getValue()` on a java.util.Map.Entry became a call to
+        org.json.CDL.getValue, and with it four phantom callers that put
+        CDL.getValue's CountInput at 5 against Understand's 2.
+
+        A call with no receiver is on the enclosing class. A call on a receiver
+        whose declared type is known is on that type. A receiver whose type
+        cannot be determined -- a chained call, or a JDK type this project does
+        not index -- is left unplaced and the reference dropped, because a bare
+        name is not evidence about which method was called.
+        """
+        from openunderstand.ounderstand import symbol_table
+
+        name = str(called)
+        parents = class_properties.ClassPropertiesListener.findParents(context)
+        enclosing = ".".join(parents + [cls.IDENTIFIER().__str__()])
+        if not receiver:
+            return enclosing + "." + name
+        if not receiver.isidentifier():
+            return None
+        type_name = self.declared_types.get(receiver)
+        if not type_name:
+            return None
+        owner = symbol_table.resolve_type(type_name, enclosing)
+        return owner + "." + name if owner else None
+
+    @staticmethod
+    def receiver_of(expression):
+        """Text of the receiver in `receiver.method()`, or None for a bare call."""
+        inner = getattr(expression, "expression", None)
+        if not callable(inner):
+            return None
+        try:
+            inner = inner()
+        except TypeError:
+            return None
+        if inner is None or isinstance(inner, list):
+            return None
+        return inner.getText()
 
     def dfs(self, ctx, cls, context):
         try:
@@ -94,6 +149,11 @@ class CallAndCallBy(JavaParserLabeledListener):
                                         methodCall = methodCall()
                                         if methodCall is not None:
                                             called = methodCall.IDENTIFIER()
+                                            called_longname = self.callee_longname(
+                                                called, self.receiver_of(exp3),
+                                                cls, context)
+                                            if called_longname is None:
+                                                continue
                                             scope_parents = class_properties.ClassPropertiesListener.findParents(
                                                 context
                                             )
@@ -123,7 +183,7 @@ class CallAndCallBy(JavaParserLabeledListener):
                                                     ),
                                                     "line": line,
                                                     "col": col,
-                                                    "type_ent_longname": str(called),
+                                                    "type_ent_longname": called_longname,
                                                 }
                                             )
 
@@ -133,6 +193,11 @@ class CallAndCallBy(JavaParserLabeledListener):
                                     methodCall = methodCall()
                                     if methodCall is not None:
                                         called = methodCall.IDENTIFIER()
+                                        called_longname = self.callee_longname(
+                                            called, self.receiver_of(exp),
+                                            cls, context)
+                                        if called_longname is None:
+                                            return
                                         scope_parents = class_properties.ClassPropertiesListener.findParents(
                                             context
                                         )
@@ -160,7 +225,7 @@ class CallAndCallBy(JavaParserLabeledListener):
                                                 ),
                                                 "line": line,
                                                 "col": col,
-                                                "type_ent_longname": str(called),
+                                                "type_ent_longname": called_longname,
                                             }
                                         )
         except Exception as e:

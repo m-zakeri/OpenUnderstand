@@ -148,6 +148,27 @@ def enclosing_type_name(ctx):
     return None
 
 
+@lru_cache(maxsize=256)
+def _scoped_counts(source, name, family_is_type, file_scoped, listener_factory):
+    from collections import Counter
+
+    listener = listener_factory()
+    ParseTreeWalker().walk(t=parse(source), listener=listener)
+    counts = Counter(getattr(listener, "repository", []))
+
+    if file_scoped:
+        return {id(ctx): n for ctx, n in counts.items()}, listener
+
+    out = {}
+    for ctx, n in counts.items():
+        if family_is_type:
+            if enclosing_type_name(ctx) == name:
+                out[id(ctx)] = n
+        elif declared_name(ctx) == name:
+            out[id(ctx)] = n
+    return out, listener
+
+
 def scoped_counts(ent_model, listener_factory):
     """Per-declaration counts from `listener.repository`, limited to an entity.
 
@@ -157,25 +178,20 @@ def scoped_counts(ent_model, listener_factory):
     everything, a type gets its own members, a method gets itself. Without it,
     SumCyclomatic and MaxCyclomatic answered every question with the whole
     file's number.
+
+    Memoized on its real inputs -- the file's source and the entity's name and
+    family. Ent.metric() dispatches one metric at a time through an if/elif
+    chain, so asking an entity for SumCyclomatic, MaxCyclomatic and
+    AvgCyclomatic walked the same file three times. The returned dict and
+    listener are shared between callers and must not be mutated.
     """
-    from collections import Counter
-
-    listener = walk_file(ent_model, listener_factory())
-    counts = Counter(getattr(listener, "repository", []))
-
-    if is_file(ent_model):
-        return {id(ctx): n for ctx, n in counts.items()}, listener
-
-    name = ent_model.name()
-    family_is_type = "Type" in (ent_model.kindname() or "")
-    out = {}
-    for ctx, n in counts.items():
-        if family_is_type:
-            if enclosing_type_name(ctx) == name:
-                out[id(ctx)] = n
-        elif declared_name(ctx) == name:
-            out[id(ctx)] = n
-    return out, listener
+    return _scoped_counts(
+        file_source(ent_model),
+        ent_model.name(),
+        "Type" in (ent_model.kindname() or ""),
+        is_file(ent_model),
+        listener_factory,
+    )
 
 
 def cyclomatic_summary(ent_model) -> dict:
@@ -304,9 +320,17 @@ def statement_counts(ent_model) -> dict:
     They used to come from a listener that was constructed but never walked --
     so CountLineCodeDecl and CountLineCodeExe were 0 everywhere -- and from a
     statement counter that did not distinguish declarative from executable.
+
+    Five metrics read this one result, and each used to recompute it. The
+    returned dict is shared and must not be mutated.
     """
+    return _statement_counts(ent_model.contents() or "")
+
+
+@lru_cache(maxsize=256)
+def _statement_counts(source: str) -> dict:
     classifier = _StatementClassifier()
-    classifier.visit(parse_entity(ent_model.contents() or ""))
+    classifier.visit(parse_entity(source))
     return {
         "stmt": classifier.statements,
         "stmt_decl": classifier.decl_statements,
@@ -316,8 +340,13 @@ def statement_counts(ent_model) -> dict:
     }
 
 
+@lru_cache(maxsize=512)
 def line_counts(source: str) -> dict:
     """Understand's line metrics for a block of source.
+
+    Five metrics read this one result, and average_line_counts() calls it once
+    per member of a class for each of four more, so it is memoized on the
+    source it counts. The returned dict is shared and must not be mutated.
 
     A line is counted once per category it belongs to, and a line holding both
     code and a trailing comment counts in both -- which is why the categories

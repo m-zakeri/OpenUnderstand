@@ -18,7 +18,7 @@ being papered over.
 """
 
 from openunderstand.oudb.models import (EntityModel, KindModel, ReferenceModel,
-                                        kind_family, kind_id)
+                                        _kind_name, kind_family, kind_id)
 
 
 def _refs(entity_id, kind_name):
@@ -286,11 +286,36 @@ def count_semicolon(ent_model):
     return total
 
 
-def _fan_targets(entity_id, ref_kinds, families):
+def _fan_targets(entity_id, ref_kinds, owner_longname):
+    """Distinct parameters, and variables declared outside the asking entity.
+
+    Understand's fan metrics count "calling subprograms plus global variables
+    read" -- and, as its own numbers show, the entity's parameters. On CDL:
+
+        getValue(JSONTokener x)                In=2  = 1 caller  + 1 parameter
+        rowToString(JSONArray ja)              In=3  = 2 callers + 1 parameter
+        rowToJSONObject(JSONArray, JSONTokener) In=3 = 1 caller  + 2 parameters
+
+    A method's *locals* are neither: counting them gave getValue an input of 8
+    from its three locals and one parameter. Parameters and locals are both
+    nested under the method's long name, so telling them apart needs the kind
+    family -- and the long name is what separates a field from a local, since
+    425 of the JSON benchmark's variable entities are `Java Unknown Variable
+    Member` placeholders no pass ever upgraded, where kind says nothing.
+    """
+    prefix = (owner_longname or "") + "."
     out = set()
     for kind in ref_kinds:
         for target in _targets(entity_id, kind):
-            if kind_family(target._kind_id) in families:
+            if kind_family(target._kind_id) != "variable":
+                continue
+            # A parameter and a local are both the "variable" family -- Java
+            # Parameter maps to it too -- so only the kind name tells them
+            # apart, and only the long name tells a field from a local.
+            if "Parameter" in (_kind_name(target._kind_id) or ""):
+                out.add(target._id)
+            elif not (owner_longname
+                      and (target._longname or "").startswith(prefix)):
                 out.add(target._id)
     return out
 
@@ -308,7 +333,7 @@ def count_output(ent_model):
     fan |= {t._id for t in _targets(entity._id, "Java Call Nondynamic")}
     fan |= _fan_targets(entity._id,
                         ("Java Set", "Java Set Init", "Java Modify"),
-                        {"variable"})
+                        entity._longname)
     declared = (entity._type or "").strip()
     if declared and declared != "void" and kind_family(entity._kind_id) == "method":
         fan.add(("return", entity._id))
@@ -325,7 +350,8 @@ def count_input(ent_model):
         return 0
     fan = {t._id for t in _targets(entity._id, "Java Callby")}
     fan |= {t._id for t in _targets(entity._id, "Java Callby Nondynamic")}
-    fan |= _fan_targets(entity._id, ("Java Use", "Java DotRef"), {"variable"})
+    fan |= _fan_targets(entity._id, ("Java Use", "Java DotRef"),
+                        entity._longname)
     return len(fan)
 
 
