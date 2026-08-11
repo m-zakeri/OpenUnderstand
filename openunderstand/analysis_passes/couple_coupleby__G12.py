@@ -33,6 +33,8 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         self.type_parameters = set()
         #: Annotations seen before their type declaration opened a frame.
         self.pending_annotations = []
+        #: Packages brought in by `import x.y.*`, in declaration order.
+        self.wildcard_imports = []
 
 
 
@@ -116,6 +118,12 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
 
     def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
         imported_class_longname = ctx.qualifiedName().getText()
+        if ctx.getText().rstrip(';').endswith('.*'):
+            # `import java.util.*` names a package, not a type. Taking the last
+            # segment registered 'util' -> 'java.util' as though util were a
+            # class; the package is what an unqualified name falls back to.
+            self.wildcard_imports.append(imported_class_longname)
+            return
         imported_class_name = imported_class_longname.split('.')[-1]
         self.Imports[imported_class_name] = imported_class_longname
 
@@ -307,13 +315,26 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         in_project = symbol_table.resolve_type(name, self.classlongname)
         if in_project:
             return in_project
+        # java.lang is imported implicitly, and a name that lives there beats a
+        # wildcard: `Integer` is java.lang.Integer even under `import
+        # java.util.*`.
+        if name in symbol_table.JAVA_LANG_TYPES:
+            return "java.lang." + name
+        # Otherwise a single `import x.y.*` is the only place left it can come
+        # from. This used to fall straight through to java.lang, which named 41
+        # of TheAlgorithms' couples java.lang.Map, java.lang.ArrayList,
+        # java.lang.FileInputStream -- a false positive and a missed true
+        # positive each time.
+        # ponytail: only when exactly one wildcard is in scope. 15 of the 19
+        # files that use one have exactly one; with two or more there is no
+        # evidence here to choose between them, so those keep the old guess.
+        if len(self.wildcard_imports) == 1:
+            return self.wildcard_imports[0] + "." + name
         # An unqualified name that is neither imported nor declared here is
-        # implicitly java.lang -- String, Object, Integer, Throwable. This used
-        # to be `self.packageName + '.' + name`, which produced org.json.String
-        # for every one of them: a false positive and a missed true positive at
-        # the same time.
-        # ponytail: wildcard imports (`import java.util.*`) also land here and
-        # get mislabelled java.lang. Revisit if parity shows it matters.
+        # implicitly java.lang -- String, Object, Throwable. This used to be
+        # `self.packageName + '.' + name`, which produced org.json.String for
+        # every one of them: a false positive and a missed true positive at the
+        # same time.
         return "java.lang." + name
 
 

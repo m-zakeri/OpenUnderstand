@@ -34,6 +34,13 @@ class DotRef_DotRefBy(JavaParserLabeledListener):
 
     def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
         longname = ctx.qualifiedName().getText()
+        if ctx.getText().rstrip(";").endswith(".*"):
+            # `import java.util.*` names a package. Taking the last segment
+            # registered 'util' as if it were an importable type.
+            # ponytail: a receiver that only a wildcard could resolve is left
+            # unresolved rather than guessed -- this pass's precision comes
+            # from refusing names it cannot place.
+            return
         self.imports[longname.split(".")[-1]] = longname
 
     def enterExpression1(self, ctx: JavaParserLabeled.Expression1Context):
