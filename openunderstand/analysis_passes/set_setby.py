@@ -69,6 +69,14 @@ class SetAndSetByListener(JavaParserLabeledListener):
         # a field declared `Node<Element> firstElement` has type Node.
         name = type_ctx.getText().split("<")[0].split("[")[0]
         for declarator in declarators or []:
+            # `variableDeclarator: variableDeclaratorId ('=' variableInitializer)?`
+            # -- getText() on an initialised one is "temp=null", so the name has
+            # to come from the id. Keying on the whole text recorded a type for
+            # "temp=null" and left `temp` itself untyped, which is why only the
+            # uninitialised declarations resolved.
+            declarator_id = getattr(declarator, "variableDeclaratorId", None)
+            if callable(declarator_id):
+                declarator = declarator_id() or declarator
             identifier = declarator.getText().split("[")[0]
             if identifier:
                 target[identifier] = name
@@ -183,9 +191,6 @@ class SetAndSetByListener(JavaParserLabeledListener):
         long_name = self.file_name.replace(".java", "") + "." + self.ex_name
         line = ctx.children[0].symbol.line
         col = ctx.children[0].symbol.column
-
-    def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
-        self.ex_name = ctx.children[1].getText()
 
     def enterExpression21(self, ctx: JavaParserLabeled.Expression21Context):
         self.entered_expression = True
