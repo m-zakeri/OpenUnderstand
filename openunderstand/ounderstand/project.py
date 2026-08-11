@@ -506,25 +506,55 @@ class Project:
                 continue
 
             name = ref_dict["name"]
-            ent = EntityModel.get_or_none(
-                EntityModel._longname == f"{ref_dict['scope_longname']}.{name}"
-            )
-            if ent is None:
-                # The declaration may be in another file, which this pass
-                # cannot see. The project-wide index built before the passes
-                # ran can answer that; it refuses ambiguous names rather than
-                # guessing.
-                resolved = symbol_table.resolve(name, ref_dict["scope_longname"])
-                if resolved:
-                    ent = EntityModel.get_or_none(EntityModel._longname == resolved)
-            if ent is None:
-                ent, _ = EntityModel.get_or_create(
-                    _kind=kind_id("Java Unknown Method Member"),
-                    _name=name,
-                    _parent=file_ent,
-                    _longname=name,
-                    _contents="",
+            receiver = ref_dict.get("receiver")
+            receiver_type = ref_dict.get("receiver_type")
+            if receiver:
+                # A call on a receiver is a call on that receiver's type, and
+                # nothing else. Resolving the bare name project-wide instead
+                # sent every `entry.getValue()` on a java.util.Map.Entry to
+                # org.json.CDL.getValue -- the only getValue the project
+                # declares -- inventing four callers for it and putting its
+                # CountInput at 5 against Understand's 2.
+                if not receiver_type:
+                    # A chained call, or a JDK type this project does not
+                    # index. The call happened, but naming its target would be
+                    # a guess, and a wrong target is worse than none.
+                    continue
+                owner = symbol_table.resolve_type(
+                    receiver_type, ref_dict["scope_longname"])
+                if owner is None:
+                    continue
+                longname = f"{owner}.{name}"
+                ent = EntityModel.get_or_none(EntityModel._longname == longname)
+                if ent is None:
+                    ent, _ = EntityModel.get_or_create(
+                        _kind=kind_id("Java Unknown Method Member"),
+                        _name=name,
+                        _parent=file_ent,
+                        _longname=longname,
+                        _contents="",
+                    )
+            else:
+                # No receiver: a call on the enclosing class.
+                ent = EntityModel.get_or_none(
+                    EntityModel._longname == f"{ref_dict['scope_longname']}.{name}"
                 )
+                if ent is None:
+                    # The declaration may be in another file, which this pass
+                    # cannot see. The project-wide index built before the
+                    # passes ran can answer that; it refuses ambiguous names
+                    # rather than guessing.
+                    resolved = symbol_table.resolve(name, ref_dict["scope_longname"])
+                    if resolved:
+                        ent = EntityModel.get_or_none(EntityModel._longname == resolved)
+                if ent is None:
+                    ent, _ = EntityModel.get_or_create(
+                        _kind=kind_id("Java Unknown Method Member"),
+                        _name=name,
+                        _parent=file_ent,
+                        _longname=name,
+                        _contents="",
+                    )
             if ent._id == scope._id:
                 continue
 
