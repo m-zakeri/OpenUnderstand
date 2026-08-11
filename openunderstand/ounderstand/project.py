@@ -194,13 +194,30 @@ class Project:
 
         for type_tuple in d:
             par = EntityModel.get(_name=type_tuple[7])
-            ss = str(type_tuple[1]).rfind(".")
+            # The scope is the enclosing method, which is not the entity's long
+            # name minus its last segment: `this.usePrevious = false` inside
+            # JSONTokener.next sets org.json.JSONTokener.usePrevious -- a field
+            # of the class -- from scope org.json.JSONTokener.next. Trimming
+            # the entity gave org.json.JSONTokener for the scope.
+            scope_longname = type_tuple[11]
+            # `this.map = ...` arrives with the short name already qualified
+            # ("JSONObject.map"). Resolving that verbatim never matches, and the
+            # fallback glued it onto the scope:
+            # org.json.JSONObject.JSONObject.JSONObject.map.
+            simple_name = str(type_tuple[0]).rsplit(".", 1)[-1]
+            # Where to start looking for that name. Same as the scope except
+            # for a `this.` target, which must skip the method's own locals.
+            resolve_scope = type_tuple[12]
             ent, h_c1 = EntityModel.get_or_create(
                 # was the reference kind Java Set, written into an entity row; the variable being set
                 _kind=kind_id("Java Unknown Variable Member"),
                 _parent=par._id,
-                _name=type_tuple[0],
-                _longname=type_tuple[1],
+                _name=simple_name,
+                # Innermost scope outwards: a local in this method wins, then a
+                # field of its class. The pass could only glue the package on
+                # the front, which named every `c` in the project org.json.c.
+                _longname=resolved_longname(
+                    simple_name, resolve_scope + "." + simple_name, resolve_scope),
                 _value=type_tuple[3],
                 _type=type_tuple[9],
                 _contents="",
@@ -210,8 +227,8 @@ class Project:
                 # was the reference kind Java Setby, written into an entity row; the setting scope
                 _kind=kind_id("Java Unknown Method Member"),
                 _parent=None,
-                _name=type_tuple[10],  # PROBLEM
-                _longname=str(type_tuple[1])[:ss],
+                _name=scope_longname.rsplit(".", 1)[-1],
+                _longname=scope_longname,
                 _value=None,
                 _type=type_tuple[3],
                 _contents=type_tuple[8],

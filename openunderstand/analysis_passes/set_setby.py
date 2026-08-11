@@ -1,5 +1,6 @@
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.analysis_passes import class_properties
 from os.path import basename
 
 
@@ -43,6 +44,28 @@ class SetAndSetByListener(JavaParserLabeledListener):
                 set_value = "String"
 
         sss = self.ss + "." + self.ex_name
+        # The long names above are assembled by walking to a parent by rule
+        # index and taking children[1]. In the plain `x = ...` branch that
+        # parent is the assignment expression itself, so children[1] is the
+        # `=` token: every one of those 150 references on the JSON benchmark
+        # was scoped to `org.json.CDL.=`. findParents() answers the question
+        # the index-chasing was approximating -- which scopes enclose this
+        # node -- and it is right for nested classes and methods alike.
+        parents = class_properties.ClassPropertiesListener.findParents(ctx)
+        scope_longname = ".".join(parents)
+        # `this.x` names a field of the enclosing class, never a local. The
+        # constructors here take a parameter of the same name as the field they
+        # assign -- `JSONPointer(List<String> refTokens) { this.refTokens = ...
+        # }` -- so resolving from the constructor outwards found the parameter
+        # first and produced org.json.JSONPointer.JSONPointer.refTokens.
+        # Resolution for a `this.` target starts one scope out; the reference's
+        # own scope stays the constructor, which is what Understand reports.
+        target = ctx.children[0].getText() if ctx.getChildCount() else ""
+        resolve_scope = (
+            ".".join(parents[:-1])
+            if target.startswith("this.") and len(parents) > 1
+            else scope_longname
+        )
         self.setBy.append(
             (
                 set_short_name,
@@ -56,6 +79,8 @@ class SetAndSetByListener(JavaParserLabeledListener):
                 self.stream,
                 self.ent_type,
                 sss,
+                scope_longname,
+                resolve_scope,
             )
         )
 
@@ -217,20 +242,14 @@ class SetAndSetByListener(JavaParserLabeledListener):
                                 + "."
                                 + ctx.children[0].children[2].getText()
                             )
-                            line = (
-                                ctx.children[0]
-                                .children[0]
-                                .children[0]
-                                .children[0]
-                                .symbol.line
-                            )
-                            column = (
-                                ctx.children[0]
-                                .children[0]
-                                .children[0]
-                                .children[0]
-                                .symbol.column
-                            )
+                            # `this.myArrayList = ...`: the reference belongs to
+                            # the field, so it sits on the field's identifier.
+                            # Drilling to the leftmost token landed on `this`,
+                            # putting all 64 of these exactly len("this.") = 5
+                            # columns to the left of where Understand has them.
+                            field = ctx.children[0].children[2]
+                            line = field.symbol.line
+                            column = field.symbol.column
                             self.add_set_by_entry(
                                 set_short_name,
                                 set_long_name,
@@ -280,101 +299,12 @@ class SetAndSetByListener(JavaParserLabeledListener):
         self.method_name = ""
         self.class_name = ""
 
-    def enterVariableDeclarator(self, ctx: JavaParserLabeled.VariableDeclaratorContext):
-        self.entered_expression = True
-        self.create_object = False
-        self.call_function = False
-
-    def exitVariableDeclarator(self, ctx: JavaParserLabeled.VariableDeclaratorContext):
-        try:
-            name_of_file = self.file_name
-            set_long_name = (
-                self.package_name + "." + self.ex_name + "." + ctx.children[0].getText()
-            )
-
-            if int(ctx.getChildCount()) > 1 and ctx.children[1].getText() == "=":
-                node = ctx
-                node = self.get_parent_node(node, (25, 20, 7))
-                set_short_name = node.children[0].getText()
-                if ctx.parentCtx.parentCtx.parentCtx.parentCtx.getRuleIndex() == 77:
-                    node1 = self.get_parent_node(node, (7,))
-                    if node.getRuleIndex() == 20:
-                        set_long_name = (
-                            self.package_name
-                            + "."
-                            + node1.children[1].getText()
-                            + "."
-                            + node.children[1].getText()
-                            + "."
-                            + f"(for_loop_{self.for_loop_counter})"
-                            + "."
-                            + ctx.children[0].getText()
-                        )
-                    elif node.getRuleIndex() == 25:
-                        self.stream = node.parentCtx.parentCtx.getText()
-                        set_long_name = (
-                            self.package_name
-                            + "."
-                            + node1.children[1].getText()
-                            + "."
-                            + node.children[0].getText()
-                            + "."
-                            + f"(for_loop_{self.for_loop_counter})"
-                            + "."
-                            + ctx.children[0].getText()
-                        )
-                    self.for_loop_counter += 1
-                else:
-                    if node.getRuleIndex() == 25:
-                        set_long_name = (
-                            self.package_name
-                            + "."
-                            + node.children[0].getText()
-                            + "."
-                            + ctx.children[0].getText()
-                        )
-                    elif node.getRuleIndex() == 20:
-                        self.ss = node.children[0].getText()
-                        node1 = self.get_parent_node(node, (7,))
-                        set_short_name = ctx.children[0].getText()
-                        set_long_name = (
-                            self.package_name
-                            + "."
-                            + node1.children[1].getText()
-                            + "."
-                            + node.children[1].getText()
-                            + "."
-                            + ctx.children[0].getText()
-                        )
-                    else:
-                        node2 = ctx
-                        while node2.getRuleIndex() != 0:
-                            node2 = node2.parentCtx
-                        self.ss = node2.children[0].children[1].children[2].getText()
-                        set_short_name = (
-                            node.children[1].getText() + "." + ctx.children[0].getText()
-                        )
-                        set_long_name = (
-                            self.package_name
-                            + "."
-                            + node.children[1].getText()
-                            + "."
-                            + ctx.children[0].getText()
-                        )
-                line = ctx.children[0].children[0].symbol.line
-                column = ctx.children[0].children[0].symbol.column
-                self.add_set_by_entry(
-                    set_short_name, set_long_name, name_of_file, line, column, ctx
-                )
-
-        except Exception as e:
-            print(f"Error occurred: {e}")
-
-        self.entered_expression = False
-        self.call_function = False
-        self.create_object = False
-        self.method_name = ""
-        self.class_name = ""
+    # A variable declared with an initializer -- `char c = ' '` -- is a
+    # Java Set Init, not a Java Set. Understand reports Define/Definein and
+    # Set Init/Setby Init there and no plain Set, and setinit_setinitby
+    # already emits exactly those 310 references on the JSON benchmark. The
+    # exitVariableDeclarator handler that used to live here duplicated all of
+    # them as Java Set, which was 310 of this pass's 537 rows.
 
     def exitPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
         try:
