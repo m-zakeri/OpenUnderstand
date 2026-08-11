@@ -36,6 +36,8 @@ class _DeclarationIndex:
         # package actually declared it -- 92 of Couple's 159 false positives
         # there, and the same error reached DotRef through resolve_type().
         self.types: dict[str, set[str]] = {}
+        #: Class long name -> the simple name it extends, for project classes.
+        self.supertypes: dict[str, str] = {}
         self.files = 0
 
     def add(self, simple_name: str, longname: str, is_type: bool = False):
@@ -87,6 +89,32 @@ class _DeclarationIndex:
         return self._closest(
             self.types.get(simple_name), simple_name, scope_longname)
 
+    def declares(self, type_longname: str, member: str) -> bool:
+        return f"{type_longname}.{member}" in self.by_simple_name.get(member, ())
+
+    def declaring_type(self, type_longname: str, member: str) -> str | None:
+        """The class in `type_longname`'s hierarchy that declares `member`.
+
+        Understand attributes a call to the class that *declares* the method,
+        not to the static type of the receiver: `XMLTokener extends
+        JSONTokener` and `next()` is declared in the parent, so
+        `x.next()` on an XMLTokener is a call to org.json.JSONTokener.next.
+
+        Returns None when no class in the chain declares it -- which includes
+        every method inherited from the JDK, since a supertype outside the
+        project has no members here to search. Understand reports
+        JSONObject.Null.equals as java.lang.Object.equals; this cannot.
+        """
+        seen = set()
+        current = type_longname
+        while current and current not in seen:
+            if self.declares(current, member):
+                return current
+            seen.add(current)
+            parent = self.supertypes.get(current)
+            current = self.resolve_type(parent, current) if parent else None
+        return None
+
     def __len__(self):
         return sum(len(v) for v in self.by_simple_name.values())
 
@@ -136,7 +164,24 @@ def build(root: str) -> _DeclarationIndex:
     # generated parser, and this module is imported by the CLI before sys.path
     # has been arranged in some entry points.
     from openunderstand.analysis_passes.define_definein import DefineListener
+    from openunderstand.analysis_passes import class_properties
+    from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+        JavaParserLabeledListener)
     from antlr4 import ParseTreeWalker
+
+    class _Supertypes(JavaParserLabeledListener):
+        """Records `class X extends Y` as a long name -> simple name pair."""
+
+        def __init__(self):
+            self.pairs = []
+
+        def enterClassDeclaration(self, ctx):
+            if ctx.EXTENDS() is None:
+                return
+            parents = class_properties.ClassPropertiesListener.findParents(ctx)
+            longname = ".".join(parents + [ctx.IDENTIFIER().getText()])
+            self.pairs.append(
+                (longname, ctx.typeType().getText().split("<")[0]))
 
     for path in _java_files(root):
         try:
@@ -145,11 +190,14 @@ def build(root: str) -> _DeclarationIndex:
             )
             listener = DefineListener(path)
             ParseTreeWalker().walk(t=tree, listener=listener)
+            supertypes = _Supertypes()
+            ParseTreeWalker().walk(t=tree, listener=supertypes)
         except Exception:
             # A file that will not parse contributes nothing; the per-file
             # pass over it logs the failure in its own right.
             continue
         index.files += 1
+        index.supertypes.update(supertypes.pairs)
         for declaration in listener.defines:
             index.add(
                 declaration["ent"],
@@ -164,6 +212,11 @@ def build(root: str) -> _DeclarationIndex:
 
 def resolve(simple_name: str, scope_longname: str = "") -> str | None:
     return INDEX.resolve(simple_name, scope_longname)
+
+
+def declaring_type(type_longname: str, member: str) -> str | None:
+    """Class in `type_longname`'s hierarchy that declares `member`, or None."""
+    return INDEX.declaring_type(type_longname, member)
 
 
 def resolve_type(simple_name: str, scope_longname: str = "") -> str | None:

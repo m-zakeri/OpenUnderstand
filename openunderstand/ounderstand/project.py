@@ -520,6 +520,13 @@ class Project:
                     # nor imports. The call happened, but naming its target
                     # would be a guess, and a wrong target is worse than none.
                     continue
+                # Understand attributes the call to the class that *declares*
+                # the method, not to the receiver's static type: XMLTokener
+                # extends JSONTokener, so x.next() on an XMLTokener is a call
+                # to org.json.JSONTokener.next. Falls back to the static type
+                # when nothing in the chain declares it, which is every method
+                # inherited from the JDK.
+                owner = symbol_table.declaring_type(owner, name) or owner
                 longname = f"{owner}.{name}"
                 ent = EntityModel.get_or_none(EntityModel._longname == longname)
                 if ent is None:
