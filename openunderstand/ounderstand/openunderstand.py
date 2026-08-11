@@ -86,7 +86,8 @@ def start_parsing(
     from openunderstand.oudb.fill import fill
     from openunderstand.ounderstand.runner import runner
     from openunderstand.ounderstand import symbol_table
-    from openunderstand.oudb.models import (merge_placeholder_entities,
+    from openunderstand.oudb.models import (drop_shadowed_use_refs,
+                                            merge_placeholder_entities,
                                             relabel_nondynamic_calls)
 
     if (
@@ -127,6 +128,9 @@ def start_parsing(
     # once everything has been written.
     merge_placeholder_entities()
     relabel_nondynamic_calls()
+    # After merging, so the endpoints a Use shares with its more specific
+    # variant have already been folded onto the same entity rows.
+    drop_shadowed_use_refs()
 
 
 if __name__ == "__main__":

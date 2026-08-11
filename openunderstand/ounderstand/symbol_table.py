@@ -43,14 +43,26 @@ class _DeclarationIndex:
     def resolve(self, simple_name: str, scope_longname: str = "") -> str | None:
         """Long name for a simple name, or None when it is ambiguous.
 
-        A declaration in the asking scope's own package wins over one
-        elsewhere; otherwise a unique match wins and an ambiguous one is
-        refused. Refusing beats guessing: a wrong resolution silently
-        misattributes every reference built on it.
+        Innermost scope first, the way Java resolves: a local declared in the
+        method that asked wins over a field of its class, which wins over
+        anything else. Then a declaration in the asking scope's own package;
+        otherwise a unique match wins and an ambiguous one is refused.
+        Refusing beats guessing: a wrong resolution silently misattributes
+        every reference built on it.
+
+        Without the innermost walk the ambiguity check below refused every
+        name more than one method declares -- `c` in CDL.getValue and in
+        CDL.rowToJSONArray resolved to neither.
         """
         candidates = self.by_simple_name.get(simple_name)
         if not candidates:
             return None
+        scope = scope_longname
+        while scope:
+            candidate = scope + "." + simple_name
+            if candidate in candidates:
+                return candidate
+            scope = scope.rsplit(".", 1)[0] if "." in scope else ""
         if len(candidates) == 1:
             return next(iter(candidates))
         package = scope_longname.rsplit(".", 1)[0] if scope_longname else ""
@@ -105,6 +117,16 @@ def build(root: str) -> _DeclarationIndex:
 
 def resolve(simple_name: str, scope_longname: str = "") -> str | None:
     return INDEX.resolve(simple_name, scope_longname)
+
+
+def resolve_type(simple_name: str) -> str | None:
+    """Long name for a *type's* simple name, or None if the project declares none.
+
+    resolve() searches every declaration, so a variable named `value` and a
+    class named `Value` compete. A pass that already knows it is looking at a
+    type position wants only the classes, interfaces, enums and annotations.
+    """
+    return INDEX.types.get(simple_name)
 
 
 def _java_files(root: str):

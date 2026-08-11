@@ -53,11 +53,15 @@ def process_file(file_address):
         lap.open_by_listener,
         lap.use_module_listener,
     ]
+    for listener in listeners:
+        listener(file_address=file_address, p=p, file_ent=file_ent, tree=tree)
+    # Runs last, not first: add_modify_and_modifyby_reference() resolves the
+    # modified variable by longname and drops the reference when it finds
+    # nothing. Before define_listener/declare_listener have declared the
+    # locals, that lookup misses and every += site is silently discarded.
     lap.modify_listener(
         entity_generator=entity_generator,
         parse_tree=parse_tree,
         file_address=file_address,
         p=p,
     )
-    for listener in listeners:
-        listener(file_address=file_address, p=p, file_ent=file_ent, tree=tree)

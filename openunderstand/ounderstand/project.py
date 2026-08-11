@@ -325,26 +325,39 @@ class Project:
             )
 
     def addUseRefs(self, d_use, file_ent, stream: str = ""):
-        for use_tuple in d_use:
+        """Write Java Use / Java Useby.
+
+        The two endpoints used to be the wrong way round: `ent` was built from
+        the enclosing method's name and `scope` from the identifier being read,
+        so Understand's
+            scope=org.json.CDL.getValue  ent=org.json.CDL.getValue.c
+        came out as
+            scope=org.json.c             ent=org.json.CDL.getValue
+        -- reversed, and with a long name (`org.json.c`) shared by every `c` in
+        the project.
+        """
+        for use in d_use:
+            scope_longname = use["scope_longname"]
             ent, h_c1 = EntityModel.get_or_create(
-                # was the reference kind Java Use, written into an entity row; the used entity
+                # The entity being read. Unknown is a placeholder kind: it
+                # matches any family and is upgraded in place once the pass
+                # that declares this entity has run.
                 _kind=kind_id("Java Unknown Variable Member"),
                 _parent=None,
-                _name=use_tuple[1],
+                _name=use["name"],
                 _longname=resolved_longname(
-                    use_tuple[1], use_tuple[6] + "." + use_tuple[1], use_tuple[6]),
+                    use["name"], scope_longname + "." + use["name"], scope_longname),
                 _value=None,
                 _type=None,
                 _contents=stream,
             )
 
             scope, h_c2 = EntityModel.get_or_create(
-                # was the reference kind Java Useby, written into an entity row; the using scope
+                # The method (or class) the read sits in.
                 _kind=kind_id("Java Unknown Method Member"),
                 _parent=None,
-                _name=use_tuple[0],
-                _longname=resolved_longname(
-                    use_tuple[0], use_tuple[6] + "." + use_tuple[0], use_tuple[6]),
+                _name=scope_longname.rsplit(".", 1)[-1],
+                _longname=scope_longname,
                 _value=None,
                 _type=None,
                 _contents=stream,
@@ -353,8 +366,8 @@ class Project:
             use_ref = ReferenceModel.get_or_create(
                 _kind=kind_id("Java Use"),
                 _file=file_ent,
-                _line=use_tuple[4],
-                _column=col_1based(use_tuple[5]),
+                _line=use["line"],
+                _column=col_1based(use["column"]),
                 _ent=ent,
                 _scope=scope,
             )
@@ -366,8 +379,8 @@ class Project:
             useby_ref = ReferenceModel.get_or_create(
                 _kind=kind_id("Java Useby"),
                 _file=file_ent,
-                _line=use_tuple[4],
-                _column=col_1based(use_tuple[5]),
+                _line=use["line"],
+                _column=col_1based(use["column"]),
                 _ent=scope,
                 _scope=ent,
             )
@@ -1235,8 +1248,17 @@ class Project:
         return ent
 
     def findKindWithKeywords(self, type, modifiers):
+        # An annotation is not a modifier. `@SuppressWarnings("boxing") public
+        # class XML` arrived here with '@SuppressWarnings("boxing")' in the
+        # list; no kind name contains that, so every candidate was rejected and
+        # this returned None. None went on to _kind, failed the NOT NULL
+        # constraint, and the caller's `except: print(e)` dropped the whole
+        # class -- org.json.XML and org.json.XMLParserConfiguration produced no
+        # references of any kind. Rebinding rather than mutating also stops the
+        # "default" below leaking back into the caller's list.
+        modifiers = [m for m in modifiers if not m.startswith("@")]
         if len(modifiers) == 0:
-            modifiers.append("default")
+            modifiers = ["default"]
         leastspecific_kind_selected = None
         for kind in KindModel.select().where(KindModel._name.contains(type)):
             if self.checkModifiersInKind(modifiers, kind):
@@ -1729,11 +1751,16 @@ class Project:
                                     _parent=file_ent,
                                     _longname=key,
                                 )
+                            # Couple is a class-level fact, not a source event:
+                            # Understand stores every one of them at line 0,
+                            # column 0. Writing the class declaration's
+                            # position here made every row miss on position
+                            # even when the coupled pair was right.
                             Couple_ref = ReferenceModel.get_or_create(
                                 _kind=kind_id("Java Couple"),
                                 _file=file_ent,
-                                _line=c["line"],
-                                _column=col_1based(c["col"]),
+                                _line=0,
+                                _column=0,
                                 _ent=ent[0],
                                 _scope=scope[0],
                             )
@@ -1744,8 +1771,8 @@ class Project:
                             CoupleBy_ref = ReferenceModel.get_or_create(
                                 _kind=kind_id("Java Coupleby"),
                                 _file=file_ent,
-                                _line=c["line"],
-                                _column=col_1based(c["col"]),
+                                _line=0,
+                                _column=0,
                                 _ent=scope[0],
                                 _scope=ent[0],
                             )

@@ -66,10 +66,9 @@ class ModifyListener(JavaParserLabeledListener):
 
             self.modify.append(
                 {
-                    "kind": 208,
                     "file": self.entity_manager.file_ent,
                     "line": line,
-                    "column": col.replace("]", ""),
+                    "column": col,
                     "ent": longname,
                     "scope": parent[0],
                     "modifiers": None,
@@ -99,10 +98,9 @@ class ModifyListener(JavaParserLabeledListener):
 
                 self.modify.append(
                     {
-                        "kind": 208,
                         "file": self.entity_manager.file_ent,
                         "line": line,
-                        "column": col.replace("]", ""),
+                        "column": col,
                         "ent": longname,
                         "scope": parent[0],
                         "modifiers": None,
@@ -134,10 +132,9 @@ class ModifyListener(JavaParserLabeledListener):
 
                 self.modify.append(
                     {
-                        "kind": 208,
                         "file": self.entity_manager.file_ent,
                         "line": line,
-                        "column": col.replace("]", ""),
+                        "column": col,
                         "ent": longname,
                         "scope": parent[0],
                         "modifiers": None,
