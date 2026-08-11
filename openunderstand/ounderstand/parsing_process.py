@@ -34,7 +34,15 @@ def process_file(file_address):
         lap.method_call_listener,
         lap.declare_listener,
         lap.override_listener,
-        lap.callby_listener,
+        # callby_listener is gone: method_call_listener records the same
+        # references from an enterMethodCall0 callback, which sees every call
+        # site rather than only whole expression statements, and scopes each to
+        # the method containing it. call_callby.py walked the tree itself from
+        # enterClassDeclaration and passed the *class* context to findParents,
+        # so every reference it produced was scoped to the package. Measured on
+        # JSON: dropping it left the 394 correct Call references untouched and
+        # removed 43 wrong ones and 15 placeholder entities, taking Call
+        # precision from 48.9% to 51.7% and Call Nondynamic from 92.3% to 97.3%.
         lap.couple_listener,
         lap.useby_listener,
         lap.setby_listener,

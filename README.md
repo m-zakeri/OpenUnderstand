@@ -102,10 +102,16 @@ Current agreement, on three benchmarks:
 
 [docs/parity.md](docs/parity.md) has the per-kind breakdown.
 
-This is the test suite: there are no unit tests, because the only
-specification that matters is what the real tool outputs. The comparison
-harness needs a licensed Understand install, so it is not part of this
-repository — ask if you want to run it.
+The comparison is the specification: what the real tool outputs is what decides
+whether a reference is right. The harness needs a licensed Understand install,
+so it is not part of this repository — ask if you want to run it.
+
+`tests/` holds unit tests for the pass rules that comparison established. They
+need no database and run in about a second each:
+
+```bash
+for t in tests/test_*.py; do .venv/bin/python -W ignore "$t"; done
+```
 
 ## Use it from an assistant
 

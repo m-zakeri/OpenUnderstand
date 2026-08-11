@@ -15,8 +15,12 @@ parsing_process.process_file
     ↓
   parse once  →  run ~25 listeners over that one tree, in order
     ↓
-merge_placeholder_entities + relabel_nondynamic_calls   (once, after all files)
+merge_placeholder_entities + relabel_nondynamic_calls
++ drop_shadowed_use_refs                                (once, after all files)
 ```
+
+Before any of that, `symbol_table.build()` indexes every declaration in the
+project — see [Resolving names across files](#resolving-names-across-files).
 
 A file is parsed once. Every analysis pass then walks that same tree, so
 parsing is a small fraction of the total cost — most of the time goes into the
@@ -71,14 +75,52 @@ order the passes run in.
 ### Resolving names across files
 
 `process_file` sees one file, so a pass cannot resolve a name declared
-elsewhere. Instead of a project-wide symbol table built up front, unresolved
-names become placeholder entities, and `merge_placeholder_entities()` folds
+elsewhere. Two mechanisms cover this, and they work from opposite ends.
+
+**`ounderstand/symbol_table.py`** indexes every declaration in the project
+*before* the passes run, so a pass can ask what a name means while it is still
+deciding what to write:
+
+```python
+symbol_table.resolve(name, scope_longname)       # any declaration
+symbol_table.resolve_type(name, scope_longname)  # classes/interfaces/enums only
+symbol_table.declaring_type(type_longname, member)  # walks the extends chain
+```
+
+All three search the innermost scope outward, then the asking scope's own
+package, and **refuse an ambiguous name rather than guess** — a wrong
+resolution silently misattributes every reference built on it. `resolve_type()`
+exists because `resolve()` would let a variable named `value` compete with a
+class named `Value`; a pass that knows it is in a type position wants only the
+types. `declaring_type()` follows `extends` so that a call to an inherited
+method lands on the class that declares it, which is what Understand reports.
+
+Working out *what* a name is often needs the declared type of something else —
+`x.p = v` names a field of `x`'s type. `analysis_passes/declared_types.py`
+reads those off the parse tree. It is not a type checker: it answers only what
+a declaration states, so `a.b.c` resolves `b` on `a`'s type and stops.
+
+**Placeholders** cover what the index cannot. A pass that still cannot place a
+name creates a placeholder entity, and `merge_placeholder_entities()` folds
 each into the real entity after every file has been parsed — but only when
 exactly one project-wide candidate shares the simple name. More than one means
 guessing, and a wrong merge is worse than a duplicate.
 
+Note the failure mode this creates when a pass records a *bare* name: the merge
+will happily fold it into the single project method that happens to share it.
+`entry.getValue()` on a `java.util.Map.Entry` became a call to
+`org.json.CDL.getValue` that way. A pass should qualify what it can and emit
+nothing for what it cannot.
+
 `relabel_nondynamic_calls()` runs next and splits `Java Call` into
 `Call`/`Call Nondynamic` now that the callee's modifiers are known.
+
+`drop_shadowed_use_refs()` runs last. Understand reports exactly one reference
+kind per position: `x` in `x.next()` is a `Use Deref Partial`, an assignment
+target is a `Set`, `i++` is a `Modify` — and in none of those cases does it
+also report a plain `Use`. The use pass cannot know this, because it runs
+before set/dotref/modify have written anything, so the plain `Use` is deleted
+here wherever a more specific kind sits on the same position.
 
 ### Kind ids
 

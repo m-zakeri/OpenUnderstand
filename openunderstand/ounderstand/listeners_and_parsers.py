@@ -4,7 +4,6 @@ from openunderstand.analysis_passes.callNonDynamic_callNonDynamicby import (
     CallNonDynamicAndCallNonDynamicBy,
 )
 
-from openunderstand.analysis_passes.call_callby import CallAndCallBy
 from openunderstand.analysis_passes.cast_cast_by import CastAndCastBy, implementListener
 from openunderstand.analysis_passes.contain_contain_by import ContainAndContainBy
 from openunderstand.analysis_passes.extends_implicit_couple_coupleby import (
@@ -403,24 +402,6 @@ class ListenersAndParsers:
         except Exception as e:
             self.logger.error(
                 "An Error occurred in use ref in file :" + file_address + "\n" + str(e)
-            )
-
-    @timer_decorator()
-    def callby_listener(self, tree, file_ent, file_address, p):
-        try:
-            listener = CallAndCallBy(
-                file_full_path=file_address,
-                class_parents={},
-                available_class_fields=None,
-                available_class_methods=None,
-                available_package_classes=None,
-            )
-            p.Walk(listener, tree)
-            p.addCallOrCallByRefs(listener.implement, file_ent, file_address)
-            self.logger.info("call ref success ")
-        except Exception as e:
-            self.logger.error(
-                "An Error occurred in call ref in file :" + file_address + "\n" + str(e)
             )
 
     @timer_decorator()
