@@ -54,10 +54,15 @@ def max_nesting(ent_model):
 
     MaxNesting is a listener class, and api.py called it as MaxNesting(ent),
     which its zero-argument constructor rejected.
+
+    Walked over context.parse_entity() rather than a plain compilationUnit()
+    parse of the entity's contents: a *method's* source is not a compilation
+    unit, so that parse produced a tree with no statements in it and every
+    method's MaxNesting came out 0. Understand reports 2 for Cookie.escape.
+    parse_entity() wraps a member in a synthetic class so it parses, and the
+    wrapper adds no nesting of its own because only statements are counted.
     """
-    listener = MaxNesting()
-    ParseTreeWalker().walk(t=_parse(ent_model), listener=listener)
-    return listener.max_nesting
+    return context.walk_entity(ent_model, MaxNesting()).max_nesting
 
 
 def getListOfFiles(dirName):
