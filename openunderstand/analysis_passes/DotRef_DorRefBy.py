@@ -45,16 +45,20 @@ class DotRef_DotRefBy(JavaParserLabeledListener):
         # receiver is a value, not a type.
         if not receiver.isidentifier():
             return
-        longname = self.resolve_type(receiver)
-        if longname is None:
-            return
         parents = class_properties.ClassPropertiesListener.findParents(ctx)
         if not parents:
+            return
+        scope_longname = ".".join(parents)
+        # Resolved from the asking scope: `Node` is declared in several
+        # packages, and without it the name binds to whichever was indexed
+        # first rather than the one this file would actually see.
+        longname = self.resolve_type(receiver, scope_longname)
+        if longname is None:
             return
         token = ctx.start
         self.implement.append(
             {
-                "scope_longname": ".".join(parents),
+                "scope_longname": scope_longname,
                 "refent_name": receiver,
                 "refent_longname": longname,
                 "line": token.line,
@@ -62,7 +66,7 @@ class DotRef_DotRefBy(JavaParserLabeledListener):
             }
         )
 
-    def resolve_type(self, name):
+    def resolve_type(self, name, scope_longname=""):
         """Long name if `name` denotes a type, else None."""
         # Deferred: openunderstand.ounderstand's __init__ reaches oudb.api ->
         # parsing_process -> the module that imports this pass.
@@ -70,7 +74,7 @@ class DotRef_DotRefBy(JavaParserLabeledListener):
 
         if name in self.imports:
             return self.imports[name]
-        in_project = symbol_table.resolve_type(name)
+        in_project = symbol_table.resolve_type(name, scope_longname)
         if in_project:
             return in_project
         if name in symbol_table.JAVA_LANG_TYPES:

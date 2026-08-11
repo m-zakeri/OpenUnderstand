@@ -224,7 +224,9 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
             return None
         if name in self.Imports:
             return self.Imports[name]
-        in_project = symbol_table.resolve_type(name)
+        # Scoped: `Node` is declared in several packages, and without the
+        # asking class it binds to whichever was indexed first.
+        in_project = symbol_table.resolve_type(name, self.classlongname)
         if in_project:
             return in_project
         if name in symbol_table.JAVA_LANG_TYPES:
@@ -300,7 +302,9 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
             return self.Imports[name]
         if "." in name:
             return name
-        in_project = symbol_table.resolve_type(name)
+        # Scoped: `Node` is declared in several packages, and without the
+        # asking class it binds to whichever was indexed first.
+        in_project = symbol_table.resolve_type(name, self.classlongname)
         if in_project:
             return in_project
         # An unqualified name that is neither imported nor declared here is

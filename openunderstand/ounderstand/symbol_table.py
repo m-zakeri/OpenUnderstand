@@ -30,7 +30,12 @@ class _DeclarationIndex:
 
     def __init__(self):
         self.by_simple_name: dict[str, set[str]] = {}
-        self.types: dict[str, str] = {}
+        # All the long names declaring a type under this simple name, not just
+        # the first one indexed. Keeping only the first meant every `Node` in
+        # TheAlgorithms resolved to DataStructures.Stacks.Node whichever
+        # package actually declared it -- 92 of Couple's 159 false positives
+        # there, and the same error reached DotRef through resolve_type().
+        self.types: dict[str, set[str]] = {}
         self.files = 0
 
     def add(self, simple_name: str, longname: str, is_type: bool = False):
@@ -38,23 +43,23 @@ class _DeclarationIndex:
             return
         self.by_simple_name.setdefault(simple_name, set()).add(longname)
         if is_type:
-            self.types.setdefault(simple_name, longname)
+            self.types.setdefault(simple_name, set()).add(longname)
 
-    def resolve(self, simple_name: str, scope_longname: str = "") -> str | None:
-        """Long name for a simple name, or None when it is ambiguous.
+    @staticmethod
+    def _closest(candidates, simple_name: str, scope_longname: str) -> str | None:
+        """The candidate an asking scope would bind, or None when ambiguous.
 
-        Innermost scope first, the way Java resolves: a local declared in the
-        method that asked wins over a field of its class, which wins over
-        anything else. Then a declaration in the asking scope's own package;
+        Innermost scope first, the way Java resolves: a declaration in the
+        scope that asked wins over one in its enclosing scope, which wins over
+        one further out. Then a declaration in the asking scope's own package;
         otherwise a unique match wins and an ambiguous one is refused.
         Refusing beats guessing: a wrong resolution silently misattributes
         every reference built on it.
 
         Without the innermost walk the ambiguity check below refused every
-        name more than one method declares -- `c` in CDL.getValue and in
+        name more than one scope declares -- `c` in CDL.getValue and in
         CDL.rowToJSONArray resolved to neither.
         """
-        candidates = self.by_simple_name.get(simple_name)
         if not candidates:
             return None
         scope = scope_longname
@@ -71,6 +76,16 @@ class _DeclarationIndex:
             if len(local) == 1:
                 return local[0]
         return None
+
+    def resolve(self, simple_name: str, scope_longname: str = "") -> str | None:
+        """Long name for a simple name, or None when it is ambiguous."""
+        return self._closest(
+            self.by_simple_name.get(simple_name), simple_name, scope_longname)
+
+    def resolve_type(self, simple_name: str, scope_longname: str = "") -> str | None:
+        """Long name for a *type's* simple name, or None when it is ambiguous."""
+        return self._closest(
+            self.types.get(simple_name), simple_name, scope_longname)
 
     def __len__(self):
         return sum(len(v) for v in self.by_simple_name.values())
@@ -133,14 +148,19 @@ def resolve(simple_name: str, scope_longname: str = "") -> str | None:
     return INDEX.resolve(simple_name, scope_longname)
 
 
-def resolve_type(simple_name: str) -> str | None:
-    """Long name for a *type's* simple name, or None if the project declares none.
+def resolve_type(simple_name: str, scope_longname: str = "") -> str | None:
+    """Long name for a *type's* simple name, or None if none resolves.
 
     resolve() searches every declaration, so a variable named `value` and a
     class named `Value` compete. A pass that already knows it is looking at a
     type position wants only the classes, interfaces, enums and annotations.
+
+    Pass the asking scope. Without it a name several packages declare -- `Node`
+    appears in DataStructures.Stacks, DataStructures.Lists and more -- binds to
+    whichever was indexed first rather than the one in the caller's own
+    package, and the reference is attributed to the wrong class.
     """
-    return INDEX.types.get(simple_name)
+    return INDEX.resolve_type(simple_name, scope_longname)
 
 
 def _java_files(root: str):
