@@ -26,9 +26,96 @@ class SetAndSetByListener(JavaParserLabeledListener):
         self.ent_value = None
         self.ent_name = None
         self.ss = ""
+        #: Declared type (simple name) of each field of the enclosing class.
+        self.field_types = {}
+        #: Same for the parameters and locals of the method being walked.
+        self.local_types = {}
+
+    # ---- declared types, for resolving `receiver.field = ...` -------------
+    #
+    # Understand reports a Java Set against every member of a dereferenced
+    # assignment target, resolved to the class that declares it: `x.p = temp`
+    # sets DataStructures.Trees.RedBlackBST.Node.p, because x is declared
+    # `Node x`. Naming that field needs the receiver's declared type, which
+    # the database does not carry -- all 1206 parameters and 2552 of 4634
+    # variables on TheAlgorithms have a null _type -- so the pass records it
+    # while walking. 204 of the 290 Set references missing there are the first
+    # member of such a chain.
+
+    def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
+        self.ex_name = ctx.children[1].getText()
+        # Parameters and locals belong to one method; fields outlive them.
+        self.local_types = {}
+
+    def enterConstructorDeclaration(self, ctx: JavaParserLabeled.ConstructorDeclarationContext):
+        self.local_types = {}
+
+    def enterFormalParameter(self, ctx: JavaParserLabeled.FormalParameterContext):
+        self._record_type(self.local_types, ctx.typeType(), [ctx.variableDeclaratorId()])
+
+    def enterLocalVariableDeclaration(self, ctx: JavaParserLabeled.LocalVariableDeclarationContext):
+        self._record_type(self.local_types, ctx.typeType(),
+                          ctx.variableDeclarators().variableDeclarator())
+
+    def enterFieldDeclaration(self, ctx: JavaParserLabeled.FieldDeclarationContext):
+        self._record_type(self.field_types, ctx.typeType(),
+                          ctx.variableDeclarators().variableDeclarator())
+
+    @staticmethod
+    def _record_type(target, type_ctx, declarators):
+        if type_ctx is None:
+            return
+        # Generic arguments and array brackets are not part of the type's name:
+        # a field declared `Node<Element> firstElement` has type Node.
+        name = type_ctx.getText().split("<")[0].split("[")[0]
+        for declarator in declarators or []:
+            identifier = declarator.getText().split("[")[0]
+            if identifier:
+                target[identifier] = name
+
+    def add_member_set(self, target, ctx, name_of_file):
+        """Record `receiver.member = ...` as a Set against the member's field.
+
+        Only the first member of the chain: naming the second would need the
+        declared type of the first, which is a field of another class and not
+        recorded anywhere this pass can see. On TheAlgorithms that first member
+        is 204 of the 290 missing Set references, the rest being members two or
+        more levels deep.
+        """
+        if target.children[1].getText() != ".":
+            return                      # `a[i] = x`: no member is named
+        receiver = target.children[0].getText()
+        if not receiver.isidentifier():
+            return                      # a chained call or index, not a name
+        member = target.children[2]
+        if not hasattr(member, "symbol"):
+            return                      # `a.foo() = ...` cannot occur, but be safe
+        parents = class_properties.ClassPropertiesListener.findParents(ctx)
+        owner = self.owner_of_member(receiver, ".".join(parents))
+        if owner is None:
+            return                      # receiver's type is unknown: no guess
+        self.add_set_by_entry(
+            member.getText(), owner + "." + member.getText(), name_of_file,
+            member.symbol.line, member.symbol.column, ctx,
+            resolve_override=owner,
+        )
+
+    def declared_type(self, name):
+        """Simple name of `name`'s declared type: a local first, then a field."""
+        return self.local_types.get(name) or self.field_types.get(name)
+
+    def owner_of_member(self, receiver, scope_longname):
+        """Long name of the class declaring the member accessed on `receiver`."""
+        from openunderstand.ounderstand import symbol_table
+
+        type_name = self.declared_type(receiver)
+        if not type_name:
+            return None
+        return symbol_table.resolve_type(type_name, scope_longname)
 
     def add_set_by_entry(
-        self, set_short_name, set_long_name, name_of_file, line, column, ctx
+        self, set_short_name, set_long_name, name_of_file, line, column, ctx,
+        scope_override=None, resolve_override=None,
     ):
         if self.call_function:
             set_value = self.method_name
@@ -66,6 +153,13 @@ class SetAndSetByListener(JavaParserLabeledListener):
             if target.startswith("this.") and len(parents) > 1
             else scope_longname
         )
+        # A dereferenced member resolves inside the class that declares it, not
+        # in the method doing the assigning; the reference's own scope is still
+        # the method, which is what Understand reports as the Setby.
+        if scope_override is not None:
+            scope_longname = scope_override
+        if resolve_override is not None:
+            resolve_scope = resolve_override
         self.setBy.append(
             (
                 set_short_name,
@@ -131,7 +225,11 @@ class SetAndSetByListener(JavaParserLabeledListener):
                             and target.children[0].getText() != "this"
                         )
                         if dereferenced:
-                            pass
+                            # The dereferenced variable itself is a Set Deref
+                            # Partial, but the *member* being written is a
+                            # plain Set against the field's declaring class:
+                            # `x.p = temp` sets RedBlackBST.Node.p.
+                            self.add_member_set(target, ctx, name_of_file)
                         else:
                             node = self.get_parent_node(ctx, (7, 25, 20))
                             self.ss = node.children[0].getText()
