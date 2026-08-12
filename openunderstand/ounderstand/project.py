@@ -560,13 +560,12 @@ class Project:
                     if resolved:
                         ent = EntityModel.get_or_none(EntityModel._longname == resolved)
                 if ent is None:
-                    ent, _ = EntityModel.get_or_create(
-                        _kind=kind_id("Java Unknown Method Member"),
-                        _name=name,
-                        _parent=file_ent,
-                        _longname=name,
-                        _contents="",
-                    )
+                    # A bare simple name is exactly what
+                    # merge_placeholder_entities() folds into whichever single
+                    # project entity shares it, which is how `print(...)` became
+                    # a call to Sorts.SortUtils.print from 21 unrelated places.
+                    # An unresolved call is better left unwritten.
+                    continue
             if ent._id == scope._id:
                 continue
 

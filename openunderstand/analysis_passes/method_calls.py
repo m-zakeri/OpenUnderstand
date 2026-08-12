@@ -28,8 +28,9 @@ class MethodCallListener(JavaParserLabeledListener):
         #: of which precede any call inside them.
         self.field_types = {}
         self.local_types = {}
-        #: Explicitly imported types, by simple name.
+        #: Explicitly imported types, by simple name, and the `x.y.*` packages.
         self.imports = {}
+        self.wildcards = []
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         body = ctx.classBody()
@@ -45,6 +46,7 @@ class MethodCallListener(JavaParserLabeledListener):
     def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
         longname = ctx.qualifiedName().getText()
         if ctx.getText().rstrip(";").endswith(".*"):
+            self.wildcards.append(longname)
             return          # a package, not a type
         self.imports[longname.split(".")[-1]] = longname
 
@@ -57,25 +59,38 @@ class MethodCallListener(JavaParserLabeledListener):
     def owner_longname(self, receiver, scope_longname):
         """Long name of the type a call on `receiver` lands on, or None.
 
-        The receiver's declared type is a simple name; placing it needs the
-        same resolution order the couple and dotref passes use. A JDK type is
-        as valid a call target as a project one -- Understand reports
-        `sb.append(...)` as a call to java.lang.StringBuilder.append -- so
-        stopping at project types alone would drop most calls in the file.
+        Three shapes, and only the first was handled before -- which is why
+        1,197 of TheAlgorithms' 1,416 missing calls were to the JDK:
+
+          sb.append(x)         a variable, so the call lands on its type
+          Arrays.sort(a)       a *type*: a static call lands on the type itself
+          System.out.println() a field, so the call lands on the field's type
+
+        A JDK type is as valid a target as a project one -- Understand reports
+        `sb.append(...)` as java.lang.StringBuilder.append -- and a fully
+        qualified JDK long name is safe to write, unlike a bare simple name
+        that merge_placeholder_entities() would fold into any project match.
         """
         from openunderstand.ounderstand import symbol_table
 
-        type_name = self.declared_type(receiver)
-        if not type_name:
+        if not receiver:
             return None
-        if type_name in self.imports:
-            return self.imports[type_name]
-        in_project = symbol_table.resolve_type(type_name, scope_longname)
-        if in_project:
-            return in_project
-        if type_name in symbol_table.JAVA_LANG_TYPES:
-            return "java.lang." + type_name
-        return None
+        head, _, field = receiver.partition(".")
+        if not head.isidentifier() or (field and not field.isidentifier()):
+            return None     # a chained call or an expression: naming it is a guess
+
+        type_name = self.declared_type(head)
+        owner = symbol_table.resolve_type_name(
+            # No declared type means the receiver is not a variable in scope,
+            # so read it as the type itself: `Math.abs(x)`, `Arrays.sort(a)`.
+            type_name or head, self.imports, self.wildcards, scope_longname)
+        if owner is None or not field:
+            return owner
+        # `System.out.println()` -- Understand attributes this to the declared
+        # type of the *field*, java.io.PrintStream, not to java.lang.System.
+        # Only the JDK fields the table knows; a project field's type is not
+        # visible from this file.
+        return symbol_table.JDK_FIELD_TYPES.get((owner, field))
 
     def enterMethodCall0(self, ctx: JavaParserLabeled.MethodCall0Context):
         identifier = ctx.IDENTIFIER()
@@ -99,9 +114,7 @@ class MethodCallListener(JavaParserLabeledListener):
             # resolved project-wide and `entry.getValue()` on a Map.Entry
             # became a call to org.json.CDL.getValue, the only getValue the
             # project declares.
-            "owner_longname": self.owner_longname(
-                receiver if receiver and receiver.isidentifier() else None,
-                scope_longname),
+            "owner_longname": self.owner_longname(receiver, scope_longname),
             "scope_longname": scope_longname,
             "line": identifier.symbol.line,
             "col": identifier.symbol.column,

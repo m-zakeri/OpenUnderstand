@@ -58,9 +58,19 @@ def _visibility(entity):
 # ---------------------------------------------------------------- declarations
 
 def count_decl_class(ent_model):
-    """Classes declared in this entity."""
+    """Classes declared in this entity.
+
+    A package declares nothing -- a *file* defines a class and the package
+    merely contains it -- so counting Java Define returned 0 for all 27
+    packages on TheAlgorithms against Understand's 18 for Conversions alone.
+    """
     entity = _entity(ent_model)
-    return 0 if entity is None else len(_declares(entity._id, "type"))
+    if entity is None:
+        return 0
+    declared = _declares(entity._id, "type")
+    if declared or "package" not in _visibility(entity):
+        return len(declared)
+    return len(_targets(entity._id, "Java Contain", "type"))
 
 
 def count_decl_method(ent_model):

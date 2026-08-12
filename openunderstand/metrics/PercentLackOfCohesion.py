@@ -5,6 +5,23 @@ from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 
 
+def _is_static(ctx):
+    """Whether the declaration this member belongs to is declared static.
+
+    The modifiers sit on the enclosing classBodyDeclaration, not on the member
+    itself, so they have to be fetched from the ancestor.
+    """
+    node = ctx.parentCtx
+    while node is not None:
+        if type(node).__name__.startswith("ClassBodyDeclaration"):
+            modifiers = getattr(node, "modifier", None)
+            if callable(modifiers):
+                return any(m.getText() == "static" for m in (modifiers() or []))
+            return False
+        node = node.parentCtx
+    return False
+
+
 class UseAndUseByListener(JavaParserLabeledListener):
     def __init__(self, file_name):
         self.file_name = file_name
@@ -16,6 +33,13 @@ class UseAndUseByListener(JavaParserLabeledListener):
 
     # find members
     def enterMemberDeclaration2(self, ctx: JavaParserLabeled.MemberDeclaration2Context):
+        # Cohesion is about instance state. A class whose only fields are
+        # static has none to share, and Understand reports 0 there rather than
+        # a lack of cohesion -- AnyBaseToAnyBase, DecimalToHexaDecimal and
+        # RomanToInteger are static utility classes and it scored all three 0
+        # where this reported 67, 50 and 75.
+        if _is_static(ctx):
+            return
         self.class_members.append(
             ctx.getChild(0).getChild(1).getChild(0).getChild(0).getChild(0).getText()
         )
