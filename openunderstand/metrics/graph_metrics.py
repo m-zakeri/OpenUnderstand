@@ -70,7 +70,18 @@ def count_decl_class(ent_model):
     declared = _declares(entity._id, "type")
     if declared or "package" not in _visibility(entity):
         return len(declared)
-    return len(_targets(entity._id, "Java Contain", "type"))
+    # Contain reaches the package's top-level classes; a class nested inside
+    # one of them is declared by *it*, and Understand counts those too --
+    # DataStructures.Bags holds Bag and Bag.ListIterator, and stopping at the
+    # top level reported 1 of 3.
+    seen, pending = set(), _targets(entity._id, "Java Contain", "type")
+    while pending:
+        current = pending.pop()
+        if current._id in seen:
+            continue
+        seen.add(current._id)
+        pending += _declares(current._id, "type")
+    return len(seen)
 
 
 def count_decl_method(ent_model):
@@ -372,6 +383,10 @@ def count_input(ent_model):
 #: CountLineCode 76, CountStmt 58 and SumCyclomatic 13 are exactly the sums over
 #: the package's four files.
 _NOT_AGGREGATED = {
+    # A package's own definition answers this; summing it over the package's
+    # files gives 0, because a file declares nothing -- the class is defined
+    # in the package's scope, not the file's.
+    "CountDeclClass",
     "CountDeclFile", "CountClassBase", "CountClassDerived",
     "CountClassCoupled", "CountClassCoupledModified", "MaxInheritanceTree",
     "PercentLackOfCohesion", "PercentLackOfCohesionModified",
@@ -480,8 +495,12 @@ def percent_lack_of_cohesion(ent_model, modified=False):
     if entity is None:
         return 0
     methods = _declares(entity._id, "method")
+    # Cohesion is about *instance* state. A static utility class shares
+    # nothing between its methods by construction, and Understand scores it 0
+    # rather than a total lack of cohesion -- AnyBaseToAnyBase,
+    # DecimalToHexaDecimal and RomanToInteger came out 67, 50 and 75.
     fields = [v for v in _declares(entity._id, "variable")
-              if not {"local", "parameter"} & _visibility(v)]
+              if not {"local", "parameter", "static"} & _visibility(v)]
     if not methods or not fields:
         # Undefined for a class with no methods or no fields; Understand
         # reports 0 there, not total lack of cohesion.

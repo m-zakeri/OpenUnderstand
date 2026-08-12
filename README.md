@@ -98,7 +98,8 @@ Current agreement, on three benchmarks:
 | --- | ---: | ---: | ---: |
 | Java files | 8 | 22 | 228 |
 | Metric values matching Understand | 80% | 72% | 73% |
-| References reproduced at the exact position | 0.62 | 0.50 | 0.46 |
+| References reproduced at the exact position — recall | 0.92 | 0.87 | 0.86 |
+| — precision | 0.89 | 0.87 | 0.84 |
 
 [docs/parity.md](docs/parity.md) has the per-kind breakdown.
 

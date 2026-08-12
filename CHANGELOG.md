@@ -1,5 +1,97 @@
 # Changelog
 
+## Unreleased
+
+Reference and metric agreement with SciTools Understand 7.0.1217, measured on
+the same source with the comparison harness. Precision and recall are for a
+reference reproduced at the **exact** position — same kind, scope, entity, file,
+line and column — with the dump's own normalisation applied to both sides.
+
+| fixture | precision / recall, before | after |
+| --- | ---: | ---: |
+| org.json | 84% / 83% | **87% / 87%** |
+| TheAlgorithms | 83% / 83% | **84% / 86%** |
+| calculator_app | not measured this way | **89% / 92%** |
+
+(The `report.md` headline is a different, looser measure — it ignores position
+and so reads higher. Quote one or the other, never a mix.)
+
+### New reference kinds
+
+- **`Java Use Ptr` / `Java Useby Ptr`** — lambda expressions. Understand gives
+  each lambda an entity of its own, kind `Java Method Lambda`, named
+  `(lambda_expr_N)` and numbered within the enclosing method. 19 of 19 on
+  TheAlgorithms, both directions.
+- **`Java Importby` / `Java Importby Demand`** — static imports, recorded
+  against the imported member with the importing file as the entity. Understand
+  emits no `Java Import` for Java, so these are written one-directional via
+  `"inverse_only": True`.
+- **`Java Overrides` / `Java Overriddenby`** — 0 → 15 of 15 on org.json, 13 → 46
+  of 47 on TheAlgorithms, at 100% precision on both.
+
+### Corrected
+
+- **`Java Use Cast` was produced by two passes at once** — `use_variants` and
+  `cast_cast_by` — so every cast got two rows and every `(int) x` got one
+  Understand has no counterpart for. 74 rows against its 10, 6.8% precision.
+  Now one emitter, primitives skipped, positioned on the type rather than the
+  `(`, and casts to a type parameter resolved against the method or class that
+  declares it. 100% / 100% on org.json.
+- **Calls to the JDK are now resolved** — 1,197 of TheAlgorithms' 1,416 missing
+  `Java Call` rows targeted `java.io`, `java.util` and `java.lang`. A receiver
+  is a variable (`sb.append`), a type (`Arrays.sort`, a static call) or a field
+  (`System.out.println`, which lands on the field's declared type); only the
+  first was handled. Recall 37% → 64%, precision 59% → 91%.
+- **`Java Call Nondynamic`** — a call on a final JDK class cannot dispatch
+  virtually. Recall 35% → 81% on TheAlgorithms, 22% → 73% on org.json.
+- **`Java Overrides` is signature-sensitive.** `MaxHeap.getElement(int)` does
+  not override `Heap.getElement()`. Parameter *types* are compared, not counted:
+  `SortAlgorithm` declares both `sort(T[])` and `sort(List<T>)`, and a
+  signature map keyed by long name silently dropped the first.
+- **`Java Use GenericArgument`** — a type argument now resolves as a type
+  (`Comparable<Vertex>` had been resolving to the *constructor*
+  `Others.Graph.Vertex.Vertex`), a type parameter's bound is scoped to the
+  parameter itself, and the writer creates that entity rather than skipping the
+  row because a later pass had not yet made it. Recall 53% → 97%.
+- **`Java Create`** — anonymous class creation (`new ActionListener() { ... }`)
+  is not a `Create`, and a type reached through one of several `import x.y.*`
+  now resolves instead of falling back to a bare name. 99% / 99% on org.json.
+- **Java's keyword literals are not entities.** `str.isidentifier()` is true for
+  `true`, `false` and `null`, so `return true` pointed 114 references at an
+  entity named `false`.
+- **A JDK long name is no longer merged away.** `merge_placeholder_entities()`
+  folds by simple name, so `java.lang.Object.equals` was absorbed into
+  `org.json.JSONObject.Null.equals` — the only `equals` the project declares —
+  and the reference then pointed at itself from both ends.
+- **The contain pass no longer dies on default-package files.** It indexed
+  `packageInfo[0]` unconditionally; the glue logs and swallows, so this looked
+  like silence. 7 logged pass failures → 0.
+
+### Metrics
+
+- `CountCCViol`, `CountCCViolType`, `CCViolDensityCode` and `CCViolDensityLine`
+  implemented — CodeCheck runs no rules here, so they report zero rather than
+  raising.
+- `CountDeclClass` counted `Java Define` for a package, which declares nothing;
+  a package *contains*. It returned 0 for all 27 packages on TheAlgorithms.
+  Also added to `_NOT_AGGREGATED`, without which `Ent.metric()` aggregates over
+  the package's files before the metric's own branch can run.
+- `PercentLackOfCohesion` reports 0 for a class with no instance state, as
+  Understand does, rather than treating a static utility class as maximally
+  incohesive.
+- `CountOutput` 6% → 48% and `CountInput` 29% → 34%, both carried by the call
+  resolution above.
+
+### Known gaps
+
+- `CountStmtExe` (56%), `CountLineCodeExe` (73%), `CountLineCodeDecl` (62%) —
+  one family, one unsolved rule; the counts run in opposite directions.
+- `Java Call` recall on org.json is 41%: a chained receiver (`f().g()`) or a
+  project field chain is still refused rather than guessed at.
+- Overrides of JDK *classes* (`java.awt.Window.paint` through `JFrame`) need a
+  library class hierarchy this project does not have. `symbol_table`'s JDK
+  tables cover the core language and collection contracts only, by design.
+
 ## 0.2.0
 
 First release that can be installed from PyPI. **Databases built by earlier

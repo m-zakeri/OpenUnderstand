@@ -42,7 +42,7 @@ class UseVariantListener(JavaParserLabeledListener):
         self.file_address = file_address
         self.uses = []
 
-    def _add(self, kind, name, ctx, token, suffix=None):
+    def _add(self, kind, name, ctx, token, suffix=None, ent_longname=None):
         if not name or name in LITERALS:
             return
         parents = class_properties.ClassPropertiesListener.findParents(ctx)
@@ -50,10 +50,16 @@ class UseVariantListener(JavaParserLabeledListener):
             # The reference belongs to the declaration the construct attaches
             # to, which findParents() stops short of.
             parents = parents + [suffix]
+        scope_longname = ".".join(parents)
         self.uses.append({
             "kind": kind,
             "name": name,
-            "scope_longname": ".".join(parents),
+            "scope_longname": scope_longname,
+            # Set when the pass already knows which entity is meant and the
+            # writer must not go looking by name. `<E extends Enum<E>>` reads
+            # its own type parameter, so entity and scope are the same thing;
+            # resolving "E" by name instead found an arbitrary other E.
+            "ent_longname": scope_longname if ent_longname is True else ent_longname,
             "line": token.line,
             "col": token.column,
         })
@@ -131,8 +137,11 @@ class UseVariantListener(JavaParserLabeledListener):
             type_ctx = argument.typeType() if hasattr(argument, "typeType") else None
             if type_ctx is None:
                 continue
-            self._add(kind, _simple_type_name(type_ctx), ctx, type_ctx.start,
-                      suffix=declared)
+            argument_name = _simple_type_name(type_ctx)
+            self._add(kind, argument_name, ctx, type_ctx.start, suffix=declared,
+                      # The bound of a type parameter naming that parameter.
+                      ent_longname=bool(
+                          bound and argument_name == bound.rsplit(".", 1)[-1]) or None)
 
 
 def _type_parameter_scope(ctx):
@@ -209,6 +218,13 @@ def _declared_owner(ctx):
         name = type(node).__name__
         if name.startswith(("Creator", "CreatedName", "Expression",
                             "MethodCall", "Block")):
+            return None
+        if name.startswith(("TypeList", "ClassDeclaration",
+                            "InterfaceDeclaration")):
+            # `class Vertex implements Comparable<Vertex>` -- the arguments
+            # belong to the class, which findParents() already names. Walking
+            # past this reached the class again and appended it twice, so the
+            # scope came out as Others.Graph.Vertex.Vertex.
             return None
         if name.startswith(("LocalVariableDeclaration", "FieldDeclaration")):
             return _first_declared_name(node)

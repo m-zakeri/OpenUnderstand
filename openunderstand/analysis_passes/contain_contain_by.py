@@ -49,6 +49,13 @@ class ContainAndContainBy(JavaParserLabeledListener):
         # prefixing packageLongName here produced "org.json.org.json", and
         # omitting `name` left the class's longname pointing at its package.
         scope_longname = ".".join(scope_parents + [name])
+        if not self.packageInfo:
+            # No `package` declaration, so the class is in the default package
+            # and there is no package entity to contain it. This indexed [0]
+            # unconditionally and raised IndexError, which the glue logged and
+            # swallowed -- taking the whole pass down for all 7 default-package
+            # files on TheAlgorithms, Kruskal and BSTIterative among them.
+            return
         packageName = self.packageInfo[0]["name"]
         packageLongName = self.packageInfo[0]["longname"]
         packageKind = self.packageInfo[0]["kind"]

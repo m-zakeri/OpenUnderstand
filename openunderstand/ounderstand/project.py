@@ -589,13 +589,33 @@ class Project:
         """
         for ref_dict in ref_dicts:
             scope_longname = ref_dict["scope_longname"]
+            stated = ref_dict.get("ent_longname")
             scope = EntityModel.get_or_none(EntityModel._longname == scope_longname)
+            if scope is None and stated == scope_longname:
+                # A type parameter is its own scope here -- `<T extends
+                # Comparable<T>>` reads T inside T's declaration. Nothing has
+                # declared it yet: this pass runs fourth and the type parameter
+                # entity is not created until the couple pass writes its Use
+                # Constrains Couple, so every one of these was skipped.
+                scope = EntityModel.get_or_create(
+                    _kind=kind_id("Java GenericParameter Type"),
+                    _name=scope_longname.rsplit(".", 1)[-1],
+                    _parent=None,
+                    _longname=scope_longname,
+                    _contents="",
+                )[0]
             if scope is None:
                 continue
 
             name = ref_dict["name"]
+            if not stated and ref_dict["kind"].endswith("GenericArgument"):
+                # A type argument names a *type*. Looking it up relative to the
+                # scope first found `Others.Graph.Vertex.Vertex` -- the
+                # constructor -- for the `Vertex` of `Comparable<Vertex>`.
+                stated = symbol_table.resolve_type_name(
+                    name, scope_longname=scope_longname)
             ent = EntityModel.get_or_none(
-                EntityModel._longname == f"{scope_longname}.{name}"
+                EntityModel._longname == (stated or f"{scope_longname}.{name}")
             )
             if ent is None:
                 resolved = symbol_table.resolve(name, scope_longname)
