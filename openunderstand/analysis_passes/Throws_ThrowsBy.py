@@ -1,177 +1,85 @@
-import os
+"""Java Throw / Java Throwby: the exceptions a declaration says it throws.
+
+Understand records one reference per exception in a `throws` clause, scoped to
+the *method* and positioned on the exception's own token:
+
+    AESEncryption.java:84:14  scope=ciphers.AESEncryption.decryptText
+                              ent=java.security.NoSuchAlgorithmException
+
+The previous implementation took `qualifiedNameList().getText().split(",")[-1]`
+-- only the *last* exception of the clause -- stored it as the bare written
+text, scoped it to the enclosing class, and positioned it at the method's own
+start token. It produced 2 rows against Understand's 23 on TheAlgorithms and
+none of them matched.
+
+It also resolved each name by walking the project directory for a matching
+file and slicing the path at a hard-coded "org" component, which raised
+`'org' is not in list` on any project not rooted at org/. The glue swallowed
+that, so the pass silently produced nothing at all for those files.
+"""
 
 from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 import openunderstand.analysis_passes.class_properties as class_properties
-from openunderstand.oudb.models import ProjectModel, EntityModel
-
-
-def throws_parent_finder(root_dir, file_name):
-    for root, dirs, files in os.walk(root_dir):
-        for file in files:
-            if file.endswith(".java") and file == (file_name + ".java"):
-                root_splited = str(root).split("/")
-                org_index = root_splited.index("org")
-                return ".".join(root_splited[org_index:])
 
 
 class Throws_TrowsBy(JavaParserLabeledListener):
     def __init__(self):
+        #: Positioned relations, written by Project.addTypeRelationRefs.
+        self.relations = []
+        #: Retained for callers that still read it; nothing populates it now.
         self.implement = []
+        self.imports = {}
+        self.wildcards = []
 
-    def findmethodreturntype(self, c):
-        parents = ""
-        context = ""
-        current = c
-        parents_list = [
-            "ConstructorDeclarationContext",
-            "MethodDeclarationContext",
-            "InterfaceMethodDeclarationContext",
-        ]
-        while current is not None:
-            if type(current.parentCtx).__name__ in parents_list:
-                parents = current.parentCtx.typeTypeOrVoid().getText()
-                context = current.parentCtx.getText()
-                break
-            current = current.parentCtx
+    def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
+        longname = ctx.qualifiedName().getText()
+        if ctx.getText().rstrip(";").endswith(".*"):
+            self.wildcards.append(longname)
+            return
+        self.imports[longname.split(".")[-1]] = longname
 
-        return parents, context
+    # ------------------------------------------------------------- the shapes
 
-    def findmethodacess(self, c):
-        parents = ""
-        modifiers = []
-        current = c
-        while current is not None:
-            if "ClassBodyDeclaration" in type(current.parentCtx).__name__:
-                parents = current.parentCtx.modifier()
-                break
-            current = current.parentCtx
-        for x in parents:
-            if x.classOrInterfaceModifier():
-                modifiers.append(x.classOrInterfaceModifier().getText())
-        return modifiers
-
-    # def enterClassDeclaration(self, ctx:JavaParserLabeled.ClassDeclarationContext):
-    #     if ctx.IMPLEMENTS():
-    #         scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-    #         if len(scope_parents) == 1:
-    #             scope_longname = scope_parents[0]
-    #         else:
-    #             scope_longname = ".".join(scope_parents)
-    #
-    #         [line, col] = str(ctx.start).split(",")[3].split(":")
-    #         for myType in ctx.typeList().typeType():
-    #             if myType.classOrInterfaceType():
-    #                 myType_longname = ".".join([x.getText() for x in myType.classOrInterfaceType().IDENTIFIER()])
-    #                 self.implement.append({"scope_kind": "Class", "scope_name": ctx.IDENTIFIER().__str__(),
-    #                                        "scope_longname": scope_longname,
-    #                                        "scope_parent": scope_parents[-2] if len(scope_parents) > 2 else None,
-    #                                        "scope_contents": ctx.getText(),
-    #                                        "scope_modifiers":
-    #                                            class_properties.ClassPropertiesListener.findClassOrInterfaceModifiers(ctx),
-    #                                        "line": line,
-    #                                        "col": col,
-    #                                        "type_ent_longname": myType_longname})
-
-    def enterMethodDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
-
-        if ctx.THROWS():
-            modifiers = self.findmethodacess(ctx)
-            mothodedreturn, methodcontext = self.findmethodreturntype(ctx)
-            refEntName = ctx.qualifiedNameList().getText().split(",")[-1]
-            if refEntName:
-                allrefs = class_properties.ClassPropertiesListener.findParents(
-                    ctx
-                )  # self.findParents(ctx)
-                refent = allrefs[-1]
-                entlongname = ".".join(allrefs)
-                is_here = throws_parent_finder(
-                    ProjectModel.select()[0].root, refEntName
-                )
-                if is_here is not None:
-                    refEntName = is_here + "." + refEntName
-                line, col = ctx.start.line, ctx.start.column
-                self.implement.append(
-                    {
-                        "scopename": refent,
-                        "scopelongname": entlongname,
-                        "scopemodifiers": modifiers,
-                        "scopereturntype": mothodedreturn,
-                        "scopecontent": methodcontext,
-                        "line": line,
-                        "col": col,
-                        "refent": refEntName,
-                        "scope_parent": allrefs[-2] if len(allrefs) > 2 else None,
-                        "potential_refent": ".".join(allrefs[:-1]) + "." + refEntName,
-                    }
-                )
+    def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
+        self._record(ctx)
 
     def enterConstructorDeclaration(
-        self, ctx: JavaParserLabeled.EnumDeclarationContext
+        self, ctx: JavaParserLabeled.ConstructorDeclarationContext
     ):
-
-        if ctx.THROWS():
-            modifiers = self.findmethodacess(ctx)
-            mothodedreturn, methodcontext = self.findmethodreturntype(ctx)
-            refEntName = ctx.qualifiedNameList().getText().split(",")[-1]
-            if refEntName:
-                allrefs = class_properties.ClassPropertiesListener.findParents(
-                    ctx
-                )  # self.findParents(ctx)
-                refent = allrefs[-1]
-                entlongname = ".".join(allrefs)
-                is_here = throws_parent_finder(
-                    ProjectModel.select()[0].root, refEntName
-                )
-                if is_here is not None:
-                    refEntName = is_here + "." + refEntName
-                line, col = ctx.start.line, ctx.start.column
-                self.implement.append(
-                    {
-                        "scopename": refent,
-                        "scopelongname": entlongname,
-                        "scopemodifiers": modifiers,
-                        "scopereturntype": mothodedreturn,
-                        "scopecontent": methodcontext,
-                        "line": line,
-                        "col": col,
-                        "refent": refEntName,
-                        "scope_parent": allrefs[-2] if len(allrefs) > 2 else None,
-                        "potential_refent": ".".join(allrefs[:-1]) + "." + refEntName,
-                    }
-                )
+        self._record(ctx)
 
     def enterInterfaceMethodDeclaration(
-        self, ctx: JavaParserLabeled.EnumDeclarationContext
+        self, ctx: JavaParserLabeled.InterfaceMethodDeclarationContext
     ):
+        self._record(ctx)
 
-        if ctx.THROWS():
-            modifiers = self.findmethodacess(ctx)
-            mothodedreturn, methodcontext = self.findmethodreturntype(ctx)
-            refEntName = ctx.qualifiedNameList().getText().split(",")[-1]
-            if refEntName:
-                allrefs = class_properties.ClassPropertiesListener.findParents(
-                    ctx
-                )  # self.findParents(ctx)
-                refent = allrefs[-1]
-                entlongname = ".".join(allrefs)
-                is_here = throws_parent_finder(
-                    ProjectModel.select()[0].root, refEntName
-                )
-                if is_here is not None:
-                    refEntName = is_here + "." + refEntName
-                line, col = ctx.start.line, ctx.start.column
-                self.implement.append(
-                    {
-                        "scopename": refent,
-                        "scopelongname": entlongname,
-                        "scopemodifiers": modifiers,
-                        "scopereturntype": mothodedreturn,
-                        "scopecontent": methodcontext,
-                        "line": line,
-                        "col": col,
-                        "refent": refEntName,
-                        "scope_parent": allrefs[-2] if len(allrefs) > 2 else None,
-                        "potential_refent": ".".join(allrefs[:-1]) + "." + refEntName,
-                    }
-                )
+    # ------------------------------------------------------------------ guts
+
+    def _record(self, ctx):
+        names = getattr(ctx, "qualifiedNameList", None)
+        names = names() if callable(names) else None
+        if names is None:
+            return
+        identifier = ctx.IDENTIFIER()
+        if identifier is None or isinstance(identifier, list):
+            return
+
+        from openunderstand.ounderstand import symbol_table
+
+        parents = class_properties.ClassPropertiesListener.findParents(ctx)
+        scope_longname = ".".join(parents + [identifier.getText()])
+        for qualified in names.qualifiedName():
+            longname = symbol_table.resolve_type_name(
+                qualified.getText(), self.imports, self.wildcards, scope_longname)
+            if longname is None:
+                continue
+            token = qualified.start
+            self.relations.append({
+                "kind": "Java Throw",
+                "scope_longname": scope_longname,
+                "ent_longname": longname,
+                "name": longname.rsplit(".", 1)[-1],
+                "line": token.line,
+                "col": token.column,
+            })

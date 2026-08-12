@@ -24,6 +24,8 @@ class CreateAndCreateBy(JavaParserLabeledListener):
     def __init__(self):
         self.package_long_name = ""
         self.create = []
+        self.imports = {}
+        self.wildcard_imports = []
         # Initialize new flags for blockStatement and variableInitializer
         self.isBlockStatement1 = False
         self.isVariableInitializer1 = False
@@ -165,7 +167,11 @@ class CreateAndCreateBy(JavaParserLabeledListener):
                 # token's repr broke on tokens whose text contains a comma or
                 # a colon -- `new int[24]` yielded the column "24]", which went
                 # straight into an integer column as text.
-                line, col = ctx.start.line, ctx.start.column
+                # The reference belongs on the *type* being created, not on
+                # the `new` keyword: Understand puts `new StringBuilder()`
+                # at the S, four columns right of where ctx.start is.
+                line = createdName.start.line
+                col = createdName.start.column
 
                 # if creator.arrayCreatorRest() or creator.classCreatorRest():
                 # If we're in the correct context for creator1, then check for createdName0
@@ -187,6 +193,13 @@ class CreateAndCreateBy(JavaParserLabeledListener):
                         "line": line,
                         "col": col,
                         "refent": createdName.getText(),
+                        # Resolved here rather than left bare: a bare
+                        # `StringBuilder` is folded by
+                        # merge_placeholder_entities() into whatever
+                        # project entity shares the name, where Understand
+                        # reports java.lang.StringBuilder.
+                        "refent_longname": self.resolve_created_type(
+                            createdName.getText(), scope_longname),
                         "scope_parent": (
                             all_parents[-2] if len(all_parents) > 1 else None
                         ),
@@ -199,6 +212,37 @@ class CreateAndCreateBy(JavaParserLabeledListener):
         # Reset the flags whether context condition was met or not
         self.isBlockStatement1 = False
         self.isVariableInitializer1 = False
+
+    def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
+        longname = ctx.qualifiedName().getText()
+        if ctx.getText().rstrip(";").endswith(".*"):
+            self.wildcard_imports.append(longname)
+            return          # a package, not a type
+        self.imports[longname.split(".")[-1]] = longname
+
+    def resolve_created_type(self, name, scope_longname):
+        """Long name of the type being created, or None if it cannot be placed."""
+        from openunderstand.ounderstand import symbol_table
+
+        name = name.split("<")[0].split("[")[0]
+        if not name:
+            return None
+        if name in self.imports:
+            return self.imports[name]
+        if "." in name:
+            return name
+        in_project = symbol_table.resolve_type(name, scope_longname)
+        if in_project:
+            return in_project
+        if name in symbol_table.JAVA_LANG_TYPES:
+            return "java.lang." + name
+        # A single `import x.y.*` is the only place left the name can come
+        # from. TheAlgorithms constructs many types it wildcard-imports, and
+        # without this they fell back to the bare-name path -- Java Create
+        # dropped from 89.4% precision on JSON to 62.6% there.
+        if len(self.wildcard_imports) == 1:
+            return self.wildcard_imports[0] + "." + name
+        return None
 
     def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
         self.package_long_name = ctx.qualifiedName().getText()

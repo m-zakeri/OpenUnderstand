@@ -27,9 +27,15 @@ def process_file(file_address):
         return
     entity_generator = lap.entity_gen(file_address=file_address, parse_tree=parse_tree)
     listeners = [
-        lap.create_listener,
         lap.type_listener,
         lap.define_listener,
+        # After define_listener, not before it. `new` in a field initializer
+        # has no enclosing method, so this pass's scope is the class -- and
+        # running first, it created that scope itself with a Method kind. The
+        # result was a second `org.json.JSONObject` in the method family which
+        # then captured all 110 of the class's Define references, leaving the
+        # real class entity with none.
+        lap.create_listener,
         lap.use_variant_listener,
         lap.method_call_listener,
         lap.declare_listener,
@@ -43,6 +49,8 @@ def process_file(file_address):
         # JSON: dropping it left the 394 correct Call references untouched and
         # removed 43 wrong ones and 15 placeholder entities, taking Call
         # precision from 48.9% to 51.7% and Call Nondynamic from 92.3% to 97.3%.
+        lap.static_import_listener,
+        lap.overrides_listener,
         lap.couple_listener,
         lap.useby_listener,
         lap.setby_listener,
@@ -57,9 +65,13 @@ def process_file(file_address):
         lap.contain_in_listener,
         lap.extend_implict_listener,
         lap.import_demand_listener,
-        lap.import_listener,
-        lap.open_by_listener,
-        lap.use_module_listener,
+        # import_listener, open_by_listener and use_module_listener are gone.
+        # Understand reports no Java Import, Java Open or Java ModuleUse for
+        # Java on either benchmark -- an import is not a reference it records,
+        # and Open/ModuleUse belong to languages with modules. All three wrote
+        # references scoped to a *file path* rather than an entity, so none
+        # could ever match: 288 Open, 241 Import and 60 ModuleUse rows of pure
+        # noise on TheAlgorithms, and 112 on JSON.
     ]
     for listener in listeners:
         listener(file_address=file_address, p=p, file_ent=file_ent, tree=tree)

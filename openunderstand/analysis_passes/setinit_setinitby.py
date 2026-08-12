@@ -1,6 +1,7 @@
 # Group 13
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+import openunderstand.analysis_passes.class_properties as class_properties
 
 
 class SetInitAndSetByInitListener(JavaParserLabeledListener):
@@ -113,6 +114,16 @@ class SetInitAndSetByInitListener(JavaParserLabeledListener):
             else:
                 set_init_value = ctx.getText()
             sss = self.ss + "." + self.ex_name
+            # The long names above walk to a parent by rule index and take
+            # children[0], which is a *type* name as often as the enclosing
+            # class: `JSONArray ja = ...` in CDL.rowToJSONArray was recorded as
+            # org.json.JSONArray.rowToJSONArray.ja. findParents() answers what
+            # the index-chasing was approximating, and the positions were
+            # already right, so this is the whole defect -- 51 of 310
+            # references matched Understand on JSON.
+            parents = class_properties.ClassPropertiesListener.findParents(ctx)
+            enclosing = ".".join(parents)
+            declared = ctx.parentCtx.children[0].getText()
             self.set_init_by.append(
                 (
                     set_init_short_name,
@@ -126,6 +137,8 @@ class SetInitAndSetByInitListener(JavaParserLabeledListener):
                     self.ent_type,
                     self.stream,
                     sss,
+                    enclosing,
+                    f"{enclosing}.{declared}",
                 )
             )
 

@@ -21,9 +21,16 @@ def _defined_methods(entity_id):
 
 def _superclasses(entity_id):
     """Ids of the types this one extends, as far as the project can see."""
+    # Forward Extend kinds only. Matching every name containing "Extend" also
+    # matched the inverses -- `Java Extendby Coupleby Implicit External` is
+    # scoped to java.lang.Object and points at *every* class in the project, so
+    # the walk went class -> Object -> all 26 classes and summed their methods.
+    # CountDeclMethodAll returned the same 193 for every type on JSON.
     extend_kinds = [
         k._id for k in KindModel.select().where(
-            (KindModel.is_ent_kind == False) & (KindModel._name.contains("Extend"))  # noqa: E712
+            (KindModel.is_ent_kind == False)  # noqa: E712
+            & (KindModel._name.contains("Extend"))
+            & ~(KindModel._name.contains("Extendby"))
         )
     ]
     if not extend_kinds:

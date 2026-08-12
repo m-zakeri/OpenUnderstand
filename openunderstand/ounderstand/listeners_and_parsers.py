@@ -4,7 +4,7 @@ from openunderstand.analysis_passes.callNonDynamic_callNonDynamicby import (
     CallNonDynamicAndCallNonDynamicBy,
 )
 
-from openunderstand.analysis_passes.cast_cast_by import CastAndCastBy, implementListener
+from openunderstand.analysis_passes.cast_cast_by import CastAndCastBy
 from openunderstand.analysis_passes.contain_contain_by import ContainAndContainBy
 from openunderstand.analysis_passes.extends_implicit_couple_coupleby import (
     PackageImportListener,
@@ -16,6 +16,8 @@ from openunderstand.analysis_passes.import_demand_g9 import ImportListenerDemand
 from openunderstand.analysis_passes.define_definein import DefineListener
 from openunderstand.analysis_passes.use_variants import UseVariantListener
 from openunderstand.analysis_passes.method_calls import MethodCallListener
+from openunderstand.analysis_passes.overrides import OverridesListener
+from openunderstand.analysis_passes.static_imports import StaticImportListener
 
 # from analysis_passes.define_and_definin_g6 import DefineListener
 from openunderstand.analysis_passes.modify_modifyby import ModifyListener
@@ -102,9 +104,7 @@ class ListenersAndParsers:
         try:
             listener = ExtendCoupleAndExtendCoupleBy()
             p.Walk(listener, tree)
-            p.addExtendCoupleOrExtendCoupleByRefs(
-                listener.implement, file_ent, file_address
-            )
+            p.addTypeRelationRefs(listener.relations, file_ent)
             self.logger.info("extends coupled refs success ")
         except Exception as e:
             self.logger.error(
@@ -151,6 +151,32 @@ class ListenersAndParsers:
         except Exception as e:
             self.logger.error(
                 "An Error occurred in file create refs :" + file_address + "\n" + str(e)
+            )
+
+    @timer_decorator()
+    def static_import_listener(self, tree, file_ent, file_address, p):
+        try:
+            listener = StaticImportListener(file_address)
+            p.Walk(listener, tree)
+            p.addTypeRelationRefs(listener.relations, file_ent)
+            self.logger.info("static imports success")
+        except Exception as e:
+            self.logger.error(
+                "An Error occurred in static imports in file :"
+                + file_address + "\n" + str(e) + "\n" + traceback.format_exc()
+            )
+
+    @timer_decorator()
+    def overrides_listener(self, tree, file_ent, file_address, p):
+        try:
+            listener = OverridesListener()
+            p.Walk(listener, tree)
+            p.addTypeRelationRefs(listener.relations, file_ent)
+            self.logger.info("overrides success")
+        except Exception as e:
+            self.logger.error(
+                "An Error occurred in overrides in file :"
+                + file_address + "\n" + str(e) + "\n" + traceback.format_exc()
             )
 
     @timer_decorator()
@@ -302,6 +328,7 @@ class ListenersAndParsers:
             p.addcouplereference(
                 classescoupleby , couple, file_ent
             )
+            p.addTypeRelationRefs(listener.relations, file_ent)
             self.logger.info("couple success ")
         except Exception as e:
             self.logger.error(
@@ -319,10 +346,7 @@ class ListenersAndParsers:
             # Throws
             listener = Throws_TrowsBy()
             p.Walk(listener, tree)
-            p.addThrows_TrowsByRefs(
-                listener.implement, file_ent, file_address,
-                kind_id("Java Throw"), kind_id("Java Throwby"), True
-            )
+            p.addTypeRelationRefs(listener.relations, file_ent)
             self.logger.info("Throws success ")
         except Exception as e:
             self.logger.error(
@@ -426,11 +450,9 @@ class ListenersAndParsers:
     @timer_decorator()
     def cast_by_listener(self, tree, file_ent, file_address, p):
         try:
-            imp = implementListener()
-            p.Walk(imp, tree)
-            listener = CastAndCastBy(imp.classes)
+            listener = CastAndCastBy(file_address)
             p.Walk(listener, tree)
-            p.add_cast_by(listener.cast, file_ent, file_address)
+            p.addTypeRelationRefs(listener.relations, file_ent)
             self.logger.info("cast success ")
         except Exception as e:
             self.logger.error(

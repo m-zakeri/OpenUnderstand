@@ -366,6 +366,12 @@ def purge_file(file_entity_id):
     return entities_removed, refs_removed
 
 
+#: Long-name roots that belong to the JDK rather than to the project. An
+#: entity under one of these is external and already fully qualified, however
+#: unresolved its kind looks.
+EXTERNAL_ROOTS = ("java.", "javax.")
+
+
 def merge_placeholder_entities():
     """Fold Unknown/Unresolved entities into the real entity they describe.
 
@@ -400,6 +406,14 @@ def merge_placeholder_entities():
 
     merged = 0
     for ghost in placeholders:
+        if (ghost._longname or "").startswith(EXTERNAL_ROOTS):
+            # A JDK long name is fully qualified by construction -- it is not a
+            # local name a pass failed to qualify, so there is nothing here to
+            # resolve. Folding it on the simple name turned
+            # java.lang.Object.equals into org.json.JSONObject.Null.equals,
+            # the only `equals` the project declares, and the reference then
+            # pointed at itself from both ends.
+            continue
         candidates = by_simple.get((ghost._longname or "").rsplit(".", 1)[-1], [])
         if len(candidates) != 1:
             continue

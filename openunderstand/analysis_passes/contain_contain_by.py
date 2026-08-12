@@ -31,7 +31,11 @@ class ContainAndContainBy(JavaParserLabeledListener):
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         name = ctx.IDENTIFIER().getText()
-        line, col = ctx.start.line, ctx.start.column
+        # The reference sits on the class's name, not on the `class` keyword:
+        # ctx.start put every one of these exactly len("class ") = 6 columns
+        # to the left of where Understand reports it.
+        line = ctx.IDENTIFIER().symbol.line
+        col = ctx.IDENTIFIER().symbol.column
         scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
 
         if len(scope_parents) == 1:
