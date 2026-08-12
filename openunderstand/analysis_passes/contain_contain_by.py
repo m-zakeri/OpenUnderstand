@@ -31,7 +31,11 @@ class ContainAndContainBy(JavaParserLabeledListener):
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         name = ctx.IDENTIFIER().getText()
-        line, col = ctx.start.line, ctx.start.column
+        # The reference sits on the class's name, not on the `class` keyword:
+        # ctx.start put every one of these exactly len("class ") = 6 columns
+        # to the left of where Understand reports it.
+        line = ctx.IDENTIFIER().symbol.line
+        col = ctx.IDENTIFIER().symbol.column
         scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
 
         if len(scope_parents) == 1:
@@ -45,6 +49,13 @@ class ContainAndContainBy(JavaParserLabeledListener):
         # prefixing packageLongName here produced "org.json.org.json", and
         # omitting `name` left the class's longname pointing at its package.
         scope_longname = ".".join(scope_parents + [name])
+        if not self.packageInfo:
+            # No `package` declaration, so the class is in the default package
+            # and there is no package entity to contain it. This indexed [0]
+            # unconditionally and raised IndexError, which the glue logged and
+            # swallowed -- taking the whole pass down for all 7 default-package
+            # files on TheAlgorithms, Kruskal and BSTIterative among them.
+            return
         packageName = self.packageInfo[0]["name"]
         packageLongName = self.packageInfo[0]["longname"]
         packageKind = self.packageInfo[0]["kind"]

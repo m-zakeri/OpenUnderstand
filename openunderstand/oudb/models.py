@@ -366,6 +366,12 @@ def purge_file(file_entity_id):
     return entities_removed, refs_removed
 
 
+#: Long-name roots that belong to the JDK rather than to the project. An
+#: entity under one of these is external and already fully qualified, however
+#: unresolved its kind looks.
+EXTERNAL_ROOTS = ("java.", "javax.")
+
+
 def merge_placeholder_entities():
     """Fold Unknown/Unresolved entities into the real entity they describe.
 
@@ -400,6 +406,14 @@ def merge_placeholder_entities():
 
     merged = 0
     for ghost in placeholders:
+        if (ghost._longname or "").startswith(EXTERNAL_ROOTS):
+            # A JDK long name is fully qualified by construction -- it is not a
+            # local name a pass failed to qualify, so there is nothing here to
+            # resolve. Folding it on the simple name turned
+            # java.lang.Object.equals into org.json.JSONObject.Null.equals,
+            # the only `equals` the project declares, and the reference then
+            # pointed at itself from both ends.
+            continue
         candidates = by_simple.get((ghost._longname or "").rsplit(".", 1)[-1], [])
         if len(candidates) != 1:
             continue
@@ -465,6 +479,23 @@ def drop_shadowed_use_refs():
     return cursor.rowcount if cursor.rowcount and cursor.rowcount > 0 else 0
 
 
+#: JDK classes declared final, so a call on one is never virtual. Understand
+#: knows this from the library it indexes; this is the same fact written down.
+#:
+#: ponytail: the finals the benchmarks actually call. java.lang.Object is
+#: deliberately absent -- it is not final, and its methods are the ones most
+#: often overridden.
+JDK_FINAL_TYPES = frozenset("""
+    java.lang.Boolean java.lang.Byte java.lang.Character java.lang.Class
+    java.lang.Double java.lang.Float java.lang.Integer java.lang.Long
+    java.lang.Math java.lang.Short java.lang.String java.lang.StringBuffer
+    java.lang.StringBuilder java.lang.System java.lang.reflect.Method
+    java.math.BigDecimal java.math.BigInteger java.util.Arrays
+    java.util.Collections java.util.Objects java.util.Optional
+    java.util.Scanner java.util.UUID java.util.stream.Collectors
+""".split())
+
+
 def relabel_nondynamic_calls():
     """Split Java Call into Call/Call Nondynamic once targets are known.
 
@@ -489,8 +520,16 @@ def relabel_nondynamic_calls():
         entity = EntityModel.get_or_none(_id=entity_id)
         if entity is None:
             return False
-        return bool(set(_kind_name(entity._kind_id).lower().split())
-                    & _NONDYNAMIC_TOKENS)
+        if set(_kind_name(entity._kind_id).lower().split()) & _NONDYNAMIC_TOKENS:
+            return True
+        # A JDK callee carries no modifiers here -- it is a placeholder named
+        # from the receiver's type, never a declaration this project parsed.
+        # Its class being final is what settles it: nothing can override
+        # java.lang.String.length, so the call cannot dispatch virtually.
+        # These are 303 of TheAlgorithms' missing Call Nondynamic rows for
+        # String alone, and 180 of JSON's.
+        owner = (entity._longname or "").rsplit(".", 1)[0]
+        return owner in JDK_FINAL_TYPES
 
     relabelled = 0
     # The callee is _ent on a Call and _scope on its inverse.

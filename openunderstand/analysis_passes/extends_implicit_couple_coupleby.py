@@ -230,22 +230,38 @@ def add_java_file_entity(file_path, file_name):
     return obj
 
 
-def add_references(importing_ent, imported_ent, cls_data: ClassTypeData, file_path):
+def add_references(importing_ent, imported_ent, cls_data: ClassTypeData, file_path,
+                   file_ent=None):
+    """Record `class X` implicitly extending java.lang.Object.
 
+    The kind is the *External* variant: the supertype is outside the analysed
+    project, and Understand reports these as Java Extend Couple Implicit
+    External -- 19 on JSON, against 0 of the non-External kind this used to
+    write. Not one of ours matched as a result.
+
+    The column is Understand's own 0, not col_1based(0) = 1: it positions these
+    on the class's line but at no column, the way it does an unpositioned
+    Couple.
+    """
+    reference_file = file_ent or importing_ent
     ref, _ = ReferenceModel.get_or_create(
-        _kind=KindModel.get_or_none(_name="Java Extend Couple Implicit")._id,
-        _file_id=importing_ent._id,
+        _kind=KindModel.get_or_none(
+            _name="Java Extend Couple Implicit External")._id,
+        # _file is the file the reference occurs in. This was the *class*
+        # entity, which is what every other pass had wrong before it was fixed.
+        _file_id=reference_file._id,
         _line=cls_data.line,
-        _column=col_1based(cls_data.column),
+        _column=0,
         _ent_id=imported_ent._id,
         _scope_id=importing_ent._id,
     )
 
     inverse_ref, _ = ReferenceModel.get_or_create(
-        _kind=KindModel.get_or_none(_name="Java Extendby Coupleby Implicit")._id,
-        _file_id=importing_ent._id,
+        _kind=KindModel.get_or_none(
+            _name="Java Extendby Coupleby Implicit External")._id,
+        _file_id=reference_file._id,
         _line=cls_data.line,
-        _column=col_1based(cls_data.column),
+        _column=0,
         _ent_id=importing_ent._id,
         _scope_id=imported_ent._id,
     )

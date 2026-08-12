@@ -49,11 +49,15 @@ class ModifyListener(JavaParserLabeledListener):
         if target is None:
             return
         token = target.stop
+        kind = "Java Modify"
         if token is None or not token.text.isidentifier():
-            # `arr[i] += 1` ends on `]`. Understand reports the array element,
-            # which this pass has no entity for.
-            # ponytail: skipped rather than guessed; 0 such cases on JSON.
-            return
+            # `arr[i] += 1` ends on `]`. Understand reports this against the
+            # array itself, as a Java Modify Deref Partial positioned on the
+            # array's own token -- the same shape as Set Deref Partial.
+            token = target.start
+            kind = "Java Modify Deref Partial"
+            if token is None or not token.text.isidentifier():
+                return
         parents = class_properties.ClassPropertiesListener.findParents(target)
         if not parents:
             return
@@ -68,6 +72,7 @@ class ModifyListener(JavaParserLabeledListener):
         )
         self.modify.append(
             {
+                "kind": kind,
                 "file": self.entity_manager.file_ent,
                 "line": token.line,
                 "column": token.column,

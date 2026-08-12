@@ -36,8 +36,23 @@ class _DeclarationIndex:
         # package actually declared it -- 92 of Couple's 159 false positives
         # there, and the same error reached DotRef through resolve_type().
         self.types: dict[str, set[str]] = {}
-        #: Class long name -> the simple name it extends, for project classes.
-        self.supertypes: dict[str, str] = {}
+        #: Class long name -> the simple names it extends *and* implements.
+        #: Interfaces matter as much as superclasses: Understand reports
+        #: BinarySearch.find as overriding SearchAlgorithm.find, and recording
+        #: only `extends` found 5 of TheAlgorithms' 47 Overrides.
+        self.supertypes: dict[str, list[str]] = {}
+        #: Method long name -> every declaration under it, each as
+        #: (parameter type names, is_abstract, is_generic).
+        #:
+        #: `Java Overrides` needs the *supertype's* declaration, which lives in
+        #: another file, to tell an override from a same-named overload:
+        #: MaxHeap.getElement(int) does not override Heap.getElement().
+        #:
+        #: A list, not one entry: overloads share a long name. SortAlgorithm
+        #: declares both `sort(T[])` and `sort(List<T>)`, and keeping one
+        #: dropped the abstract generic overload that Understand refuses to
+        #: report -- which is 15 wrong rows, one per class implementing it.
+        self.methods: dict[str, list[tuple[tuple[str, ...], bool, bool]]] = {}
         self.files = 0
 
     def add(self, simple_name: str, longname: str, is_type: bool = False):
@@ -111,9 +126,54 @@ class _DeclarationIndex:
             if self.declares(current, member):
                 return current
             seen.add(current)
-            parent = self.supertypes.get(current)
-            current = self.resolve_type(parent, current) if parent else None
+            for parent in self.supertypes.get(current, []):
+                resolved = self.resolve_type(parent, current)
+                if resolved and resolved not in seen:
+                    found = self.declaring_type(resolved, member)
+                    if found:
+                        return found
+            return None
         return None
+
+    def overridden_declaration(self, owner: str, member: str,
+                               parameters: tuple) -> str | None:
+        """The supertype whose declaration of `member` this one overrides.
+
+        Stricter than declaring_type(): an override has to match the
+        signature, and `MaxHeap.getElement(int)` does not override
+        `Heap.getElement()`. Parameter *types* are compared as written, not
+        just counted, because SortAlgorithm's two `sort` overloads both take
+        one argument and only one of them is overridden. This is not full Java
+        overload resolution -- an inherited generic renamed from T to E would
+        defeat it -- but it separates every case in either benchmark.
+
+        An *abstract generic* declaration is skipped, because Understand does
+        not report overrides of one. `Sorts.SortAlgorithm.sort(T[] unsorted)`
+        has no Overriddenby in Understand's own database even though fifteen
+        classes implement it, while its concrete `sort(List<T>)` sibling and
+        the non-generic abstract `Heap.getElement()` both do. Emitting them
+        anyway was 21 of this pass's 23 wrong rows on TheAlgorithms.
+        """
+        seen = set()
+
+        def search(current):
+            if not current or current in seen:
+                return None
+            seen.add(current)
+            for parent in self.supertypes.get(current, []):
+                resolved = self.resolve_type(parent, current)
+                if not resolved:
+                    continue
+                for declared, abstract, generic in self.methods.get(
+                        f"{resolved}.{member}", ()):
+                    if declared == parameters and not (abstract and generic):
+                        return resolved
+                found = search(resolved)
+                if found:
+                    return found
+            return None
+
+        return search(owner)
 
     def __len__(self):
         return sum(len(v) for v in self.by_simple_name.values())
@@ -130,11 +190,62 @@ INDEX = _DeclarationIndex()
 #: project is left unresolved rather than guessed. Widen it if parity shows a
 #: type being missed.
 JAVA_LANG_TYPES = frozenset(
-    """Boolean Byte Character Class ClassLoader Comparable Double Enum Error
-    Exception Float Integer Iterable Long Math Number Object Override Package
-    Process Runtime Short String StringBuffer StringBuilder System Thread
-    Throwable Void""".split()
+    """Appendable AutoCloseable Boolean Byte CharSequence Character Class
+    ClassLoader Cloneable Comparable Deprecated Double Enum Error Exception
+    Float FunctionalInterface Integer Iterable Long Math Number Object Override
+    Package Process Readable Runnable Runtime SafeVarargs Short String
+    StringBuffer StringBuilder SuppressWarnings System Thread Throwable
+    Void
+
+    ArithmeticException ArrayIndexOutOfBoundsException ArrayStoreException
+    ClassCastException ClassNotFoundException CloneNotSupportedException
+    IllegalAccessException IllegalArgumentException IllegalStateException
+    IndexOutOfBoundsException InterruptedException NegativeArraySizeException
+    NoSuchFieldException NoSuchMethodException NullPointerException
+    NumberFormatException OutOfMemoryError RuntimeException StackOverflowError
+    StringIndexOutOfBoundsException UnsupportedOperationException
+    AssertionError""".split()
 )
+
+#: Simple name -> the JDK package declaring it, for types a file reaches
+#: through `import x.y.*`.
+#:
+#: Only consulted when the file wildcard-imports that exact package and the
+#: lone-wildcard rule cannot choose, so this narrows candidates the source
+#: already asked for -- it never introduces a package the file does not import.
+#:
+#: ponytail: a lookup table covering what the benchmarks construct, not a model
+#: of the JDK. `Timer` is deliberately absent: java.util and javax.swing both
+#: declare one and only the file's explicit imports can say which.
+JDK_TYPE_PACKAGES = {
+    **{n: "java.util" for n in """ArrayList Arrays ArrayDeque BitSet Calendar
+        Collection Collections Comparator Date Deque EmptyStackException
+        HashMap HashSet Hashtable IdentityHashMap InputMismatchException
+        Iterator LinkedHashMap LinkedHashSet LinkedList List ListIterator Map
+        NavigableMap NavigableSet NoSuchElementException Objects Optional
+        PriorityQueue Queue Random Scanner Set SortedMap SortedSet Stack
+        StringJoiner StringTokenizer TreeMap TreeSet UUID Vector""".split()},
+    **{n: "java.io" for n in """BufferedReader BufferedWriter File
+        FileInputStream FileNotFoundException FileOutputStream FileReader
+        FileWriter IOException InputStream InputStreamReader OutputStream
+        OutputStreamWriter PrintStream PrintWriter Reader Serializable
+        Writer""".split()},
+    **{n: "java.awt" for n in """BorderLayout Color Component Container
+        Dimension FlowLayout Font Frame Graphics Graphics2D GridLayout Image
+        Insets Point Polygon Rectangle Toolkit Window""".split()},
+    **{n: "java.awt.event" for n in """ActionEvent ActionListener KeyAdapter
+        KeyEvent KeyListener MouseAdapter MouseEvent MouseListener
+        WindowAdapter WindowEvent WindowListener""".split()},
+    **{n: "javax.swing" for n in """BorderFactory ImageIcon JButton
+        JComponent JFrame JLabel JOptionPane JPanel JScrollPane JTextArea
+        JTextField SwingUtilities""".split()},
+    **{n: "java.math" for n in "BigDecimal BigInteger".split()},
+    **{n: "java.util.stream" for n in "Collectors IntStream Stream".split()},
+    **{n: "java.util.function" for n in """BiFunction Consumer Function
+        Predicate Supplier""".split()},
+    **{n: "java.text" for n in """DecimalFormat NumberFormat
+        SimpleDateFormat""".split()},
+}
 
 #: Declared type of well-known JDK fields, keyed by (owning type, field).
 #:
@@ -153,6 +264,67 @@ JDK_FIELD_TYPES = {
     ("java.lang.System", "out"): "java.io.PrintStream",
     ("java.lang.System", "err"): "java.io.PrintStream",
 }
+
+#: Overridable members of the JDK supertypes, as member -> parameter count.
+#:
+#: Most overrides in a real project are of JDK types, not of project ones: 15
+#: of JSON's 15 and 34 of TheAlgorithms' 47. Understand indexes the whole Java
+#: library and can see java.lang.Object.toString; this project cannot, and
+#: CLAUDE.md is right that matching on the method *name* alone would claim an
+#: override of every same-named method anywhere. Matching a name **and its
+#: parameter count** against a supertype the class explicitly names is a
+#: different question, and one the parse tree can answer.
+#:
+#: java.lang.Object is the exception that needs no `implements`: every class
+#: extends it, so its five overridable members are always in scope. The rest
+#: apply only where the class names them.
+#:
+#: ponytail: a hand-written table of the core language and collection
+#: contracts. It is not a model of the JDK -- java.awt.event.ActionListener and
+#: java.awt.Window are deliberately absent, so TheAlgorithms' six AWT overrides
+#: stay unreported rather than pull the whole AWT hierarchy in behind them.
+#: Add an interface here when parity shows one being missed.
+JDK_OVERRIDABLE = {
+    "java.lang.Object": {
+        "toString": 0, "hashCode": 0, "equals": 1, "clone": 0, "finalize": 0,
+    },
+    "java.lang.Iterable": {"iterator": 0, "forEach": 1, "spliterator": 0},
+    "java.lang.Runnable": {"run": 0},
+    "java.lang.Comparable": {"compareTo": 1},
+    "java.util.Iterator": {
+        "hasNext": 0, "next": 0, "remove": 0, "forEachRemaining": 1,
+    },
+    "java.util.Comparator": {"compare": 2},
+    "java.awt.event.ActionListener": {"actionPerformed": 1},
+}
+
+#: Simple name -> long name, for the supertypes named in JDK_OVERRIDABLE.
+JDK_OVERRIDABLE_BY_SIMPLE_NAME = {
+    longname.rsplit(".", 1)[-1]: longname for longname in JDK_OVERRIDABLE
+}
+
+
+def parameter_types(ctx) -> tuple:
+    """Declared parameter types of a method declaration, as written.
+
+    Compared textually between an override and the declaration above it, so
+    both ends have to be read the same way -- the pass and the index share
+    this rather than each counting parameters its own way.
+    """
+    parameters = getattr(ctx, "formalParameters", None)
+    parameters = parameters() if callable(parameters) else None
+    listed = parameters.formalParameterList() if parameters is not None else None
+    if listed is None:
+        return ()
+    names = []
+    formal = getattr(listed, "formalParameter", None)
+    if callable(formal):
+        names += [p.typeType().getText() for p in (formal() or [])]
+    last = getattr(listed, "lastFormalParameter", None)
+    last = last() if callable(last) else None
+    if last is not None:
+        names.append(last.typeType().getText() + "...")
+    return tuple(names)
 
 
 def build(root: str) -> _DeclarationIndex:
@@ -174,14 +346,59 @@ def build(root: str) -> _DeclarationIndex:
 
         def __init__(self):
             self.pairs = []
+            self.methods = {}
 
         def enterClassDeclaration(self, ctx):
-            if ctx.EXTENDS() is None:
+            parents = class_properties.ClassPropertiesListener.findParents(ctx)
+            longname = ".".join(parents + [ctx.IDENTIFIER().getText()])
+            supers = []
+            if ctx.EXTENDS() is not None and ctx.typeType() is not None:
+                supers.append(ctx.typeType().getText().split("<")[0])
+            if ctx.IMPLEMENTS() is not None and ctx.typeList() is not None:
+                supers += [t.getText().split("<")[0]
+                           for t in ctx.typeList().typeType()]
+            if supers:
+                self.pairs.append((longname, supers))
+
+        def enterInterfaceDeclaration(self, ctx):
+            if ctx.EXTENDS() is None or ctx.typeList() is None:
                 return
             parents = class_properties.ClassPropertiesListener.findParents(ctx)
             longname = ".".join(parents + [ctx.IDENTIFIER().getText()])
             self.pairs.append(
-                (longname, ctx.typeType().getText().split("<")[0]))
+                (longname, [t.getText().split("<")[0]
+                            for t in ctx.typeList().typeType()]))
+
+        # ------------------------------------------------------- signatures
+
+        def enterMethodDeclaration(self, ctx):
+            self._signature(ctx)
+
+        def enterInterfaceMethodDeclaration(self, ctx):
+            self._signature(ctx)
+
+        def _signature(self, ctx):
+            identifier = ctx.IDENTIFIER()
+            if identifier is None or isinstance(identifier, list):
+                return
+            parents = class_properties.ClassPropertiesListener.findParents(ctx)
+            longname = ".".join(parents + [identifier.getText()])
+
+            body = ctx.methodBody()
+            abstract = body is None or body.block() is None
+            # <T> is on the genericMethodDeclaration wrapper, never on the
+            # declaration that carries the name -- except in an interface,
+            # where the typeParameters are inline.
+            generic = (
+                getattr(ctx.parentCtx, "typeParameters", None) is not None
+                and callable(getattr(ctx.parentCtx, "typeParameters", None))
+                and ctx.parentCtx.typeParameters() is not None
+            ) or (
+                callable(getattr(ctx, "typeParameters", None))
+                and ctx.typeParameters() is not None
+            )
+            self.methods.setdefault(longname, []).append(
+                (parameter_types(ctx), abstract, generic))
 
     for path in _java_files(root):
         try:
@@ -198,6 +415,7 @@ def build(root: str) -> _DeclarationIndex:
             continue
         index.files += 1
         index.supertypes.update(supertypes.pairs)
+        index.methods.update(supertypes.methods)
         for declaration in listener.defines:
             index.add(
                 declaration["ent"],
@@ -212,6 +430,45 @@ def build(root: str) -> _DeclarationIndex:
 
 def resolve(simple_name: str, scope_longname: str = "") -> str | None:
     return INDEX.resolve(simple_name, scope_longname)
+
+
+def resolve_type_name(name, imports=None, wildcards=None, scope_longname=""):
+    """Long name for a type as written in source, or None if it cannot be placed.
+
+    The order javac uses: an explicit single-type import, then an already
+    qualified name, then the project's own types (innermost scope outward),
+    then implicit java.lang, then a lone `import x.y.*`. Refusing beats
+    guessing -- a wrong type silently misattributes every reference built on
+    it.
+
+    Several passes grew near-copies of this; they should converge here.
+    """
+    if not name:
+        return None
+    name = name.split("<")[0].split("[")[0]
+    if not name:
+        return None
+    if imports and name in imports:
+        return imports[name]
+    if "." in name:
+        return name
+    in_project = resolve_type(name, scope_longname)
+    if in_project:
+        return in_project
+    if name in JAVA_LANG_TYPES:
+        return "java.lang." + name
+    if wildcards and len(wildcards) == 1:
+        return wildcards[0] + "." + name
+    # More than one `import x.y.*` and the lone-wildcard rule above cannot
+    # choose. Hanoi.java wildcard-imports java.awt, java.awt.event, java.util
+    # and javax.swing, so every type it constructs fell back to a bare name --
+    # 143 of TheAlgorithms' Java Create rows. The package is only accepted when
+    # the file actually imports it, so this decides between candidates the file
+    # already asked for rather than inventing one.
+    package = JDK_TYPE_PACKAGES.get(name)
+    if package and wildcards and package in wildcards:
+        return package + "." + name
+    return None
 
 
 def declaring_type(type_longname: str, member: str) -> str | None:

@@ -35,6 +35,8 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         self.pending_annotations = []
         #: Packages brought in by `import x.y.*`, in declaration order.
         self.wildcard_imports = []
+        #: Positioned type relations: implements, type-parameter bounds.
+        self.relations = []
 
 
 
@@ -185,9 +187,80 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
             return
         if grandparent == 'TypeListContext' and \
                 type(ctx.parentCtx.parentCtx.parentCtx).__name__ == 'ClassDeclarationContext':
+            # `implements Z` is its own relation, not a plain Couple.
+            self.record_relation('Java Implement Couple', ctx, self.classlongname)
+            return
+        bound = self.constrained_parameter(ctx)
+        if bound is not None:
+            # `<T extends Comparable<T>>` -- scoped to the type parameter
+            # itself, which is how Understand names it: Searches.BinarySearch
+            # .find.T -> java.lang.Comparable.
+            self.record_relation('Java Use Constrains Couple', ctx, bound)
             return
 
         self.add(self.resolve_type_longname(ctx))
+
+    def constrained_parameter(self, ctx):
+        """Long name of the type parameter this type bounds, or None."""
+        node = ctx.parentCtx
+        while node is not None:
+            if type(node).__name__.startswith('TypeParameter'):
+                identifier = node.IDENTIFIER()
+                if identifier is None:
+                    return None
+                parents = class_properties.ClassPropertiesListener.findParents(node)
+                owner = self.generic_owner(node)
+                if owner:
+                    # `<T extends Comparable<T>> int find(...)`: the type
+                    # parameter list is a *sibling* of the method declaration
+                    # inside genericMethodDeclaration, so findParents() stops at
+                    # the class and the scope came out Searches.BinarySearch.T
+                    # where Understand says Searches.BinarySearch.find.T.
+                    parents = parents + [owner]
+                return '.'.join(parents + [identifier.getText()])
+            if type(node).__name__.startswith(('ClassBody', 'Block')):
+                return None
+            node = node.parentCtx
+        return None
+
+    @staticmethod
+    def generic_owner(node):
+        """Name of the method a type parameter list belongs to, if any."""
+        current = node.parentCtx
+        while current is not None:
+            name = type(current).__name__
+            if name.startswith(('GenericMethodDeclaration',
+                                'GenericConstructorDeclaration')):
+                for attribute in ('methodDeclaration', 'constructorDeclaration'):
+                    inner = getattr(current, attribute, None)
+                    inner = inner() if callable(inner) else None
+                    if inner is not None and inner.IDENTIFIER() is not None:
+                        return inner.IDENTIFIER().getText()
+                return None
+            if name.startswith(('ClassBody', 'ClassDeclaration')):
+                return None
+            current = current.parentCtx
+        return None
+
+    def record_relation(self, kind, ctx, scope_longname):
+        """A positioned type relation: implements, or a type-parameter bound.
+
+        Java Couple is unpositioned and aggregated per class; these are
+        per-occurrence and carry the type's own token, so they are collected
+        separately rather than folded into the couple set.
+        """
+        longname = self.resolve_type_longname(ctx)
+        if not longname or not scope_longname:
+            return
+        token = ctx.start
+        self.relations.append({
+            'kind': kind,
+            'scope_longname': scope_longname,
+            'ent_longname': longname,
+            'name': longname.rsplit('.', 1)[-1],
+            'line': token.line,
+            'col': token.column,
+        })
 
     def enterAnnotation(self, ctx:JavaParserLabeled.AnnotationContext):
         """`@Override` couples the type to the annotation type."""

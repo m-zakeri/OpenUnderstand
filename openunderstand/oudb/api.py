@@ -139,6 +139,10 @@ List of Functions with Parameters
 
 import ounderstand
 
+
+
+
+
 def sortKeyFunc(ent):
   return str.lower(ent.longname())
 
@@ -250,6 +254,22 @@ for lexeme in file.lexer():
   if lexeme.ent():
     print ("@",end="")
 """
+
+#: Understand's CodeCheck violation counts, reported as whole numbers and as
+#: two-decimal strings. They are 0 for every entity unless a CodeCheck ruleset
+#: has been run -- 330 of 330 on JSON and 1047 of 1047 on TheAlgorithms.
+#:
+#: This project has no CodeCheck engine, so it can never report a violation:
+#: "no checks configured, therefore none violated" is the honest answer, and it
+#: is the one Understand gives for an unconfigured project. Returning None left
+#: all four absent on every entity.
+_CODE_CHECK_METRICS = {
+    "CountCCViol": 0,
+    "CountCCViolType": 0,
+    "CCViolDensityCode": "0.00",
+    "CCViolDensityLine": "0.00",
+}
+
 
 # Variables with simple values
 
@@ -943,6 +963,9 @@ class Ent:
             if item not in known:
                 metrics[item] = None
         for item in metric_list:
+            if item in _CODE_CHECK_METRICS:
+                metrics[item] = _CODE_CHECK_METRICS[item]
+                continue
             if item == "CountDeclMethodAll":
                 metrics.update({"CountDeclMethodAll": count_decl_method_all(self)})
             elif item == "CountDeclClassVariable":
@@ -1094,7 +1117,8 @@ class Ent:
                 )
             elif item == "PercentLackOfCohesion":
                 metrics.update(
-                    {"PercentLackOfCohesion": get_percent_lack_of_cohesion(self)}
+                    {"PercentLackOfCohesion":
+                        graph_metrics.percent_lack_of_cohesion(self)}
                 )
             elif item == "PercentLackOfCohesionModified":
                 metrics.update(
@@ -1159,6 +1183,10 @@ class Ent:
             "CountDeclInstanceVariableProtected",
             "CountDeclInstanceVariablePublic",
             "CountDeclMethod",
+            "CountCCViol",
+            "CountCCViolType",
+            "CCViolDensityCode",
+            "CCViolDensityLine",
             "CountDeclMethodAll",
             "CountDeclMethodDefault",
             "CountDeclMethodPrivate",

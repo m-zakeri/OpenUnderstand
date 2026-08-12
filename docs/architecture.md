@@ -13,7 +13,7 @@ ounderstand.runner         one worker per .java file
     ↓
 parsing_process.process_file
     ↓
-  parse once  →  run ~25 listeners over that one tree, in order
+  parse once  →  run ~28 listeners over that one tree, in order
     ↓
 merge_placeholder_entities + relabel_nondynamic_calls
 + drop_shadowed_use_refs                                (once, after all files)
@@ -112,8 +112,26 @@ will happily fold it into the single project method that happens to share it.
 `org.json.CDL.getValue` that way. A pass should qualify what it can and emit
 nothing for what it cannot.
 
+A *qualified* name outside the project is not a placeholder at all. Anything
+rooted under `EXTERNAL_ROOTS` — `java.`, `javax.` — is fully qualified by
+construction, however unresolved its kind looks, and the merge skips it.
+Without that, `java.lang.Object.equals` was folded into
+`org.json.JSONObject.Null.equals`, the only `equals` the project declares, and
+the reference pointed at itself from both ends.
+
+Most references leave the project, so refusing to name an external target is
+expensive: 1,197 of TheAlgorithms' 1,416 missing calls were to `java.io`,
+`java.util` and `java.lang`. `symbol_table` carries small hand-written tables
+for this — `JAVA_LANG_TYPES`, `JDK_TYPE_PACKAGES`, `JDK_FIELD_TYPES`,
+`JDK_OVERRIDABLE` and `models.JDK_FINAL_TYPES`. They are lookup tables covering
+what the benchmarks use, not a model of the JDK, and each says so where it is
+defined.
+
 `relabel_nondynamic_calls()` runs next and splits `Java Call` into
-`Call`/`Call Nondynamic` now that the callee's modifiers are known.
+`Call`/`Call Nondynamic` now that the callee's modifiers are known. A JDK
+callee carries no modifiers here — it was named from the receiver's type, not
+parsed — so its class being final is what settles it: nothing can override
+`java.lang.String.length`.
 
 `drop_shadowed_use_refs()` runs last. Understand reports exactly one reference
 kind per position: `x` in `x.next()` is a `Use Deref Partial`, an assignment

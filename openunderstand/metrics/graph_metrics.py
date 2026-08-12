@@ -58,9 +58,30 @@ def _visibility(entity):
 # ---------------------------------------------------------------- declarations
 
 def count_decl_class(ent_model):
-    """Classes declared in this entity."""
+    """Classes declared in this entity.
+
+    A package declares nothing -- a *file* defines a class and the package
+    merely contains it -- so counting Java Define returned 0 for all 27
+    packages on TheAlgorithms against Understand's 18 for Conversions alone.
+    """
     entity = _entity(ent_model)
-    return 0 if entity is None else len(_declares(entity._id, "type"))
+    if entity is None:
+        return 0
+    declared = _declares(entity._id, "type")
+    if declared or "package" not in _visibility(entity):
+        return len(declared)
+    # Contain reaches the package's top-level classes; a class nested inside
+    # one of them is declared by *it*, and Understand counts those too --
+    # DataStructures.Bags holds Bag and Bag.ListIterator, and stopping at the
+    # top level reported 1 of 3.
+    seen, pending = set(), _targets(entity._id, "Java Contain", "type")
+    while pending:
+        current = pending.pop()
+        if current._id in seen:
+            continue
+        seen.add(current._id)
+        pending += _declares(current._id, "type")
+    return len(seen)
 
 
 def count_decl_method(ent_model):
@@ -362,6 +383,10 @@ def count_input(ent_model):
 #: CountLineCode 76, CountStmt 58 and SumCyclomatic 13 are exactly the sums over
 #: the package's four files.
 _NOT_AGGREGATED = {
+    # A package's own definition answers this; summing it over the package's
+    # files gives 0, because a file declares nothing -- the class is defined
+    # in the package's scope, not the file's.
+    "CountDeclClass",
     "CountDeclFile", "CountClassBase", "CountClassDerived",
     "CountClassCoupled", "CountClassCoupledModified", "MaxInheritanceTree",
     "PercentLackOfCohesion", "PercentLackOfCohesionModified",
@@ -376,6 +401,20 @@ def container_members(ent_model):
     `contents()` returned 0 or 1 for them -- and packages are 6 of the 28
     entities the comparison covers, which is precisely the 79% ceiling that
     appeared on fifteen separate metrics.
+
+    Files are deliberately *not* containers. A file has source of its own, so
+    its line and statement metrics are right from text; rolling it up over its
+    classes instead made a package's CountLine the sum over class bodies and
+    dropped every file-level comment (org.json: 9015 -> 8451). Only a file's
+    *declaration* counts need its types, and those are still wrong -- see the
+    note below.
+
+    ponytail: CountDecl* is unfixed at file and package level. `org.json`
+    reports CountDeclMethod 0 where Understand says 330, because the rollup
+    goes package -> file and a file counts no declarations of its own. Counting
+    entities under the package directly gets CountDeclClass exactly right (26)
+    but CountDeclMethod to 345 against 330, so the definition is not simply
+    "entities nested under it" and needs measuring before it is implemented.
     """
     entity = _entity(ent_model)
     if entity is None or kind_family(entity._kind_id) != "package":
@@ -383,6 +422,10 @@ def container_members(ent_model):
     define = KindModel.get_or_none(_name="Java Define")
     if define is None:
         return []
+    # The file each of the package's declarations was found in. Verified
+    # against Understand on com.calculator.app.method: its CountLine 94,
+    # CountLineCode 76, CountStmt 58 and SumCyclomatic 13 are exactly the sums
+    # over the package's four files.
     file_ids = {
         ref._file_id
         for ref in ReferenceModel.select().where(
@@ -433,3 +476,44 @@ def aggregate(name, values):
     if name.startswith("Min"):
         return min(numbers)
     return sum(numbers)
+
+
+def percent_lack_of_cohesion(ent_model, modified=False):
+    """"Percentage of methods that do not use each instance variable." [LCOM]
+
+    Computed from the reference graph rather than by reparsing. The listener
+    this replaces collected a class's fields by walking
+    getChild(0).getChild(1).getChild(0)... and its uses with its own
+    primary4 handler; it found no uses at all on the JSON benchmark, so every
+    class came out 100 -- total lack of cohesion -- against Understand's 76
+    and 77. Use, Set and Modify references now name their variable exactly,
+    which is the same question asked of data that has been checked.
+
+    Understand reports whole percent, not a float.
+    """
+    entity = _entity(ent_model)
+    if entity is None:
+        return 0
+    methods = _declares(entity._id, "method")
+    # Cohesion is about *instance* state. A static utility class shares
+    # nothing between its methods by construction, and Understand scores it 0
+    # rather than a total lack of cohesion -- AnyBaseToAnyBase,
+    # DecimalToHexaDecimal and RomanToInteger came out 67, 50 and 75.
+    fields = [v for v in _declares(entity._id, "variable")
+              if not {"local", "parameter", "static"} & _visibility(v)]
+    if not methods or not fields:
+        # Undefined for a class with no methods or no fields; Understand
+        # reports 0 there, not total lack of cohesion.
+        return 0
+
+    reading = ("Java Use", "Java Use Deref Partial", "Java Set",
+               "Java Set Init", "Java Modify")
+    field_ids = {f._id for f in fields}
+    users = {f._id: set() for f in fields}
+    for method in methods:
+        for kind in reading:
+            for target in _targets(method._id, kind):
+                if target._id in field_ids:
+                    users[target._id].add(method._id)
+    share = [len(users[f._id]) / len(methods) for f in fields]
+    return round((1 - sum(share) / len(share)) * 100)
