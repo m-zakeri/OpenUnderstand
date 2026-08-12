@@ -435,6 +435,44 @@ def merge_placeholder_entities():
 _NONDYNAMIC_TOKENS = {"static", "private", "final", "constructor"}
 
 
+def drop_orphan_placeholders():
+    """Delete placeholder entities that no reference points at.
+
+    A placeholder means "something is here but I could not identify it". With
+    no reference at either end, nothing is here: the row is a name a pass
+    speculated about and then never used. Most are created by the use pass for
+    a name it cannot place -- `Character` in `Character.isDigit(c)` is a type,
+    not a variable of the enclosing method, so it became
+    `org.json.Cookie.escape.Character` -- and are orphaned when
+    drop_shadowed_use_refs() removes the reference that named them.
+
+    Only placeholder kinds. 126 entities on org.json have no reference at all
+    and 4 of them are real declarations Understand also reports, mis-kinded
+    rather than imaginary; those carry a real kind and are left alone.
+
+    Runs after drop_shadowed_use_refs(), which is what orphans them.
+
+    Returns the number of rows deleted.
+    """
+    doomed = [
+        e._id for e in EntityModel.select()
+        if is_placeholder_kind(e._kind_id)
+        and not ReferenceModel.select().where(
+            (ReferenceModel._ent == e._id)
+            | (ReferenceModel._scope == e._id)
+            | (ReferenceModel._file == e._id)
+        ).exists()
+    ]
+    if not doomed:
+        return 0
+    # Nothing may point at them as a parent either, or the delete leaves a
+    # dangling foreign key behind.
+    EntityModel.update({EntityModel._parent: None}).where(
+        EntityModel._parent << doomed).execute()
+    EntityModel.delete().where(EntityModel._id << doomed).execute()
+    return len(doomed)
+
+
 def drop_shadowed_use_refs():
     """Delete plain Java Use/Useby where a more specific kind sits on it.
 
