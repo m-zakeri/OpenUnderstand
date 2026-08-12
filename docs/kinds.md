@@ -29,7 +29,7 @@ is one kind, not five attributes.
 | `Java Abstract Generic Class Type Public Member` | — |
 | `Java Abstract Generic Method Default Member` | — |
 | `Java Abstract Generic Method Protected Member` | — |
-| `Java Abstract Generic Method Public Member` | yes |
+| `Java Abstract Generic Method Public Member` | — |
 | `Java Abstract Method Default Member` | — |
 | `Java Abstract Method Protected Member` | — |
 | `Java Abstract Method Public Member` | yes |
@@ -51,10 +51,10 @@ is one kind, not five attributes.
 | `Java Enum Class Type Public Member` | — |
 | `Java File` | yes |
 | `Java File Jar` | — |
-| `Java Final Class Type Default Member` | yes |
+| `Java Final Class Type Default Member` | — |
 | `Java Final Class Type Private Member` | — |
 | `Java Final Class Type Protected Member` | — |
-| `Java Final Class Type Public Member` | yes |
+| `Java Final Class Type Public Member` | — |
 | `Java Final Generic Class Type Default Member` | — |
 | `Java Final Generic Class Type Private Member` | — |
 | `Java Final Generic Class Type Protected Member` | — |
@@ -83,7 +83,7 @@ is one kind, not five attributes.
 | `Java Generic Interface Type Protected` | — |
 | `Java Generic Interface Type Public` | yes |
 | `Java Generic Method Default Member` | — |
-| `Java Generic Method Private Member` | yes |
+| `Java Generic Method Private Member` | — |
 | `Java Generic Method Protected Member` | — |
 | `Java Generic Method Public Member` | yes |
 | `Java Generic Record Class Type Default Member` | — |
@@ -151,7 +151,7 @@ is one kind, not five attributes.
 | `Java Static Abstract Generic Class Type Private Member` | — |
 | `Java Static Abstract Generic Class Type Protected Member` | — |
 | `Java Static Abstract Generic Class Type Public Member` | — |
-| `Java Static Class Type Default Member` | yes |
+| `Java Static Class Type Default Member` | — |
 | `Java Static Class Type Private Member` | yes |
 | `Java Static Class Type Protected Member` | — |
 | `Java Static Class Type Public Member` | yes |
@@ -179,7 +179,7 @@ is one kind, not five attributes.
 | `Java Static Generic Class Type Private Member` | yes |
 | `Java Static Generic Class Type Protected Member` | — |
 | `Java Static Generic Class Type Public Member` | — |
-| `Java Static Generic Method Default Member` | yes |
+| `Java Static Generic Method Default Member` | — |
 | `Java Static Generic Method Private Member` | yes |
 | `Java Static Generic Method Protected Member` | — |
 | `Java Static Generic Method Public Member` | — |
@@ -212,7 +212,7 @@ is one kind, not five attributes.
 | `Java Static Sealed Generic Class Type Private Member` | — |
 | `Java Static Sealed Generic Class Type Protected Member` | — |
 | `Java Static Sealed Generic Class Type Public Member` | — |
-| `Java Static Variable Default Member` | yes |
+| `Java Static Variable Default Member` | — |
 | `Java Static Variable Private Member` | yes |
 | `Java Static Variable Protected Member` | — |
 | `Java Static Variable Public Member` | yes |
@@ -311,7 +311,7 @@ once in each direction, at the same file, line and column.
 | `Java Use Deref Partial` | `Java Useby Deref Partial` | yes |
 | `Java Use GenericArgument` | `Java Useby GenericArgument` | yes |
 | `Java Use Implicit` | `Java Useby Implicit` | — |
-| `Java Use Ptr` | `Java Useby Ptr` | — |
+| `Java Use Ptr` | `Java Useby Ptr` | yes |
 | `Java Use Return` | `Java Useby Return` | yes |
 
 "Produced" means at least one row of that kind exists in the
