@@ -1866,8 +1866,13 @@ class Project:
             ent = EntityModel.get_or_none(
                 EntityModel._longname == relation["ent_longname"])
             if ent is None:
+                # A pass that knows what it is creating says so. A lambda is
+                # declared by the reference itself and by nothing else, so
+                # leaving it Unknown would make it a placeholder that
+                # merge_placeholder_entities() is free to fold away.
                 ent = EntityModel.get_or_create(
-                    _kind=kind_id("Java Unknown Class Type Member"),
+                    _kind=kind_id(relation.get(
+                        "ent_kind", "Java Unknown Class Type Member")),
                     _name=relation["name"],
                     _parent=None,
                     _longname=relation["ent_longname"],

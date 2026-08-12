@@ -18,6 +18,7 @@ from openunderstand.analysis_passes.use_variants import UseVariantListener
 from openunderstand.analysis_passes.method_calls import MethodCallListener
 from openunderstand.analysis_passes.overrides import OverridesListener
 from openunderstand.analysis_passes.static_imports import StaticImportListener
+from openunderstand.analysis_passes.lambdas import LambdaListener
 
 # from analysis_passes.define_and_definin_g6 import DefineListener
 from openunderstand.analysis_passes.modify_modifyby import ModifyListener
@@ -151,6 +152,19 @@ class ListenersAndParsers:
         except Exception as e:
             self.logger.error(
                 "An Error occurred in file create refs :" + file_address + "\n" + str(e)
+            )
+
+    @timer_decorator()
+    def lambda_listener(self, tree, file_ent, file_address, p):
+        try:
+            listener = LambdaListener(file_address)
+            p.Walk(listener, tree)
+            p.addTypeRelationRefs(listener.relations, file_ent)
+            self.logger.info("lambdas success")
+        except Exception as e:
+            self.logger.error(
+                "An Error occurred in lambdas in file :"
+                + file_address + "\n" + str(e) + "\n" + traceback.format_exc()
             )
 
     @timer_decorator()

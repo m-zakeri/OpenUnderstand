@@ -157,7 +157,13 @@ class CreateAndCreateBy(JavaParserLabeledListener):
 
             # First check to ensure we're working with creator1
             creator = ctx.creator()
-            if creator.arrayCreatorRest() or creator.classCreatorRest():
+            rest = creator.classCreatorRest()
+            # `new ActionListener() { ... }` declares an anonymous class rather
+            # than creating a named one, and Understand reports no Java Create
+            # for it -- 4 of Hanoi's rows, and the entity each left behind was
+            # the bare name `ActionListener`.
+            anonymous = rest is not None and rest.classBody() is not None
+            if not anonymous and (creator.arrayCreatorRest() or rest):
                 createdName = creator.createdName()
                 all_parents = class_properties.ClassPropertiesListener.findParents(ctx)
                 scope_name = all_parents[-1]
@@ -224,25 +230,11 @@ class CreateAndCreateBy(JavaParserLabeledListener):
         """Long name of the type being created, or None if it cannot be placed."""
         from openunderstand.ounderstand import symbol_table
 
-        name = name.split("<")[0].split("[")[0]
-        if not name:
-            return None
-        if name in self.imports:
-            return self.imports[name]
-        if "." in name:
-            return name
-        in_project = symbol_table.resolve_type(name, scope_longname)
-        if in_project:
-            return in_project
-        if name in symbol_table.JAVA_LANG_TYPES:
-            return "java.lang." + name
-        # A single `import x.y.*` is the only place left the name can come
-        # from. TheAlgorithms constructs many types it wildcard-imports, and
-        # without this they fell back to the bare-name path -- Java Create
-        # dropped from 89.4% precision on JSON to 62.6% there.
-        if len(self.wildcard_imports) == 1:
-            return self.wildcard_imports[0] + "." + name
-        return None
+        # The same ladder every other pass climbs. This used to be a private
+        # near-copy; the shared one also resolves a type reached through one of
+        # several `import x.y.*`, which is most of what Hanoi.java constructs.
+        return symbol_table.resolve_type_name(
+            name, self.imports, self.wildcard_imports, scope_longname)
 
     def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
         self.package_long_name = ctx.qualifiedName().getText()

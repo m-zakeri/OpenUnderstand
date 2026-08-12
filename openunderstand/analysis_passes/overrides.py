@@ -63,6 +63,9 @@ class OverridesListener(JavaParserLabeledListener):
         declaring = symbol_table.INDEX.overridden_declaration(
             owner, name, parameters)
         if declaring is None:
+            declaring = self._anonymous_supertype(
+                symbol_table, ctx, owner, name, parameters)
+        if declaring is None:
             declaring = self._jdk_supertype(
                 symbol_table, owner, name, len(parameters))
         if declaring is None:
@@ -80,6 +83,37 @@ class OverridesListener(JavaParserLabeledListener):
             "line": identifier.symbol.line,
             "col": identifier.symbol.column,
         })
+
+    @staticmethod
+    def _anonymous_supertype(symbol_table, ctx, owner, name, parameters):
+        """The type an enclosing `new Iterator<T>() { ... }` implements.
+
+        An anonymous class names its supertype in a creator expression rather
+        than a class declaration, so the supertype index never sees it and the
+        method looks like it overrides nothing. Understand scopes these to the
+        enclosing method -- org.json.XML.codePointIterator.iterator.hasNext.
+        """
+        node = ctx.parentCtx
+        while node is not None:
+            if type(node).__name__.startswith("Creator"):
+                created = node.createdName()
+                identifiers = created.IDENTIFIER() if created is not None else None
+                if identifiers:
+                    simple = identifiers[-1].getText()
+                    in_project = symbol_table.resolve_type(simple, owner)
+                    if in_project:
+                        for declared, abstract, generic in (
+                                symbol_table.INDEX.methods.get(
+                                    f"{in_project}.{name}", ())):
+                            if declared == parameters and not (abstract and generic):
+                                return in_project
+                    longname = symbol_table.JDK_OVERRIDABLE_BY_SIMPLE_NAME.get(simple)
+                    if longname and symbol_table.JDK_OVERRIDABLE[longname].get(
+                            name) == len(parameters):
+                        return longname
+                return None
+            node = node.parentCtx
+        return None
 
     @staticmethod
     def _jdk_supertype(symbol_table, owner, name, arity):

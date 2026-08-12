@@ -190,12 +190,62 @@ INDEX = _DeclarationIndex()
 #: project is left unresolved rather than guessed. Widen it if parity shows a
 #: type being missed.
 JAVA_LANG_TYPES = frozenset(
-    """Boolean Byte Character Class ClassLoader Comparable Deprecated Double
-    Enum Error Exception Float FunctionalInterface Integer Iterable Long Math
-    Number Object Override Package Process Runtime SafeVarargs Short String
+    """Appendable AutoCloseable Boolean Byte CharSequence Character Class
+    ClassLoader Cloneable Comparable Deprecated Double Enum Error Exception
+    Float FunctionalInterface Integer Iterable Long Math Number Object Override
+    Package Process Readable Runnable Runtime SafeVarargs Short String
     StringBuffer StringBuilder SuppressWarnings System Thread Throwable
-    Void""".split()
+    Void
+
+    ArithmeticException ArrayIndexOutOfBoundsException ArrayStoreException
+    ClassCastException ClassNotFoundException CloneNotSupportedException
+    IllegalAccessException IllegalArgumentException IllegalStateException
+    IndexOutOfBoundsException InterruptedException NegativeArraySizeException
+    NoSuchFieldException NoSuchMethodException NullPointerException
+    NumberFormatException OutOfMemoryError RuntimeException StackOverflowError
+    StringIndexOutOfBoundsException UnsupportedOperationException
+    AssertionError""".split()
 )
+
+#: Simple name -> the JDK package declaring it, for types a file reaches
+#: through `import x.y.*`.
+#:
+#: Only consulted when the file wildcard-imports that exact package and the
+#: lone-wildcard rule cannot choose, so this narrows candidates the source
+#: already asked for -- it never introduces a package the file does not import.
+#:
+#: ponytail: a lookup table covering what the benchmarks construct, not a model
+#: of the JDK. `Timer` is deliberately absent: java.util and javax.swing both
+#: declare one and only the file's explicit imports can say which.
+JDK_TYPE_PACKAGES = {
+    **{n: "java.util" for n in """ArrayList Arrays ArrayDeque BitSet Calendar
+        Collection Collections Comparator Date Deque EmptyStackException
+        HashMap HashSet Hashtable IdentityHashMap InputMismatchException
+        Iterator LinkedHashMap LinkedHashSet LinkedList List ListIterator Map
+        NavigableMap NavigableSet NoSuchElementException Objects Optional
+        PriorityQueue Queue Random Scanner Set SortedMap SortedSet Stack
+        StringJoiner StringTokenizer TreeMap TreeSet UUID Vector""".split()},
+    **{n: "java.io" for n in """BufferedReader BufferedWriter File
+        FileInputStream FileNotFoundException FileOutputStream FileReader
+        FileWriter IOException InputStream InputStreamReader OutputStream
+        OutputStreamWriter PrintStream PrintWriter Reader Serializable
+        Writer""".split()},
+    **{n: "java.awt" for n in """BorderLayout Color Component Container
+        Dimension FlowLayout Font Frame Graphics Graphics2D GridLayout Image
+        Insets Point Polygon Rectangle Toolkit Window""".split()},
+    **{n: "java.awt.event" for n in """ActionEvent ActionListener KeyAdapter
+        KeyEvent KeyListener MouseAdapter MouseEvent MouseListener
+        WindowAdapter WindowEvent WindowListener""".split()},
+    **{n: "javax.swing" for n in """BorderFactory ImageIcon JButton
+        JComponent JFrame JLabel JOptionPane JPanel JScrollPane JTextArea
+        JTextField SwingUtilities""".split()},
+    **{n: "java.math" for n in "BigDecimal BigInteger".split()},
+    **{n: "java.util.stream" for n in "Collectors IntStream Stream".split()},
+    **{n: "java.util.function" for n in """BiFunction Consumer Function
+        Predicate Supplier""".split()},
+    **{n: "java.text" for n in """DecimalFormat NumberFormat
+        SimpleDateFormat""".split()},
+}
 
 #: Declared type of well-known JDK fields, keyed by (owning type, field).
 #:
@@ -245,6 +295,7 @@ JDK_OVERRIDABLE = {
         "hasNext": 0, "next": 0, "remove": 0, "forEachRemaining": 1,
     },
     "java.util.Comparator": {"compare": 2},
+    "java.awt.event.ActionListener": {"actionPerformed": 1},
 }
 
 #: Simple name -> long name, for the supertypes named in JDK_OVERRIDABLE.
@@ -408,6 +459,15 @@ def resolve_type_name(name, imports=None, wildcards=None, scope_longname=""):
         return "java.lang." + name
     if wildcards and len(wildcards) == 1:
         return wildcards[0] + "." + name
+    # More than one `import x.y.*` and the lone-wildcard rule above cannot
+    # choose. Hanoi.java wildcard-imports java.awt, java.awt.event, java.util
+    # and javax.swing, so every type it constructs fell back to a bare name --
+    # 143 of TheAlgorithms' Java Create rows. The package is only accepted when
+    # the file actually imports it, so this decides between candidates the file
+    # already asked for rather than inventing one.
+    package = JDK_TYPE_PACKAGES.get(name)
+    if package and wildcards and package in wildcards:
+        return package + "." + name
     return None
 
 

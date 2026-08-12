@@ -30,13 +30,20 @@ from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserL
 import openunderstand.analysis_passes.class_properties as class_properties
 
 
+#: Java's keyword literals are valid Python identifiers, so the isidentifier()
+#: guard each handler uses lets them through. `return true;` named an entity
+#: `false`/`true`/`null` and pointed 114 references at it on TheAlgorithms.
+#: Checked once here rather than in each handler, which is where the bug got in.
+LITERALS = frozenset(("true", "false", "null"))
+
+
 class UseVariantListener(JavaParserLabeledListener):
     def __init__(self, file_address=""):
         self.file_address = file_address
         self.uses = []
 
     def _add(self, kind, name, ctx, token, suffix=None):
-        if not name:
+        if not name or name in LITERALS:
             return
         parents = class_properties.ClassPropertiesListener.findParents(ctx)
         if suffix:
@@ -104,9 +111,15 @@ class UseVariantListener(JavaParserLabeledListener):
         Emitting every one as Typed GenericArgument scoped to the method gave
         19% precision and left Use GenericArgument with no producer at all.
         """
-        declared = _declared_owner(ctx)
+        # `class Graph<E extends Comparable<E>>` -- the inner E sits inside the
+        # *declaration of E*, and Understand scopes it to the type parameter,
+        # not to Graph: scope and entity are both Graph.E. Checked first
+        # because such an argument is never part of a declaration's type.
+        bound = _type_parameter_scope(ctx)
+        declared = None if bound else _declared_owner(ctx)
         kind = ("Java Typed GenericArgument" if declared
                 else "Java Use GenericArgument")
+        declared = declared or bound
         for argument in ctx.typeArgument():
             # A wildcard is an entity in its own right: Understand names it "?"
             # and reports 46 of JSON's 93 Typed GenericArgument references
@@ -120,6 +133,33 @@ class UseVariantListener(JavaParserLabeledListener):
                 continue
             self._add(kind, _simple_type_name(type_ctx), ctx, type_ctx.start,
                       suffix=declared)
+
+
+def _type_parameter_scope(ctx):
+    """Scope suffix when this sits inside a type parameter's bound, else None.
+
+    `<T extends Comparable<T>>` on a *method* is a further trap: typeParameters
+    is a sibling of the methodDeclaration under the genericMethodDeclaration
+    wrapper, so findParents() walking up from the bound reaches the class and
+    never sees the method name. The result is the method's own name has to be
+    fetched back down off the wrapper -- `find.T`, not `T`.
+    """
+    node = ctx.parentCtx
+    parameter = None
+    while node is not None:
+        name = type(node).__name__
+        if name == "TypeParameterContext" and parameter is None:
+            identifier = node.IDENTIFIER()
+            if identifier is not None:
+                parameter = identifier.getText()
+        elif parameter and name.startswith("Generic") and "Method" in name:
+            for attribute in ("methodDeclaration", "interfaceMethodDeclaration"):
+                declaration = getattr(node, attribute, None)
+                declaration = declaration() if callable(declaration) else None
+                if declaration is not None and declaration.IDENTIFIER() is not None:
+                    return f"{declaration.IDENTIFIER().getText()}.{parameter}"
+        node = node.parentCtx
+    return parameter
 
 
 def _annotated_name(ctx):
