@@ -59,6 +59,14 @@ class _DeclarationIndex:
         #: `node.next.previous` dies at the second hop without this: the type
         #: of `next` is declared in whatever file declares Node.
         self.field_types: dict[tuple[str, str], str] = {}
+        #: File path -> ({simple name: long name}, [wildcard packages]).
+        #:
+        #: Sixteen passes each collected imports for themselves, and each was a
+        #: separate chance to get it wrong: four of them silently discarded
+        #: `import x.y.*`, which is how `Scanner`, `HashMap` and every
+        #: org.evosuite annotation went unresolved. Indexed once here, during
+        #: the walk that already reads every file.
+        self.file_imports: dict[str, tuple[dict, list]] = {}
         self.files = 0
 
     def add(self, simple_name: str, longname: str, is_type: bool = False):
@@ -329,6 +337,8 @@ def build(root: str) -> _DeclarationIndex:
             self.pairs = []
             self.methods = {}
             self.fields = {}
+            self.imports = {}
+            self.wildcards = []
 
         def enterClassDeclaration(self, ctx):
             parents = class_properties.ClassPropertiesListener.findParents(ctx)
@@ -352,6 +362,13 @@ def build(root: str) -> _DeclarationIndex:
                             for t in ctx.typeList().typeType()]))
 
         # ------------------------------------------------------- signatures
+
+        def enterImportDeclaration(self, ctx):
+            longname = ctx.qualifiedName().getText()
+            if ctx.getText().rstrip(";").endswith(".*"):
+                self.wildcards.append(longname)
+            elif ctx.STATIC() is None:
+                self.imports[longname.split(".")[-1]] = longname
 
         def enterFieldDeclaration(self, ctx):
             type_ctx = ctx.typeType()
@@ -412,6 +429,7 @@ def build(root: str) -> _DeclarationIndex:
         index.supertypes.update(supertypes.pairs)
         index.methods.update(supertypes.methods)
         index.field_types.update(supertypes.fields)
+        index.file_imports[path] = (supertypes.imports, supertypes.wildcards)
         for declaration in listener.defines:
             index.add(
                 declaration["ent"],
@@ -479,6 +497,19 @@ def resolve_type_name(name, imports=None, wildcards=None, scope_longname=""):
     # that was handled at the top -- but preferring it over an on-demand import
     # is what shadowed java.util.HashMap.
     return resolve_type(name, scope_longname)
+
+
+def resolve_in_file(name: str, file_path: str, scope_longname: str = "") -> str | None:
+    """Long name for a type as written in `file_path`, or None.
+
+    The one entry point a pass needs: it applies the file's own imports without
+    the pass having to collect them. A third-party type resolves here exactly
+    as Understand resolves it -- from the import statement, with no jar
+    involved. Understand records `org.junit.After` as an Unknown Annotation
+    with no members, which is all an import can tell anyone.
+    """
+    imports, wildcards = INDEX.file_imports.get(file_path, ({}, []))
+    return resolve_type_name(name, imports, wildcards, scope_longname)
 
 
 def member_type(owner: str, field: str) -> str | None:

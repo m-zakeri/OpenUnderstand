@@ -36,8 +36,16 @@ class CallNonDynamicAndCallNonDynamicBy(JavaParserLabeledListener):
                         method = getattr(member, "methodDeclaration", None)
                         if method is not None:
                             method = method()
-                            block = method.methodBody().block()
-                            self.dfs(block, method, ctx, extendedBy)
+                            body_ctx = method.methodBody()
+                            block = body_ctx.block() if body_ctx else None
+                            # An abstract or interface method has no body.
+                            # dfs() then walked None and raised, and the glue
+                            # logs rather than raises -- so the whole pass died
+                            # for that file and produced no Call Nondynamic at
+                            # all: 18 files on ganttproject, 12 on jhotdraw,
+                            # both full of abstract classes.
+                            if block is not None:
+                                self.dfs(block, method, ctx, extendedBy)
 
     def dfs(self, ctx, cls, context, extendedBy):
         bStatements = ctx.blockStatement()

@@ -41,6 +41,16 @@ class UseVariantListener(JavaParserLabeledListener):
     def __init__(self, file_address=""):
         self.file_address = file_address
         self.uses = []
+        #: The file's imports, so an annotation resolves to the type it names.
+        self.imports = {}
+        self.wildcards = []
+
+    def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
+        longname = ctx.qualifiedName().getText()
+        if ctx.getText().rstrip(";").endswith(".*"):
+            self.wildcards.append(longname)
+            return
+        self.imports[longname.split(".")[-1]] = longname
 
     def _add(self, kind, name, ctx, token, suffix=None, ent_longname=None):
         if not name or name in LITERALS:
@@ -121,10 +131,18 @@ class UseVariantListener(JavaParserLabeledListener):
         qualified = ctx.qualifiedName()
         if qualified is None:
             return
+        from openunderstand.ounderstand import symbol_table
+
         annotated = _annotated_name(ctx)
-        self._add("Java Use Annotation",
-                  qualified.IDENTIFIER()[-1].getText(), ctx, qualified.start,
-                  suffix=annotated)
+        name = qualified.IDENTIFIER()[-1].getText()
+        # `@RunWith` is org.junit.runner.RunWith, and storing the bare name is
+        # what merge_placeholder_entities() folds into any project match. The
+        # writer cannot resolve it -- only this pass has read the imports.
+        resolved = symbol_table.resolve_type_name(
+            qualified.getText(), self.imports, self.wildcards,
+            ".".join(class_properties.ClassPropertiesListener.findParents(ctx)))
+        self._add("Java Use Annotation", name, ctx, qualified.start,
+                  suffix=annotated, ent_longname=resolved)
 
     def enterTypeArguments(self, ctx: JavaParserLabeled.TypeArgumentsContext):
         """`List<T>` -- the T, labelled by where the list is written.
@@ -227,6 +245,18 @@ def _annotated_name(ctx):
             return None
         if name.startswith("LocalVariableDeclaration"):
             return _first_declared_name(node)
+        if name.startswith("TypeDeclaration"):
+            # `@RunWith(...) public class X` -- the annotation sits on a
+            # top-level type, which has no ClassBodyDeclaration above it. Every
+            # annotation in testing_legacy_code is this shape, and each was
+            # scoped to the package instead of the class.
+            for attribute in ("classDeclaration", "interfaceDeclaration",
+                              "enumDeclaration", "annotationTypeDeclaration"):
+                inner = getattr(node, attribute, None)
+                inner = inner() if callable(inner) else None
+                if inner is not None:
+                    return _first_declared_name(inner)
+            return None
         node = node.parentCtx
     return None
 
@@ -253,7 +283,9 @@ def _declared_owner(ctx):
             return None
         if name.startswith(("LocalVariableDeclaration", "FieldDeclaration")):
             return _first_declared_name(node)
-        if name.startswith("FormalParameter"):
+        if name.startswith("FormalParameter") and not name.startswith(
+                "FormalParameterList"):
+            # The *list* context shares the prefix and has no declarator id.
             identifier = node.variableDeclaratorId()
             return identifier.getText().split("[")[0] if identifier else None
         if name.startswith("MethodDeclaration"):
