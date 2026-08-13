@@ -134,6 +134,20 @@ and so reads higher. Quote one or the other, never a mix.)
 - `get_or_create` keeps a declared return type instead of discarding it, which
   is what `CountOutput`'s non-void clause reads.
 
+### Performance
+
+- **`getClassProperties()` is memoized per file** — it answers by walking the
+  whole parse tree, and the create pass alone asked it 168 times for
+  `JSONObject.java`, 13.5s of that file's 44s. The answer depends only on the
+  long name and the tree, and the tree is fixed while a file is processed. JSON
+  builds in 93s rather than 127s, with an identical fingerprint.
+- **`runner.py`'s `Pool` is still not used**, and should not be. Entity
+  identity is enforced in Python rather than by a database constraint, so
+  concurrent workers each miss the same SELECT and both INSERT: 5606 entities
+  against the sequential 5186, and 85113 references against 73363, to save 71
+  seconds. Correct parallelism needs workers that only collect and a parent
+  that writes.
+
 ### Known gaps
 
 - `CountStmtExe` (56%), `CountLineCodeExe` (73%), `CountLineCodeDecl` (62%) —
