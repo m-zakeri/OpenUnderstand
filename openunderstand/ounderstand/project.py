@@ -1239,6 +1239,28 @@ class Project:
                     _scope=ent,
                     _ent=scope,
                 )
+
+                # `new JSONObject(...)` also *calls* the constructor, and
+                # Understand reports both facts at the same position -- 219 of
+                # JSON's calls and 433 of TheAlgorithms', all as a plain
+                # Java Call, never Nondynamic. An array creation runs no
+                # constructor, and a type this pass could not place would give
+                # a bare simple name, so both are skipped.
+                created = ent._longname or ""
+                if not ref_dict.get("is_array") and "." in created:
+                    constructor = self.getClassEntity(
+                        f"{created}.{created.rsplit('.', 1)[-1]}",
+                        file_address, file_ent)
+                    for kind, (a, b) in (("Java Call", (constructor, scope)),
+                                         ("Java Callby", (scope, constructor))):
+                        ReferenceModel.get_or_create(
+                            _kind=kind_id(kind),
+                            _file=file_ent,
+                            _line=ref_dict["line"],
+                            _column=col_1based(ref_dict["col"]),
+                            _ent=a,
+                            _scope=b,
+                        )
             except Exception as e:
                 print("ERROR in project.py function addCreateRefs ")
                 print("error message : ", e)

@@ -87,6 +87,7 @@ def start_parsing(
     from openunderstand.ounderstand.runner import runner
     from openunderstand.ounderstand import symbol_table
     from openunderstand.oudb.models import (drop_shadowed_use_refs, drop_orphan_placeholders,
+                                        drop_nonvariable_deref_refs,
                                             merge_placeholder_entities,
                                             relabel_nondynamic_calls)
 
@@ -130,6 +131,7 @@ def start_parsing(
     relabel_nondynamic_calls()
     # After merging, so the endpoints a Use shares with its more specific
     # variant have already been folded onto the same entity rows.
+    drop_nonvariable_deref_refs()
     drop_shadowed_use_refs()
     drop_orphan_placeholders()
 

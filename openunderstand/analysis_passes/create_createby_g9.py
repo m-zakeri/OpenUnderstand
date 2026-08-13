@@ -198,6 +198,8 @@ class CreateAndCreateBy(JavaParserLabeledListener):
                         "scopecontent": methodcontext,
                         "line": line,
                         "col": col,
+                        # An array creation runs no constructor, so it is a Create and not a Call.
+                        "is_array": creator.arrayCreatorRest() is not None,
                         "refent": createdName.getText(),
                         # Resolved here rather than left bare: a bare
                         # `StringBuilder` is folded by

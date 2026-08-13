@@ -49,6 +49,7 @@ def process_file(file_address):
         # JSON: dropping it left the 394 correct Call references untouched and
         # removed 43 wrong ones and 15 placeholder entities, taking Call
         # precision from 48.9% to 51.7% and Call Nondynamic from 92.3% to 97.3%.
+        lap.field_use_listener,
         lap.lambda_listener,
         lap.static_import_listener,
         lap.overrides_listener,
