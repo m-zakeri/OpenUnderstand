@@ -18,6 +18,7 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
 import com.intellij.ui.content.ContentFactory
 import java.awt.BorderLayout
+import java.io.File
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.JButton
@@ -25,6 +26,26 @@ import javax.swing.JPanel
 import javax.swing.table.DefaultTableModel
 
 private const val PYTHON_KEY = "openunderstand.python"
+
+/**
+ * Interpreter to run the dumper with: the one explicitly set, else an activated
+ * virtualenv, else a `.venv` at or above the analysed project, else `python3`.
+ * `openunderstand` is usually installed in a venv, and a bare `python3` that
+ * cannot import it is the failure everyone hits first.
+ */
+private fun python(root: String): String {
+    PropertiesComponent.getInstance().getValue(PYTHON_KEY)?.let { return it }
+    val candidates = sequence {
+        System.getenv("VIRTUAL_ENV")?.let { yield(File(it, "bin/python")) }
+        var dir: File? = File(root).absoluteFile
+        while (dir != null) {
+            yield(File(dir, ".venv/bin/python"))
+            dir = dir.parentFile
+        }
+    }
+    // ponytail: POSIX layout only; add Scripts/python.exe when someone runs this on Windows.
+    return candidates.firstOrNull { it.canExecute() }?.absolutePath ?: "python3"
+}
 
 /** One row of `scripts/idea_metrics.py` output: `path:line: longname  K=V K=V`. */
 private data class Row(val file: String, val line: Int, val entity: String,
@@ -60,9 +81,8 @@ class MetricsToolWindow : ToolWindowFactory {
         })
 
         python.addActionListener {
-            val current = PropertiesComponent.getInstance().getValue(PYTHON_KEY, "python3")
             Messages.showInputDialog(project, "Python interpreter with `openunderstand` installed:",
-                "OpenUnderstand", null, current, null)
+                "OpenUnderstand", null, python(project.basePath ?: "."), null)
                 ?.let { PropertiesComponent.getInstance().setValue(PYTHON_KEY, it) }
         }
 
