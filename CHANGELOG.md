@@ -40,6 +40,16 @@ and so reads higher. Quote one or the other, never a mix.)
   and any metric that reparsed one failed on input like
   `classBuilder{publicBuilder(){}`. 9 such entities on org.json, now 1; entity
   count 5196 → 5188 with references unchanged.
+- **A `super.x()` call was scoped to its package, not its method** —
+  `callNonDynamic_callNonDynamicby.dfs` names its parameters
+  `(ctx, cls, context)` but is passed
+  `(block, methodDeclaration, classDeclaration)`, so the scope's long name came
+  from `findParents(classDeclaration)`, which excludes that context's own
+  identifier and left the bare package. Each call site wrote a *class* entity
+  named `org.json.junit.data` holding the method's whitespace-free `getText()`,
+  and the 4 references scoped to it could not match Understand, which scopes a
+  call to the calling method. Now `package.Class.method` with a Method kind, so
+  entity identity binds it to the method `define_listener` already declared.
 - **`Java Use Cast` was produced by two passes at once** — `use_variants` and
   `cast_cast_by` — so every cast got two rows and every `(int) x` got one
   Understand has no counterpart for. 74 rows against its 10, 6.8% precision.
