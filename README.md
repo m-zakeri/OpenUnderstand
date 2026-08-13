@@ -132,6 +132,19 @@ and metric names, and three prompts (`review_class`, `complexity_hotspots`,
 `trace_callers`) — so an assistant can analyse a Java project and ask what
 calls what, without knowing the schema. See [docs/mcp.md](docs/mcp.md).
 
+## Use it from IntelliJ IDEA
+
+`idea-plugin/` builds a **Java Metrics** tool window: analyse the open project,
+sort by any metric, double-click to jump to the declaration, export CSV. It
+runs the analysis in a Python subprocess and offers to install the package into
+a private virtualenv when it cannot find one.
+
+```bash
+cd idea-plugin && gradle buildPlugin    # then install the zip from disk
+```
+
+See [docs/idea-plugin.md](docs/idea-plugin.md).
+
 ## What it does not do
 
 - **Java 8 only.** The grammar predates records, sealed types, `var`, text
@@ -152,6 +165,7 @@ calls what, without knowing the schema. See [docs/mcp.md](docs/mcp.md).
 | [Architecture](docs/architecture.md) | how a file becomes rows; how to add a pass |
 | [Parity](docs/parity.md) | measured agreement with Understand |
 | [MCP server](docs/mcp.md) | query your code from an assistant |
+| [IntelliJ IDEA plugin](docs/idea-plugin.md) | metrics in a tool window |
 
 Published at
 [m-zakeri.github.io/OpenUnderstand](https://m-zakeri.github.io/OpenUnderstand/).
