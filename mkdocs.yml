@@ -39,4 +39,5 @@ nav:
     - Architecture: architecture.md
     - Parity with Understand: parity.md
     - MCP server: mcp.md
+    - IntelliJ IDEA plugin: idea-plugin.md
     - Issue tracker: 'https://github.com/m-zakeri/OpenUnderstand/issues'
