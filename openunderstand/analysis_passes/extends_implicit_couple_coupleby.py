@@ -50,13 +50,50 @@ class ClassTypeData:
     def set_prefixes(self, prefix_list: list):
         self.prefixes = prefix_list
 
+    # Declarations that contribute a component to a nested type's long name.
+    # Methods are deliberately absent: a class local to a method is named for
+    # its enclosing *type* here, and adding the method would invent a component
+    # no other pass writes.
+    _TYPE_SCOPES = frozenset({
+        JavaParserLabeled.RULE_classDeclaration,
+        JavaParserLabeled.RULE_interfaceDeclaration,
+        JavaParserLabeled.RULE_enumDeclaration,
+        JavaParserLabeled.RULE_annotationTypeDeclaration,
+    })
+
+    def _enclosing_types(self) -> list:
+        """Names of the types this class is nested in, outermost first."""
+        names = []
+        current = self.childClass.parentCtx
+        while current is not None:
+            if current.getRuleIndex() in ClassTypeData._TYPE_SCOPES:
+                identifier = current.IDENTIFIER()
+                if identifier is not None:
+                    names.append(identifier.getText())
+            current = current.parentCtx
+        names.reverse()
+        return names
+
     def get_long_name(self) -> str:
-        # IDENTIFIER(), not getText(): getText() on a class declaration is the
-        # whole class body, which ended up spliced into longnames as
-        # "org.json.classJSONML{privatestaticObjectparse(...". get_name() below
-        # already uses the right accessor; get_contents() genuinely wants the
-        # body text.
-        return self.package_name + "." + str(self.childClass.IDENTIFIER())
+        """Package, enclosing types, then this class's own name.
+
+        The enclosing types are not optional. Without them a nested class was
+        named for its package alone, so `Builder` inside `JSONPointer` became
+        `org.json.Builder` -- a second entity for a class that already existed
+        as `org.json.JSONPointer.Builder`, carrying `getText()` as its
+        contents, which is source with the whitespace removed. Nine of JSON's
+        entities were duplicates of this shape, and every metric that reparsed
+        one failed on input like `classBuilder{publicBuilder(){}`.
+
+        IDENTIFIER(), not getText(): getText() on a class declaration is the
+        whole class body, which ended up spliced into longnames as
+        "org.json.classJSONML{privatestaticObjectparse(...". get_name() below
+        already uses the right accessor; get_contents() genuinely wants the
+        body text.
+        """
+        parts = [self.package_name, *self._enclosing_types(),
+                 str(self.childClass.IDENTIFIER())]
+        return ".".join(p for p in parts if p)
 
     def get_type(self) -> str:
         return "extends" + " " + self.parentClass

@@ -44,6 +44,18 @@ problem rather than an empty table.
 A virtualenv rather than `pip install --user` because a distro Python is
 externally managed (PEP 668) and refuses to install into itself.
 
+It installs the wheel bundled in the plugin when there is one, so the analyser
+matches the plugin rather than whatever PyPI serves. Build it first and
+`processResources` picks it up:
+
+```bash
+python -m build --wheel      # dist/*.whl, ~430 KB
+cd idea-plugin && gradle buildPlugin
+```
+
+Dependencies still come from PyPI, so the bootstrap is version-pinned, not
+offline.
+
 ## Publishing
 
 Not set up. The Marketplace needs `signPlugin` (a certificate chain and private

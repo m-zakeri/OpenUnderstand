@@ -29,6 +29,14 @@ dependencies {
 // External Tool setup in the README).
 tasks.processResources {
     from("../scripts/idea_metrics.py")
+    // Bundle the analyser itself when a wheel has been built, so the plugin
+    // installs the source tree it was built from rather than whatever version
+    // PyPI happens to serve. Optional on purpose: without it the bootstrap
+    // falls back to `pip install openunderstand`, and building the plugin does
+    // not require a Python toolchain.
+    //
+    //     python -m build --wheel      # writes dist/*.whl
+    from("../dist") { include("*.whl"); rename { "openunderstand.whl" } }
 }
 
 // Nothing here registers searchable settings, and the task starts a headless

@@ -35,6 +35,27 @@ expensive. If the import fails it offers to build a virtualenv under
 and remember that interpreter — so the common case needs no configuration and
 the failure case names the problem instead of returning an empty table.
 
+It installs the **wheel bundled in the plugin** when there is one, falling back
+to `pip install openunderstand` otherwise. Bundling matters because the plugin
+and the analyser ship separately: without it, a user who installs the plugin
+gets whatever version PyPI currently serves, which is not necessarily the one
+the plugin was built and tested against. Build the wheel before the plugin and
+it is picked up automatically:
+
+```bash
+python -m build --wheel      # writes dist/*.whl, ~430 KB
+cd idea-plugin && gradle buildPlugin
+```
+
+The wheel pins the analyser, not the install: its two dependencies
+(`antlr4-python3-runtime`, `peewee`) still come from PyPI, so the bootstrap
+needs a network. Vendoring those as well and installing with `--find-links`
+would make it offline; nothing does that today.
+
+Bump the package version before bundling a changed wheel. A wheel that carries
+different code under a version string already published is the kind of thing
+that wastes an afternoon.
+
 A virtualenv rather than `pip install --user`, because a distribution Python is
 externally managed (PEP 668) and refuses to install into itself. Working from a
 source checkout, `pip install -e .`: the plugin runs the script from a

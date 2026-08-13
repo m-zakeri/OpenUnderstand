@@ -58,10 +58,22 @@ private fun python(root: String): String {
 private fun canAnalyse(python: String) =
     try { exec(python, "-c", "import openunderstand").exitCode == 0 } catch (e: Exception) { false }
 
+/** Copy a bundled resource to a temp file, or null when it was not bundled. */
+private fun unpack(resource: String, suffix: String): File? {
+    val stream = MetricsToolWindow::class.java.getResourceAsStream(resource) ?: return null
+    val file = FileUtil.createTempFile("openunderstand", suffix, true)
+    stream.use { it.copyTo(file.outputStream()) }
+    return file
+}
+
 /**
  * Install the analyser into a virtualenv this plugin owns, and return its
  * interpreter. A venv rather than `pip install --user` because a distro python
  * is externally managed (PEP 668) and refuses to install into itself.
+ *
+ * Prefers the wheel bundled at build time, so the analyser matches the plugin
+ * instead of whatever version PyPI currently serves. Its two dependencies still
+ * come from PyPI, so this pins the version without making the install offline.
  */
 private fun bootstrap(base: String): Pair<String?, String?> {
     val dir = File(PathManager.getSystemPath(), "openunderstand-venv")
@@ -70,7 +82,9 @@ private fun bootstrap(base: String): Pair<String?, String?> {
         val made = exec(base, "-m", "venv", dir.absolutePath)
         if (made.exitCode != 0) return null to "Could not create a virtualenv with `$base`:\n\n${made.stderr.take(2000)}"
     }
-    val installed = exec(interpreter.absolutePath, "-m", "pip", "install", "--upgrade", "openunderstand")
+    val wheel = unpack("/openunderstand.whl", ".whl")
+    val installed = exec(interpreter.absolutePath, "-m", "pip", "install", "--upgrade",
+        wheel?.absolutePath ?: "openunderstand")
     if (installed.exitCode != 0) return null to "Could not install openunderstand:\n\n${installed.stderr.take(2000)}"
     return interpreter.absolutePath to null
 }
@@ -211,8 +225,7 @@ class MetricsToolWindow : ToolWindowFactory {
                         python = installed
                     }
                     indicator.text = "Analysing $root"
-                    val script = FileUtil.createTempFile("idea_metrics", ".py", true)
-                    javaClass.getResourceAsStream("/idea_metrics.py")!!.use { it.copyTo(script.outputStream()) }
+                    val script = unpack("/idea_metrics.py", ".py")!!
                     val out = exec(python, "-W", "ignore", script.absolutePath, root)
                     rows = parse(out.stdout)
                     if (rows.isEmpty()) {
