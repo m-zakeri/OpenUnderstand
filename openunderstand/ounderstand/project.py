@@ -18,6 +18,7 @@ from openunderstand.utils.utilities import ClassTypeData
 from openunderstand.utils import antler_parser, utilities
 from openunderstand.oudb.models import kind_id
 from openunderstand.utils import kind_names
+from openunderstand.oudb import jdk_index
 from openunderstand.ounderstand import symbol_table
 
 _ENGINE = None
@@ -46,6 +47,11 @@ def _use_cpp_engine():
         # README says "C++ or Python". Accept anything that starts with a "c".
         _ENGINE = requested.strip().lower().startswith("c")
     return _ENGINE
+
+
+#: A primitive names no entity, so it can be neither created nor referenced.
+PRIMITIVES = frozenset(
+    "int long short byte char float double boolean void".split())
 
 
 def resolved_longname(simple_name, fallback, scope_longname=""):
@@ -464,14 +470,23 @@ class Project:
             if dirty:
                 ent.save()
 
-            define_ref = ReferenceModel.get_or_create(
-                _kind=kind_id("Java Define"),
-                _file=file_ent,
-                _line=ref_dict["line"],
-                _column=col_1based(ref_dict["col"]),
-                _ent=ent,
-                _scope=scope,
-            )
+            # A package does not *define* the classes in it -- it contains
+            # them, and the contain pass already says so. Understand scopes no
+            # Java Define to a package on either fixture, yet it keeps the
+            # inverse: 74 Definein against 58 Define on calculator_app, the
+            # difference being every class recorded as defined *in* its
+            # package. One direction only, as for a static import.
+            package_scoped = (kind_family(scope._kind_id) == "package"
+                              or kind_family(ent._kind_id) == "package")
+            if not package_scoped:
+                define_ref = ReferenceModel.get_or_create(
+                    _kind=kind_id("Java Define"),
+                    _file=file_ent,
+                    _line=ref_dict["line"],
+                    _column=col_1based(ref_dict["col"]),
+                    _ent=ent,
+                    _scope=scope,
+                )
 
             # Definein: kind id 195
             definein_ref = ReferenceModel.get_or_create(
@@ -535,7 +550,27 @@ class Project:
                 # to org.json.JSONTokener.next. Falls back to the static type
                 # when nothing in the chain declares it, which is every method
                 # inherited from the JDK.
-                owner = symbol_table.declaring_type(owner, name) or owner
+                # The class that declares the method, inside the project or
+                # in the JDK: Understand reports `sb.append(x)` against
+                # java.lang.AbstractStringBuilder, not StringBuilder.
+                owner = (symbol_table.declaring_type(owner, name)
+                         or jdk_index.declaring_type(owner, name)
+                         or owner)
+                longname = f"{owner}.{name}"
+                ent = EntityModel.get_or_none(EntityModel._longname == longname)
+                if ent is None:
+                    ent, _ = EntityModel.get_or_create(
+                        _kind=kind_id("Java Unknown Method Member"),
+                        _name=name,
+                        _parent=file_ent,
+                        _longname=longname,
+                        _contents="",
+                    )
+            elif owner:
+                # No receiver, but the name was statically imported, so the
+                # call lands on the type that exported it rather than on the
+                # enclosing class: `import static Sorts.SortUtils.less` makes a
+                # bare `less(a, b)` a call to Sorts.SortUtils.less.
                 longname = f"{owner}.{name}"
                 ent = EntityModel.get_or_none(EntityModel._longname == longname)
                 if ent is None:
@@ -1211,6 +1246,11 @@ class Project:
                 # "StringBuilder", which merge_placeholder_entities() then
                 # folded into whatever project entity shared that name --
                 # Understand reports java.lang.StringBuilder.
+                # `new int[n]` creates an array of a primitive, which names no
+                # entity -- Understand reports no Java Create there, and this
+                # emitted one against an entity called `int`.
+                if ref_dict["refent"].split("<")[0].split("[")[0] in PRIMITIVES:
+                    continue
                 resolved = ref_dict.get("refent_longname")
                 if resolved:
                     ent = self.getClassEntity(resolved, file_address, file_ent)
@@ -1239,6 +1279,28 @@ class Project:
                     _scope=ent,
                     _ent=scope,
                 )
+
+                # `new JSONObject(...)` also *calls* the constructor, and
+                # Understand reports both facts at the same position -- 219 of
+                # JSON's calls and 433 of TheAlgorithms', all as a plain
+                # Java Call, never Nondynamic. An array creation runs no
+                # constructor, and a type this pass could not place would give
+                # a bare simple name, so both are skipped.
+                created = ent._longname or ""
+                if not ref_dict.get("is_array") and "." in created:
+                    constructor = self.getClassEntity(
+                        f"{created}.{created.rsplit('.', 1)[-1]}",
+                        file_address, file_ent)
+                    for kind, (a, b) in (("Java Call", (constructor, scope)),
+                                         ("Java Callby", (scope, constructor))):
+                        ReferenceModel.get_or_create(
+                            _kind=kind_id(kind),
+                            _file=file_ent,
+                            _line=ref_dict["line"],
+                            _column=col_1based(ref_dict["col"]),
+                            _ent=a,
+                            _scope=b,
+                        )
             except Exception as e:
                 print("ERROR in project.py function addCreateRefs ")
                 print("error message : ", e)

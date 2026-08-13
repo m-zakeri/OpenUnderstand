@@ -4,6 +4,16 @@ from openunderstand.analysis_passes import class_properties
 from os.path import basename
 
 
+def symbol_table_member_type(owner, field):
+    """Declared type of `owner.field`, project or JDK.
+
+    Imported inside the call: this module is loaded while symbol_table is
+    still being built, and a module-level import would close the cycle.
+    """
+    from openunderstand.ounderstand import symbol_table
+    return symbol_table.member_type(owner, field)
+
+
 class SetAndSetByListener(JavaParserLabeledListener):
     def __init__(self, file_name):
         self.ex_name = ""
@@ -93,8 +103,34 @@ class SetAndSetByListener(JavaParserLabeledListener):
         if target.children[1].getText() != ".":
             return                      # `a[i] = x`: no member is named
         receiver = target.children[0].getText()
+        if "." in receiver and all(
+                part.split("[")[0].isidentifier() for part in receiver.split(".")):
+            # `head.a.b = v` sets a field of b's type. Each hop is a field whose
+            # type the project index knows, so the chain resolves however deep
+            # it goes -- DoublyLinkedList sets `position.next.previous` and this
+            # pass stopped at the first member.
+            parents = class_properties.ClassPropertiesListener.findParents(ctx)
+            owner = self.owner_of_member(
+                receiver.split(".")[0].split("[")[0], ".".join(parents))
+            for hop in receiver.split(".")[1:]:
+                if owner is None:
+                    break
+                owner = symbol_table_member_type(owner, hop.split("[")[0])
+            member = target.children[2]
+            if owner and hasattr(member, "symbol"):
+                self.add_set_by_entry(
+                    member.getText(), owner + "." + member.getText(), name_of_file,
+                    member.symbol.line, member.symbol.column, ctx,
+                    resolve_override=owner)
+            return
         if not receiver.isidentifier():
-            return                      # a chained call or index, not a name
+            # `cursorSpace[os].next = x` sets a field of the *element*. The
+            # head is still a name this pass can resolve; anything else -- a
+            # chained call, a cast -- is not.
+            head = receiver.split("[")[0]
+            if "[" not in receiver or not head.isidentifier():
+                return
+            receiver = head
         member = target.children[2]
         if not hasattr(member, "symbol"):
             return                      # `a.foo() = ...` cannot occur, but be safe
@@ -118,8 +154,14 @@ class SetAndSetByListener(JavaParserLabeledListener):
 
         type_name = self.declared_type(receiver)
         if not type_name:
-            return None
-        return symbol_table.resolve_type(type_name, scope_longname)
+            # `ColumnarTranspositionCipher.keyword = x` -- the receiver is a
+            # *type*, so the field is a static one on that type. Understand
+            # reports these as an ordinary Java Set and this pass produced
+            # none of them.
+            return symbol_table.resolve_type(receiver, scope_longname)
+        # An array's element type is what carries the member.
+        return symbol_table.resolve_type(
+            type_name.split("[")[0], scope_longname)
 
     def add_set_by_entry(
         self, set_short_name, set_long_name, name_of_file, line, column, ctx,

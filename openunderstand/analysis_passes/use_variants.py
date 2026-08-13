@@ -41,6 +41,16 @@ class UseVariantListener(JavaParserLabeledListener):
     def __init__(self, file_address=""):
         self.file_address = file_address
         self.uses = []
+        #: The file's imports, so an annotation resolves to the type it names.
+        self.imports = {}
+        self.wildcards = []
+
+    def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
+        longname = ctx.qualifiedName().getText()
+        if ctx.getText().rstrip(";").endswith(".*"):
+            self.wildcards.append(longname)
+            return
+        self.imports[longname.split(".")[-1]] = longname
 
     def _add(self, kind, name, ctx, token, suffix=None, ent_longname=None):
         if not name or name in LITERALS:
@@ -75,6 +85,31 @@ class UseVariantListener(JavaParserLabeledListener):
             return
         self._add("Java Use Deref Partial", text, ctx, receiver.start)
 
+    def enterExpression2(self, ctx: JavaParserLabeled.Expression2Context):
+        """`a[i]` dereferences a, exactly as `a.b` does.
+
+        Understand reports 712 of TheAlgorithms' 2909 Use Deref Partial
+        references on an indexed array -- the character after the identifier is
+        `[` rather than `.`. Producing a plain `Java Use` there instead was 700
+        of this project's wrong Use rows *and* most of what Deref Partial was
+        missing, the same rows counted twice.
+
+        An assignment target is a Set, not a Use: `arr[i] = v` is Understand's
+        Set Deref Partial and `arr[i] += v` its Modify Deref Partial, both
+        already produced elsewhere.
+        """
+        receiver = ctx.expression(0)
+        if receiver is None or type(receiver).__name__ != "Expression0Context":
+            return
+        text = receiver.getText()
+        if not text.isidentifier():
+            return
+        parent = ctx.parentCtx
+        if (type(parent).__name__ == "Expression21Context"
+                and parent.expression(0) is ctx):
+            return
+        self._add("Java Use Deref Partial", text, ctx, receiver.start)
+
     def enterStatement10(self, ctx: JavaParserLabeled.Statement10Context):
         expression = ctx.expression()
         if expression is None:
@@ -96,10 +131,18 @@ class UseVariantListener(JavaParserLabeledListener):
         qualified = ctx.qualifiedName()
         if qualified is None:
             return
+        from openunderstand.ounderstand import symbol_table
+
         annotated = _annotated_name(ctx)
-        self._add("Java Use Annotation",
-                  qualified.IDENTIFIER()[-1].getText(), ctx, qualified.start,
-                  suffix=annotated)
+        name = qualified.IDENTIFIER()[-1].getText()
+        # `@RunWith` is org.junit.runner.RunWith, and storing the bare name is
+        # what merge_placeholder_entities() folds into any project match. The
+        # writer cannot resolve it -- only this pass has read the imports.
+        resolved = symbol_table.resolve_type_name(
+            qualified.getText(), self.imports, self.wildcards,
+            ".".join(class_properties.ClassPropertiesListener.findParents(ctx)))
+        self._add("Java Use Annotation", name, ctx, qualified.start,
+                  suffix=annotated, ent_longname=resolved)
 
     def enterTypeArguments(self, ctx: JavaParserLabeled.TypeArgumentsContext):
         """`List<T>` -- the T, labelled by where the list is written.
@@ -202,6 +245,18 @@ def _annotated_name(ctx):
             return None
         if name.startswith("LocalVariableDeclaration"):
             return _first_declared_name(node)
+        if name.startswith("TypeDeclaration"):
+            # `@RunWith(...) public class X` -- the annotation sits on a
+            # top-level type, which has no ClassBodyDeclaration above it. Every
+            # annotation in testing_legacy_code is this shape, and each was
+            # scoped to the package instead of the class.
+            for attribute in ("classDeclaration", "interfaceDeclaration",
+                              "enumDeclaration", "annotationTypeDeclaration"):
+                inner = getattr(node, attribute, None)
+                inner = inner() if callable(inner) else None
+                if inner is not None:
+                    return _first_declared_name(inner)
+            return None
         node = node.parentCtx
     return None
 
@@ -228,7 +283,9 @@ def _declared_owner(ctx):
             return None
         if name.startswith(("LocalVariableDeclaration", "FieldDeclaration")):
             return _first_declared_name(node)
-        if name.startswith("FormalParameter"):
+        if name.startswith("FormalParameter") and not name.startswith(
+                "FormalParameterList"):
+            # The *list* context shares the prefix and has no declarator id.
             identifier = node.variableDeclaratorId()
             return identifier.getText().split("[")[0] if identifier else None
         if name.startswith("MethodDeclaration"):

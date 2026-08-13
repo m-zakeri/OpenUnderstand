@@ -30,6 +30,21 @@ class DeclaredTypeCollector(JavaParserLabeledListener):
     def enterFieldDeclaration(self, ctx):
         self._record(ctx.typeType(), ctx.variableDeclarators().variableDeclarator())
 
+    def enterResource(self, ctx):
+        """`try (Scanner input = new Scanner(System.in))` declares input.
+
+        A resource is its own grammar rule, not a localVariableDeclaration, so
+        every call on a try-with-resources variable had an unknown receiver --
+        `input.nextLine()` was the single most common missing Java Call on
+        TheAlgorithms. Its type is a classOrInterfaceType rather than a
+        typeType.
+        """
+        self._record(ctx.classOrInterfaceType(), [ctx.variableDeclaratorId()])
+
+    def enterEnhancedForControl(self, ctx):
+        """`for (Edge e : edges)` declares e."""
+        self._record(ctx.typeType(), [ctx.variableDeclaratorId()])
+
     def _record(self, type_ctx, declarators):
         if type_ctx is None:
             return

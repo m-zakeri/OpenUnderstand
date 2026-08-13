@@ -229,12 +229,41 @@ _DECLARATIVE = (
     "ClassDeclarationContext", "InterfaceDeclarationContext",
     "EnumDeclarationContext", "AnnotationTypeDeclarationContext",
     "ConstDeclarationContext", "InterfaceMethodDeclarationContext",
+    # `for (char c : items)` declares c. It is not a localVariableDeclaration,
+    # so it was the declarative statement validForBase was short by -- and its
+    # *line* still belongs to the loop, which _add_signature_lines skips.
+    "EnhancedForControlContext",
 )
 # Every `statement` alternative except a bare block (#statement0), an empty
 # statement (#statement14) and a label (#statement16), which do nothing.
 _EXECUTABLE = tuple(
     f"Statement{n}Context" for n in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15)
 )
+
+
+#: Contexts that make an initialiser *do* something rather than copy a value.
+_INVOKING = ("MethodCall", "Creator", "CreatedName")
+
+
+def _initialiser_invokes(ctx):
+    """Whether a declaration's initialiser does something rather than copy.
+
+    `T temp = item;` is declarative only -- CycleSort.replace is Understand's
+    StmtDecl 2 / StmtExe 3 -- while `int comp = key.compareTo(...)` also
+    executes, which is how BinarySearch.search reaches 8.
+
+    Calling *anything else* executable was tried and measured worse: array
+    literals and arithmetic pushed CountStmtExe from 64.5% down to 59.5%, so
+    invoking something is the line, until a traced method says otherwise.
+    """
+    stack = [ctx]
+    while stack:
+        node = stack.pop()
+        if type(node).__name__.startswith(_INVOKING):
+            return True
+        stack.extend(c for c in (getattr(node, "children", None) or ())
+                     if hasattr(c, "getRuleIndex"))
+    return False
 
 
 class _StatementClassifier:
@@ -258,17 +287,36 @@ class _StatementClassifier:
         if name in _DECLARATIVE:
             self.statements += 1
             self.decl_statements += 1
-            self._add_signature_lines(ctx, self.decl_lines)
+            # `for (int i = 0; ...)` declares i, but the line belongs to the
+            # loop: Understand counts validForBase at 7 declarative lines and
+            # the eighth this produced was the `for`. Every counted loop with
+            # an init declaration added one.
+            if not (type(ctx.parentCtx).__name__.startswith("ForInit")
+                    or name == "EnhancedForControlContext"):
+                self._add_signature_lines(ctx, self.decl_lines)
             if name == "LocalVariableDeclarationContext" and _has_initialiser(ctx):
-                # `int x = f();` both declares and executes.
-                self.exe_statements += 1
+                # The line carries executable code either way -- CycleSort's
+                # `T temp = item;` is one of that method's four
+                # CountLineCodeExe lines.
                 if ctx.start is not None:
                     self.exe_lines.add(ctx.start.line)
+                # Whether it is also an executable *statement* depends on what
+                # the initialiser does. `T temp = item;` is not one and
+                # `int comp = key.compareTo(...)` is: BinarySearch.search
+                # declares both and Understand counts exactly one of them.
+                if _initialiser_invokes(ctx):
+                    self.exe_statements += 1
         elif name in _EXECUTABLE:
             self.statements += 1
             self.exe_statements += 1
             if ctx.start is not None:
                 self.exe_lines.add(ctx.start.line)
+        elif name == "Statement0Context" and ctx.start is not None:
+            # A bare block is not a statement Understand counts, but the line
+            # it opens on carries executable code: `} else {` is the ninth of
+            # BinarySearch.search's nine CountLineCodeExe lines and the only
+            # one this missed.
+            self.exe_lines.add(ctx.start.line)
         for child in getattr(ctx, "children", None) or ():
             if hasattr(child, "getRuleIndex"):
                 self.visit(child)

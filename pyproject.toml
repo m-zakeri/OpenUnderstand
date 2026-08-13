@@ -80,7 +80,7 @@ exclude = ["openunderstand.gen.java8speedy.build-cache*"]
 # The seed files are load-bearing: fill.py reads them to populate the kind
 # tables, and without them a database has no vocabulary. The .interp/.tokens
 # files ship with the generated parsers.
-"openunderstand.oudb" = ["*.txt"]
+"openunderstand.oudb" = ["*.txt", "*.txt.gz"]
 "openunderstand.gen.javaLabeled" = ["*.interp", "*.tokens"]
 "openunderstand.gen.java8speedy" = ["*.md"]
 

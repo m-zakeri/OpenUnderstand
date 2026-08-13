@@ -67,9 +67,12 @@ def count_decl_class(ent_model):
     entity = _entity(ent_model)
     if entity is None:
         return 0
-    declared = _declares(entity._id, "type")
-    if declared or "package" not in _visibility(entity):
-        return len(declared)
+    if "package" not in _visibility(entity):
+        return len(_declares(entity._id, "type"))
+    # A package's classes are the ones it *contains*. Preferring Define when it
+    # happened to be non-empty answered 1 for DataStructures.Bags where Contain
+    # gives Understand's 3: a file defines a class into the package, so Define
+    # only ever sees the one file this entity was created from.
     # Contain reaches the package's top-level classes; a class nested inside
     # one of them is declared by *it*, and Understand counts those too --
     # DataStructures.Bags holds Bag and Bag.ListIterator, and stopping at the
@@ -419,17 +422,19 @@ def container_members(ent_model):
     entity = _entity(ent_model)
     if entity is None or kind_family(entity._kind_id) != "package":
         return None
-    define = KindModel.get_or_none(_name="Java Define")
-    if define is None:
+    contain = KindModel.get_or_none(_name="Java Contain")
+    if contain is None:
         return []
-    # The file each of the package's declarations was found in. Verified
-    # against Understand on com.calculator.app.method: its CountLine 94,
+    # The file each of the package's classes was found in. Read from Contain,
+    # not Define: a package contains its classes and defines nothing, which is
+    # how Understand records it and now how this project does. Verified against
+    # Understand on com.calculator.app.method -- its CountLine 94,
     # CountLineCode 76, CountStmt 58 and SumCyclomatic 13 are exactly the sums
     # over the package's four files.
     file_ids = {
         ref._file_id
         for ref in ReferenceModel.select().where(
-            (ReferenceModel._kind == define._id)
+            (ReferenceModel._kind == contain._id)
             & (ReferenceModel._scope == entity._id)
         )
     }

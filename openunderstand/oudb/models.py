@@ -1,5 +1,7 @@
 from peewee import *
 
+from openunderstand.oudb import jdk_index
+
 
 def col_1based(column):
     """Convert an ANTLR column offset to the 1-based column Understand reports.
@@ -208,8 +210,13 @@ class EntityModel(Model):
                     or kind_family(row._kind_id) == incoming_family):
                 continue
             row_site = (row._line, row._column)
-            if all(incoming_site) and all(row_site) and incoming_site != row_site:
-                continue  # a different declaration of the same name: an overload
+            if (all(incoming_site) and all(row_site) and incoming_site != row_site
+                    and incoming_family == "method"):
+                # Only methods overload. Two locals sharing a long name are the
+                # same declaration seen twice -- `main.name` declared in two
+                # blocks -- and splitting them by position produced 155 of the
+                # duplicate rows the comparison reports.
+                continue
             match = row
             if not row_placeholder:
                 break  # prefer a row that already has a real kind
@@ -222,6 +229,17 @@ class EntityModel(Model):
             if all(incoming_site) and not all((match._line, match._column)):
                 match._line, match._column = incoming_site
                 dirty = True
+            # Fill in facts the row is missing rather than discarding them.
+            # A pass that meets a method before define_listener declares it
+            # creates the row with no type, and the declared return type was
+            # then thrown away for 271 of JSON's 440 methods -- CountOutput
+            # adds one for a non-void return, so each of those was short by
+            # exactly one.
+            for field in ("_type", "_value", "_contents"):
+                incoming_value = fields.get(field)
+                if incoming_value and not getattr(match, field, None):
+                    setattr(match, field, incoming_value)
+                    dirty = True
             if dirty:
                 match.save()
             return match, False
@@ -435,6 +453,92 @@ def merge_placeholder_entities():
 _NONDYNAMIC_TOKENS = {"static", "private", "final", "constructor"}
 
 
+def drop_orphan_placeholders():
+    """Delete placeholder entities that no reference points at.
+
+    A placeholder means "something is here but I could not identify it". With
+    no reference at either end, nothing is here: the row is a name a pass
+    speculated about and then never used. Most are created by the use pass for
+    a name it cannot place -- `Character` in `Character.isDigit(c)` is a type,
+    not a variable of the enclosing method, so it became
+    `org.json.Cookie.escape.Character` -- and are orphaned when
+    drop_shadowed_use_refs() removes the reference that named them.
+
+    Only placeholder kinds. 126 entities on org.json have no reference at all
+    and 4 of them are real declarations Understand also reports, mis-kinded
+    rather than imaginary; those carry a real kind and are left alone.
+
+    Runs after drop_shadowed_use_refs(), which is what orphans them.
+
+    Returns the number of rows deleted.
+    """
+    doomed = [
+        e._id for e in EntityModel.select()
+        if is_placeholder_kind(e._kind_id)
+        and not ReferenceModel.select().where(
+            (ReferenceModel._ent == e._id)
+            | (ReferenceModel._scope == e._id)
+            | (ReferenceModel._file == e._id)
+        ).exists()
+    ]
+    if not doomed:
+        return 0
+    # Nothing may point at them as a parent either, or the delete leaves a
+    # dangling foreign key behind.
+    EntityModel.update({EntityModel._parent: None}).where(
+        EntityModel._parent << doomed).execute()
+    EntityModel.delete().where(EntityModel._id << doomed).execute()
+    return len(doomed)
+
+
+def drop_nonvariable_deref_refs():
+    """Delete Deref Partial references whose target is not a variable.
+
+    `a.b` is a partial dereference only when `a` is a variable. In
+    `org.evosuite.runtime.sandbox.Sandbox.goingToExecuteSUT()` the `org` is a
+    *package* qualifier and Understand reports no dereference on it at all.
+
+    The use pass already refuses a target it can see is not a variable, but it
+    runs fourth and the entity is still an unresolved placeholder at that
+    point -- the package pass upgrades the kind afterwards, and the row it
+    guarded against is written anyway. Deciding it here, once every pass has
+    run and the kinds are final, is the same reason relabel_nondynamic_calls()
+    and drop_shadowed_use_refs() live here.
+
+    The same holds for the Set and Modify variants: `a.b = v` sets a field of
+    `a`, and `org.foo.BAR = v` does not. All 80 of testing_legacy_code's Set
+    Deref Partial rows target a package or a placeholder, against 0 of JSON's
+    8, 0 of TheAlgorithms' 467 and 0 of ganttproject's 161.
+
+    Measured on Use Deref Partial: this removes 380 of testing_legacy_code's
+    538 rows, which is where its 53% precision came from, and 0 of JSON's 781,
+    0 of calculator_app's, 6 of TheAlgorithms' 2402 and 0 of jfreechart's
+    30063 -- every one of those targets a real declared variable or parameter.
+
+    Returns the number of references deleted.
+    """
+    # The target is _ent on the forward reference and _scope on its inverse.
+    doomed = set()
+    for name, side in (("Java Use Deref Partial", "_ent_id"),
+                       ("Java Useby Deref Partial", "_scope_id"),
+                       ("Java Set Deref Partial", "_ent_id"),
+                       ("Java Setby Deref Partial", "_scope_id"),
+                       ("Java Modify Deref Partial", "_ent_id"),
+                       ("Java Modifyby Deref Partial", "_scope_id")):
+        kind = KindModel.get_or_none(KindModel._name == name)
+        if kind is None:
+            continue
+        for ref in ReferenceModel.select().where(ReferenceModel._kind == kind._id):
+            target = EntityModel.get_or_none(_id=getattr(ref, side))
+            if target is None or is_placeholder_kind(target._kind_id) \
+                    or kind_family(target._kind_id) != "variable":
+                doomed.add(ref._id)
+    if not doomed:
+        return 0
+    ReferenceModel.delete().where(ReferenceModel._id << list(doomed)).execute()
+    return len(doomed)
+
+
 def drop_shadowed_use_refs():
     """Delete plain Java Use/Useby where a more specific kind sits on it.
 
@@ -479,23 +583,6 @@ def drop_shadowed_use_refs():
     return cursor.rowcount if cursor.rowcount and cursor.rowcount > 0 else 0
 
 
-#: JDK classes declared final, so a call on one is never virtual. Understand
-#: knows this from the library it indexes; this is the same fact written down.
-#:
-#: ponytail: the finals the benchmarks actually call. java.lang.Object is
-#: deliberately absent -- it is not final, and its methods are the ones most
-#: often overridden.
-JDK_FINAL_TYPES = frozenset("""
-    java.lang.Boolean java.lang.Byte java.lang.Character java.lang.Class
-    java.lang.Double java.lang.Float java.lang.Integer java.lang.Long
-    java.lang.Math java.lang.Short java.lang.String java.lang.StringBuffer
-    java.lang.StringBuilder java.lang.System java.lang.reflect.Method
-    java.math.BigDecimal java.math.BigInteger java.util.Arrays
-    java.util.Collections java.util.Objects java.util.Optional
-    java.util.Scanner java.util.UUID java.util.stream.Collectors
-""".split())
-
-
 def relabel_nondynamic_calls():
     """Split Java Call into Call/Call Nondynamic once targets are known.
 
@@ -520,6 +607,16 @@ def relabel_nondynamic_calls():
         entity = EntityModel.get_or_none(_id=entity_id)
         if entity is None:
             return False
+        longname = entity._longname or ""
+        owner, _, simple = longname.rpartition(".")
+        # Checked before anything else. A constructor is never virtual and
+        # `constructor` is in _NONDYNAMIC_TOKENS, yet Understand reports every
+        # `new X(...)` as a plain Java Call -- 219 on JSON, 433 on
+        # TheAlgorithms, not one of them Nondynamic. Testing the kind first
+        # relabelled all of them and cost 17 points of Call Nondynamic
+        # precision.
+        if owner and owner.rsplit(".", 1)[-1] == simple:
+            return False
         if set(_kind_name(entity._kind_id).lower().split()) & _NONDYNAMIC_TOKENS:
             return True
         # A JDK callee carries no modifiers here -- it is a placeholder named
@@ -528,8 +625,7 @@ def relabel_nondynamic_calls():
         # java.lang.String.length, so the call cannot dispatch virtually.
         # These are 303 of TheAlgorithms' missing Call Nondynamic rows for
         # String alone, and 180 of JSON's.
-        owner = (entity._longname or "").rsplit(".", 1)[0]
-        return owner in JDK_FINAL_TYPES
+        return jdk_index.is_final(owner)
 
     relabelled = 0
     # The callee is _ent on a Call and _scope on its inverse.
