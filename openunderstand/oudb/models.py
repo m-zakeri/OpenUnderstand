@@ -255,6 +255,26 @@ class EntityModel(Model):
     # TODO: Implement other methods
 
 
+#: Reference rows already written, as (kind, file, line, column, ent, scope),
+#: and the database they were read from. Seeded on first use so an incremental
+#: run over a populated database still sees what is already there, and rebuilt
+#: when a different database is bound -- `create_db` and `open` each construct
+#: a new SqliteDatabase, and reusing one database's keys against another would
+#: silently drop every reference they happen to share.
+_REFERENCE_KEYS = None
+_REFERENCE_KEYS_DB = None
+
+#: The fields a reference is identified by, in key order.
+_REFERENCE_FIELDS = ("_kind", "_file", "_line", "_column", "_ent", "_scope")
+
+
+def _row_id(value):
+    """A field value as it is stored: a foreign key's id, or the value itself."""
+    if isinstance(value, Model):
+        return value._id
+    return value
+
+
 class ReferenceModel(Model):
     _id = AutoField()
     _kind = ForeignKeyField(KindModel, backref="references")
@@ -263,6 +283,44 @@ class ReferenceModel(Model):
     _column = IntegerField()
     _ent = ForeignKeyField(EntityModel, backref="refs")
     _scope = ForeignKeyField(EntityModel, backref="inv_refs")
+
+    @classmethod
+    def get_or_create(cls, **kwargs):
+        """Create the row without asking the database whether it exists.
+
+        peewee's default issues a SELECT keyed on every field and then an
+        INSERT. That SELECT was 50% of `process_file` on JSONObject.java --
+        4.4s of 8.8s across 8624 calls -- and it answers a question this
+        process can answer itself: one process writes the database, so a set of
+        the keys it has already written is authoritative.
+
+        A key that has been seen falls through to the original path, so a
+        genuine duplicate still resolves to the existing row rather than a
+        second one. The set is seeded from the database on first use, which
+        costs one query and keeps an incremental run over an existing database
+        correct.
+        """
+        global _REFERENCE_KEYS, _REFERENCE_KEYS_DB
+        defaults = dict(kwargs.pop("defaults", None) or {})
+        fields = {**defaults, **kwargs}
+        try:
+            key = tuple(_row_id(fields[name]) for name in _REFERENCE_FIELDS)
+        except KeyError:
+            # A caller identifying a reference some other way; let peewee decide.
+            return super().get_or_create(defaults=defaults, **kwargs)
+
+        database = cls._meta.database
+        if _REFERENCE_KEYS is None or _REFERENCE_KEYS_DB is not database:
+            _REFERENCE_KEYS = {
+                tuple(row) for row in cls.select(
+                    cls._kind, cls._file, cls._line, cls._column, cls._ent, cls._scope
+                ).tuples()
+            }
+            _REFERENCE_KEYS_DB = database
+        if key in _REFERENCE_KEYS:
+            return super().get_or_create(defaults=defaults, **kwargs)
+        _REFERENCE_KEYS.add(key)
+        return super().create(**fields), True
 
     def __str__(self):
         return f"{self._kind} {self._ent} {self._file}({self._line}, {self._column})"

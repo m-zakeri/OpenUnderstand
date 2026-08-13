@@ -136,6 +136,20 @@ and so reads higher. Quote one or the other, never a mix.)
 
 ### Performance
 
+JSON builds in **58s rather than 127s**, with an identical fingerprint at every
+step. Measured per phase on `JSONObject.java`, not under cProfile -- its
+overhead roughly trebles the numbers and made the write layer look like 72% of
+the run when it was 50%.
+
+- **A reference is written without first asking whether it exists** —
+  peewee's `get_or_create` issues a SELECT keyed on every field and then an
+  INSERT, and that SELECT was 50% of `process_file` on JSONObject.java: 4.4s of
+  8.8s across 8624 calls. One process writes the database, so the set of keys
+  it has already written answers the question itself. A key that has been seen
+  still falls through to the original path, so a genuine duplicate resolves to
+  the existing row; the set is seeded from the database on first use and
+  rebuilt when a different one is bound, which keeps both an incremental run
+  and two analyses in one process correct.
 - **`getClassProperties()` is memoized per file** — it answers by walking the
   whole parse tree, and the create pass alone asked it 168 times for
   `JSONObject.java`, 13.5s of that file's 44s. The answer depends only on the
