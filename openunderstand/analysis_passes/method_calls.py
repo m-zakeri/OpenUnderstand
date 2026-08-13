@@ -106,11 +106,10 @@ class MethodCallListener(JavaParserLabeledListener):
             type_name or head, self.imports, self.wildcards, scope_longname)
         if owner is None or not field:
             return owner
-        # `System.out.println()` -- Understand attributes this to the declared
-        # type of the *field*, java.io.PrintStream, not to java.lang.System.
-        # Only the JDK fields the table knows; a project field's type is not
-        # visible from this file.
-        return symbol_table.JDK_FIELD_TYPES.get((owner, field))
+        # `System.out.println()` lands on the declared type of the *field*,
+        # java.io.PrintStream, not on java.lang.System. member_type() answers
+        # for a project field too, which a pass reading one file cannot.
+        return symbol_table.member_type(owner, field)
 
     def enterMethodCall0(self, ctx: JavaParserLabeled.MethodCall0Context):
         identifier = ctx.IDENTIFIER()

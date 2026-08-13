@@ -110,5 +110,33 @@ def declares(longname: str, member: str, arity: int) -> bool:
     return members(longname).get(member) == arity
 
 
+def declaring_type(longname: str, member: str) -> str | None:
+    """The type in `longname`'s hierarchy that declares `member`.
+
+    Understand attributes a call to the class that declares the method, not to
+    the receiver's static type: `sb.append(x)` on a java.lang.StringBuilder is
+    a call to java.lang.AbstractStringBuilder.append. That is the same rule
+    symbol_table.declaring_type() applies inside the project, answered here
+    from the generated hierarchy.
+
+    Returns None when nothing in the chain declares it, so a caller keeps the
+    static type rather than inventing one.
+    """
+    types = _load()["types"]
+    seen, pending = set(), [longname]
+    while pending:
+        current = pending.pop(0)
+        if current in seen:
+            continue
+        seen.add(current)
+        entry = types.get(current)
+        if entry is None:
+            continue
+        if member in entry["methods"]:
+            return current
+        pending.extend(entry["supers"])
+    return None
+
+
 def known(longname: str) -> bool:
     return longname in _load()["types"]

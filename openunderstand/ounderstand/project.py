@@ -18,6 +18,7 @@ from openunderstand.utils.utilities import ClassTypeData
 from openunderstand.utils import antler_parser, utilities
 from openunderstand.oudb.models import kind_id
 from openunderstand.utils import kind_names
+from openunderstand.oudb import jdk_index
 from openunderstand.ounderstand import symbol_table
 
 _ENGINE = None
@@ -469,14 +470,23 @@ class Project:
             if dirty:
                 ent.save()
 
-            define_ref = ReferenceModel.get_or_create(
-                _kind=kind_id("Java Define"),
-                _file=file_ent,
-                _line=ref_dict["line"],
-                _column=col_1based(ref_dict["col"]),
-                _ent=ent,
-                _scope=scope,
-            )
+            # A package does not *define* the classes in it -- it contains
+            # them, and the contain pass already says so. Understand scopes no
+            # Java Define to a package on either fixture, yet it keeps the
+            # inverse: 74 Definein against 58 Define on calculator_app, the
+            # difference being every class recorded as defined *in* its
+            # package. One direction only, as for a static import.
+            package_scoped = (kind_family(scope._kind_id) == "package"
+                              or kind_family(ent._kind_id) == "package")
+            if not package_scoped:
+                define_ref = ReferenceModel.get_or_create(
+                    _kind=kind_id("Java Define"),
+                    _file=file_ent,
+                    _line=ref_dict["line"],
+                    _column=col_1based(ref_dict["col"]),
+                    _ent=ent,
+                    _scope=scope,
+                )
 
             # Definein: kind id 195
             definein_ref = ReferenceModel.get_or_create(
@@ -540,7 +550,12 @@ class Project:
                 # to org.json.JSONTokener.next. Falls back to the static type
                 # when nothing in the chain declares it, which is every method
                 # inherited from the JDK.
-                owner = symbol_table.declaring_type(owner, name) or owner
+                # The class that declares the method, inside the project or
+                # in the JDK: Understand reports `sb.append(x)` against
+                # java.lang.AbstractStringBuilder, not StringBuilder.
+                owner = (symbol_table.declaring_type(owner, name)
+                         or jdk_index.declaring_type(owner, name)
+                         or owner)
                 longname = f"{owner}.{name}"
                 ent = EntityModel.get_or_none(EntityModel._longname == longname)
                 if ent is None:

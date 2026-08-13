@@ -229,6 +229,10 @@ _DECLARATIVE = (
     "ClassDeclarationContext", "InterfaceDeclarationContext",
     "EnumDeclarationContext", "AnnotationTypeDeclarationContext",
     "ConstDeclarationContext", "InterfaceMethodDeclarationContext",
+    # `for (char c : items)` declares c. It is not a localVariableDeclaration,
+    # so it was the declarative statement validForBase was short by -- and its
+    # *line* still belongs to the loop, which _add_signature_lines skips.
+    "EnhancedForControlContext",
 )
 # Every `statement` alternative except a bare block (#statement0), an empty
 # statement (#statement14) and a label (#statement16), which do nothing.
@@ -242,7 +246,16 @@ _INVOKING = ("MethodCall", "Creator", "CreatedName")
 
 
 def _initialiser_invokes(ctx):
-    """Whether a declaration's initialiser calls or constructs anything."""
+    """Whether a declaration's initialiser does something rather than copy.
+
+    `T temp = item;` is declarative only -- CycleSort.replace is Understand's
+    StmtDecl 2 / StmtExe 3 -- while `int comp = key.compareTo(...)` also
+    executes, which is how BinarySearch.search reaches 8.
+
+    Calling *anything else* executable was tried and measured worse: array
+    literals and arithmetic pushed CountStmtExe from 64.5% down to 59.5%, so
+    invoking something is the line, until a traced method says otherwise.
+    """
     stack = [ctx]
     while stack:
         node = stack.pop()
@@ -278,7 +291,8 @@ class _StatementClassifier:
             # loop: Understand counts validForBase at 7 declarative lines and
             # the eighth this produced was the `for`. Every counted loop with
             # an init declaration added one.
-            if not type(ctx.parentCtx).__name__.startswith("ForInit"):
+            if not (type(ctx.parentCtx).__name__.startswith("ForInit")
+                    or name == "EnhancedForControlContext"):
                 self._add_signature_lines(ctx, self.decl_lines)
             if name == "LocalVariableDeclarationContext" and _has_initialiser(ctx):
                 # The line carries executable code either way -- CycleSort's

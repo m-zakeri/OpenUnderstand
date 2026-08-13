@@ -54,6 +54,11 @@ class _DeclarationIndex:
         #: dropped the abstract generic overload that Understand refuses to
         #: report -- which is 15 wrong rows, one per class implementing it.
         self.methods: dict[str, list[tuple[tuple[str, ...], bool, bool]]] = {}
+        #: (declaring type long name, field) -> the field's declared type, as
+        #: written. `process_file` sees one file, so a chain like
+        #: `node.next.previous` dies at the second hop without this: the type
+        #: of `next` is declared in whatever file declares Node.
+        self.field_types: dict[tuple[str, str], str] = {}
         self.files = 0
 
     def add(self, simple_name: str, longname: str, is_type: bool = False):
@@ -323,6 +328,7 @@ def build(root: str) -> _DeclarationIndex:
         def __init__(self):
             self.pairs = []
             self.methods = {}
+            self.fields = {}
 
         def enterClassDeclaration(self, ctx):
             parents = class_properties.ClassPropertiesListener.findParents(ctx)
@@ -346,6 +352,19 @@ def build(root: str) -> _DeclarationIndex:
                             for t in ctx.typeList().typeType()]))
 
         # ------------------------------------------------------- signatures
+
+        def enterFieldDeclaration(self, ctx):
+            type_ctx = ctx.typeType()
+            declarators = ctx.variableDeclarators()
+            if type_ctx is None or declarators is None:
+                return
+            owner = ".".join(
+                class_properties.ClassPropertiesListener.findParents(ctx))
+            written = type_ctx.getText().split("<")[0]
+            for declarator in declarators.variableDeclarator() or []:
+                identifier = declarator.variableDeclaratorId()
+                if identifier is not None:
+                    self.fields[(owner, identifier.getText().split("[")[0])] = written
 
         def enterMethodDeclaration(self, ctx):
             self._signature(ctx)
@@ -392,6 +411,7 @@ def build(root: str) -> _DeclarationIndex:
         index.files += 1
         index.supertypes.update(supertypes.pairs)
         index.methods.update(supertypes.methods)
+        index.field_types.update(supertypes.fields)
         for declaration in listener.defines:
             index.add(
                 declaration["ent"],
@@ -459,6 +479,25 @@ def resolve_type_name(name, imports=None, wildcards=None, scope_longname=""):
     # that was handled at the top -- but preferring it over an on-demand import
     # is what shadowed java.util.HashMap.
     return resolve_type(name, scope_longname)
+
+
+def member_type(owner: str, field: str) -> str | None:
+    """Declared type of `owner.field`, project or JDK, or None.
+
+    The one place a field's type is answered. A pass walking a single file can
+    only see the fields of the class it is in, so a chain leaving that class --
+    `node.next.previous`, `System.out` -- needed either a hand-written table or
+    a guess. Both are gone: project fields come from the index built before the
+    passes run, and JDK fields from the generated index.
+    """
+    if not owner or not field:
+        return None
+    written = INDEX.field_types.get((owner, field))
+    if written:
+        # Resolved against the declaring type's own scope, which is the
+        # package the field was declared in.
+        return resolve_type_name(written, None, None, owner) or None
+    return jdk_index.field_type(owner, field)
 
 
 def declaring_type(type_longname: str, member: str) -> str | None:

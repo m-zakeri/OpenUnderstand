@@ -89,7 +89,7 @@ class FieldUseListener(JavaParserLabeledListener):
             declared or head, self.imports, self.wildcards, scope_longname)
         if owner is None or not field:
             return owner
-        return symbol_table.JDK_FIELD_TYPES.get((owner, field))
+        return symbol_table.member_type(owner, field)
 
     def enterExpression1(self, ctx: JavaParserLabeled.Expression1Context):
         identifier = ctx.IDENTIFIER()
