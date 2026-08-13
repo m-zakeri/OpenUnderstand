@@ -25,6 +25,7 @@ import java.awt.BorderLayout
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import java.io.File
+import java.util.zip.ZipFile
 import javax.swing.JButton
 import javax.swing.JPanel
 import javax.swing.table.DefaultTableModel
@@ -67,6 +68,31 @@ private fun unpack(resource: String, suffix: String): File? {
 }
 
 /**
+ * The bundled wheel, written out under a filename pip will accept.
+ *
+ * pip parses the distribution and version out of the *filename* and rejects
+ * anything that is not `name-version-python-abi-platform.whl`, so the resource
+ * cannot simply be copied to a temp file: `openunderstand.whl` fails with
+ * "Invalid wheel filename (wrong number of parts)". The version is recovered
+ * from the wheel's own `*.dist-info/` entry, which is the one place it is
+ * guaranteed to agree with the metadata pip checks it against.
+ */
+private fun unpackWheel(): File? {
+    val raw = unpack("/openunderstand.whl", ".zip") ?: return null
+    // ponytail: pure-Python wheel, so the compatibility tags are fixed. A wheel
+    // with native code would need its real tags carried over instead.
+    val version = ZipFile(raw).use { zip ->
+        zip.entries().asSequence()
+            .mapNotNull { Regex("""^openunderstand-([^/]+)\.dist-info/""").find(it.name) }
+            .firstOrNull()?.groupValues?.get(1)
+    } ?: return null
+    val named = File(FileUtil.createTempDirectory("openunderstand", "wheel", true),
+        "openunderstand-$version-py3-none-any.whl")
+    raw.copyTo(named, overwrite = true)
+    return named
+}
+
+/**
  * Install the analyser into a virtualenv this plugin owns, and return its
  * interpreter. A venv rather than `pip install --user` because a distro python
  * is externally managed (PEP 668) and refuses to install into itself.
@@ -82,7 +108,7 @@ private fun bootstrap(base: String): Pair<String?, String?> {
         val made = exec(base, "-m", "venv", dir.absolutePath)
         if (made.exitCode != 0) return null to "Could not create a virtualenv with `$base`:\n\n${made.stderr.take(2000)}"
     }
-    val wheel = unpack("/openunderstand.whl", ".whl")
+    val wheel = unpackWheel()
     val installed = exec(interpreter.absolutePath, "-m", "pip", "install", "--upgrade",
         wheel?.absolutePath ?: "openunderstand")
     if (installed.exitCode != 0) return null to "Could not install openunderstand:\n\n${installed.stderr.take(2000)}"
