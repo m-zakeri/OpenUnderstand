@@ -183,3 +183,4 @@ CLAUDE.md
 tests
 
 idea-plugin/.*
+idea-plugin/.gradle
