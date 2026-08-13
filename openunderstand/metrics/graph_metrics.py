@@ -67,9 +67,12 @@ def count_decl_class(ent_model):
     entity = _entity(ent_model)
     if entity is None:
         return 0
-    declared = _declares(entity._id, "type")
-    if declared or "package" not in _visibility(entity):
-        return len(declared)
+    if "package" not in _visibility(entity):
+        return len(_declares(entity._id, "type"))
+    # A package's classes are the ones it *contains*. Preferring Define when it
+    # happened to be non-empty answered 1 for DataStructures.Bags where Contain
+    # gives Understand's 3: a file defines a class into the package, so Define
+    # only ever sees the one file this entity was created from.
     # Contain reaches the package's top-level classes; a class nested inside
     # one of them is declared by *it*, and Understand counts those too --
     # DataStructures.Bags holds Bag and Bag.ListIterator, and stopping at the

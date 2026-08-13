@@ -210,8 +210,13 @@ class EntityModel(Model):
                     or kind_family(row._kind_id) == incoming_family):
                 continue
             row_site = (row._line, row._column)
-            if all(incoming_site) and all(row_site) and incoming_site != row_site:
-                continue  # a different declaration of the same name: an overload
+            if (all(incoming_site) and all(row_site) and incoming_site != row_site
+                    and incoming_family == "method"):
+                # Only methods overload. Two locals sharing a long name are the
+                # same declaration seen twice -- `main.name` declared in two
+                # blocks -- and splitting them by position produced 155 of the
+                # duplicate rows the comparison reports.
+                continue
             match = row
             if not row_placeholder:
                 break  # prefer a row that already has a real kind

@@ -82,6 +82,39 @@ and so reads higher. Quote one or the other, never a mix.)
 - `CountOutput` 6% → 48% and `CountInput` 29% → 34%, both carried by the call
   resolution above.
 
+### Resolution of external names
+
+- **The JDK is now indexed rather than guessed at.**
+  `scripts/gen_jdk_index.py` generates `oudb/jdk_index.txt.gz` (3,957 types,
+  64 KB) from a local JDK; five hand-written tables of 208 entries are gone.
+  Coverage went from 61 `java.lang` names to all of them, 114 simple-name
+  mappings to 3,957, two known field types to 303 types' worth, seven
+  overridable interfaces to 740, and 24 final classes to 663.
+- **Type resolution follows javac's order** — explicit import, then scope and
+  package, then `java.lang`, then on-demand imports. A uniquely-named project
+  class in another package no longer shadows an imported JDK one.
+- **A lone `import x.y.*` no longer types a lowercase name.** The variable
+  `graph` was becoming `java.util.graph`, as a type parameter had become
+  `java.util.E`.
+
+### Also corrected
+
+- `new X(...)` emits the constructor call Understand reports alongside the
+  Create, and the constructor guard runs before the nondynamic modifiers test.
+- `a.b` records two references: the receiver's `Use Deref Partial` and the
+  member's `Java Use`, the latter previously absent — 1,513 references on
+  TheAlgorithms, 490 of them `System.out`.
+- `a[i]` is a `Use Deref Partial`, not a plain `Use`; this over-produced `Use`
+  and under-produced `Deref Partial` by the same 700 rows.
+- `Java Typed` keeps wildcard imports and handles for-each, catch clauses and
+  type parameters; `Java Set` handles static and indexed assignment targets.
+- Placeholder entities with no reference are dropped, as are Deref Partial
+  references onto a package qualifier — `org` in `org.evosuite...`.
+- `new int[n]` creates no entity, and only methods are split by declaration
+  position, halving duplicate entity rows.
+- `get_or_create` keeps a declared return type instead of discarding it, which
+  is what `CountOutput`'s non-void clause reads.
+
 ### Known gaps
 
 - `CountStmtExe` (56%), `CountLineCodeExe` (73%), `CountLineCodeDecl` (62%) —

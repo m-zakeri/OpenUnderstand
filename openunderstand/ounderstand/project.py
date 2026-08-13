@@ -48,6 +48,11 @@ def _use_cpp_engine():
     return _ENGINE
 
 
+#: A primitive names no entity, so it can be neither created nor referenced.
+PRIMITIVES = frozenset(
+    "int long short byte char float double boolean void".split())
+
+
 def resolved_longname(simple_name, fallback, scope_longname=""):
     """Long name for a simple name, preferring the project-wide index.
 
@@ -1226,6 +1231,11 @@ class Project:
                 # "StringBuilder", which merge_placeholder_entities() then
                 # folded into whatever project entity shared that name --
                 # Understand reports java.lang.StringBuilder.
+                # `new int[n]` creates an array of a primitive, which names no
+                # entity -- Understand reports no Java Create there, and this
+                # emitted one against an entity called `int`.
+                if ref_dict["refent"].split("<")[0].split("[")[0] in PRIMITIVES:
+                    continue
                 resolved = ref_dict.get("refent_longname")
                 if resolved:
                     ent = self.getClassEntity(resolved, file_address, file_ent)
