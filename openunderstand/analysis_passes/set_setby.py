@@ -94,7 +94,13 @@ class SetAndSetByListener(JavaParserLabeledListener):
             return                      # `a[i] = x`: no member is named
         receiver = target.children[0].getText()
         if not receiver.isidentifier():
-            return                      # a chained call or index, not a name
+            # `cursorSpace[os].next = x` sets a field of the *element*. The
+            # head is still a name this pass can resolve; anything else -- a
+            # chained call, a cast -- is not.
+            head = receiver.split("[")[0]
+            if "[" not in receiver or not head.isidentifier():
+                return
+            receiver = head
         member = target.children[2]
         if not hasattr(member, "symbol"):
             return                      # `a.foo() = ...` cannot occur, but be safe
@@ -118,8 +124,14 @@ class SetAndSetByListener(JavaParserLabeledListener):
 
         type_name = self.declared_type(receiver)
         if not type_name:
-            return None
-        return symbol_table.resolve_type(type_name, scope_longname)
+            # `ColumnarTranspositionCipher.keyword = x` -- the receiver is a
+            # *type*, so the field is a static one on that type. Understand
+            # reports these as an ordinary Java Set and this pass produced
+            # none of them.
+            return symbol_table.resolve_type(receiver, scope_longname)
+        # An array's element type is what carries the member.
+        return symbol_table.resolve_type(
+            type_name.split("[")[0], scope_longname)
 
     def add_set_by_entry(
         self, set_short_name, set_long_name, name_of_file, line, column, ctx,

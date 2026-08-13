@@ -546,6 +546,21 @@ class Project:
                         _longname=longname,
                         _contents="",
                     )
+            elif owner:
+                # No receiver, but the name was statically imported, so the
+                # call lands on the type that exported it rather than on the
+                # enclosing class: `import static Sorts.SortUtils.less` makes a
+                # bare `less(a, b)` a call to Sorts.SortUtils.less.
+                longname = f"{owner}.{name}"
+                ent = EntityModel.get_or_none(EntityModel._longname == longname)
+                if ent is None:
+                    ent, _ = EntityModel.get_or_create(
+                        _kind=kind_id("Java Unknown Method Member"),
+                        _name=name,
+                        _parent=file_ent,
+                        _longname=longname,
+                        _contents="",
+                    )
             else:
                 # No receiver: a call on the enclosing class.
                 ent = EntityModel.get_or_none(

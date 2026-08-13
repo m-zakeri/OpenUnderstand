@@ -31,6 +31,10 @@ class MethodCallListener(JavaParserLabeledListener):
         #: Explicitly imported types, by simple name, and the `x.y.*` packages.
         self.imports = {}
         self.wildcards = []
+        #: Statically imported member -> the type declaring it. A call with no
+        #: receiver may be one of these: TheAlgorithms statically imports
+        #: Sorts.SortUtils.less and calls `less(a, b)` bare, 32 times.
+        self.static_imports = {}
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         body = ctx.classBody()
@@ -45,7 +49,14 @@ class MethodCallListener(JavaParserLabeledListener):
 
     def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
         longname = ctx.qualifiedName().getText()
-        if ctx.getText().rstrip(";").endswith(".*"):
+        on_demand = ctx.getText().rstrip(";").endswith(".*")
+        if ctx.STATIC() is not None:
+            if not on_demand:
+                owner, _, member = longname.rpartition(".")
+                if owner:
+                    self.static_imports[member] = owner
+            return
+        if on_demand:
             self.wildcards.append(longname)
             return          # a package, not a type
         self.imports[longname.split(".")[-1]] = longname
@@ -76,10 +87,19 @@ class MethodCallListener(JavaParserLabeledListener):
         if not receiver:
             return None
         head, _, field = receiver.partition(".")
-        if not head.isidentifier() or (field and not field.isidentifier()):
+        if not head.isidentifier():
+            # `roundKeys[i - 1].remainder(...)` calls a method of the array's
+            # *element*; the head is still a name this pass can resolve.
+            indexed = head.split("[")[0]
+            if "[" not in head or not indexed.isidentifier():
+                return None
+            head = indexed
+        if field and not field.isidentifier():
             return None     # a chained call or an expression: naming it is a guess
 
         type_name = self.declared_type(head)
+        if type_name:
+            type_name = type_name.split("[")[0]
         owner = symbol_table.resolve_type_name(
             # No declared type means the receiver is not a variable in scope,
             # so read it as the type itself: `Math.abs(x)`, `Arrays.sort(a)`.
@@ -114,7 +134,11 @@ class MethodCallListener(JavaParserLabeledListener):
             # resolved project-wide and `entry.getValue()` on a Map.Entry
             # became a call to org.json.CDL.getValue, the only getValue the
             # project declares.
-            "owner_longname": self.owner_longname(receiver, scope_longname),
+            # A bare call may be a statically imported member rather than one
+            # of the enclosing class's own.
+            "owner_longname": (self.owner_longname(receiver, scope_longname)
+                               if receiver
+                               else self.static_imports.get(identifier.getText())),
             "scope_longname": scope_longname,
             "line": identifier.symbol.line,
             "col": identifier.symbol.column,

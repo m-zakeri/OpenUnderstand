@@ -22,6 +22,7 @@ from fnmatch import fnmatch
 
 from antlr4 import FileStream
 
+from openunderstand.oudb import jdk_index
 from openunderstand.utils import antler_parser
 
 
@@ -63,7 +64,8 @@ class _DeclarationIndex:
             self.types.setdefault(simple_name, set()).add(longname)
 
     @staticmethod
-    def _closest(candidates, simple_name: str, scope_longname: str) -> str | None:
+    def _closest(candidates, simple_name: str, scope_longname: str,
+                 local_only: bool = False) -> str | None:
         """The candidate an asking scope would bind, or None when ambiguous.
 
         Innermost scope first, the way Java resolves: a declaration in the
@@ -85,13 +87,20 @@ class _DeclarationIndex:
             if candidate in candidates:
                 return candidate
             scope = scope.rsplit(".", 1)[0] if "." in scope else ""
-        if len(candidates) == 1:
-            return next(iter(candidates))
         package = scope_longname.rsplit(".", 1)[0] if scope_longname else ""
         if package:
             local = [c for c in candidates if c.startswith(package + ".")]
             if len(local) == 1:
                 return local[0]
+        if local_only:
+            # Java makes a type in another package visible only through an
+            # import. Letting a globally unique project class win regardless
+            # bound `new HashMap<>()` in Conversions to the project's own
+            # DataStructures.HashMap.Hashing.HashMap rather than to
+            # java.util.HashMap, which the file wildcard-imports.
+            return None
+        if len(candidates) == 1:
+            return next(iter(candidates))
         return None
 
     def resolve(self, simple_name: str, scope_longname: str = "") -> str | None:
@@ -99,10 +108,11 @@ class _DeclarationIndex:
         return self._closest(
             self.by_simple_name.get(simple_name), simple_name, scope_longname)
 
-    def resolve_type(self, simple_name: str, scope_longname: str = "") -> str | None:
+    def resolve_type(self, simple_name: str, scope_longname: str = "",
+                     local_only: bool = False) -> str | None:
         """Long name for a *type's* simple name, or None when it is ambiguous."""
         return self._closest(
-            self.types.get(simple_name), simple_name, scope_longname)
+            self.types.get(simple_name), simple_name, scope_longname, local_only)
 
     def declares(self, type_longname: str, member: str) -> bool:
         return f"{type_longname}.{member}" in self.by_simple_name.get(member, ())
@@ -182,126 +192,92 @@ class _DeclarationIndex:
 #: Populated by build(); read by the passes through resolve().
 INDEX = _DeclarationIndex()
 
-#: java.lang is imported implicitly, so a bare `Integer` or `Character` carries
-#: no import to resolve it against and is declared nowhere in the project. Only
-#: the names that actually turn up are listed -- this is a lookup table, not a
-#: model of the JDK.
-#: ponytail: a name outside this set, outside the imports and outside the
-#: project is left unresolved rather than guessed. Widen it if parity shows a
-#: type being missed.
+#: Names java.lang declares, which every file imports implicitly. Derived from
+#: the generated JDK index rather than listed by hand -- the hand-written set
+#: had 61 names and missed whatever no benchmark had yet used.
 JAVA_LANG_TYPES = frozenset(
-    """Appendable AutoCloseable Boolean Byte CharSequence Character Class
-    ClassLoader Cloneable Comparable Deprecated Double Enum Error Exception
-    Float FunctionalInterface Integer Iterable Long Math Number Object Override
-    Package Process Readable Runnable Runtime SafeVarargs Short String
-    StringBuffer StringBuilder SuppressWarnings System Thread Throwable
-    Void
-
-    ArithmeticException ArrayIndexOutOfBoundsException ArrayStoreException
-    ClassCastException ClassNotFoundException CloneNotSupportedException
-    IllegalAccessException IllegalArgumentException IllegalStateException
-    IndexOutOfBoundsException InterruptedException NegativeArraySizeException
-    NoSuchFieldException NoSuchMethodException NullPointerException
-    NumberFormatException OutOfMemoryError RuntimeException StackOverflowError
-    StringIndexOutOfBoundsException UnsupportedOperationException
-    AssertionError""".split()
+    name for name, longnames in jdk_index._load()["by_simple"].items()
+    if any(l.rsplit(".", 1)[0] == "java.lang" for l in longnames)
 )
 
-#: Simple name -> the JDK package declaring it, for types a file reaches
-#: through `import x.y.*`.
-#:
-#: Only consulted when the file wildcard-imports that exact package and the
-#: lone-wildcard rule cannot choose, so this narrows candidates the source
-#: already asked for -- it never introduces a package the file does not import.
-#:
-#: ponytail: a lookup table covering what the benchmarks construct, not a model
-#: of the JDK. `Timer` is deliberately absent: java.util and javax.swing both
-#: declare one and only the file's explicit imports can say which.
-JDK_TYPE_PACKAGES = {
-    **{n: "java.util" for n in """ArrayList Arrays ArrayDeque BitSet Calendar
-        Collection Collections Comparator Date Deque EmptyStackException
-        HashMap HashSet Hashtable IdentityHashMap InputMismatchException
-        Iterator LinkedHashMap LinkedHashSet LinkedList List ListIterator Map
-        NavigableMap NavigableSet NoSuchElementException Objects Optional
-        PriorityQueue Queue Random Scanner Set SortedMap SortedSet Stack
-        StringJoiner StringTokenizer TreeMap TreeSet UUID Vector""".split()},
-    **{n: "java.io" for n in """BufferedReader BufferedWriter File
-        FileInputStream FileNotFoundException FileOutputStream FileReader
-        FileWriter IOException InputStream InputStreamReader OutputStream
-        OutputStreamWriter PrintStream PrintWriter Reader Serializable
-        Writer""".split()},
-    **{n: "java.awt" for n in """BorderLayout Color Component Container
-        Dimension FlowLayout Font Frame Graphics Graphics2D GridLayout Image
-        Insets Point Polygon Rectangle Toolkit Window""".split()},
-    **{n: "java.awt.event" for n in """ActionEvent ActionListener KeyAdapter
-        KeyEvent KeyListener MouseAdapter MouseEvent MouseListener
-        WindowAdapter WindowEvent WindowListener""".split()},
-    **{n: "javax.swing" for n in """BorderFactory ImageIcon JButton
-        JComponent JFrame JLabel JOptionPane JPanel JScrollPane JTextArea
-        JTextField SwingUtilities""".split()},
-    **{n: "java.math" for n in "BigDecimal BigInteger".split()},
-    **{n: "java.util.stream" for n in "Collectors IntStream Stream".split()},
-    **{n: "java.util.function" for n in """BiFunction Consumer Function
-        Predicate Supplier""".split()},
-    **{n: "java.text" for n in """DecimalFormat NumberFormat
-        SimpleDateFormat""".split()},
-}
 
-#: Declared type of well-known JDK fields, keyed by (owning type, field).
-#:
-#: Understand resolves a field access to the field's *declared* type and
-#: couples to that as well as to the owner, so `System.out.println(...)` gives
-#: both java.lang.System and java.io.PrintStream. Reproducing that in general
-#: needs a model of the JDK's members, which this project has no access to;
-#: these are the ones that actually occur. On TheAlgorithms, System.out alone
-#: accounts for 144 of Understand's 1182 couples.
-#:
-#: ponytail: a hand-written table, so it covers exactly what is listed and
-#: nothing else. System.in is deliberately absent -- no file in either
-#: benchmark uses it, so there is no measurement to say whether Understand
-#: couples it, and a guess here would be indistinguishable from a fix.
-JDK_FIELD_TYPES = {
-    ("java.lang.System", "out"): "java.io.PrintStream",
-    ("java.lang.System", "err"): "java.io.PrintStream",
-}
+def _jdk_package(name):
+    """Package declaring a JDK simple name, when exactly one does."""
+    return jdk_index.package_of(name)
 
-#: Overridable members of the JDK supertypes, as member -> parameter count.
-#:
-#: Most overrides in a real project are of JDK types, not of project ones: 15
-#: of JSON's 15 and 34 of TheAlgorithms' 47. Understand indexes the whole Java
-#: library and can see java.lang.Object.toString; this project cannot, and
-#: CLAUDE.md is right that matching on the method *name* alone would claim an
-#: override of every same-named method anywhere. Matching a name **and its
-#: parameter count** against a supertype the class explicitly names is a
-#: different question, and one the parse tree can answer.
-#:
-#: java.lang.Object is the exception that needs no `implements`: every class
-#: extends it, so its five overridable members are always in scope. The rest
-#: apply only where the class names them.
-#:
-#: ponytail: a hand-written table of the core language and collection
-#: contracts. It is not a model of the JDK -- java.awt.event.ActionListener and
-#: java.awt.Window are deliberately absent, so TheAlgorithms' six AWT overrides
-#: stay unreported rather than pull the whole AWT hierarchy in behind them.
-#: Add an interface here when parity shows one being missed.
-JDK_OVERRIDABLE = {
-    "java.lang.Object": {
-        "toString": 0, "hashCode": 0, "equals": 1, "clone": 0, "finalize": 0,
-    },
-    "java.lang.Iterable": {"iterator": 0, "forEach": 1, "spliterator": 0},
-    "java.lang.Runnable": {"run": 0},
-    "java.lang.Comparable": {"compareTo": 1},
-    "java.util.Iterator": {
-        "hasNext": 0, "next": 0, "remove": 0, "forEachRemaining": 1,
-    },
-    "java.util.Comparator": {"compare": 2},
-    "java.awt.event.ActionListener": {"actionPerformed": 1},
-}
 
-#: Simple name -> long name, for the supertypes named in JDK_OVERRIDABLE.
-JDK_OVERRIDABLE_BY_SIMPLE_NAME = {
-    longname.rsplit(".", 1)[-1]: longname for longname in JDK_OVERRIDABLE
-}
+class _PackageTable(dict):
+    """Simple name -> package, answered from the JDK index on demand.
+
+    Kept as a mapping because the passes read it like one; nothing is
+    materialised, so widening the index widens this with it.
+    """
+
+    def get(self, name, default=None):
+        return _jdk_package(name) or default
+
+    def __contains__(self, name):
+        return _jdk_package(name) is not None
+
+    def __getitem__(self, name):
+        found = _jdk_package(name)
+        if found is None:
+            raise KeyError(name)
+        return found
+
+
+#: Simple name -> the JDK package declaring it.
+JDK_TYPE_PACKAGES = _PackageTable()
+
+
+class _FieldTable(dict):
+    """(owning type, field) -> the field's declared type, from the JDK index.
+
+    `System.out` is a java.io.PrintStream, and Understand attributes a call on
+    it to PrintStream rather than to System. The hand-written version knew
+    System.out and System.err and nothing else; this knows 303 types' fields.
+    """
+
+    def get(self, key, default=None):
+        owner, field = key
+        return jdk_index.field_type(owner, field) or default
+
+    def __contains__(self, key):
+        return self.get(key) is not None
+
+
+JDK_FIELD_TYPES = _FieldTable()
+
+
+class _OverridableTable(dict):
+    """JDK type -> {member: parameter count}, for override attribution.
+
+    Every interface in the index, not the seven that were listed by hand --
+    which is what left java.awt.Window.paint and the AWT listeners unreported.
+    """
+
+    def get(self, longname, default=None):
+        return jdk_index.members(longname) or default
+
+    def __getitem__(self, longname):
+        return jdk_index.members(longname)
+
+    def __contains__(self, longname):
+        return bool(jdk_index.members(longname))
+
+
+JDK_OVERRIDABLE = _OverridableTable()
+
+
+class _OverridableBySimpleName(dict):
+    """Simple name -> long name, for a supertype named in `implements`."""
+
+    def get(self, name, default=None):
+        longname = jdk_index.resolve_simple(name)
+        return longname if longname and jdk_index.members(longname) else default
+
+
+JDK_OVERRIDABLE_BY_SIMPLE_NAME = _OverridableBySimpleName()
 
 
 def parameter_types(ctx) -> tuple:
@@ -452,12 +428,20 @@ def resolve_type_name(name, imports=None, wildcards=None, scope_longname=""):
         return imports[name]
     if "." in name:
         return name
-    in_project = resolve_type(name, scope_longname)
-    if in_project:
-        return in_project
+    # A type in the asking scope or its own package, which outranks any
+    # on-demand import. A project type in *another* package is not visible
+    # without an explicit import, so it is left until after the wildcards.
+    in_scope = resolve_type(name, scope_longname, local_only=True)
+    if in_scope:
+        return in_scope
     if name in JAVA_LANG_TYPES:
         return "java.lang." + name
-    if wildcards and len(wildcards) == 1:
+    if wildcards and len(wildcards) == 1 and name[:1].isupper():
+        # Only a name that could *be* a type. A lone `import java.util.*` was
+        # turning any unresolved lowercase identifier into a type long name --
+        # the variable `graph` became java.util.graph and carried 12 wrong
+        # Callby rows with it, the same shape as the type parameter that
+        # became java.util.E.
         return wildcards[0] + "." + name
     # More than one `import x.y.*` and the lone-wildcard rule above cannot
     # choose. Hanoi.java wildcard-imports java.awt, java.awt.event, java.util
@@ -465,10 +449,16 @@ def resolve_type_name(name, imports=None, wildcards=None, scope_longname=""):
     # 143 of TheAlgorithms' Java Create rows. The package is only accepted when
     # the file actually imports it, so this decides between candidates the file
     # already asked for rather than inventing one.
-    package = JDK_TYPE_PACKAGES.get(name)
-    if package and wildcards and package in wildcards:
-        return package + "." + name
-    return None
+    # The JDK index settles a name the file wildcard-imports, and settles it
+    # against every package offered rather than one at a time.
+    from_jdk = jdk_index.resolve_simple(name, tuple(wildcards or ()))
+    if from_jdk:
+        return from_jdk
+    # Last: a uniquely named project type in some other package. Understand
+    # resolves plenty of these -- a file that uses one usually imports it, and
+    # that was handled at the top -- but preferring it over an on-demand import
+    # is what shadowed java.util.HashMap.
+    return resolve_type(name, scope_longname)
 
 
 def declaring_type(type_longname: str, member: str) -> str | None:
@@ -476,7 +466,8 @@ def declaring_type(type_longname: str, member: str) -> str | None:
     return INDEX.declaring_type(type_longname, member)
 
 
-def resolve_type(simple_name: str, scope_longname: str = "") -> str | None:
+def resolve_type(simple_name: str, scope_longname: str = "",
+                 local_only: bool = False) -> str | None:
     """Long name for a *type's* simple name, or None if none resolves.
 
     resolve() searches every declaration, so a variable named `value` and a
@@ -488,7 +479,7 @@ def resolve_type(simple_name: str, scope_longname: str = "") -> str | None:
     whichever was indexed first rather than the one in the caller's own
     package, and the reference is attributed to the wrong class.
     """
-    return INDEX.resolve_type(simple_name, scope_longname)
+    return INDEX.resolve_type(simple_name, scope_longname, local_only)
 
 
 def _java_files(root: str):

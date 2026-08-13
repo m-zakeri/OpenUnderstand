@@ -19,6 +19,7 @@ Understand emits no Typed for a primitive or for `void`; those were
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 import openunderstand.analysis_passes.class_properties as class_properties
+from openunderstand.analysis_passes.cast_cast_by import _declaring_generic
 
 
 #: A declaration of one of these is not a reference to anything.
@@ -30,6 +31,7 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
     def __init__(self):
         self.package_name = ""
         self.imports = {}
+        self.wildcards = []
         self.typedBy = []
 
     @property
@@ -44,7 +46,11 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
     def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
         longname = ctx.qualifiedName().getText()
         if ctx.getText().rstrip(";").endswith(".*"):
-            return          # a package, not a type
+            # Kept, not discarded. `import java.util.*` is how TheAlgorithms
+            # reaches Scanner, Map and HashMap, and dropping it left 273
+            # Java Typed references unresolved.
+            self.wildcards.append(longname)
+            return
         self.imports[longname.split(".")[-1]] = longname
 
     # ---------------------------------------------------------------- helpers
@@ -55,19 +61,12 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
 
         if not name or name in PRIMITIVES:
             return None
-        if name in self.imports:
-            return self.imports[name]
-        if "." in name:
-            return name
-        in_project = symbol_table.resolve_type(name, scope_longname)
-        if in_project:
-            return in_project
-        if name in symbol_table.JAVA_LANG_TYPES:
-            return "java.lang." + name
-        # Neither declared, imported nor implicitly available. Understand names
-        # it from the JDK it indexes; this project cannot, and a package-glued
-        # guess is what produced org.json.String.
-        return None
+        # The shared ladder: imports, then already-qualified, then the project,
+        # then java.lang, then a package the file wildcard-imports. Refusing
+        # beats guessing -- a package-glued guess is what produced
+        # org.json.String.
+        return symbol_table.resolve_type_name(
+            name, self.imports, self.wildcards, scope_longname)
 
     def record(self, ctx, declared_name, type_ctx):
         """Record `declared_name is of type_ctx`, positioned on the type."""
@@ -83,7 +82,15 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
         # Generic arguments are their own reference kind (Typed
         # GenericArgument); the raw type is what Typed points at.
         type_name = type_ctx.getText().split("<")[0].split("[")[0]
-        type_longname = self.resolve_type(type_name, enclosing)
+        # A type parameter is declared by the method or class it belongs to,
+        # and must be resolved before the import ladder: with `import
+        # java.util.*` the lone-wildcard rule turned DynamicArray's `E` into
+        # java.util.E.
+        declaring = _declaring_generic(ctx, type_name)
+        if declaring:
+            type_longname = f"{declaring}.{type_name}"
+        else:
+            type_longname = self.resolve_type(type_name, enclosing)
         if type_longname is None:
             return
         token = type_ctx.start
@@ -121,6 +128,28 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
         identifier = ctx.variableDeclaratorId()
         if identifier is not None:
             self.record(ctx, identifier.getText().split("[")[0], ctx.typeType())
+
+    def enterEnhancedForControl(
+        self, ctx: JavaParserLabeled.EnhancedForControlContext
+    ):
+        """`for (Object item : table)` types item, exactly as a local does."""
+        identifier = ctx.variableDeclaratorId()
+        if identifier is not None:
+            self.record(ctx, identifier.getText().split("[")[0], ctx.typeType())
+
+    def enterCatchClause(self, ctx: JavaParserLabeled.CatchClauseContext):
+        """`catch (InputMismatchException e)` types e.
+
+        The caught type is a qualifiedName rather than a typeType, which is
+        why this needed its own handler; a multi-catch names several, and
+        Understand types the variable by each of them.
+        """
+        identifier = ctx.IDENTIFIER()
+        caught = ctx.catchType()
+        if identifier is None or caught is None:
+            return
+        for qualified in caught.qualifiedName():
+            self.record(ctx, identifier.getText(), qualified)
 
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         """A method is typed by its return type."""

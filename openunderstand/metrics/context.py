@@ -237,6 +237,22 @@ _EXECUTABLE = tuple(
 )
 
 
+#: Contexts that make an initialiser *do* something rather than copy a value.
+_INVOKING = ("MethodCall", "Creator", "CreatedName")
+
+
+def _initialiser_invokes(ctx):
+    """Whether a declaration's initialiser calls or constructs anything."""
+    stack = [ctx]
+    while stack:
+        node = stack.pop()
+        if type(node).__name__.startswith(_INVOKING):
+            return True
+        stack.extend(c for c in (getattr(node, "children", None) or ())
+                     if hasattr(c, "getRuleIndex"))
+    return False
+
+
 class _StatementClassifier:
     """Splits an entity's statements and code lines into declarative and executable."""
 
@@ -258,17 +274,35 @@ class _StatementClassifier:
         if name in _DECLARATIVE:
             self.statements += 1
             self.decl_statements += 1
-            self._add_signature_lines(ctx, self.decl_lines)
+            # `for (int i = 0; ...)` declares i, but the line belongs to the
+            # loop: Understand counts validForBase at 7 declarative lines and
+            # the eighth this produced was the `for`. Every counted loop with
+            # an init declaration added one.
+            if not type(ctx.parentCtx).__name__.startswith("ForInit"):
+                self._add_signature_lines(ctx, self.decl_lines)
             if name == "LocalVariableDeclarationContext" and _has_initialiser(ctx):
-                # `int x = f();` both declares and executes.
-                self.exe_statements += 1
+                # The line carries executable code either way -- CycleSort's
+                # `T temp = item;` is one of that method's four
+                # CountLineCodeExe lines.
                 if ctx.start is not None:
                     self.exe_lines.add(ctx.start.line)
+                # Whether it is also an executable *statement* depends on what
+                # the initialiser does. `T temp = item;` is not one and
+                # `int comp = key.compareTo(...)` is: BinarySearch.search
+                # declares both and Understand counts exactly one of them.
+                if _initialiser_invokes(ctx):
+                    self.exe_statements += 1
         elif name in _EXECUTABLE:
             self.statements += 1
             self.exe_statements += 1
             if ctx.start is not None:
                 self.exe_lines.add(ctx.start.line)
+        elif name == "Statement0Context" and ctx.start is not None:
+            # A bare block is not a statement Understand counts, but the line
+            # it opens on carries executable code: `} else {` is the ninth of
+            # BinarySearch.search's nine CountLineCodeExe lines and the only
+            # one this missed.
+            self.exe_lines.add(ctx.start.line)
         for child in getattr(ctx, "children", None) or ():
             if hasattr(child, "getRuleIndex"):
                 self.visit(child)

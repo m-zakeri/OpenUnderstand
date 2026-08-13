@@ -15,23 +15,23 @@ is one kind, not five attributes.
 
 | Kind | Produced |
 | --- | --- |
-| `Java Abstract Class Type Default Member` | — |
-| `Java Abstract Class Type Private Member` | — |
-| `Java Abstract Class Type Protected Member` | — |
-| `Java Abstract Class Type Public Member` | — |
+| `Java Abstract Class Type Default Member` | yes |
+| `Java Abstract Class Type Private Member` | yes |
+| `Java Abstract Class Type Protected Member` | yes |
+| `Java Abstract Class Type Public Member` | yes |
 | `Java Abstract Enum Type Default Member` | — |
 | `Java Abstract Enum Type Private Member` | — |
 | `Java Abstract Enum Type Protected Member` | — |
 | `Java Abstract Enum Type Public Member` | — |
-| `Java Abstract Generic Class Type Default Member` | — |
+| `Java Abstract Generic Class Type Default Member` | yes |
 | `Java Abstract Generic Class Type Private Member` | — |
 | `Java Abstract Generic Class Type Protected Member` | — |
-| `Java Abstract Generic Class Type Public Member` | — |
+| `Java Abstract Generic Class Type Public Member` | yes |
 | `Java Abstract Generic Method Default Member` | — |
 | `Java Abstract Generic Method Protected Member` | — |
-| `Java Abstract Generic Method Public Member` | — |
-| `Java Abstract Method Default Member` | — |
-| `Java Abstract Method Protected Member` | — |
+| `Java Abstract Generic Method Public Member` | yes |
+| `Java Abstract Method Default Member` | yes |
+| `Java Abstract Method Protected Member` | yes |
 | `Java Abstract Method Public Member` | yes |
 | `Java Annotation Interface Type Default` | — |
 | `Java Annotation Interface Type Private` | — |
@@ -43,33 +43,33 @@ is one kind, not five attributes.
 | `Java Class Type Anonymous Member` | — |
 | `Java Class Type Default Member` | yes |
 | `Java Class Type Private Member` | yes |
-| `Java Class Type Protected Member` | — |
+| `Java Class Type Protected Member` | yes |
 | `Java Class Type Public Member` | yes |
-| `Java Enum Class Type Default Member` | — |
-| `Java Enum Class Type Private Member` | — |
+| `Java Enum Class Type Default Member` | yes |
+| `Java Enum Class Type Private Member` | yes |
 | `Java Enum Class Type Protected Member` | — |
-| `Java Enum Class Type Public Member` | — |
+| `Java Enum Class Type Public Member` | yes |
 | `Java File` | yes |
 | `Java File Jar` | — |
-| `Java Final Class Type Default Member` | — |
-| `Java Final Class Type Private Member` | — |
-| `Java Final Class Type Protected Member` | — |
-| `Java Final Class Type Public Member` | — |
+| `Java Final Class Type Default Member` | yes |
+| `Java Final Class Type Private Member` | yes |
+| `Java Final Class Type Protected Member` | yes |
+| `Java Final Class Type Public Member` | yes |
 | `Java Final Generic Class Type Default Member` | — |
 | `Java Final Generic Class Type Private Member` | — |
 | `Java Final Generic Class Type Protected Member` | — |
 | `Java Final Generic Class Type Public Member` | — |
 | `Java Final Generic Method Protected Member` | — |
 | `Java Final Generic Method Public Member` | — |
-| `Java Final Method Default Member` | — |
-| `Java Final Method Private Member` | — |
+| `Java Final Method Default Member` | yes |
+| `Java Final Method Private Member` | yes |
 | `Java Final Method Protected Member` | yes |
-| `Java Final Method Public Member` | — |
+| `Java Final Method Public Member` | yes |
 | `Java Final Parameter` | yes |
-| `Java Final Variable Default Member` | — |
+| `Java Final Variable Default Member` | yes |
 | `Java Final Variable Local` | yes |
 | `Java Final Variable Private Member` | yes |
-| `Java Final Variable Protected Member` | — |
+| `Java Final Variable Protected Member` | yes |
 | `Java Final Variable Public Member` | yes |
 | `Java Framework` | — |
 | `Java Generic Class Type Default Member` | yes |
@@ -83,8 +83,8 @@ is one kind, not five attributes.
 | `Java Generic Interface Type Protected` | — |
 | `Java Generic Interface Type Public` | yes |
 | `Java Generic Method Default Member` | — |
-| `Java Generic Method Private Member` | — |
-| `Java Generic Method Protected Member` | — |
+| `Java Generic Method Private Member` | yes |
+| `Java Generic Method Protected Member` | yes |
 | `Java Generic Method Public Member` | yes |
 | `Java Generic Record Class Type Default Member` | — |
 | `Java Generic Record Class Type Private Member` | — |
@@ -93,9 +93,9 @@ is one kind, not five attributes.
 | `Java GenericParameter Type` | yes |
 | `Java Implicit Final Variable Public Member` | — |
 | `Java Implicit Method Public Member` | — |
-| `Java Interface Type Default` | — |
-| `Java Interface Type Private` | — |
-| `Java Interface Type Protected` | — |
+| `Java Interface Type Default` | yes |
+| `Java Interface Type Private` | yes |
+| `Java Interface Type Protected` | yes |
 | `Java Interface Type Public` | yes |
 | `Java Method Constructor Member Default` | yes |
 | `Java Method Constructor Member Private` | yes |
@@ -143,22 +143,22 @@ is one kind, not five attributes.
 | `Java Spring Embeddable Table` | — |
 | `Java Spring Mappedsuperclass Table` | — |
 | `Java Spring Table` | — |
-| `Java Static Abstract Class Type Default Member` | — |
-| `Java Static Abstract Class Type Private Member` | — |
+| `Java Static Abstract Class Type Default Member` | yes |
+| `Java Static Abstract Class Type Private Member` | yes |
 | `Java Static Abstract Class Type Protected Member` | — |
-| `Java Static Abstract Class Type Public Member` | — |
+| `Java Static Abstract Class Type Public Member` | yes |
 | `Java Static Abstract Generic Class Type Default Member` | — |
 | `Java Static Abstract Generic Class Type Private Member` | — |
 | `Java Static Abstract Generic Class Type Protected Member` | — |
 | `Java Static Abstract Generic Class Type Public Member` | — |
-| `Java Static Class Type Default Member` | — |
+| `Java Static Class Type Default Member` | yes |
 | `Java Static Class Type Private Member` | yes |
-| `Java Static Class Type Protected Member` | — |
+| `Java Static Class Type Protected Member` | yes |
 | `Java Static Class Type Public Member` | yes |
-| `Java Static Final Class Type Default Member` | — |
+| `Java Static Final Class Type Default Member` | yes |
 | `Java Static Final Class Type Private Member` | yes |
-| `Java Static Final Class Type Protected Member` | — |
-| `Java Static Final Class Type Public Member` | — |
+| `Java Static Final Class Type Protected Member` | yes |
+| `Java Static Final Class Type Public Member` | yes |
 | `Java Static Final Generic Class Type Default Member` | — |
 | `Java Static Final Generic Class Type Private Member` | — |
 | `Java Static Final Generic Class Type Protected Member` | — |
@@ -166,23 +166,23 @@ is one kind, not five attributes.
 | `Java Static Final Generic Method Default Member` | — |
 | `Java Static Final Generic Method Private Member` | — |
 | `Java Static Final Generic Method Protected Member` | — |
-| `Java Static Final Generic Method Public Member` | — |
+| `Java Static Final Generic Method Public Member` | yes |
 | `Java Static Final Method Default Member` | yes |
-| `Java Static Final Method Private Member` | — |
-| `Java Static Final Method Protected Member` | — |
-| `Java Static Final Method Public Member` | — |
+| `Java Static Final Method Private Member` | yes |
+| `Java Static Final Method Protected Member` | yes |
+| `Java Static Final Method Public Member` | yes |
 | `Java Static Final Variable Default Member` | yes |
 | `Java Static Final Variable Private Member` | yes |
-| `Java Static Final Variable Protected Member` | — |
+| `Java Static Final Variable Protected Member` | yes |
 | `Java Static Final Variable Public Member` | yes |
-| `Java Static Generic Class Type Default Member` | — |
+| `Java Static Generic Class Type Default Member` | yes |
 | `Java Static Generic Class Type Private Member` | yes |
 | `Java Static Generic Class Type Protected Member` | — |
 | `Java Static Generic Class Type Public Member` | — |
-| `Java Static Generic Method Default Member` | — |
+| `Java Static Generic Method Default Member` | yes |
 | `Java Static Generic Method Private Member` | yes |
 | `Java Static Generic Method Protected Member` | — |
-| `Java Static Generic Method Public Member` | — |
+| `Java Static Generic Method Public Member` | yes |
 | `Java Static Generic Record Class Type Default Member` | — |
 | `Java Static Generic Record Class Type Protected Member` | — |
 | `Java Static Generic Record Class Type Public Member` | — |
@@ -212,9 +212,9 @@ is one kind, not five attributes.
 | `Java Static Sealed Generic Class Type Private Member` | — |
 | `Java Static Sealed Generic Class Type Protected Member` | — |
 | `Java Static Sealed Generic Class Type Public Member` | — |
-| `Java Static Variable Default Member` | — |
+| `Java Static Variable Default Member` | yes |
 | `Java Static Variable Private Member` | yes |
-| `Java Static Variable Protected Member` | — |
+| `Java Static Variable Protected Member` | yes |
 | `Java Static Variable Public Member` | yes |
 | `Java Unknown Annotation Interface Type Member` | — |
 | `Java Unknown Class Type Member` | yes |
@@ -247,7 +247,7 @@ is one kind, not five attributes.
 | `Java Unresolved Type` | — |
 | `Java Unresolved Variable` | — |
 | `Java Variable Default Member` | yes |
-| `Java Variable EnumConstant Public Member` | — |
+| `Java Variable EnumConstant Public Member` | yes |
 | `Java Variable Local` | yes |
 | `Java Variable Private Member` | yes |
 | `Java Variable Protected Member` | yes |
