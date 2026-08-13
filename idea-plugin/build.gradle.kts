@@ -31,6 +31,10 @@ tasks.processResources {
     from("../scripts/idea_metrics.py")
 }
 
+// Nothing here registers searchable settings, and the task starts a headless
+// IDE that fails while the sandbox one holds its lock.
+tasks.buildSearchableOptions { enabled = false }
+
 // `gradle runIde -PrunProject=/some/java/project` opens it in the sandbox IDE
 // instead of the empty welcome screen.
 tasks.runIde {

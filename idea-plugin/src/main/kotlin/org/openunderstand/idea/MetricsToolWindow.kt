@@ -1,9 +1,13 @@
 package org.openunderstand.idea
 
 import com.intellij.execution.configurations.GeneralCommandLine
+import com.intellij.execution.process.ProcessOutput
 import com.intellij.execution.util.ExecUtil
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.PathManager
+import com.intellij.openapi.fileChooser.FileChooserFactory
+import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
@@ -18,14 +22,18 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
 import com.intellij.ui.content.ContentFactory
 import java.awt.BorderLayout
-import java.io.File
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import java.io.File
 import javax.swing.JButton
 import javax.swing.JPanel
 import javax.swing.table.DefaultTableModel
+import javax.swing.table.TableModel
 
 private const val PYTHON_KEY = "openunderstand.python"
+
+private fun exec(vararg command: String): ProcessOutput =
+    ExecUtil.execAndGetOutput(GeneralCommandLine(*command))
 
 /**
  * Interpreter to run the dumper with: the one explicitly set, else an activated
@@ -47,6 +55,26 @@ private fun python(root: String): String {
     return candidates.firstOrNull { it.canExecute() }?.absolutePath ?: "python3"
 }
 
+private fun canAnalyse(python: String) =
+    try { exec(python, "-c", "import openunderstand").exitCode == 0 } catch (e: Exception) { false }
+
+/**
+ * Install the analyser into a virtualenv this plugin owns, and return its
+ * interpreter. A venv rather than `pip install --user` because a distro python
+ * is externally managed (PEP 668) and refuses to install into itself.
+ */
+private fun bootstrap(base: String): Pair<String?, String?> {
+    val dir = File(PathManager.getSystemPath(), "openunderstand-venv")
+    val interpreter = File(dir, "bin/python")
+    if (!interpreter.canExecute()) {
+        val made = exec(base, "-m", "venv", dir.absolutePath)
+        if (made.exitCode != 0) return null to "Could not create a virtualenv with `$base`:\n\n${made.stderr.take(2000)}"
+    }
+    val installed = exec(interpreter.absolutePath, "-m", "pip", "install", "--upgrade", "openunderstand")
+    if (installed.exitCode != 0) return null to "Could not install openunderstand:\n\n${installed.stderr.take(2000)}"
+    return interpreter.absolutePath to null
+}
+
 /** One row of `scripts/idea_metrics.py` output: `path:line: longname  K=V K=V`. */
 private data class Row(val file: String, val line: Int, val entity: String,
                        val metrics: Map<String, String>)
@@ -62,13 +90,30 @@ private fun parse(output: String): List<Row> = output.lineSequence().mapNotNull 
     Row(m.groupValues[1], m.groupValues[2].toInt(), m.groupValues[3], metrics)
 }.toList()
 
+/** RFC 4180: quote a field only when it contains a delimiter, quote or newline. */
+private fun cell(value: Any?): String {
+    val text = value?.toString() ?: ""
+    return if (text.any { it == ',' || it == '"' || it == '\n' || it == '\r' })
+        "\"" + text.replace("\"", "\"\"") + "\"" else text
+}
+
+private fun csv(model: TableModel): String = buildString {
+    (0 until model.columnCount).joinTo(this, ",") { cell(model.getColumnName(it)) }
+    append("\n")
+    for (row in 0 until model.rowCount) {
+        (0 until model.columnCount).joinTo(this, ",") { cell(model.getValueAt(row, it)) }
+        append("\n")
+    }
+}
+
 class MetricsToolWindow : ToolWindowFactory {
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val model = DefaultTableModel()
         val table = JBTable(model).apply { autoCreateRowSorter = true }
         val run = JButton("Analyse Project")
-        val python = JButton("Python…")
+        val export = JButton("Export CSV…")
+        val interpreter = JButton("Python…")
 
         table.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
@@ -80,10 +125,21 @@ class MetricsToolWindow : ToolWindowFactory {
             }
         })
 
-        python.addActionListener {
+        interpreter.addActionListener {
             Messages.showInputDialog(project, "Python interpreter with `openunderstand` installed:",
                 "OpenUnderstand", null, python(project.basePath ?: "."), null)
                 ?.let { PropertiesComponent.getInstance().setValue(PYTHON_KEY, it) }
+        }
+
+        export.addActionListener {
+            if (model.rowCount == 0) {
+                Messages.showInfoMessage(project, "Nothing to export yet.", "OpenUnderstand")
+                return@addActionListener
+            }
+            val descriptor = FileSaverDescriptor("Export Metrics", "Save the table as CSV", "csv")
+            FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
+                .save(null as com.intellij.openapi.vfs.VirtualFile?, "metrics.csv")
+                ?.file?.writeText(csv(model))
         }
 
         run.addActionListener {
@@ -104,7 +160,7 @@ class MetricsToolWindow : ToolWindowFactory {
         }
 
         val panel = JPanel(BorderLayout()).apply {
-            add(JPanel().apply { add(run); add(python) }, BorderLayout.NORTH)
+            add(JPanel().apply { add(run); add(export); add(interpreter) }, BorderLayout.NORTH)
             add(JBScrollPane(table), BorderLayout.CENTER)
         }
         toolWindow.contentManager.addContent(
@@ -128,17 +184,39 @@ class MetricsToolWindow : ToolWindowFactory {
                 var rows = emptyList<Row>()
                 var error: String? = null
                 try {
+                    var python = python(root)
+                    if (!canAnalyse(python)) {
+                        var install = false
+                        ApplicationManager.getApplication().invokeAndWait {
+                            install = Messages.showYesNoDialog(project,
+                                "`$python` cannot import openunderstand.\n\n" +
+                                    "Install it into a virtualenv for this IDE? " +
+                                    "This downloads the package from PyPI.",
+                                "OpenUnderstand", Messages.getQuestionIcon()) == Messages.YES
+                        }
+                        if (!install) {
+                            ApplicationManager.getApplication().invokeLater {
+                                done(rows, "No interpreter with openunderstand installed. " +
+                                    "Set one with the Python… button.")
+                            }
+                            return
+                        }
+                        indicator.text = "Installing openunderstand"
+                        val (installed, failure) = bootstrap(python)
+                        if (installed == null) {
+                            ApplicationManager.getApplication().invokeLater { done(rows, failure) }
+                            return
+                        }
+                        PropertiesComponent.getInstance().setValue(PYTHON_KEY, installed)
+                        python = installed
+                    }
+                    indicator.text = "Analysing $root"
                     val script = FileUtil.createTempFile("idea_metrics", ".py", true)
                     javaClass.getResourceAsStream("/idea_metrics.py")!!.use { it.copyTo(script.outputStream()) }
-                    val python = PropertiesComponent.getInstance().getValue(PYTHON_KEY, "python3")
-                    val out = ExecUtil.execAndGetOutput(
-                        GeneralCommandLine(python, "-W", "ignore", script.absolutePath, root))
+                    val out = exec(python, "-W", "ignore", script.absolutePath, root)
                     rows = parse(out.stdout)
                     if (rows.isEmpty()) {
-                        error = "No metrics produced (exit ${out.exitCode}).\n\n" +
-                            "Check that `$python -c \"import openunderstand\"` works; " +
-                            "install it with `pip install openunderstand`, then set the " +
-                            "interpreter with the Python… button.\n\n" + out.stderr.take(2000)
+                        error = "No metrics produced (exit ${out.exitCode}).\n\n" + out.stderr.take(2000)
                     }
                 } catch (e: Exception) {
                     error = e.message ?: e.toString()
