@@ -31,6 +31,15 @@ and so reads higher. Quote one or the other, never a mix.)
 
 ### Corrected
 
+- **A nested class was named for its package, not its outer class** —
+  `ClassTypeData.get_long_name()` built `package + "." + IDENTIFIER`, so
+  `Builder` inside `JSONPointer` was written as `org.json.Builder`, a second
+  entity for a class already recorded as `org.json.JSONPointer.Builder`. Entity
+  identity is (long name, kind family), so the two never merged. Each duplicate
+  carried `ctx.getText()` as its contents — source with the whitespace removed —
+  and any metric that reparsed one failed on input like
+  `classBuilder{publicBuilder(){}`. 9 such entities on org.json, now 1; entity
+  count 5196 → 5188 with references unchanged.
 - **`Java Use Cast` was produced by two passes at once** — `use_variants` and
   `cast_cast_by` — so every cast got two rows and every `(int) x` got one
   Understand has no counterpart for. 74 rows against its 10, 6.8% precision.
