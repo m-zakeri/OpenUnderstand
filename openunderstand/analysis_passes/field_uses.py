@@ -19,6 +19,14 @@ the same question:
 A member that is called rather than read is not a use -- `println` in
 `System.out.println(x)` is a `Java Call`, and the grammar separates them:
 `methodCall` is a different alternative of expression1 from `IDENTIFIER`.
+
+Every row this pass gets wrong sits at a position Understand does report --
+700 of them as `Use Deref Partial`, where `a.b.c` dereferences b rather than
+reading it. Relabelling those by whether the member is itself dereferenced was
+tried and measured worse: they did not match Understand's Deref Partial rows
+either, because its entity at that position is not the field this pass
+resolves. Recall fell 93.5% to 84.6% for 0.2 points of precision, so the plain
+`Java Use` stands until what Understand names there is established.
 """
 
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled

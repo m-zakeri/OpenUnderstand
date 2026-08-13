@@ -75,6 +75,31 @@ class UseVariantListener(JavaParserLabeledListener):
             return
         self._add("Java Use Deref Partial", text, ctx, receiver.start)
 
+    def enterExpression2(self, ctx: JavaParserLabeled.Expression2Context):
+        """`a[i]` dereferences a, exactly as `a.b` does.
+
+        Understand reports 712 of TheAlgorithms' 2909 Use Deref Partial
+        references on an indexed array -- the character after the identifier is
+        `[` rather than `.`. Producing a plain `Java Use` there instead was 700
+        of this project's wrong Use rows *and* most of what Deref Partial was
+        missing, the same rows counted twice.
+
+        An assignment target is a Set, not a Use: `arr[i] = v` is Understand's
+        Set Deref Partial and `arr[i] += v` its Modify Deref Partial, both
+        already produced elsewhere.
+        """
+        receiver = ctx.expression(0)
+        if receiver is None or type(receiver).__name__ != "Expression0Context":
+            return
+        text = receiver.getText()
+        if not text.isidentifier():
+            return
+        parent = ctx.parentCtx
+        if (type(parent).__name__ == "Expression21Context"
+                and parent.expression(0) is ctx):
+            return
+        self._add("Java Use Deref Partial", text, ctx, receiver.start)
+
     def enterStatement10(self, ctx: JavaParserLabeled.Statement10Context):
         expression = ctx.expression()
         if expression is None:
