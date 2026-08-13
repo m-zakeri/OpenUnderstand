@@ -181,3 +181,5 @@ scripts
 CLAUDE.md
 .DS_Store
 tests
+
+idea-plugin/.*
