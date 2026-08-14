@@ -1,14 +1,16 @@
 # OpenUnderstand IDEA plugin
 
 A **Java Metrics** tool window that runs OpenUnderstand over the open project
-and lists Cyclomatic, CountLine, MaxNesting, CountDeclMethod,
-PercentLackOfCohesion and CountClassCoupled per class and method. Sortable;
-double-click a row to jump to the declaration.
+and lists every metric OpenUnderstand implements — `Ent.metrics()`, around 70
+of Understand's names — per class and method. Sortable; double-click a row to
+jump to the declaration.
 
 The analyser is Python, so the plugin shells out to it — it does not bundle an
-interpreter. Users need Python 3.9+ with `pip install openunderstand`, and set
-the path with the **Python…** button. Unset, it uses `$VIRTUAL_ENV`, else the
-nearest `.venv/bin/python` at or above the analysed project, else `python3`.
+interpreter. It finds one itself (`$VIRTUAL_ENV`, else the nearest
+`.venv/bin/python` at or above the analysed project, else `python3`) and offers
+to install the bundled wheel into a virtualenv of its own when that interpreter
+cannot import `openunderstand`. The **Python…** button overrides the choice,
+which is what you need when there is no usable `python3` on `PATH`.
 
 Working from a source checkout, `pip install -e .` it: the plugin runs the
 script from a temp directory, so having the repo as your working directory is

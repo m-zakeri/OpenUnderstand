@@ -12,12 +12,8 @@ from openunderstand.metrics.AvgCyclomaticStrict import avg_cyclomatic_strict
 from openunderstand.metrics.AvgEssential import avg_essential
 from openunderstand.metrics.count_decl_class_method import declare_method_count
 from openunderstand.metrics.RatioCommentToCode import get_ratio_comment_to_code
-from openunderstand.metrics.PercentLackOfCohesionModified import (
-    get_percent_lack_of_cohesion_modified,
-)
 from openunderstand.metrics.count_stmt import statement_counter
 from openunderstand.metrics.count_stmt_decl import statement_counter_delc
-from openunderstand.metrics.PercentLackOfCohesion import get_percent_lack_of_cohesion
 from openunderstand.metrics.sum_cyclomatic_modified import get_sum_cyclomatic_modified
 from openunderstand.metrics.sum_cyclomatic_strict import get_sum_cyclomatic_strict
 from openunderstand.metrics.sumOfCyclomatics import get_sum_of_cyclomatics
@@ -1121,12 +1117,13 @@ class Ent:
                         graph_metrics.percent_lack_of_cohesion(self)}
                 )
             elif item == "PercentLackOfCohesionModified":
+                # The listener in metrics/PercentLackOfCohesionModified.py is
+                # the reparsing version that found no uses at all; this is the
+                # same reference-graph answer PercentLackOfCohesion already
+                # gives, with the accessor allowance the name promises.
                 metrics.update(
-                    {
-                        "PercentLackOfCohesionModified": get_percent_lack_of_cohesion_modified(
-                            self
-                        )
-                    }
+                    {"PercentLackOfCohesionModified":
+                        graph_metrics.percent_lack_of_cohesion(self, modified=True)}
                 )
             elif item == "RatioCommentToCode":
                 # Understand reports this to two decimal places as a string.

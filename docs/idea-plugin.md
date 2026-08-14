@@ -15,9 +15,14 @@ resource and runs with a Python interpreter it finds on the machine.
 | Export CSV… | Writes the table to a file, in analysis order |
 | Python… | Sets the interpreter, when the one found automatically is wrong |
 
+One column per metric `Ent.metrics()` reports — around 70 of Understand's
+names, whichever the library implements — so the table scrolls sideways.
 Columns are sortable, and double-clicking a row opens the declaration. Classes
 and methods are listed together, so class-only metrics such as
 `CountDeclMethod` and `PercentLackOfCohesion` read 0 on every method row.
+
+Passing metric names as arguments to `scripts/idea_metrics.py` narrows the set;
+the plugin passes none.
 
 ## The interpreter
 

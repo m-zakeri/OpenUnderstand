@@ -59,6 +59,10 @@ private fun python(root: String): String {
 private fun canAnalyse(python: String) =
     try { exec(python, "-c", "import openunderstand").exitCode == 0 } catch (e: Exception) { false }
 
+/** Whether this build carries the wheel, which decides where pip gets the package. */
+private val bundled: Boolean
+    get() = MetricsToolWindow::class.java.getResource("/openunderstand.whl") != null
+
 /** Copy a bundled resource to a temp file, or null when it was not bundled. */
 private fun unpack(resource: String, suffix: String): File? {
     val stream = MetricsToolWindow::class.java.getResourceAsStream(resource) ?: return null
@@ -150,7 +154,12 @@ class MetricsToolWindow : ToolWindowFactory {
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val model = DefaultTableModel()
-        val table = JBTable(model).apply { autoCreateRowSorter = true }
+        // AUTO_RESIZE_OFF: ~70 metric columns squeezed into the viewport width
+        // leaves each one a few pixels wide. Let the scroll pane scroll instead.
+        val table = JBTable(model).apply {
+            autoCreateRowSorter = true
+            autoResizeMode = JBTable.AUTO_RESIZE_OFF
+        }
         val run = JButton("Analyse Project")
         val export = JButton("Export CSV…")
         val interpreter = JButton("Python…")
@@ -166,7 +175,7 @@ class MetricsToolWindow : ToolWindowFactory {
         })
 
         interpreter.addActionListener {
-            Messages.showInputDialog(project, "Python interpreter with `openunderstand` installed:",
+            Messages.showInputDialog(project, "Python interpreter to run the analyser with:",
                 "OpenUnderstand", null, python(project.basePath ?: "."), null)
                 ?.let { PropertiesComponent.getInstance().setValue(PYTHON_KEY, it) }
         }
@@ -231,7 +240,8 @@ class MetricsToolWindow : ToolWindowFactory {
                             install = Messages.showYesNoDialog(project,
                                 "`$python` cannot import openunderstand.\n\n" +
                                     "Install it into a virtualenv for this IDE? " +
-                                    "This downloads the package from PyPI.",
+                                    (if (bundled) "The package ships with the plugin; its two dependencies come from PyPI."
+                                    else "This downloads the package and its dependencies from PyPI."),
                                 "OpenUnderstand", Messages.getQuestionIcon()) == Messages.YES
                         }
                         if (!install) {

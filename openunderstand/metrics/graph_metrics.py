@@ -133,23 +133,6 @@ def count_decl_instance_variable(ent_model, visibility=None):
 
 
 
-def count_class_base(ent_model):
-    """Ancestor classes, following Extend as far as the project can see."""
-    entity = _entity(ent_model)
-    if entity is None:
-        return 0
-    seen, pending = set(), [entity._id]
-    while pending:
-        current = pending.pop()
-        for parent in _targets(current, "Java Extend Couple"):
-            if parent._id not in seen:
-                seen.add(parent._id)
-                pending.append(parent._id)
-    # +1 for java.lang.Object, which Understand counts even though no JDK is
-    # analysed here -- the same adjustment MaxInheritanceTree needs.
-    return len(seen) + 1
-
-
 def count_class_derived(ent_model):
     """Classes that extend this one directly."""
     entity = _entity(ent_model)
@@ -160,22 +143,28 @@ def count_class_derived(ent_model):
 
 
 def count_decl_file(ent_model):
-    """Files that contribute declarations to this entity.
+    """Files this package is declared in -- Understand's "Number of files".
 
-    For a package that is the number of source files declaring into it, which
-    is what Understand reports; the previous implementation counted the
-    entity's own file and so answered 1 for every package.
+    Understand reports it for packages and nothing else, and it counts the
+    files carrying a `package p;` of their own, not the files below `p` in the
+    tree: `org.json` is 22 and its parent `org` is 0. That is exactly the
+    package's own `Definein` refs, one per file, which reproduces all 95 of
+    Understand's package values on the JSON benchmark.
+
+    Looking for `Java Define` scoped to the package instead answered 0 for
+    every package, because the define/definein pair a file's `package`
+    statement writes puts the *file* on the ent side, not the package.
     """
     entity = _entity(ent_model)
-    if entity is None:
+    if entity is None or kind_family(entity._kind_id) != "package":
         return 0
-    define = KindModel.get_or_none(_name="Java Define")
-    if define is None:
+    definein = KindModel.get_or_none(_name="Java Definein")
+    if definein is None:
         return 0
     return len({
         ref._file_id
         for ref in ReferenceModel.select().where(
-            (ReferenceModel._kind == define._id)
+            (ReferenceModel._kind == definein._id)
             & (ReferenceModel._scope == entity._id)
         )
     })
@@ -240,6 +229,12 @@ def count_class_coupled(ent_model, exclude_standard=False):
 
     Base classes were being counted, which is what the manual explicitly
     excludes.
+
+    `Java Couple` is the whole answer, and adding `Java Use` and `Java Typed`
+    beside it was the error: reproducing this over Understand's own database,
+    the Couple refs less bases and self match 105 of its 106 project classes,
+    and the wider query matches 23. Understand has already decided what couples
+    -- a coupling is what it writes a Couple ref for.
     """
     entity = _entity(ent_model)
     if entity is None:
@@ -248,13 +243,12 @@ def count_class_coupled(ent_model, exclude_standard=False):
     bases |= {t._id for t in _targets(entity._id, "Java Implement Couple")}
 
     coupled = set()
-    for kind in ("Java Couple", "Java Use", "Java Typed"):
-        for target in _targets(entity._id, kind, "type"):
-            if target._id == entity._id or target._id in bases:
-                continue
-            if exclude_standard and _is_standard(target):
-                continue
-            coupled.add(target._id)
+    for target in _targets(entity._id, "Java Couple", "type"):
+        if target._id == entity._id or target._id in bases:
+            continue
+        if exclude_standard and _is_standard(target):
+            continue
+        coupled.add(target._id)
     return len(coupled)
 
 
@@ -355,8 +349,8 @@ def count_output(ent_model):
         return 0
     fan = {t._id for t in _targets(entity._id, "Java Call")}
     fan |= {t._id for t in _targets(entity._id, "Java Call Nondynamic")}
-    fan |= _fan_targets(entity._id,
-                        ("Java Set", "Java Set Init", "Java Modify"),
+    fan.discard(entity._id)  # "Recursive function calls ... are not included"
+    fan |= _fan_targets(entity._id, _kinds_like("Java Set", "Java Modify"),
                         entity._longname)
     declared = (entity._type or "").strip()
     if declared and declared != "void" and kind_family(entity._kind_id) == "method":
@@ -364,18 +358,47 @@ def count_output(ent_model):
     return len(fan)
 
 
+def _kinds_like(*stems):
+    """Every variant of a reference kind, because Understand's filter is a prefix.
+
+    `ent.refs("Java Use")` in Understand also returns `Java Use Deref Partial`,
+    `Java Use Return` and the rest; our kinds are stored under their full names
+    and have to be enumerated. `Use Deref Partial` is the one that matters --
+    `drop_shadowed_use_refs()` gives `x` in `x.next()` that kind and no plain
+    `Use`, so asking only for `Java Use` missed most parameter reads.
+
+    The trailing space keeps `Java Use` from dragging in `Java Useby`.
+    """
+    clause = None
+    for stem in stems:
+        match = (KindModel._name == stem) | (KindModel._name.startswith(stem + " "))
+        clause = match if clause is None else (clause | match)
+    return [k._name for k in KindModel.select().where(clause)]
+
+
+def _use_kind_names():
+    return _kinds_like("Java Use")
+
+
 def count_input(ent_model):
     """"Functions calledby + Parameters read + Global Variables read." [aka FANIN]
 
-    The previous version counted callers only, and scored 10%.
+    Understand's own wording: "Recursive function calls and local variables
+    that are not class static variables are not included." Reproducing it over
+    Understand's database -- distinct callers less the entity itself, plus the
+    parameters and non-local variables it reads -- matches 20142 of its 20298
+    method values on JSON (99.2%), which is what fixes this list of kinds.
+
+    `Java DotRef` used to be counted here and is not a read; the `Java Use`
+    variants were not, and are.
     """
     entity = _entity(ent_model)
     if entity is None:
         return 0
     fan = {t._id for t in _targets(entity._id, "Java Callby")}
     fan |= {t._id for t in _targets(entity._id, "Java Callby Nondynamic")}
-    fan |= _fan_targets(entity._id, ("Java Use", "Java DotRef"),
-                        entity._longname)
+    fan.discard(entity._id)  # a recursive call is not an input
+    fan |= _fan_targets(entity._id, _use_kind_names(), entity._longname)
     return len(fan)
 
 
@@ -511,14 +534,35 @@ def percent_lack_of_cohesion(ent_model, modified=False):
         # reports 0 there, not total lack of cohesion.
         return 0
 
-    reading = ("Java Use", "Java Use Deref Partial", "Java Set",
-               "Java Set Init", "Java Modify")
+    reading = _kinds_like("Java Use", "Java Set", "Java Modify")
     field_ids = {f._id for f in fields}
+    method_ids = {m._id for m in methods}
     users = {f._id: set() for f in fields}
     for method in methods:
         for kind in reading:
             for target in _targets(method._id, kind):
                 if target._id in field_ids:
                     users[target._id].add(method._id)
+
+    if modified:
+        # "Does not penalize the use of accessor methods within a class to
+        # set/read variables": a method that reaches a field only by calling
+        # another method of the same class counts as using it, so the credit
+        # propagates back along intra-class calls until it stops spreading.
+        # Understand's own numbers need the full closure, not one hop --
+        # JSONArray is 6, and direct use alone says 81. Measured against
+        # Understand: 86% direct, 93% one hop, 99% at the fixed point.
+        callers = {m._id: {c._id
+                           for kind in ("Java Callby", "Java Callby Nondynamic")
+                           for c in _targets(m._id, kind)} & method_ids
+                   for m in methods}
+        for field_id, reached in users.items():
+            pending = list(reached)
+            while pending:
+                for caller in callers.get(pending.pop(), ()):
+                    if caller not in reached:
+                        reached.add(caller)
+                        pending.append(caller)
+
     share = [len(users[f._id]) / len(methods) for f in fields]
     return round((1 - sum(share) / len(share)) * 100)
