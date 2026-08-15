@@ -20,42 +20,42 @@ merge_placeholder_entities + relabel_nondynamic_calls
 ```
 
 Before any of that, `symbol_table.build()` indexes every declaration in the
-project — see [Resolving names across files](#resolving-names-across-files).
+project -- see [Resolving names across files](#resolving-names-across-files).
 
 A file is parsed once. Every analysis pass then walks that same tree, so
-parsing is a small fraction of the total cost — most of the time goes into the
+parsing is a small fraction of the total cost -- most of the time goes into the
 passes and the database writes.
 
 ## The three layers
 
-**`analysis_passes/`** — one ANTLR listener per reference kind. A listener's
+**`analysis_passes/`** -- one ANTLR listener per reference kind. A listener's
 only job is to collect dictionaries while walking. It never touches the
 database. This is what makes a pass easy to test: walk it over a tree and
 inspect the list.
 
-**`ounderstand/project.py`** — the write layer. `Project.addXxxRefs(...)` turns
+**`ounderstand/project.py`** -- the write layer. `Project.addXxxRefs(...)` turns
 those dictionaries into `EntityModel` and `ReferenceModel` rows, resolving
 entity identity and kinds along the way.
 
-**`oudb/`** — the schema (`models.py`), the Understand-compatible query API
+**`oudb/`** -- the schema (`models.py`), the Understand-compatible query API
 (`api.py`), and kind seeding (`fill.py`).
 
 `ounderstand/listeners_and_parsers.py` is the glue: each `*_listener` method
 builds a listener, walks it, and hands the result to the matching `Project`
 method. Every one is wrapped in try/except and **logs failures instead of
-raising** — so a broken pass silently produces no references. If references are
+raising** -- so a broken pass silently produces no references. If references are
 missing, read the log file first.
 
 ## Data model
 
 Four tables:
 
-- `KindModel` — the vocabulary. `_inv` links a forward reference kind to its
+- `KindModel` -- the vocabulary. `_inv` links a forward reference kind to its
   inverse.
-- `EntityModel` — `_kind`, `_parent` (self-referencing), `_name`, `_longname`,
+- `EntityModel` -- `_kind`, `_parent` (self-referencing), `_name`, `_longname`,
   `_value`, `_type`, `_contents`.
-- `ReferenceModel` — `_kind`, `_file`, `_line`, `_column`, `_ent`, `_scope`.
-- `ProjectModel` — one row: name, language, root, database path.
+- `ReferenceModel` -- `_kind`, `_file`, `_line`, `_column`, `_ent`, `_scope`.
+- `ProjectModel` -- one row: name, language, root, database path.
 
 Every reference is written twice, forward and inverse, with `_ent` and
 `_scope` swapped and the same file, line and column.
@@ -64,7 +64,7 @@ Every reference is written twice, forward and inverse, with `_ent` and
 
 Two rows are the same entity when they share a long name *and* a kind family
 (type, method, variable, package, file). `EntityModel.get_or_create` enforces
-this — peewee's default keys on every field passed in, so two passes describing
+this -- peewee's default keys on every field passed in, so two passes describing
 the same class with different `_contents` would each get a row.
 
 Kinds containing `Unknown` or `Unresolved` are **placeholders**. They match any
@@ -88,21 +88,21 @@ symbol_table.declaring_type(type_longname, member)  # walks the extends chain
 ```
 
 All three search the innermost scope outward, then the asking scope's own
-package, and **refuse an ambiguous name rather than guess** — a wrong
+package, and **refuse an ambiguous name rather than guess** -- a wrong
 resolution silently misattributes every reference built on it. `resolve_type()`
 exists because `resolve()` would let a variable named `value` compete with a
 class named `Value`; a pass that knows it is in a type position wants only the
 types. `declaring_type()` follows `extends` so that a call to an inherited
 method lands on the class that declares it, which is what Understand reports.
 
-Working out *what* a name is often needs the declared type of something else —
+Working out *what* a name is often needs the declared type of something else --
 `x.p = v` names a field of `x`'s type. `analysis_passes/declared_types.py`
 reads those off the parse tree. It is not a type checker: it answers only what
 a declaration states, so `a.b.c` resolves `b` on `a`'s type and stops.
 
 **Placeholders** cover what the index cannot. A pass that still cannot place a
 name creates a placeholder entity, and `merge_placeholder_entities()` folds
-each into the real entity after every file has been parsed — but only when
+each into the real entity after every file has been parsed -- but only when
 exactly one project-wide candidate shares the simple name. More than one means
 guessing, and a wrong merge is worse than a duplicate.
 
@@ -113,7 +113,7 @@ will happily fold it into the single project method that happens to share it.
 nothing for what it cannot.
 
 A *qualified* name outside the project is not a placeholder at all. Anything
-rooted under `EXTERNAL_ROOTS` — `java.`, `javax.` — is fully qualified by
+rooted under `EXTERNAL_ROOTS` -- `java.`, `javax.` -- is fully qualified by
 construction, however unresolved its kind looks, and the merge skips it.
 Without that, `java.lang.Object.equals` was folded into
 `org.json.JSONObject.Null.equals`, the only `equals` the project declares, and
@@ -122,20 +122,20 @@ the reference pointed at itself from both ends.
 Most references leave the project, so refusing to name an external target is
 expensive: 1,197 of TheAlgorithms' 1,416 missing calls were to `java.io`,
 `java.util` and `java.lang`. `symbol_table` carries small hand-written tables
-for this — `JAVA_LANG_TYPES`, `JDK_TYPE_PACKAGES`, `JDK_FIELD_TYPES`,
+for this -- `JAVA_LANG_TYPES`, `JDK_TYPE_PACKAGES`, `JDK_FIELD_TYPES`,
 `JDK_OVERRIDABLE` and `models.JDK_FINAL_TYPES`. They are lookup tables covering
 what the benchmarks use, not a model of the JDK, and each says so where it is
 defined.
 
 `relabel_nondynamic_calls()` runs next and splits `Java Call` into
 `Call`/`Call Nondynamic` now that the callee's modifiers are known. A JDK
-callee carries no modifiers here — it was named from the receiver's type, not
-parsed — so its class being final is what settles it: nothing can override
+callee carries no modifiers here -- it was named from the receiver's type, not
+parsed -- so its class being final is what settles it: nothing can override
 `java.lang.String.length`.
 
 `drop_shadowed_use_refs()` runs last. Understand reports exactly one reference
 kind per position: `x` in `x.next()` is a `Use Deref Partial`, an assignment
-target is a `Set`, `i++` is a `Modify` — and in none of those cases does it
+target is a `Set`, `i++` is a `Modify` -- and in none of those cases does it
 also report a plain `Use`. The use pass cannot know this, because it runs
 before set/dotref/modify have written anything, so the plain `Use` is deleted
 here wherever a more specific kind sits on the same position.
@@ -160,7 +160,7 @@ line in a `.txt` file silently repointed them all.
 2. Add an `addXxxRefs(ref_dicts, file_ent)` method to `Project` that writes both
    directions of the reference, at the same position, resolving kinds by name.
 3. Add a `*_listener` method to `ListenersAndParsers` wiring the two together.
-4. Add it to the `listeners` list in `parsing_process.py`. **Order matters** —
+4. Add it to the `listeners` list in `parsing_process.py`. **Order matters** --
    later passes rely on entities earlier ones created.
 5. Have the change measured against Understand: the new kind's row count
    should move toward Understand's without hurting precision.
@@ -178,12 +178,12 @@ line in a `.txt` file silently repointed them all.
 
 `grammars/JavaParserLabeled.g4` is a fork of `antlr/grammars-v4`'s Java grammar
 carrying **114 custom labelled alternatives** (`#classBodyDeclaration0`,
-`#memberDeclaration3`, `#blockStatement1`, …). Those labels generate the context
+`#memberDeclaration3`, `#blockStatement1`, ...). Those labels generate the context
 classes every pass references.
 
 It is **Java 8**: no records, sealed types, `var`, text blocks or `yield`.
 Upstream's current grammar handles Java 21 and is backward-compatible with
-Java 8 source, but it has only 27 labels and different ones — adopting it means
+Java 8 source, but it has only 27 labels and different ones -- adopting it means
 rewriting every listener. Treat a grammar swap as a project.
 
 Regenerate after editing a `.g4` (the runtime pin in `requirements.txt` must
@@ -215,22 +215,22 @@ The installed package is `openunderstand`; everything imports fully qualified
   falls back to defaults, so the library works with no configuration.
 
 An installed wheel is expected to do the whole job with only `antlr4-runtime`
-and `peewee`. `.github/workflows/parity.yml` proves it on every push — build
+and `peewee`. `.github/workflows/parity.yml` proves it on every push -- build
 the wheel, check the seed files ship and nothing leaks to top level, install
 into a clean venv, then analyse Java and query the result.
 
-## The comparison harness
+## The comparison
 
-The comparison harness is the test suite. It builds a database with each
+The comparison is the test suite. It builds a database with each
 tool from the same source and diffs them at three levels:
 
-- **(a) raw SQLite** — what the passes actually wrote, `api.py` out of the picture
-- **(b) through `api.py`** — what a user sees
-- **(c) real Understand** — ground truth
+- **(a) raw SQLite** -- what the passes actually wrote, `api.py` out of the picture
+- **(b) through `api.py`** -- what a user sees
+- **(c) real Understand** -- ground truth
 
 (a) vs (c) isolates analysis bugs. (a) vs (b) isolates API bugs. A database
 fingerprint guards refactors: a change that should not alter output must
 reproduce the baseline digest byte for byte.
 
-The harness needs a licensed Understand install and is kept outside this
+It needs a licensed Understand install and is kept outside this
 repository.

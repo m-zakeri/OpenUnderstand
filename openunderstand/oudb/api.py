@@ -946,10 +946,16 @@ class Ent:
         members = graph_metrics.container_members(self)
         if members:
             nested = graph_metrics.container_methods(self)
+            classes = graph_metrics.container_classes(self)
             for item in metric_list:
                 if item not in known or item in graph_metrics._NOT_AGGREGATED:
                     continue
-                over = nested if graph_metrics.aggregates_over_methods(item) else members
+                if graph_metrics.aggregates_over_methods(item):
+                    over = nested
+                elif graph_metrics.aggregates_over_classes(item):
+                    over = classes
+                else:
+                    over = members
                 metrics[item] = graph_metrics.aggregate(
                     item, [Ent(**row.__dict__.get("__data__")).metric([item]).get(item)
                            for row in over])

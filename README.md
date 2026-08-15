@@ -5,7 +5,7 @@
 An open-source implementation of the [SciTools Understand](https://scitools.com)
 Python API, for Java.
 
-Understand reads a codebase and lets you ask questions about it — which methods
+Understand reads a codebase and lets you ask questions about it -- which methods
 call this one, what does this class contain, how complex is this function. The
 API is good. The analysis is closed: the database format is proprietary, the API
 source is not published, and it needs a licence.
@@ -83,7 +83,7 @@ start_parsing(
 )
 ```
 
-The result is a `.udb` file. Despite the name it is plain SQLite — open it with
+The result is a `.udb` file. Despite the name it is plain SQLite -- open it with
 any SQLite tool if you want to poke at the rows directly.
 
 ## How correct is it?
@@ -98,14 +98,14 @@ Current agreement, on three benchmarks:
 | --- | ---: | ---: | ---: |
 | Java files | 8 | 22 | 228 |
 | Metric values matching Understand | 80% | 72% | 73% |
-| References reproduced at the exact position — recall | 0.92 | 0.87 | 0.86 |
-| — precision | 0.89 | 0.87 | 0.84 |
+| References reproduced at the exact position -- recall | 0.92 | 0.87 | 0.86 |
+| -- precision | 0.89 | 0.87 | 0.84 |
 
 [docs/parity.md](docs/parity.md) has the per-kind breakdown.
 
 The comparison is the specification: what the real tool outputs is what decides
-whether a reference is right. The harness needs a licensed Understand install,
-so it is not part of this repository — ask if you want to run it.
+whether a reference is right. Understand must be installed and licensed, so it
+is not part of this repository -- ask if you want to run it.
 
 `tests/` holds unit tests for the pass rules that comparison established. They
 need no database and run in about a second each:
@@ -129,7 +129,7 @@ pip install "openunderstand[mcp]"
 Six tools (`analyze`, `open_database`, `list_entities`, `entity_references`,
 `entity_metrics`, `list_kinds`), four resources exposing the kind vocabulary
 and metric names, and three prompts (`review_class`, `complexity_hotspots`,
-`trace_callers`) — so an assistant can analyse a Java project and ask what
+`trace_callers`) -- so an assistant can analyse a Java project and ask what
 calls what, without knowing the schema. See [docs/mcp.md](docs/mcp.md).
 
 ## Use it from IntelliJ IDEA
@@ -172,12 +172,12 @@ Published at
 
 ## Contributing
 
-Read [docs/architecture.md](docs/architecture.md) first — particularly the rule
+Read [docs/architecture.md](docs/architecture.md) first -- particularly the rule
 that kind ids are positions and must always be resolved by name.
 
 Changes to the analysis are judged against Understand, not against opinion.
 If you can run the comparison, report recall **and** precision before and
-after — a change that raises recall by tanking precision is not an
+after -- a change that raises recall by tanking precision is not an
 improvement. If you cannot, say what you expect to change and it will be
 measured for you.
 

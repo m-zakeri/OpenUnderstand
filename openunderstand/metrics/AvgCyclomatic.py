@@ -132,6 +132,9 @@ class CyclomaticListener(JavaParserLabeledListener):
 def avg_cyclomatic(ent_model=None):
     p = Project()
     listener = CyclomaticListener()
-    return_tree = context.parse(ent_model.contents())
+    # parse_entity, not parse: a method's source is not a compilation
+    # unit, so the plain call yields an error tree -- ClassDeclaration
+    # with no IDENTIFIER, which is what crashed this listener.
+    return_tree = context.parse_entity(ent_model.contents() or "")
     p.Walk(reference_listener=listener, parse_tree=return_tree)
     return listener.count

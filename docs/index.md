@@ -5,14 +5,14 @@ Python API for Java source code.
 
 Understand analyses a codebase and lets you ask questions about it: which
 methods call this one, what does this class contain, how complex is this
-function. Its API is excellent and its analysis is closed — the database
+function. Its API is excellent and its analysis is closed -- the database
 format is proprietary and the API source is not published. OpenUnderstand
 reimplements that API on top of an ANTLR4 Java parser and a SQLite database,
 so the same scripts run without a licence.
 
 The goal is that a script written against Understand runs unchanged here. Every
 class name, method signature and kind name is Understand's, and every change is
-measured against the real tool — see [Parity](parity.md) for how close it
+measured against the real tool -- see [Parity](parity.md) for how close it
 currently is.
 
 ## Install
@@ -27,7 +27,7 @@ Python 3.9 or newer. Extras: `[speedy]` for the C++ parser accelerator,
 ## Build a database
 
 Point it at a directory of Java source. It walks the tree, parses every
-`.java` file, and writes a `.udb` — a SQLite file, despite the name.
+`.java` file, and writes a `.udb` -- a SQLite file, despite the name.
 
 ```bash
 python openunderstand/ounderstand/openunderstand.py \
@@ -70,18 +70,17 @@ names is in [Kinds](kinds.md).
 
 ## Check it against Understand
 
-If you have Understand installed and licensed, the comparison harness builds
-both databases from the same source and reports every difference:
+If you have Understand installed and licensed, both databases can be built
+from the same source and every difference reported:
 
-The harness builds both databases from the same source and produces a ranked
-defect report. It needs a licensed Understand install, so it is kept outside
-this repository — ask if you want to run it.
+The result is a ranked defect report. Understand must be installed and
+licensed, so it is kept outside this repository -- ask if you want to run it.
 
 The comparison is the specification: the only thing that decides whether a
 reference is right is what the real tool reports for it.
 
 Alongside it, `tests/` holds unit tests for the passes whose rules were derived
-from that comparison — what counts as a `Set` against a dereferenced target,
+from that comparison -- what counts as a `Set` against a dereferenced target,
 where a `Modify` sits on `++i`, which names a type resolves to. Each runs in
 about a second and needs no database:
 
@@ -90,7 +89,7 @@ for t in tests/test_*.py; do .venv/bin/python -W ignore "$t"; done
 ```
 
 They exist to stop a rule regressing between comparison runs, not to replace
-one — a pass can satisfy every test here and still disagree with Understand.
+one -- a pass can satisfy every test here and still disagree with Understand.
 
 ## Where to go next
 

@@ -161,8 +161,8 @@ class MetricsToolWindow : ToolWindowFactory {
             autoResizeMode = JBTable.AUTO_RESIZE_OFF
         }
         val run = JButton("Analyse Project")
-        val export = JButton("Export CSV…")
-        val interpreter = JButton("Python…")
+        val export = JButton("Export CSV...")
+        val interpreter = JButton("Python...")
 
         table.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
@@ -247,7 +247,7 @@ class MetricsToolWindow : ToolWindowFactory {
                         if (!install) {
                             ApplicationManager.getApplication().invokeLater {
                                 done(rows, "No interpreter with openunderstand installed. " +
-                                    "Set one with the Python… button.")
+                                    "Set one with the Python... button.")
                             }
                             return
                         }

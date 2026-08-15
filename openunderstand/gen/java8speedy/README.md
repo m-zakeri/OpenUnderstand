@@ -6,7 +6,7 @@ unchanged.
 
 **Set expectations: parsing is not the bottleneck.** On the 22-file
 `benchmark/JSON` fixture, parse-only drops from 3.79s to 0.44s, but a full
-analysis run takes ~43s — the 23 listener passes and the database writes
+analysis run takes ~43s -- the 23 listener passes and the database writes
 dominate. Enabling the accelerator is worth roughly 9% end-to-end. Measured
 per-pass costs after each build are in `build.log`; aggregate the
 `timer_decorator` lines to see where the time actually goes.

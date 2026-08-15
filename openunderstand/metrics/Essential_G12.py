@@ -128,7 +128,11 @@ class EssentialMetricListener(JavaParserLabeledListener):
         self.entered_switch = False
 
     def enterStatement12(self, ctx: JavaParserLabeled.Statement12Context):
-        if not self.entered_switch:
+        # `self.layers` is empty when the jump sits outside any if -- a bare
+        # `return` at the top of a method -- and there is then no decision
+        # structure to mark as unstructured. Every other handler here already
+        # tests for that; this one crashed on JSONTokener instead.
+        if not self.entered_switch and self.layers:
             if self.layers[-1] < 2:
                 self.layers[-1] += 1
 
@@ -170,6 +174,9 @@ class EssentialMetricListener(JavaParserLabeledListener):
 def essential(ent_model=None):
     p = Project()
     listener = EssentialMetricListener()
-    return_tree = context.parse(ent_model.contents())
+    # parse_entity, not parse: a method's source is not a compilation
+    # unit, so the plain call yields an error tree -- ClassDeclaration
+    # with no IDENTIFIER, which is what crashed this listener.
+    return_tree = context.parse_entity(ent_model.contents() or "")
     p.Walk(reference_listener=listener, parse_tree=return_tree)
     return listener.count_essential_metric

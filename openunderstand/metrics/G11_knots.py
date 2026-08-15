@@ -214,7 +214,10 @@ class KnotsMetricListener(JavaParserLabeledListener):
 def knot(ent_model=None):
     p = Project()
     listener = KnotsMetricListener()
-    return_tree = context.parse(ent_model.contents())
+    # parse_entity, not parse: a method is not a compilation unit, so the
+    # plain call handed the listener a tree with no statements and every
+    # method scored 0 -- which is the right answer for 74% of them.
+    return_tree = context.parse_entity(ent_model.contents() or "")
     p.Walk(reference_listener=listener, parse_tree=return_tree)
     # The listener counts knots, not essential complexity.
     return listener.count_knots_metric

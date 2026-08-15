@@ -435,12 +435,8 @@ def container_members(ent_model):
     *declaration* counts need its types, and those are still wrong -- see the
     note below.
 
-    ponytail: CountDecl* is unfixed at file and package level. `org.json`
-    reports CountDeclMethod 0 where Understand says 330, because the rollup
-    goes package -> file and a file counts no declarations of its own. Counting
-    entities under the package directly gets CountDeclClass exactly right (26)
-    but CountDeclMethod to 345 against 330, so the definition is not simply
-    "entities nested under it" and needs measuring before it is implemented.
+    A package's *declaration* counts do not roll up this way -- see
+    `container_classes`, which is what they aggregate over.
     """
     entity = _entity(ent_model)
     if entity is None or kind_family(entity._kind_id) != "package":
@@ -462,6 +458,43 @@ def container_members(ent_model):
         )
     }
     return [f for f in (EntityModel.get_or_none(_id=i) for i in file_ids) if f]
+
+
+def container_classes(ent_model):
+    """Every class-like entity a package holds, nested and anonymous included.
+
+    The `CountDecl*` family does not roll up over a package's files: a file
+    declares nothing of its own, so `org.json` reported CountDeclMethod 0
+    against Understand's 505. It rolls up over the package's *classes*, and
+    "classes" means everything reachable by following Contain into the
+    package's top-level types and then Define as far as it goes -- an
+    anonymous class declared inside a method counts.
+
+    Measured against Understand on the JSON benchmark's three packages, that
+    walk reproduces CountDeclMethod, CountDeclMethodPublic, CountDeclClassMethod
+    and CountDeclInstanceVariable exactly for all three. Stopping at top-level
+    types instead gives 493 against 505, and following Define only through
+    types gives 500.
+    """
+    entity = _entity(ent_model)
+    if entity is None or kind_family(entity._kind_id) != "package":
+        return None
+    seen, classes = set(), {}
+    pending = [t for t in _targets(entity._id, "Java Contain")]
+    while pending:
+        current = pending.pop()
+        if current._id in seen:
+            continue
+        seen.add(current._id)
+        if kind_family(current._kind_id) == "type":
+            classes[current._id] = current
+        pending += _targets(current._id, "Java Define")
+    return list(classes.values())
+
+
+def aggregates_over_classes(name):
+    """A package's declaration counts come from its classes, not its files."""
+    return name.startswith("CountDecl")
 
 
 def container_methods(ent_model):
