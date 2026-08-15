@@ -12,19 +12,24 @@ resource and runs with a Python interpreter it finds on the machine.
 | Button | Does |
 | --- | --- |
 | Analyse Project | Runs the analysis over the project root and fills the table |
-| Export CSV… | Writes the table to a file, in analysis order |
-| Python… | Sets the interpreter, when the one found automatically is wrong |
+| Export CSV... | Writes the table to a file, in analysis order |
+| Python... | Sets the interpreter, when the one found automatically is wrong |
 
+One column per metric `Ent.metrics()` reports -- around 70 of Understand's
+names, whichever the library implements -- so the table scrolls sideways.
 Columns are sortable, and double-clicking a row opens the declaration. Classes
 and methods are listed together, so class-only metrics such as
 `CountDeclMethod` and `PercentLackOfCohesion` read 0 on every method row.
+
+Passing metric names as arguments to `scripts/idea_metrics.py` narrows the set;
+the plugin passes none.
 
 ## The interpreter
 
 The analyser is Python and the plugin does not bundle one. On each run it
 resolves an interpreter in this order:
 
-1. whatever **Python…** stored;
+1. whatever **Python...** stored;
 2. `$VIRTUAL_ENV`;
 3. the nearest `.venv/bin/python` at or above the analysed project;
 4. `python3`.
@@ -32,7 +37,7 @@ resolves an interpreter in this order:
 It then checks `python -c "import openunderstand"` before doing anything
 expensive. If the import fails it offers to build a virtualenv under
 `PathManager.getSystemPath()/openunderstand-venv`, install the package into it
-and remember that interpreter — so the common case needs no configuration and
+and remember that interpreter -- so the common case needs no configuration and
 the failure case names the problem instead of returning an empty table.
 
 It installs the **wheel bundled in the plugin** when there is one, falling back
@@ -95,7 +100,7 @@ Three things the build needs, each learned the hard way:
 Not configured. The JetBrains Marketplace requires the zip to be signed
 (`signPlugin`: a certificate chain, a private key and its password) and
 uploaded with a permanent token (`publishPlugin`). Add both to
-`build.gradle.kts` reading from environment variables — never the build file —
+`build.gradle.kts` reading from environment variables -- never the build file --
 when the credentials exist. Until then, install the zip through Settings →
 Plugins → ⚙ → Install Plugin from Disk.
 

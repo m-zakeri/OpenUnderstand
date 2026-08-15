@@ -85,6 +85,16 @@ def parse_entity(source):
     synthetic class makes it parseable, which scopes the metric to the entity
     without any name matching.
     """
+    return parse_entity_source(source)[0]
+
+
+@lru_cache(maxsize=256)
+def parse_entity_source(source):
+    """`parse_entity`, plus the text the line numbers in the tree refer to.
+
+    The wrapper adds a line above the entity, so a caller that maps tree lines
+    back onto text has to know which of the two candidates parsed.
+    """
     from antlr4.error.ErrorListener import ErrorListener
 
     class _Failed(ErrorListener):
@@ -102,8 +112,8 @@ def parse_entity(source):
         parser.addErrorListener(detector)
         tree = parser.compilationUnit()
         if not detector.failed:
-            return tree
-    return tree
+            return tree, candidate
+    return tree, candidate
 
 
 def walk_entity(ent_model, listener):
@@ -275,6 +285,9 @@ class _StatementClassifier:
         self.exe_statements = 0
         self.decl_lines = set()
         self.exe_lines = set()
+        #: Depth inside `new Runnable() { ... }` bodies. What they declare
+        #: belongs to the anonymous class, which is an entity of its own.
+        self.anonymous = 0
 
     def visit(self, ctx):
         name = type(ctx).__name__
@@ -291,14 +304,25 @@ class _StatementClassifier:
             # loop: Understand counts validForBase at 7 declarative lines and
             # the eighth this produced was the `for`. Every counted loop with
             # an init declaration added one.
-            if not (type(ctx.parentCtx).__name__.startswith("ForInit")
-                    or name == "EnhancedForControlContext"):
-                self._add_signature_lines(ctx, self.decl_lines)
+            in_for = (type(ctx.parentCtx).__name__.startswith("ForInit")
+                      or name == "EnhancedForControlContext")
+            # Inside `new Runnable() { ... }` the declaration still counts as a
+            # declarative *statement* -- Understand puts the method holding one
+            # at CountStmtDecl 3 and CountLineCodeDecl 1 -- but its lines belong
+            # to the anonymous class, which is an entity in its own right and
+            # reports 0 declarative lines for them.
+            if not in_for and not self.anonymous:
+                if name in _DECLARATION_STATEMENTS:
+                    self._add_declaration_lines(ctx)
+                else:
+                    self._add_signature_lines(ctx, self.decl_lines)
             if name == "LocalVariableDeclarationContext" and _has_initialiser(ctx):
                 # The line carries executable code either way -- CycleSort's
                 # `T temp = item;` is one of that method's four
-                # CountLineCodeExe lines.
-                if ctx.start is not None:
+                # CountLineCodeExe lines. Off the `for` path
+                # _add_declaration_lines has already said so, and with the
+                # initialiser's other lines.
+                if in_for and ctx.start is not None:
                     self.exe_lines.add(ctx.start.line)
                 # Whether it is also an executable *statement* depends on what
                 # the initialiser does. `T temp = item;` is not one and
@@ -309,22 +333,110 @@ class _StatementClassifier:
         elif name in _EXECUTABLE:
             self.statements += 1
             self.exe_statements += 1
-            if ctx.start is not None:
-                self.exe_lines.add(ctx.start.line)
+            self._add_statement_lines(ctx)
+        elif name.startswith("SwitchLabel") and ctx.start is not None:
+            # `case 0:` is an executable line of its own -- Understand puts a
+            # switch with three groups and four labels at 8 executable lines,
+            # and counting only the group's first label reported 7.
+            self.exe_lines.add(ctx.start.line)
         elif name == "Statement0Context" and ctx.start is not None:
             # A bare block is not a statement Understand counts, but the line
             # it opens on carries executable code: `} else {` is the ninth of
             # BinarySearch.search's nine CountLineCodeExe lines and the only
             # one this missed.
             self.exe_lines.add(ctx.start.line)
+        # `new Runnable() { ... }` parses as creator -> classCreatorRest ->
+        # classBody, so the anonymous body is everything under the rest.
+        anonymous = name == "ClassCreatorRestContext"
+        self.anonymous += anonymous
         for child in getattr(ctx, "children", None) or ():
             if hasattr(child, "getRuleIndex"):
                 self.visit(child)
+        self.anonymous -= anonymous
+
+    def _add_statement_lines(self, ctx):
+        """Every line a statement occupies, not just the one it opens on.
+
+        `return (a\\n && b\\n && c);` is three executable lines to Understand
+        and this counted one, which is most of the 332 methods still short.
+
+        A compound statement stops at the line its body opens on: the body is
+        made of statements counted in their own right, and running to the
+        statement's own stop would swallow the closing braces. Understand puts
+        `if (n == 1\\n && n > 0) {` at two executable lines and the whole
+        method at three.
+        """
+        if ctx.start is None:
+            return
+        children = list(getattr(ctx, "children", None) or ())
+        if not children:
+            self.exe_lines.add(ctx.start.line)
+            return
+        for child in children:
+            span = _child_span(child)
+            if span is None:
+                continue
+            if type(child).__name__.startswith(_BODY):
+                # Only the line the body opens on: `} else {` and
+                # `} catch (E e) {` execute, the `}` that closes them does not.
+                self.exe_lines.add(span[0])
+            elif getattr(child, "symbol", None) is not None and child.getText() == "}":
+                continue
+            else:
+                self.exe_lines.update(range(span[0], span[1] + 1))
+
+    def _add_declaration_lines(self, ctx):
+        """Split a variable declaration's lines the way Understand does.
+
+        Every line of the declaration used to be declarative and only its
+        first line executable, which is exactly backwards for the shape that
+        dominates the benchmark's long methods -- a string built by `+` over a
+        hundred lines. `JSONMLTest.toJSONObjectToJSONArray` came out
+        decl 174 / exe 18 against Understand's 18 / 175.
+
+        Measured against Understand 7.0.1217 on a fixture written for it
+        (`String s = "a" + <n lines>` for n in 1..6, the same with an array
+        initialiser, a ternary, a nested call, two declarators one of which
+        spans lines, a declaration whose name and `=` sit on their own lines,
+        and one with no initialiser):
+
+          * with no initialiser, every line is declarative and none executes;
+          * with an expression initialiser, declarative is the run from the
+            declaration's start through the line the initialiser starts on,
+            plus the line the `;` lands on -- and executable is the
+            initialiser's whole span. `String s = "a" +` / `"b" +` / `"c";` is
+            2 declarative and 3 executable;
+          * an array initialiser is a declarative *list*: every line of it is
+            declarative, and only the element lines execute.
+        """
+        if ctx.start is None or ctx.stop is None:
+            return
+        start, stop = _signature_start(ctx), ctx.stop.line
+        declarator = _first_initialised_declarator(ctx)
+        initialiser = declarator[1] if declarator else None
+        if initialiser is None or initialiser.start is None:
+            self.decl_lines.update(range(start, stop + 1))
+            return
+        elements = _array_element_lines(initialiser)
+        if elements is not None:
+            self.decl_lines.update(range(start, stop + 1))
+            self.exe_lines.update(elements)
+            return
+        opens = initialiser.start.line
+        # The declarative half ends at the `=`, not at the initialiser: with
+        # `String s =` alone on its line the initialiser starts on the *next*
+        # one, and counting through it made CookieTest.multiPartCookie 10
+        # declarative lines against Understand's 8. Where the two sit on one
+        # line -- `= "a" +` -- the answer is the same either way.
+        self.decl_lines.update(range(start, (_assign_line(declarator[0]) or opens) + 1))
+        self.decl_lines.add(stop)
+        self.exe_lines.update(range(opens, stop + 1))
 
     @staticmethod
     def _add_signature_lines(ctx, target):
         if ctx.start is None:
             return
+        first = _signature_start(ctx)
         last = ctx.start.line
         parameters = getattr(ctx, "formalParameters", None)
         if parameters is not None:
@@ -339,7 +451,101 @@ class _StatementClassifier:
             "ConstDeclarationContext",
         ):
             last = ctx.stop.line
-        target.update(range(ctx.start.line, last + 1))
+        target.update(range(first, last + 1))
+
+
+#: Declarations whose lines split into declarative and executable halves.
+_DECLARATION_STATEMENTS = (
+    "LocalVariableDeclarationContext", "FieldDeclarationContext",
+    "ConstDeclarationContext",
+)
+
+
+#: Direct children that mean "the rest of this statement is its body".
+_BODY = ("Statement", "Block", "SwitchBlockStatementGroup", "CatchClause",
+         "FinallyBlock")
+
+
+def _child_span(child):
+    """First and last line of a parse-tree child, terminal or context."""
+    symbol = getattr(child, "symbol", None)
+    if symbol is not None:
+        return symbol.line, symbol.line
+    start = getattr(child, "start", None)
+    if start is None:
+        return None
+    stop = getattr(child, "stop", None)
+    return start.line, (stop.line if stop is not None else start.line)
+
+
+def _signature_start(ctx):
+    """First line of a declaration, annotations included.
+
+    `@Override` and `@Test(expected = ...)` sit on the enclosing
+    classBodyDeclaration, not on the methodDeclaration, so counting from the
+    declaration's own start line lost them: Understand puts
+    MyBeanCustomNameSubClass.getSomeInt at 3 declarative lines -- two
+    annotations and the signature -- and this reported 1. Verified against
+    Understand on one, two and a three-line annotation.
+
+    The enclosing declaration is the run of ancestors that end on the very same
+    token, which is what "adds only leading modifiers" looks like in the tree.
+    A localVariableDeclaration stops before its `;` and its parent does not, so
+    the climb stops there and its own `final`/annotations are already inside.
+    """
+    start = ctx.start.line
+    node, stop = ctx, ctx.stop
+    while stop is not None:
+        parent = getattr(node, "parentCtx", None)
+        if parent is None or getattr(parent, "stop", None) is not stop:
+            break
+        node = parent
+        if node.start is not None:
+            start = min(start, node.start.line)
+    return start
+
+
+def _first_initialised_declarator(ctx):
+    """The first declarator that assigns something, as `(declarator, value)`.
+
+    `int a = 1, b = 2 + \\n 3;` starts executing on the first declarator's
+    line, which is where Understand starts counting.
+    """
+    for declarator in _descend(ctx, "VariableDeclaratorContext"):
+        if getattr(declarator, "variableInitializer", None) is None:
+            continue
+        try:
+            initialiser = declarator.variableInitializer()
+        except TypeError:
+            continue
+        if initialiser is not None:
+            return declarator, initialiser
+    return None
+
+
+def _assign_line(declarator):
+    """Line of the `=` in a declarator, or None when it has no children."""
+    for child in getattr(declarator, "children", None) or ():
+        symbol = getattr(child, "symbol", None)
+        if symbol is not None and child.getText() == "=":
+            return symbol.line
+    return None
+
+
+def _array_element_lines(initialiser):
+    """Lines of an array initialiser's elements, or None when it is not one."""
+    for child in getattr(initialiser, "children", None) or ():
+        if type(child).__name__ != "ArrayInitializerContext":
+            continue
+        # The labelled grammar numbers the alternatives:
+        # `variableInitializer` is VariableInitializer0/1Context, never the
+        # bare name, so an exact match found no elements and every array
+        # declaration executed nothing.
+        return {element.start.line
+                for element in getattr(child, "children", None) or ()
+                if type(element).__name__.startswith("VariableInitializer")
+                and element.start is not None}
+    return None
 
 
 def _has_initialiser(ctx):
@@ -377,43 +583,44 @@ def statement_counts(ent_model) -> dict:
 
 @lru_cache(maxsize=256)
 def _statement_counts(source: str) -> dict:
+    tree, text = parse_entity_source(source)
     classifier = _StatementClassifier()
-    classifier.visit(parse_entity(source))
+    classifier.visit(tree)
+    # A statement's span can cross a blank or comment-only line -- `f(1,` /
+    # blank / `2);` is two executable lines to Understand, not three -- so the
+    # spans are intersected with the lines that actually hold code. `text`,
+    # not `source`: the wrapper shifts every line number by one.
+    code = {number for number, has_code, _ in _scan_lines(text) if has_code}
+    # A line holding nothing but `}` closes something; it never executes. The
+    # brace lines that do -- `} else {`, `} catch (E e) {`, `} while (c);`,
+    # `};` -- all carry something else. A statement's span crosses the closing
+    # brace of any block nested inside it, which is the line that put a method
+    # holding `new Runnable() { ... }` at 7 executable lines against 6.
+    closing = {number for number, raw in enumerate(text.split("\n")[:-1], 1)
+               if raw.strip() == "}"}
     return {
         "stmt": classifier.statements,
         "stmt_decl": classifier.decl_statements,
         "stmt_exe": classifier.exe_statements,
-        "line_decl": len(classifier.decl_lines),
-        "line_exe": len(classifier.exe_lines),
+        "line_decl": len(classifier.decl_lines & code),
+        "line_exe": len((classifier.exe_lines & code) - closing),
     }
 
 
-@lru_cache(maxsize=512)
-def line_counts(source: str) -> dict:
-    """Understand's line metrics for a block of source.
+def _scan_lines(source: str):
+    """Yield `(line number, has code, has comment)` for each line of `source`.
 
-    Five metrics read this one result, and average_line_counts() calls it once
-    per member of a class for each of four more, so it is memoized on the
-    source it counts. The returned dict is shared and must not be mutated.
-
-    A line is counted once per category it belongs to, and a line holding both
-    code and a trailing comment counts in both -- which is why the categories
-    do not sum to the total.
-
-    Counted straight from the entity's own text rather than by walking a parse
-    tree: the listener that used to do this was constructed but never walked,
-    so every one of these metrics returned 0.
+    One scanner for both line_counts() and the code-line filter the statement
+    classifier needs: a line's category is decided here, and nowhere else.
     """
-    total = blank = code = comment = 0
     in_block = False
     # split(), not splitlines(): the last element is the text after the final
     # newline, which Understand does not count as a line unless it is
     # terminated. Dropping it makes both cases uniform.
-    for raw in (source or "").split("\n")[:-1]:
-        total += 1
+    for number, raw in enumerate((source or "").split("\n")[:-1], 1):
         line = raw.strip()
         if not line:
-            blank += 1
+            yield number, False, False
             continue
 
         has_comment = in_block
@@ -439,7 +646,31 @@ def line_counts(source: str) -> dict:
             if not line[i].isspace():
                 has_code = True
             i += 1
+        yield number, has_code, has_comment
 
+
+@lru_cache(maxsize=512)
+def line_counts(source: str) -> dict:
+    """Understand's line metrics for a block of source.
+
+    Five metrics read this one result, and average_line_counts() calls it once
+    per member of a class for each of four more, so it is memoized on the
+    source it counts. The returned dict is shared and must not be mutated.
+
+    A line is counted once per category it belongs to, and a line holding both
+    code and a trailing comment counts in both -- which is why the categories
+    do not sum to the total.
+
+    Counted straight from the entity's own text rather than by walking a parse
+    tree: the listener that used to do this was constructed but never walked,
+    so every one of these metrics returned 0.
+    """
+    total = blank = code = comment = 0
+    for _number, has_code, has_comment in _scan_lines(source):
+        total += 1
+        if not (has_code or has_comment):
+            blank += 1
+            continue
         code += has_code
         comment += has_comment
     return {"total": total, "blank": blank, "code": code, "comment": comment}

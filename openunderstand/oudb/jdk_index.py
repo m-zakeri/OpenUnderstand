@@ -11,10 +11,10 @@ to a project class, `String.length` reported as a virtual call, a class
 implementing `Comparator` with no `Overrides` row.
 
 `scripts/gen_jdk_index.py` generates the real thing from a JDK's own runtime
-image -- 3,957 public java./javax. types with their modifiers, supertypes,
-public fields and, for interfaces, their members. The result is committed as
-`jdk_index.txt.gz` (64 KB), so neither a JDK nor an Understand licence is
-needed to use it.
+image -- 3,952 public java./javax. types with their modifiers, supertypes,
+public fields, their methods' arities, and each method's return type where it
+is a reference type. The result is committed as `jdk_index.txt.gz` (155 KB), so
+neither a JDK nor an Understand licence is needed to use it.
 
 Loaded once, on first access. The parse is a few milliseconds and this module
 imports nothing outside the standard library, so it stays safe to reach from
@@ -47,14 +47,24 @@ def _load() -> dict:
             if len(parts) != 5:
                 continue
             longname, final, supers, fields, methods = parts
+            arities, returns = {}, {}
+            for item in methods.split(","):
+                if "/" not in item:
+                    continue
+                name, tail = item.split("/", 1)
+                # `name/arity` or `name/arity>java.lang.Double` -- the return
+                # type is present only where it is a reference type.
+                arity, _, declared = tail.partition(">")
+                arities[name] = int(arity)
+                if declared:
+                    returns[name] = declared
             types[longname] = {
                 "final": final == "F",
                 "supers": supers.split(",") if supers else [],
                 "fields": dict(
                     pair.split("=", 1) for pair in fields.split(",") if "=" in pair),
-                "methods": {
-                    name: int(arity) for name, arity in
-                    (m.split("/", 1) for m in methods.split(",") if "/" in m)},
+                "methods": arities,
+                "returns": returns,
             }
             by_simple.setdefault(longname.rsplit(".", 1)[-1], []).append(longname)
     return {"types": types, "by_simple": by_simple}
@@ -134,6 +144,36 @@ def declaring_type(longname: str, member: str) -> str | None:
             continue
         if member in entry["methods"]:
             return current
+        pending.extend(entry["supers"])
+    return None
+
+
+def return_type(longname: str, member: str) -> str | None:
+    """Reference type `longname.member(...)` evaluates to, searching supertypes.
+
+    This is what lets a *chained* call resolve: `Double.valueOf(x).isNaN()`
+    calls isNaN on whatever valueOf returns, and without it the receiver is
+    unknown and the pass correctly emits nothing. 11 of the 13 `Java Call`
+    rows missing from JSONArrayTest.opt were this shape.
+
+    None for void, a primitive, an array or a type variable -- none of which
+    can be a call receiver -- and for anything the index does not carry, so a
+    caller keeps refusing rather than inventing a target.
+    """
+    types = _load()["types"]
+    seen, pending = set(), [longname]
+    while pending:
+        current = pending.pop(0)
+        if current in seen:
+            continue
+        seen.add(current)
+        entry = types.get(current)
+        if entry is None:
+            continue
+        if member in entry["returns"]:
+            return entry["returns"][member]
+        if member in entry["methods"]:
+            return None       # declared here and returns nothing chainable
         pending.extend(entry["supers"])
     return None
 

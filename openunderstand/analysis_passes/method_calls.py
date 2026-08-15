@@ -67,15 +67,42 @@ class MethodCallListener(JavaParserLabeledListener):
             return None
         return self.local_types.get(name) or self.field_types.get(name)
 
-    def owner_longname(self, receiver, scope_longname):
+    def chained_owner(self, ctx, scope_longname):
+        """Type a receiver that is *itself a call* evaluates to, or None.
+
+        `Double.valueOf(x).isNaN()` calls isNaN on whatever valueOf returns,
+        and the JDK index records return types for exactly this. Understand
+        reports 13 calls in JSONArrayTest.opt that this pass had nowhere to
+        put, 11 of them this shape.
+
+        A chain through a *project* method stays unresolved: the index covers
+        java./javax. only, and inventing a target is the failure that took
+        `Java Call` precision to 19%.
+        """
+        from openunderstand.oudb import jdk_index
+
+        if ctx is None or type(ctx).__name__ != "Expression1Context":
+            return None
+        call = getattr(ctx, "methodCall", None)
+        call = call() if callable(call) else None
+        identifier = getattr(call, "IDENTIFIER", None) if call is not None else None
+        identifier = identifier() if callable(identifier) else None
+        inner = ctx.expression() if identifier is not None else None
+        if inner is None or isinstance(inner, list):
+            return None
+        owner = self.owner_longname(inner.getText(), scope_longname, inner)
+        return jdk_index.return_type(owner, identifier.getText()) if owner else None
+
+    def owner_longname(self, receiver, scope_longname, ctx=None):
         """Long name of the type a call on `receiver` lands on, or None.
 
-        Three shapes, and only the first was handled before -- which is why
+        Four shapes, and only the first was handled before -- which is why
         1,197 of TheAlgorithms' 1,416 missing calls were to the JDK:
 
           sb.append(x)         a variable, so the call lands on its type
           Arrays.sort(a)       a *type*: a static call lands on the type itself
           System.out.println() a field, so the call lands on the field's type
+          f(x).g()             a chain, so the call lands on f's return type
 
         A JDK type is as valid a target as a project one -- Understand reports
         `sb.append(...)` as java.lang.StringBuilder.append -- and a fully
@@ -95,7 +122,9 @@ class MethodCallListener(JavaParserLabeledListener):
                 return None
             head = indexed
         if field and not field.isidentifier():
-            return None     # a chained call or an expression: naming it is a guess
+            # A chained call is answerable when the JDK says what the inner
+            # call returns. Anything else is still a guess and is refused.
+            return self.chained_owner(ctx, scope_longname)
 
         type_name = self.declared_type(head)
         if type_name:
@@ -116,13 +145,16 @@ class MethodCallListener(JavaParserLabeledListener):
         if identifier is None:
             return
         parent = ctx.parentCtx
-        receiver = None
+        receiver = receiver_ctx = None
         # `a.b()` parses as expression1 with the call as its right-hand side;
         # a bare `b()` has no receiver and is therefore a call on `this`.
         if type(parent).__name__ == "Expression1Context":
             expression = parent.expression()
-            if expression is not None:
+            if expression is not None and not isinstance(expression, list):
                 receiver = expression.getText()
+                # The context too: a chained receiver has to be walked, and
+                # getText() has already thrown the structure away.
+                receiver_ctx = expression
         scope_longname = ".".join(
             class_properties.ClassPropertiesListener.findParents(ctx))
         self.calls.append({
@@ -135,7 +167,8 @@ class MethodCallListener(JavaParserLabeledListener):
             # project declares.
             # A bare call may be a statically imported member rather than one
             # of the enclosing class's own.
-            "owner_longname": (self.owner_longname(receiver, scope_longname)
+            "owner_longname": (self.owner_longname(receiver, scope_longname,
+                                                   receiver_ctx)
                                if receiver
                                else self.static_imports.get(identifier.getText())),
             "scope_longname": scope_longname,

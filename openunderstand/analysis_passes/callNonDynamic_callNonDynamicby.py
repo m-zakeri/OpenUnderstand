@@ -47,6 +47,45 @@ class CallNonDynamicAndCallNonDynamicBy(JavaParserLabeledListener):
                             if block is not None:
                                 self.dfs(block, method, ctx, extendedBy)
 
+    @staticmethod
+    def scope_of(method, line, col, called):
+        """The call site's scope: the method the `super.x()` call sits in.
+
+        `dfs` calls its parameters (ctx, cls, context) but passes
+        (block, methodDeclaration, classDeclaration), so `cls` here is a
+        *method*. This used to take the long name from
+        `findParents(classDeclaration)`, which -- as that function's docstring
+        says -- excludes the context's own identifier, so the class name never
+        made it in and the long name was the bare package. The scope was then
+        written as a *class* entity called `org.json.junit.data` holding the
+        method's `getText()`, and the four references scoped to it could never
+        match Understand, which scopes a call to the calling method.
+
+        `findParents(method)` walks up through the class, so appending the
+        method's own name gives package.Class.method -- the same shape
+        `method_calls.py` produces for every other call.
+        """
+        parents = class_properties.ClassPropertiesListener.findParents(method)
+        name = method.IDENTIFIER().getText()
+        return {
+            # A method kind, so entity identity -- (long name, kind family) --
+            # binds this to the method define_listener already declared rather
+            # than creating a second entity beside it.
+            "scope_kind": "Method",
+            "scope_name": name,
+            "scope_longname": ".".join(parents + [name]),
+            "scope_parent": parents[-1] if parents else None,
+            # Empty rather than getText(): that is source with the whitespace
+            # removed, and the declaring pass has already stored the real thing.
+            "scope_contents": "",
+            "scope_modifiers": class_properties.ClassPropertiesListener.findClassOrInterfaceModifiers(
+                method
+            ),
+            "line": line,
+            "col": col,
+            "type_ent_longname": str(called),
+        }
+
     def dfs(self, ctx, cls, context, extendedBy):
         bStatements = ctx.blockStatement()
         for bStatement in bStatements:
@@ -86,41 +125,13 @@ class CallNonDynamicAndCallNonDynamicBy(JavaParserLabeledListener):
                                             methodCall = methodCall()
                                             if methodCall is not None:
                                                 called = methodCall.IDENTIFIER()
-                                                scope_parents = class_properties.ClassPropertiesListener.findParents(
-                                                    context
-                                                )
-
-                                                if len(scope_parents) == 1:
-                                                    scope_longname = scope_parents[0]
-                                                else:
-                                                    scope_longname = ".".join(
-                                                        scope_parents
-                                                    )
-
-                                                line = context.children[0].symbol.line
-                                                col = context.children[0].symbol.column
                                                 self.implement.append(
-                                                    {
-                                                        "scope_kind": "Class",
-                                                        "scope_name": cls.IDENTIFIER().__str__(),
-                                                        "scope_longname": str(
-                                                            scope_longname
-                                                        ),
-                                                        "scope_parent": (
-                                                            scope_parents[-2]
-                                                            if len(scope_parents) > 2
-                                                            else None
-                                                        ),
-                                                        "scope_contents": cls.getText(),
-                                                        "scope_modifiers": class_properties.ClassPropertiesListener.findClassOrInterfaceModifiers(
-                                                            context
-                                                        ),
-                                                        "line": line,
-                                                        "col": col,
-                                                        "type_ent_longname": str(
-                                                            called
-                                                        ),
-                                                    }
+                                                    self.scope_of(
+                                                        cls,
+                                                        context.children[0].symbol.line,
+                                                        context.children[0].symbol.column,
+                                                        called,
+                                                    )
                                                 )
 
                                 else:
@@ -129,35 +140,11 @@ class CallNonDynamicAndCallNonDynamicBy(JavaParserLabeledListener):
                                         methodCall = methodCall()
                                         if methodCall is not None:
                                             called = methodCall.IDENTIFIER()
-                                            scope_parents = class_properties.ClassPropertiesListener.findParents(
-                                                context
-                                            )
-
-                                            if len(scope_parents) == 1:
-                                                scope_longname = scope_parents[0]
-                                            else:
-                                                scope_longname = ".".join(scope_parents)
-
-                                            line = methodCall.start.line
-                                            col = methodCall.start.column
                                             self.implement.append(
-                                                {
-                                                    "scope_kind": "Class",
-                                                    "scope_name": cls.IDENTIFIER().__str__(),
-                                                    "scope_longname": str(
-                                                        scope_longname
-                                                    ),
-                                                    "scope_parent": (
-                                                        scope_parents[-2]
-                                                        if len(scope_parents) > 2
-                                                        else None
-                                                    ),
-                                                    "scope_contents": cls.getText(),
-                                                    "scope_modifiers": class_properties.ClassPropertiesListener.findClassOrInterfaceModifiers(
-                                                        context
-                                                    ),
-                                                    "line": line,
-                                                    "col": col,
-                                                    "type_ent_longname": str(called),
-                                                }
+                                                self.scope_of(
+                                                    cls,
+                                                    methodCall.start.line,
+                                                    methodCall.start.column,
+                                                    called,
+                                                )
                                             )

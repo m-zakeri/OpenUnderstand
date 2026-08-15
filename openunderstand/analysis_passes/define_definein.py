@@ -112,7 +112,7 @@ def source_text(ctx):
     `ctx.getText()` concatenates token text, so a method comes back as
     `publicvoidmain(String[]args){...}` -- which is not Java and cannot be
     reparsed. Every metric that works by reparsing `ent.contents()`
-    (Cyclomatic, CountStmt, CountLineCode, MaxNesting, …) was therefore
+    (Cyclomatic, CountStmt, CountLineCode, MaxNesting, ...) was therefore
     returning 0. The input stream still holds the real characters.
     """
     start, stop = _declaration_start(ctx), ctx.stop

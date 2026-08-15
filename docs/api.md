@@ -12,7 +12,7 @@ db = und.open("myproject.udb")
 
 ## Filter strings
 
-Several methods take a *kindstring* — the same filter grammar Understand uses.
+Several methods take a *kindstring* -- the same filter grammar Understand uses.
 
 | Syntax | Meaning |
 | --- | --- |
@@ -123,7 +123,7 @@ The first result of `refs(...)`, or `None`.
 
 ### `ents(refkindstring [, entkindstring])` → `list[Ent]`
 
-The entities on the far side of matching references — `refs()` with the
+The entities on the far side of matching references -- `refs()` with the
 references thrown away.
 
 ### `filerefs([refkindstring [, entkindstring [, unique]]])` → `list[Ref]`
@@ -189,7 +189,7 @@ See [Kinds](kinds.md) for the full vocabulary.
 
 These are deliberate and measured, not accidental:
 
-- **Long names carry no parameter list** — as in Understand, where
+- **Long names carry no parameter list** -- as in Understand, where
   `println.print` also names two entities. Overloads are told apart by
   declaration position, so they are separate entities here too.
 - **External types are not resolved.** No JDK or third-party jars are analysed,

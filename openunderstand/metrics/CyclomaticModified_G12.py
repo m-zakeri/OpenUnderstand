@@ -101,7 +101,6 @@ class CyclomaticModifiedListener(JavaParserLabeledListener):
             + "."
             + ctx.IDENTIFIER().getText()
         )
-        print("method", longname, self.method_count_Cyclomatic)
         self.method_long_names[longname] = self.method_count_Cyclomatic
 
         if self.max_value < self.method_count_Cyclomatic:
@@ -136,6 +135,23 @@ class CyclomaticModifiedListener(JavaParserLabeledListener):
 def cyclomatic_modified(ent_model=None):
     p = Project()
     listener = CyclomaticModifiedListener()
-    return_tree = context.parse(ent_model.contents())
+    # parse_entity, not parse: a method's source is not a compilation
+    # unit, so the plain call yields an error tree -- ClassDeclaration
+    # with no IDENTIFIER, which is what crashed this listener.
+    return_tree = context.parse_entity(ent_model.contents() or "")
     p.Walk(reference_listener=listener, parse_tree=return_tree)
-    return listener.method_count_Cyclomatic
+    # exitMethodDeclaration files each method's count and resets the
+    # running counter, so the attribute is back to 1 by the time the walk
+    # ends -- returning it reported 1 for every method, which is why this
+    # scored exactly the share of methods whose answer happens to be 1.
+    # Pick the entity's own entry, the way cyclomatic() does.
+    return _for_entity(ent_model, listener.method_long_names)
+
+
+def _for_entity(ent_model, counts):
+    """The walked entity's own count. A method with no branches is 1."""
+    name = getattr(ent_model, "name", lambda: None)()
+    for longname, count in counts.items():
+        if longname.rsplit(".", 1)[-1] == name:
+            return count
+    return 1

@@ -11,7 +11,7 @@
     <br/><br/>
     Requires Python 3.9+ with <code>openunderstand</code> installed
     (<code>pip install openunderstand</code>). Set the interpreter with the
-    <b>Python…</b> button in the tool window.
+    <b>Python...</b> button in the tool window.
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>

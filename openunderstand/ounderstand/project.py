@@ -70,6 +70,14 @@ def resolved_longname(simple_name, fallback, scope_longname=""):
 class Project:
     def __init__(self):
         self.tree = None
+        # getClassProperties() answers by walking the whole parse tree, and the
+        # create pass alone asked it 168 times for one file at ~80ms a call --
+        # 13.5s of JSONObject.java's 44s. The answer depends only on the long
+        # name and the tree, and the tree is fixed for the file being processed,
+        # so ask once. Cleared in Parse(), which is the only place a Project
+        # changes tree.
+        self._class_properties = {}
+        self._interface_properties = {}
 
     @staticmethod
     def listToString(s):
@@ -85,6 +93,8 @@ class Project:
             file_stream, "compilationUnit", prefer_cpp=_use_cpp_engine()
         )
         self.tree = return_tree
+        self._class_properties.clear()
+        self._interface_properties.clear()
         return return_tree
 
     @staticmethod
@@ -1347,17 +1357,23 @@ class Project:
         return ent[0]
 
     def getClassProperties(self, class_longname, file_address):
+        if class_longname in self._class_properties:
+            return self._class_properties[class_longname]
         listener = ClassPropertiesListener()
         listener.class_longname = class_longname.split(".")
         listener.class_properties = None
         self.Walk(listener, self.tree)
+        self._class_properties[class_longname] = listener.class_properties
         return listener.class_properties
 
     def getInterfaceProperties(self, interface_longname, file_address):
+        if interface_longname in self._interface_properties:
+            return self._interface_properties[interface_longname]
         listener = InterfacePropertiesListener()
         listener.interface_longname = interface_longname.split(".")
         listener.interface_properties = None
         self.Walk(listener, self.tree)
+        self._interface_properties[interface_longname] = listener.interface_properties
         return listener.interface_properties
 
     def getCreatedClassEntity(

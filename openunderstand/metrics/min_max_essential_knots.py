@@ -152,7 +152,6 @@ class MinEssentialKnots(JavaParserLabeledListener):
 
             # Ignore Switch Case
             if type(p) == JavaParserLabeled.Statement8Context:
-                print("Enter Switch Case")
                 new_num = 0
                 new_max = 0
                 new_method_num += 1
@@ -176,14 +175,9 @@ class MinEssentialKnots(JavaParserLabeledListener):
         self.method_maxEssentialKnots = 0
 
     def exitMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
-        print(
-            "Min and Max Knots of ",
-            ctx.IDENTIFIER().getText(),
-            "is : ",
-            self.method_counter,
-            ", ",
-            self.method_maxEssentialKnots,
-        )
+        # Nothing to do on exit. This used to print the per-method result:
+        # stdout is the MCP server's transport, and a stray print corrupts it.
+        pass
 
 
 def min_max_essential_knots(ent_model=None, enable: bool = True):
