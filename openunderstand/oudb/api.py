@@ -39,10 +39,11 @@ from openunderstand.metrics.knots_inheritance_nesting import (
     max_nesting,
 )
 from openunderstand.metrics import context as metric_context
+from openunderstand.metrics import count_path
 from openunderstand.metrics import graph_metrics
 from openunderstand.metrics.count_stmt_exe import statement_counter_exe
 from openunderstand.metrics.cyclomatic import cyclomatic
-from openunderstand.metrics.CyclomaticStrict_G12 import cyclomatic_strict
+from openunderstand.metrics.cyclomatic_strict import cyclomatic_strict
 from openunderstand.metrics.Essential_G12 import essential
 from openunderstand.metrics.CyclomaticModified_G12 import cyclomatic_modified
 from openunderstand.metrics.G11_knots import knot
@@ -265,6 +266,178 @@ _CODE_CHECK_METRICS = {
     "CCViolDensityCode": "0.00",
     "CCViolDensityLine": "0.00",
 }
+
+#: Every metric name this project knows, in Understand's documented order.
+#: dict.fromkeys, not set(): the list carried CountDeclClassMethod and
+#: CountDeclMethodAll twice.
+_ALL_METRICS = tuple(dict.fromkeys([
+    "CountDeclMethodAll",
+    "CountDeclClassVariable",
+    "AvgCyclomatic",
+    "AvgCyclomaticModified",
+    "AvgCyclomaticStrict",
+    "AvgEssential",
+    "CountDeclClassMethod",
+    "AvgCountLine",
+    "AvgCountLineBlank",
+    "AvgCountLineCode",
+    "AvgCountLineComment",
+    "CountClassBase",
+    "CountClassCoupled",
+    "CountClassCoupledModified",
+    "CountClassDerived",
+    "CountDeclClass",
+    "CountDeclClassMethod",
+    "CountDeclExecutableUnit",
+    "CountDeclFile",
+    "CountDeclFunction",
+    "CountDeclInstanceMethod",
+    "CountDeclInstanceVariable",
+    "CountDeclInstanceVariablePrivate",
+    "CountDeclInstanceVariableProtected",
+    "CountDeclInstanceVariablePublic",
+    "CountDeclMethod",
+    "CountCCViol",
+    "CountCCViolType",
+    "CCViolDensityCode",
+    "CCViolDensityLine",
+    "CountDeclMethodAll",
+    "CountDeclMethodDefault",
+    "CountDeclMethodPrivate",
+    "CountDeclMethodProtected",
+    "CountDeclMethodPublic",
+    "CountInput",
+    "CountLine",
+    "CountLineBlank",
+    "CountLineCode",
+    "CountLineCodeDecl",
+    "CountLineCodeExe",
+    "CountLineComment",
+    "CountOutput",
+    "CountPath",
+    "CountPathLog",
+    "CountSemicolon",
+    "CountStmt",
+    "CountStmtDecl",
+    "CountStmtExe",
+    "Cyclomatic",
+    "CyclomaticModified",
+    "CyclomaticStrict",
+    "Essential",
+    "Knots",
+    "MaxCyclomatic",
+    "MaxCyclomaticModified",
+    "MaxCyclomaticStrict",
+    "MaxEssential",
+    "MaxEssentialKnots",
+    "MaxInheritanceTree",
+    "MaxNesting",
+    "MinEssentialKnots",
+    "PercentLackOfCohesion",
+    "PercentLackOfCohesionModified",
+    "RatioCommentToCode",
+    "SumCyclomatic",
+    "SumCyclomaticModified",
+    "SumCyclomaticStrict",
+    "SumEssential",
+]))
+
+#: Which metrics Understand answers, by entity kind family. Read off a built
+#: `.und` with `ent.metric(every_name)`: availability turns on the family
+#: alone, never on modifiers or genericity, so a Public Final Generic Class and
+#: a bare Class get the same 47. `ent.metrics()` reports a smaller list than
+#: `ent.metric()` will answer -- the *cyclomatic variants and CountPath are
+#: absent from it and still valued -- so this is keyed off what it answers.
+_METRIC_SCOPE = {
+    "method": frozenset({
+        "CCViolDensityCode", "CCViolDensityLine", "CountCCViol",
+        "CountCCViolType", "CountInput", "CountLine", "CountLineBlank",
+        "CountLineCode", "CountLineCodeDecl", "CountLineCodeExe",
+        "CountLineComment", "CountOutput", "CountPath", "CountPathLog",
+        "CountSemicolon", "CountStmt", "CountStmtDecl", "CountStmtExe",
+        "Cyclomatic", "CyclomaticModified", "CyclomaticStrict", "Essential",
+        "Knots", "MaxEssentialKnots", "MaxNesting", "MinEssentialKnots",
+        "RatioCommentToCode", "SumCyclomatic", "SumCyclomaticModified",
+        "SumCyclomaticStrict", "SumEssential",
+    }),
+    "class": frozenset({
+        "AvgCountLine", "AvgCountLineBlank", "AvgCountLineCode",
+        "AvgCountLineComment", "AvgCyclomatic", "AvgCyclomaticModified",
+        "AvgCyclomaticStrict", "AvgEssential", "CountClassBase",
+        "CountClassCoupled", "CountClassCoupledModified", "CountClassDerived",
+        "CountDeclClassMethod", "CountDeclClassVariable",
+        "CountDeclInstanceMethod", "CountDeclInstanceVariable",
+        "CountDeclMethod", "CountDeclMethodAll", "CountDeclMethodDefault",
+        "CountDeclMethodPrivate", "CountDeclMethodProtected",
+        "CountDeclMethodPublic", "CountLine", "CountLineBlank",
+        "CountLineCode", "CountLineCodeDecl", "CountLineCodeExe",
+        "CountLineComment", "CountSemicolon", "CountStmt", "CountStmtDecl",
+        "CountStmtExe", "MaxCyclomatic", "MaxCyclomaticModified",
+        "MaxCyclomaticStrict", "MaxEssential", "MaxInheritanceTree",
+        "MaxNesting", "PercentLackOfCohesion", "PercentLackOfCohesionModified",
+        "RatioCommentToCode", "SumCyclomatic", "SumCyclomaticModified",
+        "SumCyclomaticStrict", "SumEssential",
+    }),
+    "file": frozenset({
+        "AvgCountLine", "AvgCountLineBlank", "AvgCountLineCode",
+        "AvgCountLineComment", "AvgCyclomatic", "AvgCyclomaticModified",
+        "AvgCyclomaticStrict", "AvgEssential", "CCViolDensityCode",
+        "CCViolDensityLine", "CountCCViol", "CountCCViolType",
+        "CountDeclClass", "CountDeclClassMethod", "CountDeclClassVariable",
+        "CountDeclExecutableUnit", "CountDeclFunction",
+        "CountDeclInstanceMethod", "CountDeclInstanceVariable",
+        "CountDeclMethod", "CountDeclMethodDefault", "CountDeclMethodPrivate",
+        "CountDeclMethodProtected", "CountDeclMethodPublic", "CountLine",
+        "CountLineBlank", "CountLineCode", "CountLineCodeDecl",
+        "CountLineCodeExe", "CountLineComment", "CountSemicolon", "CountStmt",
+        "CountStmtDecl", "CountStmtExe", "MaxCyclomatic",
+        "MaxCyclomaticModified", "MaxCyclomaticStrict", "MaxEssential",
+        "MaxNesting", "RatioCommentToCode", "SumCyclomatic",
+        "SumCyclomaticModified", "SumCyclomaticStrict", "SumEssential",
+    }),
+    "package": frozenset({
+        "AvgCountLine", "AvgCountLineBlank", "AvgCountLineCode",
+        "AvgCountLineComment", "AvgCyclomatic", "AvgCyclomaticModified",
+        "AvgCyclomaticStrict", "AvgEssential", "CountDeclClass",
+        "CountDeclClassMethod", "CountDeclClassVariable", "CountDeclFile",
+        "CountDeclInstanceMethod", "CountDeclInstanceVariable",
+        "CountDeclMethod", "CountDeclMethodDefault", "CountDeclMethodPrivate",
+        "CountDeclMethodProtected", "CountDeclMethodPublic", "CountLine",
+        "CountLineBlank", "CountLineCode", "CountLineCodeDecl",
+        "CountLineCodeExe", "CountLineComment", "CountSemicolon", "CountStmt",
+        "CountStmtDecl", "CountStmtExe", "MaxCyclomatic",
+        "MaxCyclomaticModified", "MaxCyclomaticStrict", "MaxEssential",
+        "MaxNesting", "RatioCommentToCode", "SumCyclomatic",
+        "SumCyclomaticModified", "SumCyclomaticStrict", "SumEssential",
+    }),
+}
+
+
+#: Understand scores a method with no body -- abstract, or declared in an
+#: interface -- 0 on all of these, not the 1 an empty body earns. Verified on
+#: JSON's `JSONString.toJSONString` and `XMLXsiTypeConverter.convert`, which
+#: answer 0 for every one and still carry CountLine 7 and CountStmtDecl 1.
+_BODYLESS_ZERO = frozenset({
+    "Cyclomatic", "CyclomaticModified", "CyclomaticStrict", "Essential",
+    "CountPath", "CountPathLog", "Knots", "MaxEssentialKnots",
+    "MinEssentialKnots", "MaxNesting",
+})
+
+
+def _metric_family(kindname):
+    """Which `_METRIC_SCOPE` bucket a kind name falls in, or None for a kind
+    Understand reports no metrics for at all -- a variable, a parameter, an
+    enum constant."""
+    words = set(str(kindname).split())
+    if "Package" in words:
+        return "package"
+    if "File" in words:
+        return "file"
+    if "Method" in words or "Constructor" in words:
+        return "method"
+    if words & {"Class", "Interface", "Annotation", "Enum"}:
+        return "class"
+    return None
 
 
 # Variables with simple values
@@ -926,6 +1099,37 @@ class Ent:
         """
         return str(self._longname)
 
+    def _method_summary(self, name):
+        """Avg/Max/Sum of a per-method metric over an entity's own methods.
+
+        A method's own `Sum*` is its value, not an aggregate over anything:
+        Understand reports SumCyclomatic 2 for a method of Cyclomatic 2. And
+        `MaxNesting` is a per-method metric that a container aggregates, so
+        asked of a method it returns None and the dispatch chain computes it.
+        """
+        base = graph_metrics.METHOD_SUMMARY[name]
+        if _metric_family(self.kindname()) == "method":
+            return None if base == name else self.metric([base]).get(base)
+        values = []
+        for row in graph_metrics.nested_methods(self):
+            method = Ent(**row.__dict__.get("__data__"))
+            # Only methods with a body. An interface's single abstract method
+            # has no statements to average, and Understand answers 0 for every
+            # one of JSONString's aggregates rather than the 7 lines of its
+            # declaration; an enum's synthetic `values` has no source at all
+            # and counts the same way, which is what makes MyEnum 0 and not 1.
+            if not (method.contents() or "").strip():
+                continue
+            try:
+                if metric_context.declares_without_body(method):
+                    continue
+                value = method.metric([base]).get(base)
+            except Exception:
+                continue
+            if isinstance(value, (int, float)):
+                values.append(value)
+        return graph_metrics.aggregate(name, values)
+
     def metric(
         self, metric_list: list = None
     ) -> dict:  # real signature unknown; restored from __doc__
@@ -939,6 +1143,10 @@ class Ent:
         """
         metrics = {}
         known = set(self.metrics())
+        # Computed once: it reparses, and the complexity family asks ten times.
+        bodyless = (_metric_family(self.kindname()) == "method"
+                    and any(m in _BODYLESS_ZERO for m in metric_list)
+                    and metric_context.declares_without_body(self))
 
         # A package has no source of its own: Understand reports the roll-up
         # over the files it spans. Doing this before the dispatch chain keeps
@@ -948,11 +1156,10 @@ class Ent:
             nested = graph_metrics.container_methods(self)
             classes = graph_metrics.container_classes(self)
             for item in metric_list:
-                if item not in known or item in graph_metrics._NOT_AGGREGATED:
+                if (item not in known or item in graph_metrics._NOT_AGGREGATED
+                        or item in graph_metrics.METHOD_SUMMARY):
                     continue
-                if graph_metrics.aggregates_over_methods(item):
-                    over = nested
-                elif graph_metrics.aggregates_over_classes(item):
+                if graph_metrics.aggregates_over_classes(item):
                     over = classes
                 else:
                     over = members
@@ -961,10 +1168,19 @@ class Ent:
                            for row in over])
             metric_list = [m for m in metric_list if m not in metrics]
         for item in metric_list:
-            # The docstring promises None for an unrecognised metric.
+            # The docstring promises None for a metric this entity has no
+            # value for -- unrecognised, or not defined on its kind.
             if item not in known:
                 metrics[item] = None
-        for item in metric_list:
+                continue
+            if item in _BODYLESS_ZERO and bodyless:
+                metrics[item] = 0
+                continue
+            if item in graph_metrics.METHOD_SUMMARY:
+                value = self._method_summary(item)
+                if value is not None:
+                    metrics[item] = value
+                    continue
             if item in _CODE_CHECK_METRICS:
                 metrics[item] = _CODE_CHECK_METRICS[item]
                 continue
@@ -975,32 +1191,9 @@ class Ent:
                     {"CountDeclClassVariable":
                          graph_metrics.count_decl_class_variable(self)}
                 )
-            elif item == "AvgCyclomatic":
-                # The mean over the entity's own methods. This used to return a
-                # raw count over whatever it managed to parse.
-                metrics.update({"AvgCyclomatic":
-                                metric_context.cyclomatic_summary(self)["avg"]})
-            elif item == "AvgCyclomaticModified":
-                metrics.update({"AvgCyclomaticModified": avg_cyclomatic_modified(self)})
-            elif item == "AvgCyclomaticStrict":
-                metrics.update({"AvgCyclomaticStrict": avg_cyclomatic_strict(self)})
-            elif item == "AvgEssential":
-                metrics.update({"AvgEssential": avg_essential(self)})
             elif item == "CountDeclClassMethod":
                 metrics.update({"CountDeclClassMethod":
                                 graph_metrics.count_decl_class_method(self)})
-            elif item == "AvgCountLine":
-                metrics.update({"AvgCountLine":
-                                graph_metrics.average_line_counts(self)["total"]})
-            elif item == "AvgCountLineBlank":
-                metrics.update({"AvgCountLineBlank":
-                                graph_metrics.average_line_counts(self)["blank"]})
-            elif item == "AvgCountLineCode":
-                metrics.update({"AvgCountLineCode":
-                                graph_metrics.average_line_counts(self)["code"]})
-            elif item == "AvgCountLineComment":
-                metrics.update({"AvgCountLineComment":
-                                graph_metrics.average_line_counts(self)["comment"]})
             elif item == "CountClassBase":
                 metrics.update({"CountClassBase": graph_metrics.count_class_base(self)})
             elif item == "CountClassCoupled":
@@ -1073,9 +1266,9 @@ class Ent:
             elif item == "CountOutput":
                 metrics.update({"CountOutput": graph_metrics.count_output(self)})
             elif item == "CountPath":
-                raise NotImplementedError("metric CountPath is not implemented")
+                metrics.update({"CountPath": count_path.count_path(self)})
             elif item == "CountPathLog":
-                raise NotImplementedError("metric CountPathLog is not implemented")
+                metrics.update({"CountPathLog": count_path.count_path_log(self)})
             elif item == "CountSemicolon":
                 metrics.update({"CountSemicolon": graph_metrics.count_semicolon(self)})
             elif item == "CountStmt":
@@ -1097,20 +1290,13 @@ class Ent:
                 metrics.update({"CyclomaticStrict": cyclomatic_strict(self)})
             elif item == "Knots":
                 metrics.update({"Knots": knot(self)})
-            elif item == "MaxCyclomatic":
-                metrics.update({"MaxCyclomatic": metric_context.cyclomatic_summary(self)["max"]})
-            elif item == "MaxCyclomaticModified":
-                metrics.update({"MaxCyclomaticModified": max_cyclomatic_modified(self)})
-            elif item == "MaxCyclomaticStrict":
-                metrics.update({"MaxCyclomaticStrict": max_cyclomatic_stricts(self)})
-            elif item == "MaxEssential":
-                metrics.update({"MaxEssential": max_essential(self)})
             elif item == "MaxEssentialKnots":
                 metrics.update(
                     {"MaxEssentialKnots": min_max_essential_knots(self, False)}
                 )
             elif item == "MaxInheritanceTree":
-                metrics.update({"MaxInheritanceTree": max_inheritance_tree(self)})
+                metrics.update({"MaxInheritanceTree":
+                                graph_metrics.max_inheritance_tree(self)})
             elif item == "MaxNesting":
                 metrics.update({"MaxNesting": max_nesting(self)})
             elif item == "MinEssentialKnots":
@@ -1139,97 +1325,24 @@ class Ent:
                 metrics.update({"RatioCommentToCode": (
                     f"{counts['comment'] / counts['code']:.2f}"
                     if counts["code"] else "0.00")})
-            elif item == "SumCyclomatic":
-                metrics.update({"SumCyclomatic": metric_context.cyclomatic_summary(self)["sum"]})
-            elif item == "SumCyclomaticModified":
-                metrics.update(
-                    {"SumCyclomaticModified": get_sum_cyclomatic_modified(self)}
-                )
-            elif item == "SumCyclomaticStrict":
-                metrics.update({"SumCyclomaticStrict": get_sum_cyclomatic_strict(self)})
-            elif item == "SumEssential":
-                metrics.update({"SumEssential": get_sum_essentials(self)})
         return metrics
 
     def metrics(self):  # real signature unknown; restored from __doc__
         """
         ent.metrics() -> list of strings
         Return a list of metric names defined for the entity.
-        """
 
-        # dict.fromkeys, not set(): the order is the documented order, and the
-        # list carried CountDeclClassMethod and CountDeclMethodAll twice.
-        return list(dict.fromkeys([
-            "CountDeclMethodAll",
-            "CountDeclClassVariable",
-            "AvgCyclomatic",
-            "AvgCyclomaticModified",
-            "AvgCyclomaticStrict",
-            "AvgEssential",
-            "CountDeclClassMethod",
-            "AvgCountLine",
-            "AvgCountLineBlank",
-            "AvgCountLineCode",
-            "AvgCountLineComment",
-            "CountClassBase",
-            "CountClassCoupled",
-            "CountClassCoupledModified",
-            "CountClassDerived",
-            "CountDeclClass",
-            "CountDeclClassMethod",
-            "CountDeclExecutableUnit",
-            "CountDeclFile",
-            "CountDeclFunction",
-            "CountDeclInstanceMethod",
-            "CountDeclInstanceVariable",
-            "CountDeclInstanceVariablePrivate",
-            "CountDeclInstanceVariableProtected",
-            "CountDeclInstanceVariablePublic",
-            "CountDeclMethod",
-            "CountCCViol",
-            "CountCCViolType",
-            "CCViolDensityCode",
-            "CCViolDensityLine",
-            "CountDeclMethodAll",
-            "CountDeclMethodDefault",
-            "CountDeclMethodPrivate",
-            "CountDeclMethodProtected",
-            "CountDeclMethodPublic",
-            "CountInput",
-            "CountLine",
-            "CountLineBlank",
-            "CountLineCode",
-            "CountLineCodeDecl",
-            "CountLineCodeExe",
-            "CountLineComment",
-            "CountOutput",
-            "CountPath",
-            "CountPathLog",
-            "CountSemicolon",
-            "CountStmt",
-            "CountStmtDecl",
-            "CountStmtExe",
-            "Cyclomatic",
-            "CyclomaticModified",
-            "CyclomaticStrict",
-            "Essential",
-            "Knots",
-            "MaxCyclomatic",
-            "MaxCyclomaticModified",
-            "MaxCyclomaticStrict",
-            "MaxEssential",
-            "MaxEssentialKnots",
-            "MaxInheritanceTree",
-            "MaxNesting",
-            "MinEssentialKnots",
-            "PercentLackOfCohesion",
-            "PercentLackOfCohesionModified",
-            "RatioCommentToCode",
-            "SumCyclomatic",
-            "SumCyclomaticModified",
-            "SumCyclomaticStrict",
-            "SumEssential",
-        ]))
+        Understand defines a metric on some kinds and not others -- Cyclomatic
+        on a method, CountDeclMethod on a class, CountDeclFile on a package --
+        and returns nothing at all for the rest. Answering 0 everywhere instead
+        capped every class-level metric near 0.17 in the parity table however
+        right its values were. `Ent(None).metrics()` still lists the union.
+        """
+        names = _ALL_METRICS
+        if self is None:
+            return list(names)
+        scope = _METRIC_SCOPE.get(_metric_family(self.kindname()))
+        return [n for n in names if n in scope] if scope else []
 
     def name(self):  # real signature unknown; restored from __doc__
         """

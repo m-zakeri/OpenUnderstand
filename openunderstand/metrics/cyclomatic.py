@@ -208,20 +208,21 @@ class CyclomaticListener(JavaParserLabeledListener):
 def cyclomatic(ent_model):
     """Cyclomatic complexity of one entity.
 
-    Understand reports this per method: decision points plus one. This used to
-    parse the entity's own contents as a compilation unit -- which fails for a
-    method, since a bare method is not one -- and then return the whole file's
-    total regardless. It agreed with Understand on 0 of 14 methods.
-    """
-    listener = context.walk_file(ent_model, CyclomaticListener())
-    counts = Counter(listener.repository)
+    Understand reports this per method: decision points plus one.
 
+    Counted from the entity's *own* source, not by finding its name in the
+    file. Overloads share a simple name, so the name search answered every one
+    of JSONArray's twelve constructors with the first one's number -- right for
+    each name the parity harness scores, and 197 against Understand's 227 the
+    moment a class sums them.
+    """
     if context.is_file(ent_model):
+        listener = context.walk_file(ent_model, CyclomaticListener())
         return listener.project_cyclomatic
 
-    name = ent_model.name()
-    for ctx, count in counts.items():
-        if context.declared_name(ctx) == name:
-            # A method with no branches still has complexity 1.
-            return count
-    return 1
+    listener = context.walk_entity(ent_model, CyclomaticListener())
+    counts = Counter(listener.repository)
+    # The walked source holds one declaration; a nested lambda or anonymous
+    # class adds its own entry, and the outer one is the entity asked about.
+    # A method with no branches still has complexity 1.
+    return max(counts.values(), default=1)
