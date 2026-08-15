@@ -33,7 +33,7 @@ from openunderstand.analysis_passes.class_properties import (
     ClassPropertiesListener,
     InterfacePropertiesListener,
 )
-from openunderstand.oudb.models import kind_id
+from openunderstand.oudb.models import find_kind, kind_id
 
 # Constants
 
@@ -240,13 +240,7 @@ class EntityGenerator:
             and "local" not in modifiers
         ):
             modifiers.append("default")
-        kind_selected = None
-        for kind in KindModel.select().where(KindModel._name.contains("Variable")):
-            if self.checkModifiersInKind(modifiers, kind):
-                if not kind_selected or len(kind_selected._name) > len(kind._name):
-                    kind_selected = kind
-        # print(kind_selected)
-        return kind_selected
+        return find_kind("Variable", modifiers)
 
     def get_method_kind(self, modifiers):
         """Return the kind ID based on the modifier"""
@@ -258,12 +252,7 @@ class EntityGenerator:
             modifiers.remove("@NotNull")
         if len(modifiers) == 0:
             modifiers.append("default")
-        kind_selected = None
-        for kind in KindModel.select().where(KindModel._name.contains("Method")):
-            if self.checkModifiersInKind(modifiers, kind):
-                if not kind_selected or len(kind_selected._name) > len(kind._name):
-                    kind_selected = kind
-        return kind_selected
+        return find_kind("Method", modifiers)
 
     def getClassProperties(self, class_longname) -> dict:
         listener = ClassPropertiesListener()

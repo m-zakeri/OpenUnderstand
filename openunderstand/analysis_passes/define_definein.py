@@ -369,6 +369,34 @@ class DefineListener(JavaParserLabeledListener):
             modifiers=self._type_modifiers(ctx),
         )
 
+    def enterAnnotationMethodRest(
+        self, ctx: JavaParserLabeled.AnnotationMethodRestContext
+    ):
+        """`String value();` inside an `@interface` declares a method.
+
+        It is `annotationMethodRest`, not a methodDeclaration, so nothing
+        created it and JSONPropertyName reported CountDeclMethod 0 against
+        Understand's 1 -- and CountDeclMethodAll with it, for every annotation
+        in the project.
+        """
+        ent = ctx.IDENTIFIER()
+        if ent is None:
+            return
+        element = ctx.parentCtx
+        while element is not None and not type(
+                element).__name__.startswith("AnnotationTypeElementRest"):
+            element = element.parentCtx
+        declared = element.typeType() if element is not None else None
+        self.add_define_info(
+            ent=ent,
+            ent_parents=class_properties.ClassPropertiesListener.findParents(ctx),
+            type=declared.getText() if declared is not None else "",
+            contents=source_text(ctx),
+            decl=K.METHOD,
+            # An annotation member is implicitly public and abstract.
+            modifiers=["public", "abstract"],
+        )
+
     def enterConstructorDeclaration(
         self, ctx: JavaParserLabeled.ConstructorDeclarationContext
     ):

@@ -25,7 +25,6 @@ from openunderstand.metrics.count_decl_method_default import count_decl_method_d
 from openunderstand.metrics.count_decl_file import declare_file
 from openunderstand.metrics.sum_essentials import get_sum_essentials
 from openunderstand.metrics.count_decl_executable_unit import declare_executable_unit
-from openunderstand.metrics.min_max_essential_knots import min_max_essential_knots
 from openunderstand.metrics.namm import get_namm
 from openunderstand.metrics.MaxCalculator_G12 import max_cyclomatic
 from openunderstand.metrics.MaxCalculator_G12 import max_essential
@@ -44,9 +43,10 @@ from openunderstand.metrics import graph_metrics
 from openunderstand.metrics.count_stmt_exe import statement_counter_exe
 from openunderstand.metrics.cyclomatic import cyclomatic
 from openunderstand.metrics.cyclomatic_strict import cyclomatic_strict
-from openunderstand.metrics.Essential_G12 import essential
+from openunderstand.metrics.essential import essential
 from openunderstand.metrics.CyclomaticModified_G12 import cyclomatic_modified
-from openunderstand.metrics.G11_knots import knot
+from openunderstand.metrics import knots
+from openunderstand.metrics.knots import knot
 
 """
 This is the python interface to Understand databases.
@@ -1291,18 +1291,14 @@ class Ent:
             elif item == "Knots":
                 metrics.update({"Knots": knot(self)})
             elif item == "MaxEssentialKnots":
-                metrics.update(
-                    {"MaxEssentialKnots": min_max_essential_knots(self, False)}
-                )
+                metrics.update({"MaxEssentialKnots": knots.essential_knots(self)})
             elif item == "MaxInheritanceTree":
                 metrics.update({"MaxInheritanceTree":
                                 graph_metrics.max_inheritance_tree(self)})
             elif item == "MaxNesting":
                 metrics.update({"MaxNesting": max_nesting(self)})
             elif item == "MinEssentialKnots":
-                metrics.update(
-                    {"MinEssentialKnots": min_max_essential_knots(self, True)}
-                )
+                metrics.update({"MinEssentialKnots": knots.essential_knots(self)})
             elif item == "PercentLackOfCohesion":
                 metrics.update(
                     {"PercentLackOfCohesion":

@@ -66,7 +66,10 @@ class FieldUseListener(JavaParserLabeledListener):
         # none, and it left the real field with no Use reference at all.
         self._scopes.append((self.enclosing_type, self.field_types))
         body = ctx.classBody()
-        self.field_types = (declared_types.collect(body) if body is not None
+        # collect_own: a class body contains its nested classes, and the
+        # plain walk folded their fields in with its own -- `this.items`
+        # resolved to whichever `items` was declared last in the file.
+        self.field_types = (declared_types.collect_own(body) if body is not None
                             else {})
         self.enclosing_type = ".".join(
             class_properties.ClassPropertiesListener.findParents(ctx)

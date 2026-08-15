@@ -320,8 +320,12 @@ def count_class_coupled(ent_model, exclude_standard=False):
     entity = _entity(ent_model)
     if entity is None:
         return 0
-    bases = {t._id for t in _targets(entity._id, "Java Extend Couple")}
-    bases |= {t._id for t in _targets(entity._id, "Java Implement Couple")}
+    # Every way a supertype is named, not just the two plain kinds: a JDK
+    # superclass arrives as `Extend Couple External` and an implicit
+    # java.lang.Object as `Extend Couple Implicit External`. Excluding only
+    # the plain kinds left java.lang.RuntimeException counted as a coupling of
+    # JSONException, which is Understand's 1 against our 2.
+    bases = set(_supertypes(entity._id))
 
     coupled = set()
     for target in _targets(entity._id, "Java Couple", "type"):
@@ -419,11 +423,40 @@ def _fan_targets(entity_id, ref_kinds, owner_longname):
     return out
 
 
+def _field_targets(entity_id, ref_kinds, owner_longname):
+    """Distinct variables an entity touches that are neither its own locals
+    nor its own parameters -- that is, fields."""
+    prefix = (owner_longname or "") + "."
+    out = set()
+    for kind in ref_kinds:
+        for target in _targets(entity_id, kind):
+            if kind_family(target._kind_id) != "variable":
+                continue
+            if "Parameter" in (_kind_name(target._kind_id) or ""):
+                continue
+            if owner_longname and (target._longname or "").startswith(prefix):
+                continue        # a local
+            out.add(target._id)
+    return out
+
+
 def count_output(ent_model):
     """"Functions calls + Parameters set/modify + Global Variables set/modify.
     A non-void return value adds one to the count." [aka FANOUT]
 
-    The previous version counted calls only, and scored 2%.
+    Two things in that sentence are not what they look like, and reproducing
+    the metric over Understand's *own* references settles both -- 600 of 600 of
+    JSON's methods, where the reading below scored 510.
+
+    A **parameter** is never an output. The description says so in its next
+    breath -- "parameters that are pass by value are not included" -- and in
+    Java every parameter is. Only fields count, which is why JSONTokener.back
+    is 4: two calls and the two fields it sets.
+
+    A **constructor** counts the 1 that a non-void return earns. It has no
+    declared type at all, and Understand still scores `CDL.CDL` 1 for its
+    single call plus that -- every one of the 90 remaining disagreements was a
+    constructor short by exactly one.
     """
     entity = _entity(ent_model)
     if entity is None:
@@ -431,10 +464,12 @@ def count_output(ent_model):
     fan = {t._id for t in _targets(entity._id, "Java Call")}
     fan |= {t._id for t in _targets(entity._id, "Java Call Nondynamic")}
     fan.discard(entity._id)  # "Recursive function calls ... are not included"
-    fan |= _fan_targets(entity._id, _kinds_like("Java Set", "Java Modify"),
-                        entity._longname)
+    fan |= _field_targets(entity._id, _kinds_like("Java Set", "Java Modify"),
+                          entity._longname)
+    kind = _kind_name(entity._kind_id) or ""
     declared = (entity._type or "").strip()
-    if declared and declared != "void" and kind_family(entity._kind_id) == "method":
+    returns_something = "Constructor" in kind or (declared and declared != "void")
+    if returns_something and kind_family(entity._kind_id) == "method":
         fan.add(("return", entity._id))
     return len(fan)
 
