@@ -42,6 +42,9 @@ tasks.processResources {
 // Nothing here registers searchable settings, and the task starts a headless
 // IDE that fails while the sandbox one holds its lock.
 tasks.buildSearchableOptions { enabled = false }
+// ... and the task that packs its output, which otherwise fails on a clean
+// build looking for a directory the disabled task never created.
+tasks.named("prepareJarSearchableOptions") { enabled = false }
 
 // `gradle runIde -PrunProject=/some/java/project` opens it in the sandbox IDE
 // instead of the empty welcome screen.

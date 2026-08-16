@@ -9,9 +9,9 @@
     <a href="https://github.com/m-zakeri/OpenUnderstand">OpenUnderstand</a>,
     an open-source implementation of the SciTools Understand API.
     <br/><br/>
-    Requires Python 3.9+ with <code>openunderstand</code> installed
-    (<code>pip install openunderstand</code>). Set the interpreter with the
-    <b>Python...</b> button in the tool window.
+    Requires <code>python3</code> 3.9+ on the path. The analyser ships with the
+    plugin and installs itself into a virtualenv of its own the first time you
+    press <b>Analyse Project</b>; nothing to configure.
     ]]></description>
 
     <depends>com.intellij.modules.platform</depends>

@@ -3,7 +3,7 @@
 `idea-plugin/` is a JetBrains IDE plugin that runs the analysis over the open
 project and lists per-entity metrics in a tool window. It is a thin shell: all
 of the work happens in `scripts/idea_metrics.py`, which the plugin ships as a
-resource and runs with a Python interpreter it finds on the machine.
+resource and runs in a virtualenv the plugin builds for itself.
 
 ## Using it
 
@@ -13,7 +13,6 @@ resource and runs with a Python interpreter it finds on the machine.
 | --- | --- |
 | Analyse Project | Runs the analysis over the project root and fills the table |
 | Export CSV... | Writes the table to a file, in analysis order |
-| Python... | Sets the interpreter, when the one found automatically is wrong |
 
 One column per metric `Ent.metrics()` reports -- around 70 of Understand's
 names, whichever the library implements -- so the table scrolls sideways.
@@ -26,19 +25,23 @@ the plugin passes none.
 
 ## The interpreter
 
-The analyser is Python and the plugin does not bundle one. On each run it
-resolves an interpreter in this order:
+The analyser is Python and the plugin does not bundle one. It runs in a
+virtualenv it owns, under
+`PathManager.getSystemPath()/openunderstand-venv-<analyser version>`, built with
+`python3` and populated from the bundled wheel the first time **Analyse
+Project** is pressed. `python -c "import openunderstand"` guards it, so the
+install happens once and every later run skips straight to the analysis.
 
-1. whatever **Python...** stored;
-2. `$VIRTUAL_ENV`;
-3. the nearest `.venv/bin/python` at or above the analysed project;
-4. `python3`.
+There is deliberately no interpreter setting and no search of the machine. An
+interpreter found on `PATH` or in the project carries whatever version of the
+analyser happens to be installed there, which defeats the reason the wheel is
+bundled at all. The version in the directory name is what makes a plugin update
+build a new venv rather than reuse one holding the old analyser.
 
-It then checks `python -c "import openunderstand"` before doing anything
-expensive. If the import fails it offers to build a virtualenv under
-`PathManager.getSystemPath()/openunderstand-venv`, install the package into it
-and remember that interpreter -- so the common case needs no configuration and
-the failure case names the problem instead of returning an empty table.
+The dumper is written to a **private temp directory**, never a shared one:
+Python puts a script's own directory first on `sys.path`, so a leftover
+`/tmp/openunderstand.py` from an earlier run shadows the installed package and
+the dumper dies with `'openunderstand' is not a package`.
 
 It installs the **wheel bundled in the plugin** when there is one, falling back
 to `pip install openunderstand` otherwise. Bundling matters because the plugin
