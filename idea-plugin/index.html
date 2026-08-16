@@ -807,8 +807,9 @@ belongs in a pull request.</p>
 <h2 id="publishing">Publishing</h2>
 <p><code>.github/workflows/release-plugin.yml</code> publishes to the Marketplace when a
 <code>plugin-v*</code> tag is pushed. It is separate from <code>release.yml</code> and its <code>v*</code> tags
-because the plugin and the library version independently -- plugin 0.1.1 bundles
-analyser 0.2.1 -- and it builds the wheel first, so the zip carries the analyser
+because the plugin and the library version independently -- a plugin release
+bundles whatever analyser version is current -- and it builds the wheel first,
+so the zip carries the analyser
 rather than falling back to PyPI at the user's first run.</p>
 <p>Two things it needs:</p>
 <ul>
