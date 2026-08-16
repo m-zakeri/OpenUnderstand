@@ -14,11 +14,39 @@ name: release-plugin
 
 on:
   push:
+    branches: [master]
     tags: ["plugin-v*"]
   workflow_dispatch:
 
 jobs:
+  # Merging cannot simply publish: the Marketplace rejects a version it already
+  # holds, so every other merge would fail. Publish only when this push changed
+  # the `version` line in build.gradle.kts -- bump it in the pull request and
+  # merging ships the plugin, merge anything else and this does nothing.
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.check.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - id: check
+        name: Did this push change the plugin version?
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            echo "tag push -- publishing"; echo "publish=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          BEFORE="${{ github.event.before }}"
+          case "$BEFORE" in ""|0000000000000000000000000000000000000000) BEFORE="${GITHUB_SHA}^" ;; esac
+          if git diff "$BEFORE" "$GITHUB_SHA" -- idea-plugin/build.gradle.kts | grep -qE '^\+version = '; then
+            echo "plugin version changed -- publishing"; echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "plugin version unchanged -- nothing to release"; echo "publish=false" >> "$GITHUB_OUTPUT"
+          fi
+
   publish:
+    needs: version
+    if: needs.version.outputs.publish == 'true'
     runs-on: ubuntu-latest
     environment: jetbrains
     steps:
@@ -53,8 +81,9 @@ jobs:
         working-directory: idea-plugin
         run: gradle buildPlugin verifyPlugin -PideaHome= --no-daemon
 
+      # Reaching here already means the gate opened: a tag, or a merge that
+      # changed the plugin version.
       - name: Publish to the Marketplace
-        if: startsWith(github.ref, 'refs/tags/')
         working-directory: idea-plugin
         env:
           PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
