@@ -187,7 +187,9 @@ class MetricsToolWindow : ToolWindowFactory {
             }
             val descriptor = FileSaverDescriptor("Export Metrics", "Save the table as CSV", "csv")
             FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
-                .save(null as com.intellij.openapi.vfs.VirtualFile?, "metrics.csv")
+                // Path overload, not the deprecated VirtualFile one -- untilBuild
+                // is open, so a deprecated call is a future verifier failure.
+                .save(null as java.nio.file.Path?, "metrics.csv")
                 ?.file?.writeText(csv(model))
         }
 

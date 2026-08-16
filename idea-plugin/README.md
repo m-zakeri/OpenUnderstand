@@ -30,7 +30,7 @@ gradle buildPlugin                 # build/distributions/openunderstand-idea-0.1
 Install the zip with Settings → Plugins → ⚙ → Install Plugin from Disk.
 
 `gradle.properties` carries two local paths: `ideaHome`, the IDE to build
-against (unset it to download IDEA Community 2024.2 instead -- a 1.2 GB fetch),
+against (unset it to download IDEA Community 2025.1 instead -- a 1.2 GB fetch),
 and `runProject`, what the sandbox opens.
 
 ## Requirements, installed on demand

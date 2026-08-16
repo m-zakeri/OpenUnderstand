@@ -77,7 +77,7 @@ gradle buildPlugin                            # build/distributions/*.zip
 ```
 
 `gradle.properties` carries two machine-local paths. `ideaHome` is the IDE to
-build against; unset it and the build downloads IDEA Community 2024.2 instead,
+build against; unset it and the build downloads IDEA Community 2025.1 instead,
 which is a 1.2 GB fetch. `runProject` is what the sandbox opens. Neither
 belongs in a pull request.
 

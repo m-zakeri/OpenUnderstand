@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "org.openunderstand"
-version = "0.1.0"
+version = "0.1.1"  // Marketplace rejects a re-upload under the version it verified
 
 kotlin { jvmToolchain(21) }
 
@@ -20,7 +20,7 @@ val ideaHome = providers.gradleProperty("ideaHome").orNull
 
 dependencies {
     intellijPlatform {
-        if (ideaHome != null) local(ideaHome) else intellijIdeaCommunity("2024.2")
+        if (ideaHome != null) local(ideaHome) else intellijIdeaCommunity("2025.1")
     }
 }
 
@@ -52,8 +52,19 @@ tasks.runIde {
 intellijPlatform {
     pluginConfiguration {
         ideaVersion {
-            sinceBuild = "242"  // 2024.2; raise only if you use a newer API
+            // Must not be lower than the platform this is compiled against --
+            // the Marketplace verifier runs the plugin against every IDE in the
+            // range, and bytecode compiled on 251 references signatures 242 does
+            // not have (FileSaverDescriptor's 3-String constructor is a vararg
+            // there). `verifyPluginConfiguration` reports the mismatch.
+            sinceBuild = "251"  // 2025.1; to support older IDEs, build against them
             untilBuild = provider { null }
         }
+    }
+
+    // `gradle verifyPlugin` is what the Marketplace runs on upload. Point it at
+    // the local IDE so it costs no download; `recommended()` fetches several.
+    pluginVerification {
+        ides { if (ideaHome != null) local(ideaHome) else recommended() }
     }
 }
