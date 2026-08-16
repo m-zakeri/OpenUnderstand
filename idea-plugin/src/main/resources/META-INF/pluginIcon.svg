@@ -2,9 +2,13 @@
   <!--
     The OpenUnderstand mark from docs/figs/OpenUnderstand_Logo.png, redrawn for
     40x40: the hexagon frame, the monitor and its orbit. The wordmark is left
-    out on purpose -- "OPEN UNDERSTAND" set across 40 pixels is a smudge, and
-    the hexagon is what makes the logo recognisable at this size. Colours are
-    sampled from the PNG: frame #fb9c2a, screen #f25938 -> #fb9c2a.
+    out on purpose, because "OPEN UNDERSTAND" set across 40 pixels is a smudge
+    and the hexagon is what makes the logo recognisable at this size. Colours
+    are sampled from the PNG: frame #fb9c2a, screen #f25938 to #fb9c2a.
+
+    Note for editing: XML forbids a double hyphen inside a comment, so the
+    house style for an em dash cannot be used in this file. A strict parser
+    rejects the whole document, which is how this icon first failed to open.
   -->
   <defs>
     <linearGradient id="screen" x1="0" y1="1" x2="1" y2="0">
@@ -13,7 +17,7 @@
     </linearGradient>
   </defs>
 
-  <!-- Flat chevrons with a wide side gap, as in the logo: meeting them closer
+  <!-- Flat chevrons with a wide side gap, as in the logo. Meeting them closer
        to the middle turns the hexagon into a diamond at this size. -->
   <g fill="none" stroke="#fb9c2a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
     <path d="M2.5 13.5 L20 4 L37.5 13.5"/>
