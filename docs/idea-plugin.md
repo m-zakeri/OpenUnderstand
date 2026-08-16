@@ -100,13 +100,37 @@ Three things the build needs, each learned the hard way:
 
 ## Publishing
 
-Not configured. The JetBrains Marketplace requires the zip to be signed
-(`signPlugin`: a certificate chain, a private key and its password) and
-uploaded with a permanent token (`publishPlugin`). Add both to
-`build.gradle.kts` reading from environment variables -- never the build file --
-when the credentials exist. Until then, install the zip through Settings →
-Plugins → ⚙ → Install Plugin from Disk.
+`.github/workflows/release-plugin.yml` publishes to the Marketplace when a
+`plugin-v*` tag is pushed. It is separate from `release.yml` and its `v*` tags
+because the plugin and the library version independently -- plugin 0.1.1 bundles
+analyser 0.2.1 -- and it builds the wheel first, so the zip carries the analyser
+rather than falling back to PyPI at the user's first run.
 
-A first upload to the Marketplace is manual and goes through moderation, which
-takes a couple of business days; `publishPlugin` only helps for updates after
-that.
+Two things it needs:
+
+* a repository secret **`PUBLISH_TOKEN`**, generated at plugins.jetbrains.com →
+  your profile → My Tokens. `publishPlugin` reads it from the environment;
+  it must never appear in the build file.
+* **`-PideaHome=`**. `gradle.properties` commits a developer's local IDE path,
+  which does not exist on a runner. Blank counts as unset, and the build
+  downloads a platform instead.
+
+A first upload is manual through the web form and goes through moderation, which
+takes a couple of business days; `publishPlugin` only works for versions after
+that. Signing (`signPlugin`: a certificate chain, a private key and its
+password) is still not configured -- the Marketplace signs the zip itself on
+upload, so it is optional until you distribute the zip outside it.
+
+To install a build by hand instead: Settings → Plugins → ⚙ → Install Plugin
+from Disk.
+
+### What the Marketplace verifies
+
+It runs the same Plugin Verifier over every IDE in the declared range and mails
+the result. Version 0.1.0 declared `242.0+` while being built against 2025.1,
+and came back **Critical** on 2024.2.6 and 2024.3.7.1 -- "Method not found",
+the `FileSaverDescriptor(String, String, String)` constructor that is a varargs
+one on those builds -- and **Compatible** on 2025.1, 2025.2, 2025.3, 2026.1 and
+2026.2. That is what `sinceBuild = "251"` answers, and it is also why the open
+`untilBuild` needs no local verification: the Marketplace has already proved the
+upper end.

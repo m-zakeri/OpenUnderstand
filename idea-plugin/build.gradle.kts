@@ -16,7 +16,11 @@ repositories {
 
 // Build against an IDE already on this machine when `ideaHome` points at one --
 // downloading a platform is a 1.2 GB fetch that times out on a slow link.
-val ideaHome = providers.gradleProperty("ideaHome").orNull
+//
+// Blank counts as unset, which is what lets CI say `-PideaHome=` to override the
+// developer path committed in gradle.properties. That path does not exist on a
+// runner, and `local()` on it fails the build before anything else runs.
+val ideaHome = providers.gradleProperty("ideaHome").orNull?.takeIf { it.isNotBlank() }
 
 dependencies {
     intellijPlatform {
@@ -66,8 +70,19 @@ intellijPlatform {
     }
 
     // `gradle verifyPlugin` is what the Marketplace runs on upload. Point it at
-    // the local IDE so it costs no download; `recommended()` fetches several.
+    // the local IDE so it costs no download; off the machine, one IDE at the
+    // floor of the supported range -- `recommended()` fetches several gigabytes,
+    // and the Marketplace verifies the whole range itself on upload anyway.
     pluginVerification {
-        ides { if (ideaHome != null) local(ideaHome) else recommended() }
+        ides { if (ideaHome != null) local(ideaHome) else ide("IC", "2025.1") }
+    }
+
+    // `gradle publishPlugin` uploads to the Marketplace. The token is a
+    // permanent one from plugins.jetbrains.com -> your profile -> My Tokens; it
+    // is read from the environment so it never lands in the repository. The
+    // plugin must already exist there: the first version of a plugin has to be
+    // uploaded through the web form, later ones can go through the API.
+    publishing {
+        token = providers.environmentVariable("PUBLISH_TOKEN")
     }
 }
