@@ -1,6 +1,6 @@
 # OpenUnderstand
 
-![OpenUnderstand Logo](docs/figs/OpenUnderstand_Logo.png)
+![OpenUnderstand Logo](https://raw.githubusercontent.com/m-zakeri/OpenUnderstand/master/docs/figs/OpenUnderstand_Logo.png)
 
 An open-source implementation of the [SciTools Understand](https://scitools.com)
 Python API, for Java.
@@ -101,7 +101,7 @@ Current agreement, on three benchmarks:
 | References reproduced at the exact position -- recall | 0.92 | 0.87 | 0.86 |
 | -- precision | 0.89 | 0.87 | 0.84 |
 
-[docs/parity.md](docs/parity.md) has the per-kind breakdown.
+[docs/parity.md](https://m-zakeri.github.io/OpenUnderstand/parity/) has the per-kind breakdown.
 
 The comparison is the specification: what the real tool outputs is what decides
 whether a reference is right. Understand must be installed and licensed, so it
@@ -130,7 +130,7 @@ Six tools (`analyze`, `open_database`, `list_entities`, `entity_references`,
 `entity_metrics`, `list_kinds`), four resources exposing the kind vocabulary
 and metric names, and three prompts (`review_class`, `complexity_hotspots`,
 `trace_callers`) -- so an assistant can analyse a Java project and ask what
-calls what, without knowing the schema. See [docs/mcp.md](docs/mcp.md).
+calls what, without knowing the schema. See [docs/mcp.md](https://m-zakeri.github.io/OpenUnderstand/mcp/).
 
 ## Use it from IntelliJ IDEA
 
@@ -143,7 +143,7 @@ a private virtualenv when it cannot find one.
 cd idea-plugin && gradle buildPlugin    # then install the zip from disk
 ```
 
-See [docs/idea-plugin.md](docs/idea-plugin.md).
+See [docs/idea-plugin.md](https://m-zakeri.github.io/OpenUnderstand/idea-plugin/).
 
 ## What it does not do
 
@@ -159,20 +159,20 @@ See [docs/idea-plugin.md](docs/idea-plugin.md).
 
 | | |
 | --- | --- |
-| [Getting started](docs/index.md) | install, build, query |
-| [API reference](docs/api.md) | every class and method, and what is missing |
-| [Kinds](docs/kinds.md) | the 237 entity and 106 reference kinds |
-| [Architecture](docs/architecture.md) | how a file becomes rows; how to add a pass |
-| [Parity](docs/parity.md) | measured agreement with Understand |
-| [MCP server](docs/mcp.md) | query your code from an assistant |
-| [IntelliJ IDEA plugin](docs/idea-plugin.md) | metrics in a tool window |
+| [Getting started](https://m-zakeri.github.io/OpenUnderstand/) | install, build, query |
+| [API reference](https://m-zakeri.github.io/OpenUnderstand/api/) | every class and method, and what is missing |
+| [Kinds](https://m-zakeri.github.io/OpenUnderstand/kinds/) | the 237 entity and 106 reference kinds |
+| [Architecture](https://m-zakeri.github.io/OpenUnderstand/architecture/) | how a file becomes rows; how to add a pass |
+| [Parity](https://m-zakeri.github.io/OpenUnderstand/parity/) | measured agreement with Understand |
+| [MCP server](https://m-zakeri.github.io/OpenUnderstand/mcp/) | query your code from an assistant |
+| [IntelliJ IDEA plugin](https://m-zakeri.github.io/OpenUnderstand/idea-plugin/) | metrics in a tool window |
 
 Published at
 [m-zakeri.github.io/OpenUnderstand](https://m-zakeri.github.io/OpenUnderstand/).
 
 ## Contributing
 
-Read [docs/architecture.md](docs/architecture.md) first -- particularly the rule
+Read [docs/architecture.md](https://m-zakeri.github.io/OpenUnderstand/architecture/) first -- particularly the rule
 that kind ids are positions and must always be resolved by name.
 
 Changes to the analysis are judged against Understand, not against opinion.

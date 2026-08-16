@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.3
 
 Reference and metric agreement with SciTools Understand 7.0.1217, measured on
 the same source with `scripts/compare`. Precision and recall are for a
