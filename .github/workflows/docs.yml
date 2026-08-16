@@ -1,0 +1,57 @@
+name: docs
+
+# Publishes the MkDocs site to m-zakeri.github.io/OpenUnderstand on every push
+# to master.
+#
+# Nothing did this before: the `gh-pages` branch carried "Deployed 9442e32 with
+# MkDocs version: 1.2.2" from April 2022, the fingerprint of someone running
+# `mkdocs gh-deploy` by hand. Merging a documentation change updated the
+# repository and nothing else.
+#
+# `gh-deploy` pushes the built site to the `gh-pages` branch, which is where the
+# repository's Pages settings already point -- no need to switch Pages over to
+# the "GitHub Actions" source.
+#
+# The pages under docs/ that are generated (`kinds.md`, `parity.md`,
+# `metric-parity.md`) are committed and are NOT regenerated here: two of the
+# three come from the comparison harness, which needs a licensed Understand
+# install that CI does not have. Regenerate them locally, commit, and this
+# publishes what you committed.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "docs/**"
+      - "mkdocs.yml"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write        # gh-deploy pushes to the gh-pages branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }   # gh-deploy needs the gh-pages history
+
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+
+      - name: Install MkDocs
+        # Only the site generator -- the docs no longer read the package. The
+        # mkdocstrings plugin was dropped when its 2021 configuration stopped
+        # parsing; if a `:::` directive ever comes back, this needs the package
+        # and its dependencies installed too.
+        run: pip install --upgrade mkdocs mkdocs-material
+
+      - name: Build (a broken build must not reach the site)
+        run: mkdocs build --strict
+
+      - name: Deploy
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          mkdocs gh-deploy --force
