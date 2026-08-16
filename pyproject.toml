@@ -12,11 +12,11 @@ license-files = ["LICENSE"]
 requires-python = ">=3.9"
 authors = [
     { name = "Morteza Zakeri", email = "m-zakeri@live.com" },
-    { name = "Amin HassanZarei" },
-    { name = "Ali Ayati" },
+    { name = "Amin Hasan Zarei", email = "amin.hasan.zarei@gmail.com" },
 ]
 maintainers = [
     { name = "Morteza Zakeri", email = "m-zakeri@live.com" },
+    { name = "Amin Hasan Zarei", email = "amin.hasan.zarei@gmail.com" },
 ]
 keywords = ["understand", "scitools", "static-analysis", "java", "antlr", "metrics"]
 classifiers = [
