@@ -15,6 +15,14 @@
     ]]></description>
 
     <change-notes><![CDATA[
+    <b>0.1.2</b>
+    <ul>
+      <li><b>Fixed:</b> the plugin icon was not well-formed XML. A double hyphen
+          inside an XML comment ends the document for a strict parser, so the
+          icon shipped in 0.1.1 failed to load.</li>
+      <li>Ships a newer build of the analyser.</li>
+    </ul>
+
     <b>0.1.1</b>
     <ul>
       <li><b>Compatibility.</b> Requires 2025.1 or later. 0.1.0 declared 2024.2+

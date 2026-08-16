@@ -102,8 +102,9 @@ Three things the build needs, each learned the hard way:
 
 `.github/workflows/release-plugin.yml` publishes to the Marketplace when a
 `plugin-v*` tag is pushed. It is separate from `release.yml` and its `v*` tags
-because the plugin and the library version independently -- plugin 0.1.1 bundles
-analyser 0.2.1 -- and it builds the wheel first, so the zip carries the analyser
+because the plugin and the library version independently -- a plugin release
+bundles whatever analyser version is current -- and it builds the wheel first,
+so the zip carries the analyser
 rather than falling back to PyPI at the user's first run.
 
 Two things it needs:
