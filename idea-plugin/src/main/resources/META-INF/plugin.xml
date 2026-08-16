@@ -9,10 +9,38 @@
     <a href="https://github.com/m-zakeri/OpenUnderstand">OpenUnderstand</a>,
     an open-source implementation of the SciTools Understand API.
     <br/><br/>
-    Requires Python 3.9+ with <code>openunderstand</code> installed
-    (<code>pip install openunderstand</code>). Set the interpreter with the
-    <b>Python...</b> button in the tool window.
+    Requires <code>python3</code> 3.9+ on the path. The analyser ships with the
+    plugin and installs itself into a virtualenv of its own the first time you
+    press <b>Analyse Project</b>; nothing to configure.
     ]]></description>
+
+    <change-notes><![CDATA[
+    <b>0.1.1</b>
+    <ul>
+      <li><b>Compatibility.</b> Requires 2025.1 or later. 0.1.0 declared 2024.2+
+          but was built against 2025.1, and was binary incompatible with 2024.2
+          and 2024.3 -- it called a <code>FileSaverDescriptor</code> constructor
+          that is a varargs one on those builds. Verified against 2025.1 through
+          2026.2.</li>
+      <li><b>Fixed:</b> the analysis could fail with
+          <code>'openunderstand' is not a package</code>. The dumper was written
+          to the shared temp directory, and Python puts a script's own directory
+          first on its path, so a file left there by an earlier run shadowed the
+          analyser. It is unpacked into a private directory now.</li>
+      <li><b>No interpreter to configure.</b> The <b>Python...</b> button and the
+          search of the machine are gone. The plugin builds a virtualenv of its
+          own with <code>python3</code> and installs the analyser it ships with,
+          once, on the first <b>Analyse Project</b>.</li>
+      <li><b>Fixed:</b> numeric columns sorted as text -- 10 came before 2 --
+          because the table reported every column as untyped. Double-clicking a
+          row now only navigates, instead of also opening the cell for editing.</li>
+      <li><b>Metrics:</b> <code>CountDeclMethodProtected</code> and
+          <code>CountDeclMethodDefault</code> counted methods by matching the
+          class name against the <i>method's</i> own name, so most classes
+          reported 0. Both now agree with Understand (F1 1.000 and 0.949 on the
+          JSON benchmark).</li>
+    </ul>
+    ]]></change-notes>
 
     <depends>com.intellij.modules.platform</depends>
 

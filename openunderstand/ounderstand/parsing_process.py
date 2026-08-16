@@ -39,7 +39,14 @@ def process_file(file_address):
         lap.use_variant_listener,
         lap.method_call_listener,
         lap.declare_listener,
-        lap.override_listener,
+        # override_listener is gone, for the reason callby_listener is. Two
+        # passes emitted Java Overrides -- this one and overrides_listener --
+        # and this one built a method's long name by joining findParents(),
+        # which stops at the declaring class. Every method it touched created a
+        # second entity named after its *class*: `org.json.HTTPTokener` in the
+        # method family, with no references at all, shadowing the real class on
+        # any lookup by long name. Twelve of JSON's classes had one, and each
+        # cost every class-level metric an entity it could no longer answer for.
         # callby_listener is gone: method_call_listener records the same
         # references from an enterMethodCall0 callback, which sees every call
         # site rather than only whole expression statements, and scopes each to

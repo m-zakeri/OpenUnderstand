@@ -30,6 +30,27 @@ class ContainAndContainBy(JavaParserLabeledListener):
         )
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
+        self._record(ctx, "Class")
+
+    # A package contains every type it declares, not only its classes.
+    # Understand writes Contain for `interface JSONString` at the same
+    # position it writes Define, and this pass handled `class` alone -- so
+    # org.json's four interfaces and annotations had no container, and
+    # CountDeclClass reported 24 against Understand's 30.
+    def enterInterfaceDeclaration(
+        self, ctx: JavaParserLabeled.InterfaceDeclarationContext
+    ):
+        self._record(ctx, "Interface")
+
+    def enterAnnotationTypeDeclaration(
+        self, ctx: JavaParserLabeled.AnnotationTypeDeclarationContext
+    ):
+        self._record(ctx, "Annotation")
+
+    def enterEnumDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
+        self._record(ctx, "Enum")
+
+    def _record(self, ctx, kind):
         name = ctx.IDENTIFIER().getText()
         # The reference sits on the class's name, not on the `class` keyword:
         # ctx.start put every one of these exactly len("class ") = 6 columns
@@ -65,7 +86,6 @@ class ContainAndContainBy(JavaParserLabeledListener):
         packageValue = self.packageInfo[0]["value"]
 
         parent = scope_parents[-2] if len(scope_parents) > 2 else None
-        kind = "Class"
         modifiers = (
             class_properties.ClassPropertiesListener.findClassOrInterfaceModifiers(ctx)
         )
@@ -88,7 +108,7 @@ class ContainAndContainBy(JavaParserLabeledListener):
                 "col": col,
                 "modifiers": modifiers,
                 "content": content,
-                "type": "Class",
+                "type": kind,
                 "value": None,
             }
         )

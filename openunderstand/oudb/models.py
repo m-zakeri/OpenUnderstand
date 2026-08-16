@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from peewee import *
 
 from openunderstand.oudb import jdk_index
@@ -125,6 +127,85 @@ def _kind_name(kind) -> str:
         row = KindModel.get_or_none(KindModel._id == kind_id)
         _KIND_NAMES[kind_id] = row._name if row is not None else ""
     return _KIND_NAMES[kind_id]
+
+
+def find_kind(family: str, modifiers=()) -> "KindModel | None":
+    """The entity kind named by a family word plus these modifier words.
+
+    Matching used to be `KindModel._name.contains(family)` and a substring test
+    per modifier, which is not a match on *words*: `find_kind("Parameter",
+    ["generic"])` selected `Java GenericParameter Type`, because both strings
+    occur inside the single word `GenericParameter`. That kind is a type
+    parameter and has nothing to do with a generic method's argument. Nothing
+    reaches that combination today -- `Java GenericParameter Type` is assigned
+    by name through `kind_id` -- but the mechanism was one modifier away from
+    naming the wrong kind for every entity built through it.
+
+    Words, then, and the *fewest* extra of them, which is the "least specific"
+    rule the substring version was reaching for with `len(name)`. An annotation
+    is not a modifier: `@SuppressWarnings("boxing") public class XML` arrived
+    with the annotation in the list, no kind name contains it, every candidate
+    was rejected and this returned None -- which failed the NOT NULL constraint
+    and, through a caller's bare `except`, dropped org.json.XML entirely.
+
+    Cached per process and per database. This is called once per entity
+    created, and it used to issue a `SELECT ... LIKE` every time.
+    """
+    wanted = frozenset(
+        w.lower() for w in modifiers if w and not w.startswith("@")
+    ) or frozenset({"default"})
+    return _find_kind(_database_name(), (family or "").lower(), wanted)
+
+
+def _database_name():
+    database = KindModel._meta.database
+    return getattr(database, "database", None)
+
+
+@lru_cache(maxsize=4096)
+def _find_kind(_database, family, wanted):
+    candidates = _entity_kind_words(_database)
+    exact = [(row, words) for row, words in candidates
+             if family in words and wanted <= words]
+    if exact:
+        return _least_specific(exact)
+    # Nothing carries every modifier. The family alone still beats None, which
+    # is what the NOT NULL constraint turns into a dropped entity -- and it is
+    # the only answer for `Java Parameter`, `Java Package` and `Java File`,
+    # which carry no visibility word for the implicit "default" to match.
+    family_only = [(row, words) for row, words in candidates if family in words]
+    if family_only:
+        return _least_specific(family_only)
+    # Last: the substring behaviour this replaced, so that no caller can lose
+    # an answer it used to get. `Constant` only ever matched inside the single
+    # word `EnumConstant`, which is the shape this function exists to stop
+    # trusting -- but a None here is a NOT NULL failure and a dropped entity,
+    # and that is the worse outcome.
+    loose = [(row, words) for row, words in candidates
+             if family in (row._name or "").lower()
+             and all(m in (row._name or "").lower() for m in wanted)]
+    return _least_specific(loose) if loose else None
+
+
+def _least_specific(candidates):
+    """Fewest words, then the shortest name, then alphabetical.
+
+    The shortest *name* has to stay in the ordering: `Java Enum Class Type
+    Public Member` and `Java Abstract Enum Type Public Member` both carry six
+    words and both satisfy ("Enum", ["public"]), and an enum is not abstract.
+    Sorting on word count alone left the winner to whatever order the rows came
+    back in.
+    """
+    row, _ = min(candidates,
+                 key=lambda pair: (len(pair[1]), len(pair[0]._name or ""),
+                                   pair[0]._name or ""))
+    return row
+
+
+@lru_cache(maxsize=8)
+def _entity_kind_words(_database):
+    return [(row, frozenset(w.lower() for w in (row._name or "").split()))
+            for row in KindModel.select().where(KindModel.is_ent_kind == True)]  # noqa: E712
 
 
 def kind_family(kind) -> str:

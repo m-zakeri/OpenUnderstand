@@ -46,6 +46,8 @@ class FieldUseListener(JavaParserLabeledListener):
         self.wildcards = []
         #: Long name of the class currently open, for `this.x`.
         self.enclosing_type = ""
+        #: Saved (enclosing_type, field_types) per open class declaration.
+        self._scopes = []
 
     def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
         longname = ctx.qualifiedName().getText()
@@ -55,12 +57,27 @@ class FieldUseListener(JavaParserLabeledListener):
         self.imports[longname.split(".")[-1]] = longname
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
+        # A stack, because a nested class ends and the outer one resumes.
+        # Assigning these on entry and never restoring them meant the *last*
+        # nested class a file declared owned every `this.x` after it:
+        # `this.refTokens` in JSONPointer.queryFrom resolved to
+        # JSONPointer.Builder.refTokens, a field of the inner class that
+        # happens to share the name -- a wrong target, which is worse than
+        # none, and it left the real field with no Use reference at all.
+        self._scopes.append((self.enclosing_type, self.field_types))
         body = ctx.classBody()
-        if body is not None:
-            self.field_types = declared_types.collect(body)
+        # collect_own: a class body contains its nested classes, and the
+        # plain walk folded their fields in with its own -- `this.items`
+        # resolved to whichever `items` was declared last in the file.
+        self.field_types = (declared_types.collect_own(body) if body is not None
+                            else {})
         self.enclosing_type = ".".join(
             class_properties.ClassPropertiesListener.findParents(ctx)
             + [ctx.IDENTIFIER().getText()])
+
+    def exitClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
+        if self._scopes:
+            self.enclosing_type, self.field_types = self._scopes.pop()
 
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         self.local_types = declared_types.collect(ctx)

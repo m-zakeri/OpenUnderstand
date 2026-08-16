@@ -1,5 +1,5 @@
 from openunderstand.oudb.models import (EntityModel, KindModel, ReferenceModel,
-                                        kind_family, kind_id)
+                                        _kind_name, kind_family, kind_id)
 
 
 #: java.lang.Object's declared methods, plus Object().
@@ -71,8 +71,15 @@ def count_decl_method_all(ent_model=None) -> int:
         seen.add(current)
         methods |= _defined_methods(current)
         pending.extend(_superclasses(current))
-    # Every class inherits java.lang.Object: 12 methods plus its constructor.
-    # Understand counts them; no JDK is analysed here, so they are added as a
-    # constant. Verified against Understand on the four calculator_app classes
-    # that extend nothing -- local + 13 matches exactly.
+    # Every *class* inherits java.lang.Object: 12 methods plus its
+    # constructor. Understand counts them; no JDK is analysed here, so they
+    # are added as a constant. Verified against Understand on the four
+    # calculator_app classes that extend nothing -- local + 13 matches exactly.
+    #
+    # An interface inherits nothing. Understand reports 1 for JSONString --
+    # its own single method -- where adding Object's 13 gave 14, and JSON has
+    # seven interfaces and annotations that were all wrong by exactly that.
+    if {"interface", "annotation"} & set(
+            (_kind_name(entity._kind_id) or "").lower().split()):
+        return len(methods)
     return len(methods) + _OBJECT_METHODS

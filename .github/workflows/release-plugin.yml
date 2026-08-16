@@ -1,0 +1,66 @@
+name: release-plugin
+
+# Publishes the IDEA plugin to the JetBrains Marketplace when a plugin-v* tag is
+# pushed. Separate from release.yml and its v* tags because the plugin and the
+# library version independently -- plugin 0.1.1 bundles analyser 0.2.1.
+#
+# Needs one secret, PUBLISH_TOKEN: plugins.jetbrains.com -> your profile ->
+# My Tokens -> Generate. The plugin must already exist on the Marketplace; the
+# first version of a plugin has to go through the web form.
+#
+# The plugin bundles the analyser wheel, so the Python build runs first --
+# without dist/*.whl the plugin still builds, but falls back to installing the
+# analyser from PyPI at the user's first run instead of shipping it.
+
+on:
+  push:
+    tags: ["plugin-v*"]
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: jetbrains
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+
+      - name: Build the analyser wheel to bundle
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build --wheel --outdir dist
+          ls -l dist
+
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: "21" }
+
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: "8.10" }
+
+      - name: The tag must match the plugin version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          TAG="${GITHUB_REF_NAME#plugin-v}"
+          VERSION=$(grep -oP '^version = "\K[^"]+' idea-plugin/build.gradle.kts)
+          echo "tag=$TAG plugin=$VERSION"
+          [ "$TAG" = "$VERSION" ] || { echo "tag and version disagree" >&2; exit 1; }
+
+      # -PideaHome= overrides the developer path in gradle.properties, so the
+      # build downloads a platform instead of looking for an IDE that is not here.
+      - name: Build and verify
+        working-directory: idea-plugin
+        run: gradle buildPlugin verifyPlugin -PideaHome= --no-daemon
+
+      - name: Publish to the Marketplace
+        if: startsWith(github.ref, 'refs/tags/')
+        working-directory: idea-plugin
+        env:
+          PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+        run: gradle publishPlugin -PideaHome= --no-daemon
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin
+          path: idea-plugin/build/distributions/*.zip

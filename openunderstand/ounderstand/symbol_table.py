@@ -54,6 +54,14 @@ class _DeclarationIndex:
         #: dropped the abstract generic overload that Understand refuses to
         #: report -- which is 15 wrong rows, one per class implementing it.
         self.methods: dict[str, list[tuple[tuple[str, ...], bool, bool]]] = {}
+        #: Method long name -> its declared return type, as written. A
+        #: chained call `x.next().trim()` lands on whatever `next` returns,
+        #: and one file cannot say: 1,598 of JSON's 9,507 calls are this
+        #: shape, and the JDK index answers only for java./javax. owners.
+        #: Overloads that disagree are dropped -- a name with two return types
+        #: cannot place a call, and guessing is what took Java Call precision
+        #: to 19%.
+        self.return_types: dict[str, str] = {}
         #: (declaring type long name, field) -> the field's declared type, as
         #: written. `process_file` sees one file, so a chain like
         #: `node.next.previous` dies at the second hop without this: the type
@@ -336,6 +344,7 @@ def build(root: str) -> _DeclarationIndex:
         def __init__(self):
             self.pairs = []
             self.methods = {}
+            self.returns = {}
             self.fields = {}
             self.imports = {}
             self.wildcards = []
@@ -412,6 +421,18 @@ def build(root: str) -> _DeclarationIndex:
             self.methods.setdefault(longname, []).append(
                 (parameter_types(ctx), abstract, generic))
 
+            declared = getattr(ctx, "typeTypeOrVoid", None)
+            declared = declared() if callable(declared) else None
+            written = declared.getText() if declared is not None else None
+            if written:
+                written = written.split("<")[0].split("[")[0]
+            if written and written not in ("void", ""):
+                previous = self.returns.get(longname, written)
+                # Overloads with different return types cannot place a call.
+                self.returns[longname] = written if previous == written else ""
+            elif longname in self.returns:
+                self.returns[longname] = ""
+
     for path in _java_files(root):
         try:
             tree = antler_parser.parse(
@@ -428,6 +449,8 @@ def build(root: str) -> _DeclarationIndex:
         index.files += 1
         index.supertypes.update(supertypes.pairs)
         index.methods.update(supertypes.methods)
+        index.return_types.update(
+            {k: v for k, v in supertypes.returns.items() if v})
         index.field_types.update(supertypes.fields)
         index.file_imports[path] = (supertypes.imports, supertypes.wildcards)
         for declaration in listener.defines:
@@ -529,6 +552,25 @@ def member_type(owner: str, field: str) -> str | None:
         # package the field was declared in.
         return resolve_type_name(written, None, None, owner) or None
     return jdk_index.field_type(owner, field)
+
+
+def return_type(owner: str, member: str, scope_longname: str = "") -> str | None:
+    """Long name of the type `owner.member(...)` evaluates to, or None.
+
+    Answers for a *project* method, which `jdk_index.return_type` cannot: it
+    covers java./javax. only, so a chain through one of the project's own
+    methods -- `x.nextTo(';').trim()` -- had nowhere to land. Follows the
+    `extends`/`implements` chain the way a call does, because the method may
+    be declared on a supertype.
+
+    Returns None rather than a guess when the written type does not resolve.
+    A wrong target is worse than a missing one.
+    """
+    declaring = INDEX.declaring_type(owner, member) or owner
+    written = INDEX.return_types.get(f"{declaring}.{member}")
+    if not written:
+        return None
+    return resolve_type_name(written, None, None, scope_longname or declaring)
 
 
 def declaring_type(type_longname: str, member: str) -> str | None:

@@ -400,35 +400,13 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
 
         if not name or name in self.type_parameters:
             return None
-        if name in self.Imports:
-            return self.Imports[name]
-        if "." in name:
-            return name
-        # Scoped: `Node` is declared in several packages, and without the
-        # asking class it binds to whichever was indexed first.
-        in_project = symbol_table.resolve_type(name, self.classlongname)
-        if in_project:
-            return in_project
-        # java.lang is imported implicitly, and a name that lives there beats a
-        # wildcard: `Integer` is java.lang.Integer even under `import
-        # java.util.*`.
-        if name in symbol_table.JAVA_LANG_TYPES:
-            return "java.lang." + name
-        # Otherwise a single `import x.y.*` is the only place left it can come
-        # from. This used to fall straight through to java.lang, which named 41
-        # of TheAlgorithms' couples java.lang.Map, java.lang.ArrayList,
-        # java.lang.FileInputStream -- a false positive and a missed true
-        # positive each time.
-        # ponytail: only when exactly one wildcard is in scope. 15 of the 19
-        # files that use one have exactly one; with two or more there is no
-        # evidence here to choose between them, so those keep the old guess.
-        if len(self.wildcard_imports) == 1:
-            return self.wildcard_imports[0] + "." + name
-        # An unqualified name that is neither imported nor declared here is
-        # implicitly java.lang -- String, Object, Throwable. This used to be
-        # `self.packageName + '.' + name`, which produced org.json.String for
-        # every one of them: a false positive and a missed true positive at the
-        # same time.
-        return "java.lang." + name
+        # One ladder, not a near-copy of it. This one ended in an
+        # unconditional `java.lang.` + name, which named java.lang.Map,
+        # java.lang.List and java.lang.Set for types that live in java.util --
+        # a wrong coupling and a missed right one each time, 4 classes apiece
+        # on JSON. resolve_type_name asks the JDK index instead, and refuses
+        # when nothing settles it.
+        return symbol_table.resolve_type_name(
+            name, self.Imports, self.wildcard_imports, self.classlongname)
 
 

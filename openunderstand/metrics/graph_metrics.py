@@ -17,8 +17,35 @@ the API would write, so a bug in the reference data shows up here rather than
 being papered over.
 """
 
+import math
+from functools import lru_cache
+
 from openunderstand.oudb.models import (EntityModel, KindModel, ReferenceModel,
                                         _kind_name, kind_family, kind_id)
+
+
+def _by_entity(function):
+    """Memoize a walk of the reference graph on the entity it starts from.
+
+    `nested_methods` is asked sixteen times for the same class -- once per
+    Avg/Max/Sum name -- and `container_methods` scans every Define reference in
+    the project each time. Keyed on the database file as well as the entity, so
+    opening a second database cannot serve the first one's answers.
+    """
+    @lru_cache(maxsize=4096)
+    def cached(_database, entity_id):
+        return function(EntityModel.get_or_none(_id=entity_id))
+
+    def wrapper(ent_model):
+        entity_id = getattr(ent_model, "_id", None)
+        if entity_id is None:
+            return function(ent_model)
+        return cached(EntityModel._meta.database.database, entity_id)
+
+    wrapper.cache_clear = cached.cache_clear
+    wrapper.__doc__ = function.__doc__
+    wrapper.__name__ = function.__name__
+    return wrapper
 
 
 def _refs(entity_id, kind_name):
@@ -134,11 +161,47 @@ def count_decl_instance_variable(ent_model, visibility=None):
 
 
 def count_class_derived(ent_model):
-    """Classes that extend this one directly."""
+    """"Number of immediate subclasses. [aka NOC]"
+
+    A class that *implements* an interface is one of its children -- Understand
+    reports 7 for JSONString, and counting Extendby alone reported 0.
+    """
     entity = _entity(ent_model)
     if entity is None:
         return 0
-    return len(_targets(entity._id, "Java Extendby Coupleby"))
+    children = {t._id for t in _targets(entity._id, "Java Extendby Coupleby")}
+    children |= {t._id for t in _targets(entity._id, "Java Implementby Coupleby")}
+    return len(children)
+
+
+def max_inheritance_tree(ent_model):
+    """"Maximum depth of class in inheritance tree. [aka DIT]"
+
+    Object is the root at 0, so a class that declares no superclass is 1 and
+    each further `extends` adds one. Only superclasses *in the project* count:
+    JSONException extends java.lang.RuntimeException and Understand still
+    reports 1, and StringBuilderWriter extends java.io.Writer for the same 1 --
+    which is what the bare `Java Extend Couple` kind means, the External and
+    Implicit variants being the JDK ones. An interface or annotation has no
+    inheritance tree at all and is 0.
+
+    This replaces a reparse that counted `extends` clauses in the entity's own
+    file and then added one unconditionally, so every class was at least 2.
+    """
+    entity = _entity(ent_model)
+    if entity is None:
+        return 0
+    if {"interface", "annotation"} & _visibility(entity):
+        return 0
+    depth, seen, current = 1, {entity._id}, entity
+    while True:
+        parents = _targets(current._id, "Java Extend Couple")
+        parents = [p for p in parents if p._id not in seen]
+        if not parents:
+            return depth
+        current = parents[0]
+        seen.add(current._id)
+        depth += 1
 
 
 
@@ -207,19 +270,37 @@ def average_line_counts(ent_model) -> dict:
 # fitted to sample values rather than written from the definition -- and were
 # wrong in ways sampling could not reveal.
 
+#: Every way a type names an immediate supertype. The bare kind is a project
+#: superclass; the variants carry the JDK ones and the `extends Object` the
+#: extends_implicit pass writes for a class that declares no superclass.
+_SUPERTYPE_KINDS = (
+    "Java Extend Couple", "Java Extend Couple External",
+    "Java Extend Couple Implicit", "Java Extend Couple Implicit External",
+    "Java Implement Couple",
+)
+
+
+def _supertypes(entity_id, kinds=_SUPERTYPE_KINDS):
+    out = {}
+    for kind in kinds:
+        for target in _targets(entity_id, kind):
+            out[target._id] = target
+    return out
+
+
 def count_class_base(ent_model):
     """"Number of immediate base classes. [aka IFANIN]"
 
     Immediate, not transitive: the previous version walked the whole ancestor
-    chain. Every Java class has java.lang.Object as a base, so a class with no
-    explicit `extends` still has one.
+    chain. Every Java *class* has java.lang.Object as a base, but an interface
+    or an annotation has none at all -- `or 1` answered 1 for all seven of
+    JSON's, where Understand answers 0. An implemented interface counts too:
+    JSONArray is Object plus Iterable, which is Understand's 2.
     """
     entity = _entity(ent_model)
     if entity is None:
         return 0
-    direct = {t._id for t in _targets(entity._id, "Java Extend Couple")}
-    direct |= {t._id for t in _targets(entity._id, "Java Implement Couple")}
-    return len(direct) or 1
+    return len(_supertypes(entity._id))
 
 
 def count_class_coupled(ent_model, exclude_standard=False):
@@ -239,8 +320,12 @@ def count_class_coupled(ent_model, exclude_standard=False):
     entity = _entity(ent_model)
     if entity is None:
         return 0
-    bases = {t._id for t in _targets(entity._id, "Java Extend Couple")}
-    bases |= {t._id for t in _targets(entity._id, "Java Implement Couple")}
+    # Every way a supertype is named, not just the two plain kinds: a JDK
+    # superclass arrives as `Extend Couple External` and an implicit
+    # java.lang.Object as `Extend Couple Implicit External`. Excluding only
+    # the plain kinds left java.lang.RuntimeException counted as a coupling of
+    # JSONException, which is Understand's 1 against our 2.
+    bases = set(_supertypes(entity._id))
 
     coupled = set()
     for target in _targets(entity._id, "Java Couple", "type"):
@@ -338,11 +423,40 @@ def _fan_targets(entity_id, ref_kinds, owner_longname):
     return out
 
 
+def _field_targets(entity_id, ref_kinds, owner_longname):
+    """Distinct variables an entity touches that are neither its own locals
+    nor its own parameters -- that is, fields."""
+    prefix = (owner_longname or "") + "."
+    out = set()
+    for kind in ref_kinds:
+        for target in _targets(entity_id, kind):
+            if kind_family(target._kind_id) != "variable":
+                continue
+            if "Parameter" in (_kind_name(target._kind_id) or ""):
+                continue
+            if owner_longname and (target._longname or "").startswith(prefix):
+                continue        # a local
+            out.add(target._id)
+    return out
+
+
 def count_output(ent_model):
     """"Functions calls + Parameters set/modify + Global Variables set/modify.
     A non-void return value adds one to the count." [aka FANOUT]
 
-    The previous version counted calls only, and scored 2%.
+    Two things in that sentence are not what they look like, and reproducing
+    the metric over Understand's *own* references settles both -- 600 of 600 of
+    JSON's methods, where the reading below scored 510.
+
+    A **parameter** is never an output. The description says so in its next
+    breath -- "parameters that are pass by value are not included" -- and in
+    Java every parameter is. Only fields count, which is why JSONTokener.back
+    is 4: two calls and the two fields it sets.
+
+    A **constructor** counts the 1 that a non-void return earns. It has no
+    declared type at all, and Understand still scores `CDL.CDL` 1 for its
+    single call plus that -- every one of the 90 remaining disagreements was a
+    constructor short by exactly one.
     """
     entity = _entity(ent_model)
     if entity is None:
@@ -350,10 +464,12 @@ def count_output(ent_model):
     fan = {t._id for t in _targets(entity._id, "Java Call")}
     fan |= {t._id for t in _targets(entity._id, "Java Call Nondynamic")}
     fan.discard(entity._id)  # "Recursive function calls ... are not included"
-    fan |= _fan_targets(entity._id, _kinds_like("Java Set", "Java Modify"),
-                        entity._longname)
+    fan |= _field_targets(entity._id, _kinds_like("Java Set", "Java Modify"),
+                          entity._longname)
+    kind = _kind_name(entity._kind_id) or ""
     declared = (entity._type or "").strip()
-    if declared and declared != "void" and kind_family(entity._kind_id) == "method":
+    returns_something = "Constructor" in kind or (declared and declared != "void")
+    if returns_something and kind_family(entity._kind_id) == "method":
         fan.add(("return", entity._id))
     return len(fan)
 
@@ -420,6 +536,7 @@ _NOT_AGGREGATED = {
 }
 
 
+@_by_entity
 def container_members(ent_model):
     """Files a package spans, or None when the entity is not a container.
 
@@ -460,6 +577,7 @@ def container_members(ent_model):
     return [f for f in (EntityModel.get_or_none(_id=i) for i in file_ids) if f]
 
 
+@_by_entity
 def container_classes(ent_model):
     """Every class-like entity a package holds, nested and anonymous included.
 
@@ -497,6 +615,7 @@ def aggregates_over_classes(name):
     return name.startswith("CountDecl")
 
 
+@_by_entity
 def container_methods(ent_model):
     """Every method nested anywhere inside a container.
 
@@ -521,6 +640,44 @@ def container_methods(ent_model):
     return list(methods.values())
 
 
+@_by_entity
+def nested_methods(ent_model):
+    """Every method or constructor declared inside an entity, nested included.
+
+    The container roll-up above only fires for packages. A class and a file
+    have source of their own, so their line counts come from text -- but
+    `Avg*`, `Max*` and `Sum*` are still "over all nested functions or methods",
+    and each of those had its own student listener walking the tree a different
+    way. This is the one list they all aggregate over.
+    """
+    entity = _entity(ent_model)
+    if entity is None:
+        return []
+    family = kind_family(entity._kind_id)
+    if family == "package":
+        return container_methods(ent_model)
+    if family == "file":
+        define = KindModel.get_or_none(_name="Java Define")
+        if define is None:
+            return []
+        methods = {}
+        for ref in ReferenceModel.select().where(
+                (ReferenceModel._kind == define._id)
+                & (ReferenceModel._file == entity._id)):
+            target = EntityModel.get_or_none(_id=ref._ent_id)
+            if target is not None and kind_family(target._kind_id) == "method":
+                methods[target._id] = target
+        return list(methods.values())
+    if family != "type":
+        return []
+    # A class's own methods, and not a nested class's: Understand's JSONPointer
+    # is SumCyclomatic 27 over nine methods, and 32 over the thirteen that
+    # descending into `Builder` finds. Measured over JSON's classes against
+    # Understand's own per-method numbers, direct is 103 of 106 and descending
+    # 99.
+    return _declares(entity._id, "method")
+
+
 def aggregates_over_methods(name):
     return name.startswith(("Avg", "Max", "Min"))
 
@@ -533,10 +690,37 @@ def aggregate(name, values):
     if name.startswith("Max"):
         return max(numbers)
     if name.startswith("Avg"):
-        return round(sum(numbers) / len(numbers))
+        # Half *up*, not Python's half-to-even: Understand answers 5 for a mean
+        # of 4.5, and round() answers 4. Three of JSON's classes turn on it.
+        return math.floor(sum(numbers) / len(numbers) + 0.5)
     if name.startswith("Min"):
         return min(numbers)
     return sum(numbers)
+
+
+#: Every `Avg*`/`Max*`/`Sum*` name whose value is that aggregate of a
+#: *per-method* metric, mapped to the metric it aggregates. Each of these had
+#: its own student listener walking the tree its own way and scoring 0.014 to
+#: 0.45; asking the per-method metric -- already right to ~97% -- once per
+#: method and combining the answers is the same definition, said once.
+#:
+#: `MaxNesting` is its own base: a class's is the largest of its methods'.
+#: `MaxInheritanceTree`, `MaxEssentialKnots` and `MinEssentialKnots` are absent
+#: deliberately -- the first is not an aggregate at all, and Understand defines
+#: the other two on methods only.
+METHOD_SUMMARY = {
+    f"{agg}{base}": base
+    for agg in ("Avg", "Max", "Sum")
+    for base in ("Cyclomatic", "CyclomaticModified", "CyclomaticStrict",
+                 "Essential")
+}
+METHOD_SUMMARY.update({
+    "AvgCountLine": "CountLine",
+    "AvgCountLineBlank": "CountLineBlank",
+    "AvgCountLineCode": "CountLineCode",
+    "AvgCountLineComment": "CountLineComment",
+    "MaxNesting": "MaxNesting",
+})
 
 
 def percent_lack_of_cohesion(ent_model, modified=False):

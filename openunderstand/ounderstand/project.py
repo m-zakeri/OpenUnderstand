@@ -16,7 +16,7 @@ from openunderstand.analysis_passes.g6_class_properties import (
 
 from openunderstand.utils.utilities import ClassTypeData
 from openunderstand.utils import antler_parser, utilities
-from openunderstand.oudb.models import kind_id
+from openunderstand.oudb.models import find_kind, kind_id
 from openunderstand.utils import kind_names
 from openunderstand.oudb import jdk_index
 from openunderstand.ounderstand import symbol_table
@@ -1431,31 +1431,17 @@ class Project:
         return ent
 
     def findKindWithKeywords(self, type, modifiers):
-        # An annotation is not a modifier. `@SuppressWarnings("boxing") public
-        # class XML` arrived here with '@SuppressWarnings("boxing")' in the
-        # list; no kind name contains that, so every candidate was rejected and
-        # this returned None. None went on to _kind, failed the NOT NULL
-        # constraint, and the caller's `except: print(e)` dropped the whole
-        # class -- org.json.XML and org.json.XMLParserConfiguration produced no
-        # references of any kind. Rebinding rather than mutating also stops the
-        # "default" below leaking back into the caller's list.
-        modifiers = [m for m in modifiers if not m.startswith("@")]
-        if len(modifiers) == 0:
-            modifiers = ["default"]
-        leastspecific_kind_selected = None
-        for kind in KindModel.select().where(KindModel._name.contains(type)):
-            if self.checkModifiersInKind(modifiers, kind):
-                if not leastspecific_kind_selected or len(
-                    leastspecific_kind_selected._name
-                ) > len(kind._name):
-                    leastspecific_kind_selected = kind
-        return leastspecific_kind_selected
+        """The entity kind for a family word and a list of modifiers.
+
+        Delegates to `models.find_kind`, which matches on *words* rather than
+        substrings and caches. See its docstring for what the substring version
+        selected and why an annotation had to be filtered out of `modifiers`.
+        """
+        return find_kind(type, modifiers)
 
     def checkModifiersInKind(self, modifiers, kind):
-        for modifier in modifiers:
-            if modifier.lower() not in kind._name.lower():
-                return False
-        return True
+        words = {w.lower() for w in (kind._name or "").split()}
+        return all(m.lower() in words for m in modifiers if not m.startswith("@"))
 
     def addoverridereference(self, classes, extendedfiles, file_ent):
         try:

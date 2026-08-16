@@ -76,7 +76,10 @@ def parse(source):
 _WRAPPER = "__OpenUnderstandScope"
 
 
-@lru_cache(maxsize=256)
+# 2048, not 256: a package's Sum/Max/Avg roll-up asks every method in the
+# package for sixteen metrics, and org.json alone declares over a thousand --
+# at 256 the cache evicted each tree before the next metric asked for it.
+@lru_cache(maxsize=2048)
 def parse_entity(source):
     """Parse an entity's own source, whatever kind of declaration it is.
 
@@ -88,7 +91,7 @@ def parse_entity(source):
     return parse_entity_source(source)[0]
 
 
-@lru_cache(maxsize=256)
+@lru_cache(maxsize=2048)
 def parse_entity_source(source):
     """`parse_entity`, plus the text the line numbers in the tree refer to.
 
@@ -114,6 +117,51 @@ def parse_entity_source(source):
         if not detector.failed:
             return tree, candidate
     return tree, candidate
+
+
+_DECLARATION = ("MethodDeclaration", "ConstructorDeclaration",
+                "GenericMethodDeclaration", "GenericConstructorDeclaration",
+                "InterfaceMethodDeclaration")
+
+
+def _declaration_and_body(ent_model):
+    """(declaration found?, its block) for an entity's own source."""
+    stack = [parse_entity(ent_model.contents() or "")]
+    found = False
+    while stack:
+        node = stack.pop()
+        name = type(node).__name__
+        if name.startswith(_DECLARATION):
+            found = True
+            for child in (node.children or ()):
+                if type(child).__name__ == "BlockContext":
+                    return True, child
+                if type(child).__name__.startswith(("MethodBody",
+                                                    "ConstructorBody")):
+                    blocks = [c for c in (child.children or ())
+                              if type(c).__name__ == "BlockContext"]
+                    if blocks:
+                        return True, blocks[0]
+        stack.extend(c for c in (getattr(node, "children", None) or ())
+                     if hasattr(c, "getRuleIndex"))
+    return found, None
+
+
+def method_body(ent_model):
+    """The `block` of a method or constructor's own source, or None."""
+    return _declaration_and_body(ent_model)[1]
+
+
+def declares_without_body(ent_model):
+    """True when the entity's source is a declaration carrying no body.
+
+    An abstract or interface method: Understand scores those 0 on the whole
+    complexity family, not the 1 an empty body earns. A *lambda* is an entity
+    too and is none of this -- its source holds no declaration at all, and
+    treating "no body found" as body-less zeroed all 34 of JSON's.
+    """
+    declared, body = _declaration_and_body(ent_model)
+    return declared and body is None
 
 
 def walk_entity(ent_model, listener):
@@ -677,4 +725,7 @@ def line_counts(source: str) -> dict:
 
 
 def is_file(ent_model):
-    return getattr(ent_model, "_kind_id", None) == kind_id("Java File")
+    # An entity with no kind is not a file, and asking the database would need
+    # one open -- which is what stopped tests/ exercising a metric on a stub.
+    kind = getattr(ent_model, "_kind_id", None)
+    return kind is not None and kind == kind_id("Java File")
