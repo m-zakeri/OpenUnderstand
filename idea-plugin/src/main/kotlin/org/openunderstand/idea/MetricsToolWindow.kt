@@ -146,10 +146,31 @@ private fun csv(model: TableModel): String = buildString {
     }
 }
 
+/**
+ * The table's model, which has to answer two questions `DefaultTableModel` gets
+ * wrong here.
+ *
+ * `getColumnClass` is `Object` for every column there, and `TableRowSorter`
+ * falls back to comparing `toString()` for a class that is not `Comparable` --
+ * so a `CountLine` of 10 sorts before 2 and every numeric column sorts as text.
+ * The class is settled once per analysis rather than per repaint, and stays
+ * `Object` for a column whose values are not all one type, where a `Comparable`
+ * comparator would throw instead.
+ *
+ * `isCellEditable` is true there, so the double-click that navigates to the
+ * declaration also opens the cell for editing.
+ */
+private class MetricsModel : DefaultTableModel() {
+    var columnClasses: List<Class<*>> = emptyList()
+    override fun getColumnClass(column: Int): Class<*> =
+        columnClasses.getOrElse(column) { Any::class.java }
+    override fun isCellEditable(row: Int, column: Int) = false
+}
+
 class MetricsToolWindow : ToolWindowFactory {
 
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
-        val model = DefaultTableModel()
+        val model = MetricsModel()
         // AUTO_RESIZE_OFF: ~70 metric columns squeezed into the viewport width
         // leaves each one a few pixels wide. Let the scroll pane scroll instead.
         val table = JBTable(model).apply {
@@ -207,14 +228,18 @@ class MetricsToolWindow : ToolWindowFactory {
             ContentFactory.getInstance().createContent(panel, "", false))
     }
 
-    private fun show(model: DefaultTableModel, rows: List<Row>) {
+    private fun show(model: MetricsModel, rows: List<Row>) {
         val names = rows.flatMap { it.metrics.keys }.distinct()
-        model.setDataVector(
-            rows.map { row ->
-                (listOf(row.entity, row.file, row.line) +
-                    names.map { row.metrics[it]?.toIntOrNull() ?: row.metrics[it] }).toTypedArray()
-            }.toTypedArray(),
-            (listOf("Entity", "File", "Line") + names).toTypedArray())
+        val data = rows.map { row ->
+            (listOf<Any?>(row.entity, row.file, row.line) +
+                names.map { row.metrics[it]?.toIntOrNull() ?: row.metrics[it] }).toTypedArray()
+        }.toTypedArray()
+        val columns = (listOf("Entity", "File", "Line") + names).toTypedArray()
+        // Before setDataVector: it fires an event whose listeners ask for them.
+        model.columnClasses = columns.indices.map { column ->
+            data.mapNotNull { it[column]?.javaClass }.distinct().singleOrNull() ?: Any::class.java
+        }
+        model.setDataVector(data, columns)
     }
 
     private fun analyse(project: Project, root: String, done: (List<Row>, String?) -> Unit) {
