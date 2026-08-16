@@ -1,0 +1,1120 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="An open-source implementation of Understand Python API for Java language">
+      
+      
+        <meta name="author" content="Morteza Zakeri">
+      
+      
+        <link rel="canonical" href="https://m-zakeri.github.io/OpenUnderstand/architecture/">
+      
+      
+        <link rel="prev" href="../kinds/">
+      
+      
+        <link rel="next" href="../parity/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Architecture - OpenUnderstand Docs (v0.1.1dev)</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="orange" data-md-color-accent="orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#architecture" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="OpenUnderstand Docs (v0.1.1dev)" class="md-header__button md-logo" aria-label="OpenUnderstand Docs (v0.1.1dev)" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            OpenUnderstand Docs (v0.1.1dev)
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Architecture
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="orange" data-md-color-accent="orange"  aria-label="Dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 6H7c-3.31 0-6 2.69-6 6s2.69 6 6 6h10c3.31 0 6-2.69 6-6s-2.69-6-6-6m0 10H7c-2.21 0-4-1.79-4-4s1.79-4 4-4h10c2.21 0 4 1.79 4 4s-1.79 4-4 4M7 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="orange" data-md-color-accent="orange"  aria-label="Light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/m-zakeri/OpenUnderstand" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="OpenUnderstand Docs (v0.1.1dev)" class="md-nav__button md-logo" aria-label="OpenUnderstand Docs (v0.1.1dev)" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    OpenUnderstand Docs (v0.1.1dev)
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/m-zakeri/OpenUnderstand" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../kinds/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kinds
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The pipeline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-three-layers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The three layers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entity-identity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entity identity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resolving-names-across-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolving names across files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#kind-ids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kind ids
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-an-analysis-pass" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding an analysis pass
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-a-metric" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding a metric
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-grammar" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The grammar
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parser-backends" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parser backends
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#packaging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Packaging
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The comparison
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../parity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parity with Understand
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metric-parity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Metric parity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../idea-plugin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IntelliJ IDEA plugin
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/m-zakeri/OpenUnderstand/issues" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Issue tracker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#the-pipeline" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The pipeline
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-three-layers" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The three layers
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#data-model" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data model
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Data model">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entity-identity" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entity identity
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#resolving-names-across-files" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Resolving names across files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#kind-ids" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Kind ids
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-an-analysis-pass" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding an analysis pass
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#adding-a-metric" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Adding a metric
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-grammar" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The grammar
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parser-backends" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Parser backends
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#packaging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Packaging
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#the-comparison" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The comparison
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="architecture">Architecture</h1>
+<h2 id="the-pipeline">The pipeline</h2>
+<pre><code>openunderstand.py          CLI and config
+    ↓
+oudb.api.create_db         create the SQLite file and its four tables
+    ↓
+oudb.fill.fill             seed 237 entity kinds and 106 reference kinds
+    ↓
+ounderstand.runner         one worker per .java file
+    ↓
+parsing_process.process_file
+    ↓
+  parse once  →  run ~28 listeners over that one tree, in order
+    ↓
+merge_placeholder_entities + relabel_nondynamic_calls
++ drop_shadowed_use_refs                                (once, after all files)
+</code></pre>
+<p>Before any of that, <code>symbol_table.build()</code> indexes every declaration in the
+project -- see <a href="#resolving-names-across-files">Resolving names across files</a>.</p>
+<p>A file is parsed once. Every analysis pass then walks that same tree, so
+parsing is a small fraction of the total cost -- most of the time goes into the
+passes and the database writes.</p>
+<h2 id="the-three-layers">The three layers</h2>
+<p><strong><code>analysis_passes/</code></strong> -- one ANTLR listener per reference kind. A listener's
+only job is to collect dictionaries while walking. It never touches the
+database. This is what makes a pass easy to test: walk it over a tree and
+inspect the list.</p>
+<p><strong><code>ounderstand/project.py</code></strong> -- the write layer. <code>Project.addXxxRefs(...)</code> turns
+those dictionaries into <code>EntityModel</code> and <code>ReferenceModel</code> rows, resolving
+entity identity and kinds along the way.</p>
+<p><strong><code>oudb/</code></strong> -- the schema (<code>models.py</code>), the Understand-compatible query API
+(<code>api.py</code>), and kind seeding (<code>fill.py</code>).</p>
+<p><code>ounderstand/listeners_and_parsers.py</code> is the glue: each <code>*_listener</code> method
+builds a listener, walks it, and hands the result to the matching <code>Project</code>
+method. Every one is wrapped in try/except and <strong>logs failures instead of
+raising</strong> -- so a broken pass silently produces no references. If references are
+missing, read the log file first.</p>
+<h2 id="data-model">Data model</h2>
+<p>Four tables:</p>
+<ul>
+<li><code>KindModel</code> -- the vocabulary. <code>_inv</code> links a forward reference kind to its
+  inverse.</li>
+<li><code>EntityModel</code> -- <code>_kind</code>, <code>_parent</code> (self-referencing), <code>_name</code>, <code>_longname</code>,
+  <code>_value</code>, <code>_type</code>, <code>_contents</code>.</li>
+<li><code>ReferenceModel</code> -- <code>_kind</code>, <code>_file</code>, <code>_line</code>, <code>_column</code>, <code>_ent</code>, <code>_scope</code>.</li>
+<li><code>ProjectModel</code> -- one row: name, language, root, database path.</li>
+</ul>
+<p>Every reference is written twice, forward and inverse, with <code>_ent</code> and
+<code>_scope</code> swapped and the same file, line and column.</p>
+<h3 id="entity-identity">Entity identity</h3>
+<p>Two rows are the same entity when they share a long name <em>and</em> a kind family
+(type, method, variable, package, file). <code>EntityModel.get_or_create</code> enforces
+this -- peewee's default keys on every field passed in, so two passes describing
+the same class with different <code>_contents</code> would each get a row.</p>
+<p>Kinds containing <code>Unknown</code> or <code>Unresolved</code> are <strong>placeholders</strong>. They match any
+family, never displace a real kind, and are upgraded in place when a
+better-informed pass arrives. That is what makes the result independent of the
+order the passes run in.</p>
+<h3 id="resolving-names-across-files">Resolving names across files</h3>
+<p><code>process_file</code> sees one file, so a pass cannot resolve a name declared
+elsewhere. Two mechanisms cover this, and they work from opposite ends.</p>
+<p><strong><code>ounderstand/symbol_table.py</code></strong> indexes every declaration in the project
+<em>before</em> the passes run, so a pass can ask what a name means while it is still
+deciding what to write:</p>
+<pre><code class="language-python">symbol_table.resolve(name, scope_longname)       # any declaration
+symbol_table.resolve_type(name, scope_longname)  # classes/interfaces/enums only
+symbol_table.declaring_type(type_longname, member)  # walks the extends chain
+</code></pre>
+<p>All three search the innermost scope outward, then the asking scope's own
+package, and <strong>refuse an ambiguous name rather than guess</strong> -- a wrong
+resolution silently misattributes every reference built on it. <code>resolve_type()</code>
+exists because <code>resolve()</code> would let a variable named <code>value</code> compete with a
+class named <code>Value</code>; a pass that knows it is in a type position wants only the
+types. <code>declaring_type()</code> follows <code>extends</code> so that a call to an inherited
+method lands on the class that declares it, which is what Understand reports.</p>
+<p>Working out <em>what</em> a name is often needs the declared type of something else --
+<code>x.p = v</code> names a field of <code>x</code>'s type. <code>analysis_passes/declared_types.py</code>
+reads those off the parse tree. It is not a type checker: it answers only what
+a declaration states, so <code>a.b.c</code> resolves <code>b</code> on <code>a</code>'s type and stops.</p>
+<p><strong>Placeholders</strong> cover what the index cannot. A pass that still cannot place a
+name creates a placeholder entity, and <code>merge_placeholder_entities()</code> folds
+each into the real entity after every file has been parsed -- but only when
+exactly one project-wide candidate shares the simple name. More than one means
+guessing, and a wrong merge is worse than a duplicate.</p>
+<p>Note the failure mode this creates when a pass records a <em>bare</em> name: the merge
+will happily fold it into the single project method that happens to share it.
+<code>entry.getValue()</code> on a <code>java.util.Map.Entry</code> became a call to
+<code>org.json.CDL.getValue</code> that way. A pass should qualify what it can and emit
+nothing for what it cannot.</p>
+<p>A <em>qualified</em> name outside the project is not a placeholder at all. Anything
+rooted under <code>EXTERNAL_ROOTS</code> -- <code>java.</code>, <code>javax.</code> -- is fully qualified by
+construction, however unresolved its kind looks, and the merge skips it.
+Without that, <code>java.lang.Object.equals</code> was folded into
+<code>org.json.JSONObject.Null.equals</code>, the only <code>equals</code> the project declares, and
+the reference pointed at itself from both ends.</p>
+<p>Most references leave the project, so refusing to name an external target is
+expensive: 1,197 of TheAlgorithms' 1,416 missing calls were to <code>java.io</code>,
+<code>java.util</code> and <code>java.lang</code>. <code>symbol_table</code> carries small hand-written tables
+for this -- <code>JAVA_LANG_TYPES</code>, <code>JDK_TYPE_PACKAGES</code>, <code>JDK_FIELD_TYPES</code>,
+<code>JDK_OVERRIDABLE</code> and <code>models.JDK_FINAL_TYPES</code>. They are lookup tables covering
+what the benchmarks use, not a model of the JDK, and each says so where it is
+defined.</p>
+<p><code>relabel_nondynamic_calls()</code> runs next and splits <code>Java Call</code> into
+<code>Call</code>/<code>Call Nondynamic</code> now that the callee's modifiers are known. A JDK
+callee carries no modifiers here -- it was named from the receiver's type, not
+parsed -- so its class being final is what settles it: nothing can override
+<code>java.lang.String.length</code>.</p>
+<p><code>drop_shadowed_use_refs()</code> runs last. Understand reports exactly one reference
+kind per position: <code>x</code> in <code>x.next()</code> is a <code>Use Deref Partial</code>, an assignment
+target is a <code>Set</code>, <code>i++</code> is a <code>Modify</code> -- and in none of those cases does it
+also report a plain <code>Use</code>. The use pass cannot know this, because it runs
+before set/dotref/modify have written anything, so the plain <code>Use</code> is deleted
+here wherever a more specific kind sits on the same position.</p>
+<h3 id="kind-ids">Kind ids</h3>
+<p>Kind ids are assigned by <code>AutoField</code> in the order <code>fill.py</code> reads the seed
+files, so they are positions, not identities. <strong>Always resolve a kind by name:</strong></p>
+<pre><code class="language-python">from openunderstand.oudb.models import kind_id
+ReferenceModel.get_or_create(_kind=kind_id(&quot;Java Call&quot;), ...)
+</code></pre>
+<p>The codebase used to hard-code 89 of these integers, which meant inserting one
+line in a <code>.txt</code> file silently repointed them all.</p>
+<h2 id="adding-an-analysis-pass">Adding an analysis pass</h2>
+<ol>
+<li>Write a <code>JavaParserLabeledListener</code> subclass in <code>analysis_passes/</code>. Collect
+   dictionaries; do not touch the database.</li>
+<li>Add an <code>addXxxRefs(ref_dicts, file_ent)</code> method to <code>Project</code> that writes both
+   directions of the reference, at the same position, resolving kinds by name.</li>
+<li>Add a <code>*_listener</code> method to <code>ListenersAndParsers</code> wiring the two together.</li>
+<li>Add it to the <code>listeners</code> list in <code>parsing_process.py</code>. <strong>Order matters</strong> --
+   later passes rely on entities earlier ones created.</li>
+<li>Have the change measured against Understand: the new kind's row count
+   should move toward Understand's without hurting precision.</li>
+</ol>
+<h2 id="adding-a-metric">Adding a metric</h2>
+<ol>
+<li>Write a module in <code>metrics/</code> exposing <code>metric_name(ent_model)</code>.</li>
+<li>Import it in <code>api.py</code> and add an <code>elif</code> branch to <code>Ent.metric()</code>.</li>
+<li>Add the name to <code>Ent.metrics()</code>.</li>
+<li>Check the metric against Understand's own value for the same entity, and
+   read its definition in Understand's <code>metrics.pdf</code> first. Six metrics here
+   were written from guesswork and every one of them was wrong.</li>
+</ol>
+<h2 id="the-grammar">The grammar</h2>
+<p><code>grammars/JavaParserLabeled.g4</code> is a fork of <code>antlr/grammars-v4</code>'s Java grammar
+carrying <strong>114 custom labelled alternatives</strong> (<code>#classBodyDeclaration0</code>,
+<code>#memberDeclaration3</code>, <code>#blockStatement1</code>, ...). Those labels generate the context
+classes every pass references.</p>
+<p>It is <strong>Java 8</strong>: no records, sealed types, <code>var</code>, text blocks or <code>yield</code>.
+Upstream's current grammar handles Java 21 and is backward-compatible with
+Java 8 source, but it has only 27 labels and different ones -- adopting it means
+rewriting every listener. Treat a grammar swap as a project.</p>
+<p>Regenerate after editing a <code>.g4</code> (the runtime pin in <code>requirements.txt</code> must
+match the tool version):</p>
+<pre><code class="language-bash">java -jar antlr-4.13.2-complete.jar -Dlanguage=Python3 -o OUT grammars/JavaLexer.g4
+java -jar antlr-4.13.2-complete.jar -Dlanguage=Python3 -lib OUT -o OUT grammars/JavaParserLabeled.g4
+cp OUT/*.py OUT/*.interp OUT/*.tokens openunderstand/gen/javaLabeled/
+</code></pre>
+<h2 id="parser-backends">Parser backends</h2>
+<p><code>config.ini</code>'s <code>engine_core</code> selects the parser: anything starting with <code>c</code>
+uses the speedy-antlr C++ accelerator, anything else the pure-Python ANTLR
+runtime. The accelerator is roughly 8× faster at parsing and falls back to
+Python with one warning if it was never built. Build it with
+<code>python openunderstand/gen/java8speedy/build.py</code>.</p>
+<h2 id="packaging">Packaging</h2>
+<p>The installed package is <code>openunderstand</code>; everything imports fully qualified
+(<code>openunderstand.gen.javaLabeled...</code>). Two long-standing landmines are gone:</p>
+<ul>
+<li>Imports used to be top-level <code>gen.javaLabeled...</code>, so <code>openunderstand/</code> had
+  to be on <code>sys.path</code> and the package could not be installed and used.</li>
+<li><code>setup_config()</code> used to resolve <code>config.ini</code> one directory <em>above</em> the
+  repository root and <code>KeyError</code> on a missing <code>[Logging]</code> section. It now
+  falls back to defaults, so the library works with no configuration.</li>
+</ul>
+<p>An installed wheel is expected to do the whole job with only <code>antlr4-runtime</code>
+and <code>peewee</code>. <code>.github/workflows/parity.yml</code> proves it on every push -- build
+the wheel, check the seed files ship and nothing leaks to top level, install
+into a clean venv, then analyse Java and query the result.</p>
+<h2 id="the-comparison">The comparison</h2>
+<p>The comparison is the test suite. It builds a database with each
+tool from the same source and diffs them at three levels:</p>
+<ul>
+<li><strong>(a) raw SQLite</strong> -- what the passes actually wrote, <code>api.py</code> out of the picture</li>
+<li><strong>(b) through <code>api.py</code></strong> -- what a user sees</li>
+<li><strong>(c) real Understand</strong> -- ground truth</li>
+</ul>
+<p>(a) vs (c) isolates analysis bugs. (a) vs (b) isolates API bugs. A database
+fingerprint guards refactors: a change that should not alter output must
+reproduce the baseline digest byte for byte.</p>
+<p>It needs a licensed Understand install and is kept outside this
+repository.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      © 2021-2022 OpenUnderstand project - IUST Reverse Engineering Research Laboratory
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>

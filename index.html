@@ -9,14 +9,21 @@
         <meta name="description" content="An open-source implementation of Understand Python API for Java language">
       
       
-      
-        <meta name="author" content="Morteza Zakeri, Saeed Parsa">
+        <meta name="author" content="Morteza Zakeri">
       
       
         <link rel="canonical" href="https://m-zakeri.github.io/OpenUnderstand/">
       
+      
+      
+        <link rel="next" href="api/">
+      
+      
+        
+      
+      
       <link rel="icon" href="assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.2.2, mkdocs-material-7.2.5">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -24,29 +31,31 @@
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.be71726b.min.css">
+      <link rel="stylesheet" href="assets/stylesheets/main.ec1eaa64.min.css">
       
         
-        <link rel="stylesheet" href="assets/stylesheets/palette.3f5d1f46.min.css">
-        
+        <link rel="stylesheet" href="assets/stylesheets/palette.ab4e12ef.min.css">
       
-    
-    
-    
-      
-        
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
-        <style>:root{--md-text-font-family:"Roboto";--md-code-font-family:"Roboto Mono"}</style>
-      
-    
-    
-    
-      <link rel="stylesheet" href="assets/_mkdocstrings.css">
-    
-    
       
 
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL(".",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
 
     
     
@@ -63,17 +72,13 @@
     <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="orange" data-md-color-accent="orange">
   
     
-    <script>function __prefix(e){return new URL(".",location).pathname+"."+e}function __get(e,t=localStorage){return JSON.parse(t.getItem(__prefix(e)))}</script>
-    
-      <script>var palette=__get("__palette");if(null!==palette&&"object"==typeof palette.color)for(var key in palette.color)document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
-    
     <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
     <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
         
-        <a href="#welcome-to-openunderstand" class="md-skip">
+        <a href="#openunderstand" class="md-skip">
           Skip to content
         </a>
       
@@ -82,16 +87,22 @@
       
     </div>
     
-      <header class="md-header" data-md-component="header">
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
     <a href="." title="OpenUnderstand Docs (v0.1.1dev)" class="md-header__button md-logo" aria-label="OpenUnderstand Docs (v0.1.1dev)" data-md-component="logo">
       
   
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
     </label>
     <div class="md-header__title" data-md-component="header-title">
       <div class="md-header__ellipsis">
@@ -110,71 +121,83 @@
       </div>
     </div>
     
-      <form class="md-header__option" data-md-component="palette">
-        
-          
-          
-          <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="orange" data-md-color-accent="orange"  aria-label="Dark mode"  type="radio" name="__palette" id="__palette_1">
-          
-            <label class="md-header__button md-icon" title="Dark mode" for="__palette_2" hidden>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M7 10a2 2 0 0 1 2 2 2 2 0 0 1-2 2 2 2 0 0 1-2-2 2 2 0 0 1 2-2m10-3a5 5 0 0 1 5 5 5 5 0 0 1-5 5H7a5 5 0 0 1-5-5 5 5 0 0 1 5-5h10M7 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3h10a3 3 0 0 0 3-3 3 3 0 0 0-3-3H7z"/></svg>
-            </label>
-          
-        
-          
-          
-          <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="orange" data-md-color-accent="orange"  aria-label="Light mode"  type="radio" name="__palette" id="__palette_2">
-          
-            <label class="md-header__button md-icon" title="Light mode" for="__palette_1" hidden>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3z"/></svg>
-            </label>
-          
-        
-      </form>
-    
-    
-    
-      <label class="md-header__button md-icon" for="__search">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
-      </label>
       
-<div class="md-search" data-md-component="search" role="dialog">
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="orange" data-md-color-accent="orange"  aria-label="Dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 6H7c-3.31 0-6 2.69-6 6s2.69 6 6 6h10c3.31 0 6-2.69 6-6s-2.69-6-6-6m0 10H7c-2.21 0-4-1.79-4-4s1.79-4 4-4h10c2.21 0 4 1.79 4 4s-1.79 4-4 4M7 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="orange" data-md-color-accent="orange"  aria-label="Light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
       <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
       <label class="md-search__icon md-icon" for="__search">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
       </label>
       <nav class="md-search__options" aria-label="Search">
         
-        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
       </nav>
       
     </form>
     <div class="md-search__output">
-      <div class="md-search__scrollwrap" data-md-scrollfix>
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
         <div class="md-search-result" data-md-component="search-result">
           <div class="md-search-result__meta">
             Initializing search
           </div>
-          <ol class="md-search-result__list"></ol>
+          <ol class="md-search-result__list" role="presentation"></ol>
         </div>
       </div>
     </div>
   </div>
 </div>
+      
     
     
       <div class="md-header__source">
-        
-<a href="https://github.com/m-zakeri/OpenUnderstand/" title="Go to repository" class="md-source" data-md-component="source">
+        <a href="https://github.com/m-zakeri/OpenUnderstand" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
   </div>
   <div class="md-source__repository">
     GitHub
@@ -183,11 +206,14 @@
       </div>
     
   </nav>
+  
 </header>
     
     <div class="md-container" data-md-component="container">
       
       
+        
+          
         
       
       <main class="md-main" data-md-component="main">
@@ -201,23 +227,23 @@
                     
 
 
+
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
     <a href="." title="OpenUnderstand Docs (v0.1.1dev)" class="md-nav__button md-logo" aria-label="OpenUnderstand Docs (v0.1.1dev)" data-md-component="logo">
       
   
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
     OpenUnderstand Docs (v0.1.1dev)
   </label>
   
     <div class="md-nav__source">
-      
-<a href="https://github.com/m-zakeri/OpenUnderstand/" title="Go to repository" class="md-source" data-md-component="source">
+      <a href="https://github.com/m-zakeri/OpenUnderstand" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
   </div>
   <div class="md-source__repository">
     GitHub
@@ -229,31 +255,57 @@
     
       
       
-      
-
   
   
     
   
   
+  
     <li class="md-nav__item md-nav__item--active">
       
-      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
         
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          Home
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="." class="md-nav__link md-nav__link--active">
-        Home
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
       </a>
       
         
+
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
@@ -268,131 +320,56 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#introduction" class="md-nav__link">
-    Introduction
+  <a href="#install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#project-layout" class="md-nav__link">
-    Project layout
-  </a>
-  
-    <nav class="md-nav" aria-label="Project layout">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#entity-and-reference" class="md-nav__link">
-    Entity and reference
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#entity-kinds" class="md-nav__link">
-    Entity kinds
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#reference-kind" class="md-nav__link">
-    Reference kind
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
+  <a href="#build-a-database" class="md-nav__link">
+    <span class="md-ellipsis">
       
-        <li class="md-nav__item">
-  <a href="#architecture" class="md-nav__link">
-    Architecture
-  </a>
-  
-    <nav class="md-nav" aria-label="Architecture">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#database-schema-erd" class="md-nav__link">
-    Database schema ERD
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#some-architectural-notes" class="md-nav__link">
-    Some architectural notes
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
+        Build a database
       
-        <li class="md-nav__item">
-  <a href="#api" class="md-nav__link">
-    API
-  </a>
-  
-    <nav class="md-nav" aria-label="API">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#initializing-the-database" class="md-nav__link">
-    Initializing the database
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#filling-openunderstand-tables" class="md-nav__link">
-    Filling OpenUnderstand tables
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#using-the-api" class="md-nav__link">
-    Using the API
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#api-tests" class="md-nav__link">
-    API tests
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#current-development-proposal" class="md-nav__link">
-    Current development proposal
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#faqs" class="md-nav__link">
-    FAQs
+  <a href="#query-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Query it
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#references" class="md-nav__link">
-    References
+  <a href="#check-it-against-understand" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Check it against Understand
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-to-go-next" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where to go next
+      
+    </span>
   </a>
   
 </li>
@@ -407,14 +384,26 @@
     
       
       
-      
-
+  
   
   
   
     <li class="md-nav__item">
-      <a href="entity_kinds/" class="md-nav__link">
-        Entity kinds
+      <a href="api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
       </a>
     </li>
   
@@ -422,14 +411,26 @@
     
       
       
-      
-
+  
   
   
   
     <li class="md-nav__item">
-      <a href="reference_kinds/" class="md-nav__link">
-        References kinds
+      <a href="kinds/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kinds
+  
+
+    
+  </span>
+  
+  
+
       </a>
     </li>
   
@@ -437,14 +438,26 @@
     
       
       
-      
-
+  
   
   
   
     <li class="md-nav__item">
-      <a href="source_code_metrics/" class="md-nav__link">
-        Source code metrics
+      <a href="architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
       </a>
     </li>
   
@@ -452,14 +465,26 @@
     
       
       
-      
-
+  
   
   
   
     <li class="md-nav__item">
-      <a href="benchmarks/" class="md-nav__link">
-        Benchmarks
+      <a href="parity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parity with Understand
+  
+
+    
+  </span>
+  
+  
+
       </a>
     </li>
   
@@ -467,176 +492,26 @@
     
       
       
-      
-
   
   
   
+  
+    <li class="md-nav__item">
+      <a href="metric-parity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
     
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_6" type="checkbox" id="__nav_6" >
-      
-      <label class="md-nav__link" for="__nav_6">
-        Development proposals
-        <span class="md-nav__icon md-icon"></span>
-      </label>
-      <nav class="md-nav" aria-label="Development proposals" data-md-level="1">
-        <label class="md-nav__title" for="__nav_6">
-          <span class="md-nav__icon md-icon"></span>
-          Development proposals
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
   
-  
-  
-    <li class="md-nav__item">
-      <a href="proposals/core_entity_reference_development/" class="md-nav__link">
-        Core entity-reference development
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="proposals/core_source_code_metrics_development/" class="md-nav__link">
-        Core source code metrics development
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="proposals/core_code_graphs_development/" class="md-nav__link">
-        Core code graphs and visualiztion development
-      </a>
-    </li>
-  
-
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="proposals/code_review_and_bug_fixing/" class="md-nav__link">
-        Code review and bug fixing
-      </a>
-    </li>
-  
-
-          
-        </ul>
-      </nav>
-    </li>
+    Metric parity
   
 
     
-      
-      
-      
-
+  </span>
   
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_7" type="checkbox" id="__nav_7" >
-      
-      <label class="md-nav__link" for="__nav_7">
-        Analysis passes
-        <span class="md-nav__icon md-icon"></span>
-      </label>
-      <nav class="md-nav" aria-label="Analysis passes" data-md-level="1">
-        <label class="md-nav__title" for="__nav_7">
-          <span class="md-nav__icon md-icon"></span>
-          Analysis passes
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="reference_kinds/call_callby/" class="md-nav__link">
-        Call and Callby
-      </a>
-    </li>
   
 
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_8" type="checkbox" id="__nav_8" >
-      
-      <label class="md-nav__link" for="__nav_8">
-        Code graph and visulization
-        <span class="md-nav__icon md-icon"></span>
-      </label>
-      <nav class="md-nav" aria-label="Code graph and visulization" data-md-level="1">
-        <label class="md-nav__title" for="__nav_8">
-          <span class="md-nav__icon md-icon"></span>
-          Code graph and visulization
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="code_graphs/control_flow_graph/" class="md-nav__link">
-        Control flow graph
-      </a>
-    </li>
-  
-
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-    
-      
-      
-      
-
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="tutorials/" class="md-nav__link">
-        Tutorials
       </a>
     </li>
   
@@ -644,14 +519,80 @@
     
       
       
-      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="mcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP server
+  
 
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="idea-plugin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IntelliJ IDEA plugin
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
   
   
   
     <li class="md-nav__item">
       <a href="https://github.com/m-zakeri/OpenUnderstand/issues" class="md-nav__link">
-        Issue tracker
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Issue tracker
+  
+
+    
+  </span>
+  
+  
+
       </a>
     </li>
   
@@ -669,6 +610,7 @@
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
+
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
@@ -683,131 +625,56 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#introduction" class="md-nav__link">
-    Introduction
+  <a href="#install" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Install
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#project-layout" class="md-nav__link">
-    Project layout
-  </a>
-  
-    <nav class="md-nav" aria-label="Project layout">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#entity-and-reference" class="md-nav__link">
-    Entity and reference
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#entity-kinds" class="md-nav__link">
-    Entity kinds
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#reference-kind" class="md-nav__link">
-    Reference kind
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
+  <a href="#build-a-database" class="md-nav__link">
+    <span class="md-ellipsis">
       
-        <li class="md-nav__item">
-  <a href="#architecture" class="md-nav__link">
-    Architecture
-  </a>
-  
-    <nav class="md-nav" aria-label="Architecture">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#database-schema-erd" class="md-nav__link">
-    Database schema ERD
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#some-architectural-notes" class="md-nav__link">
-    Some architectural notes
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
+        Build a database
       
-        <li class="md-nav__item">
-  <a href="#api" class="md-nav__link">
-    API
-  </a>
-  
-    <nav class="md-nav" aria-label="API">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#initializing-the-database" class="md-nav__link">
-    Initializing the database
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#filling-openunderstand-tables" class="md-nav__link">
-    Filling OpenUnderstand tables
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#using-the-api" class="md-nav__link">
-    Using the API
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#api-tests" class="md-nav__link">
-    API tests
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#current-development-proposal" class="md-nav__link">
-    Current development proposal
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#faqs" class="md-nav__link">
-    FAQs
+  <a href="#query-it" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Query it
+      
+    </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#references" class="md-nav__link">
-    References
+  <a href="#check-it-against-understand" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Check it against Understand
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#where-to-go-next" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Where to go next
+      
+    </span>
   </a>
   
 </li>
@@ -820,169 +687,154 @@
               </div>
             
           
-          <div class="md-content" data-md-component="content">
-            <article class="md-content__inner md-typeset">
+          
+            <div class="md-content" data-md-component="content">
               
+              <article class="md-content__inner md-typeset">
                 
-                  <a href="https://github.com/m-zakeri/OpenUnderstand/edit/master/docs/index.md" title="Edit this page" class="md-content__button md-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
-                  </a>
-                
-                
-                <h1 id="welcome-to-openunderstand">Welcome to OpenUnderstand</h1>
-<p>An open-source implementation of Understand Python API.
-Visit 
-<a href="https://github.com/m-zakeri/OpenUnderstand">source code</a>.</p>
-<h2 id="introduction">Introduction</h2>
-<p>Understand [1] has an extensive API to let developers query the data it captures about their code. It has three flavors: Perl, Python, and C. We work with Python API.  All three implementations of the Understand APIs are read-only. They do not modify the Understand project information. If there is a need to modify Understand project information programmatically, the 'und' tool must be used. Unfortunately, the Understand API source code is not publicly available, making it difficult to change, customize, and reuse in new activities and environments which appears in academic researches. </p>
-<p>This project aims to provide an open-source implementation of the Understand Python API to analyze the source codes. We primarily focus on implementing the API for Java programs using Python programming languages and compiler tools such as ANTLR [2]. To develop an open-source implementation of Understand Python API, we look at the structures used by Understand for analyzing source codes.</p>
-<h2 id="project-layout">Project layout</h2>
-<h3 id="entity-and-reference">Entity and reference</h3>
-<p>Most of the data captured by Understand involves Entities and References.</p>
-<ul>
-<li><strong>Entity:</strong> An Entity is anything in the code that Understand captures information on: i.e., A file, a class, a variable, a function, etc. In the Perl API, Entities are represented with the Understand::Ent class. In Python, it is the Understand.Ent class.</li>
-<li><strong>Reference:</strong> A specific place where an entity appears in the code. A reference is always defined as a relationship between two entities. e.g., function Bar is called on line 14 of function Foo. In the Perl API, References are represented with the Understand::Ref class. In Python, it is the Understand.Ref class.</li>
-</ul>
-<p>Every entity and reference have a unique set of attributes that can be queried by the API. A few of the attributes you can view for an entity would be its name, its type, any associated comments, what kind of entity it is, and if it has them: its parent entity and its parameters. On the other hand, a reference would have both of the entities associated with it as well as the file, line, and column where the reference occurs and what kind of reference it is. To help visualize this, let's use this simple C code:</p>
-<pre><code class="language-c">myFile.c
+                  
 
-    void main(){
-       char myString[];
-       myString = “Hello World!”;
-}
+
+  
+  
+
+
+<h1 id="openunderstand">OpenUnderstand</h1>
+<p>An open-source implementation of the <a href="https://scitools.com">SciTools Understand</a>
+Python API for Java source code.</p>
+<p>Understand analyses a codebase and lets you ask questions about it: which
+methods call this one, what does this class contain, how complex is this
+function. Its API is excellent and its analysis is closed -- the database
+format is proprietary and the API source is not published. OpenUnderstand
+reimplements that API on top of an ANTLR4 Java parser and a SQLite database,
+so the same scripts run without a licence.</p>
+<p>The goal is that a script written against Understand runs unchanged here. Every
+class name, method signature and kind name is Understand's, and every change is
+measured against the real tool -- see <a href="parity/">Parity</a> for how close it
+currently is.</p>
+<h2 id="install">Install</h2>
+<pre><code class="language-bash">pip install openunderstand
 </code></pre>
-<p>Understand would identify three entities (blue) and three references (green), shown in Figure 1.</p>
-<p><img alt="Understand data structure for a simple C code" src="figs/entity_reference_graph.png" /></p>
-<p><em>Figure 1. Understand data structure for a simple C code</em></p>
-<p>Since all references are relationships between two objects, the references are actually stored going in both directions. Hence, each reference kind has an opposite: "Define" and "DefineIn", "Set" and "SetBy", "Call" and "Callby", etc. The same entities of Figure 1 with their reverse references are shown in Figure 2.</p>
-<p><img alt="Understand data structure for a simple C code" src="figs/entity_reference_graph_inverse.png" /></p>
-<p><em>Figure 2. References of Figure 1 in inverse directions</em></p>
-<h3 id="entity-kinds">Entity kinds</h3>
-<p>A comprehensive list of OpenUnderstand entity kinds for Java programming language can be found on
-<a href="entity_kinds/">Entity kind page</a></p>
-<h3 id="reference-kind">Reference kind</h3>
-<p>A comprehensive list of OpenUnderstand reference kinds for Java programming language can be found on
-<a href="reference_kinds/">Reference kind page</a></p>
-<h2 id="architecture">Architecture</h2>
-<p>This section briefly describes the OpneUndertsand architecture.</p>
-<h3 id="database-schema-erd">Database schema ERD</h3>
-<p>For the database section of this project, <code>peewee</code> library and <code>SQLite3</code> are used.
-It is essential to read the <a href="http://docs.peewee-orm.com/en/latest/">peewee's documents</a> as well.</p>
-<p>The entity-relationship diagram (ERD) for the designed database for OpneUnderstand symbol table is shown in Figure 3. There are four important tables in OpenUnderstand database, created for each project during static analysis:</p>
-<ul>
-<li><strong>Project:</strong> For storing some basic information about the project under analysis such as project name, programming languages, etc. This table fills automatically.</li>
-<li><strong>Kind:</strong> For storing both the entity and reference kinds which are separable by <code>is_ent_kind</code> boolean.
-    This table fills automatically.</li>
-<li><strong>Entity:</strong> For storing Java entities in the project. This table fills during the program static analysis by <a href="tutorials/">ANTLR listeners</a>.</li>
-<li><strong>Reference:</strong> For storing Java references in the project. This table fills during the program static analysis by <a href="tutorials/">ANTLR listeners</a>.</li>
-</ul>
-<p><img alt="Designed Database Schema" src="figs/db_uml.png" /></p>
-<p><em>Figure 3. OpenUnderstand database schema ERD</em></p>
-<h3 id="some-architectural-notes">Some architectural notes</h3>
-<ul>
-<li>Multiple analysis passes are required to capture all entities and references kinds</li>
-<li>OpenUnderstand analysis project files in at least two passes.</li>
-<li>File is the root since the parent of files is None.</li>
-<li>Parent of a package is its first file according to alphabetical sort of all files in the package.</li>
-<li>Parent of other entities is their definition place.</li>
-<li>Only variables have value.</li>
-<li>Classes that are not in project are Unknown.</li>
-</ul>
-<h2 id="api">API</h2>
-<p>There is a designed and read-to-use API in <code>db/api.py</code> for querying the database and checking the results with Understand.
-The API is exactly the same as Understand's API to be compatible with Understand tool.</p>
-<h3 id="initializing-the-database">Initializing the database</h3>
-<pre><code class="language-python">from openunderstand.oudb.api import create_db
-from openunderstand.oudb.fill import main
+<p>Python 3.9 or newer. Extras: <code>[speedy]</code> for the C++ parser accelerator,
+<code>[mcp]</code> for the MCP server, <code>[dev]</code> for the test and build tooling.</p>
+<h2 id="build-a-database">Build a database</h2>
+<p>Point it at a directory of Java source. It walks the tree, parses every
+<code>.java</code> file, and writes a <code>.udb</code> -- a SQLite file, despite the name.</p>
+<pre><code class="language-bash">python openunderstand/ounderstand/openunderstand.py \
+    -r /path/to/java/project \
+    -dba /path/for/database \
+    -dbn myproject.udb \
+    -l /path/for/app.log
+</code></pre>
+<p>Or from Python, which is how <a href="https://github.com/m-zakeri/CodART">CodART</a>
+uses it:</p>
+<pre><code class="language-python">from openunderstand.ounderstand.openunderstand import start_parsing
 
-create_db(
-    dbname=&quot;G:\Dev\OpenUnderstand\database.oudb&quot;,  # customize the path
-    project_dir=&quot;G:\Dev\OpenUnderstand\benchmark\calculator_app&quot;  # customize the path
+start_parsing(
+    repo_address=&quot;/path/to/java/project&quot;,
+    db_address=&quot;/path/for/database&quot;,
+    db_name=&quot;myproject.udb&quot;,
+    engine_core=&quot;C++&quot;,          # or &quot;Python&quot;
+    log_address=&quot;/path/for/app.log&quot;,
 )
-main()
 </code></pre>
-<h3 id="filling-openunderstand-tables">Filling OpenUnderstand tables</h3>
-<p>It is essential to check whether a reference or entity kinds have already been inserted into the database or not, before any insert operation. Any duplicated entity or reference should be avoided.
-To this aim, we provide the following <code>get</code> and <code>create</code> methods.</p>
-<p><em>Get</em> or <em>create</em> an instance:</p>
-<pre><code class="language-python">obj, has_created = ModelName.get_or_create(**fields)
-</code></pre>
-<p><em>Get</em> or <em>none</em>:</p>
-<pre><code class="language-python">obj = ModelName.get_or_none(**fields)
-</code></pre>
-<p>To find more information about CRUD operations check out the <a href="http://docs.peewee-orm.com/en/latest/">peewee's documents</a>.</p>
-<h3 id="using-the-api">Using the API</h3>
-<pre><code class="language-python">from openunderstand.oudb.api import open as db_open
+<h2 id="query-it">Query it</h2>
+<pre><code class="language-python">import openunderstand.ounderstand as und
 
-db = db_open(&quot;G:\Dev\OpenUnderstand\database.oudb&quot;)  # customize the path
-ent = db.lookup(&quot;Admin&quot;, &quot;method&quot;)[0]
+db = und.open(&quot;/path/for/database/myproject.udb&quot;)
 
-print(ent, ent.kind())
-print(ent, ent.simplename())
-for ref in ent.refs(entkindstring=&quot;method&quot;):
-    print(ref)
-# The results should be exactly similar to Understand.
+for cls in db.ents(&quot;Class&quot;):
+    print(cls.longname())
+    for ref in cls.refs(&quot;Define&quot;, &quot;Method&quot;):
+        print(&quot;   &quot;, ref.ent().name(), &quot;at line&quot;, ref.line())
 </code></pre>
-<h3 id="api-tests">API tests</h3>
-<p>To facilitate the verification process OpenUnderstand uses a set of unit tests for each entity and reference kinds. The unit test mainly used the <a href="benchmarks/">benchmark projects</a>.
-Tests oracles are generated by Understand v6.0 automatically. </p>
-<h2 id="current-development-proposal">Current development proposal</h2>
-<p>Our current development proposal is Core entity-reference development which is available on <a href="https://m-zakeri.github.io/OpenUnderstand/proposals/core_entity_reference_development/">development proposals section</a>.</p>
-<h2 id="faqs">FAQs</h2>
-<p>If you have any further questions, or you are interested to be a core developer do not hesitate to contact us. You can send an e-mail to m-zakeri@live.com with the subject "OpenUnderstand".</p>
-<h2 id="references">References</h2>
-<p>[1] SciTools, “Understand,” 2020. https://www.scitools.com/ (accessed Sep. 11, 2020).</p>
-<p>[2] T. Parr and K. Fisher, “LL(*): the foundation of the ANTLR parser generator,” Proc. 32nd ACM SIGPLAN Conf. Program. Lang. Des. Implement., pp. 425–436, 2011, doi: http://doi.acm.org/10.1145/1993498.1993548.</p>
+<p>The full surface is in the <a href="api/">API reference</a>; the vocabulary of kind
+names is in <a href="kinds/">Kinds</a>.</p>
+<h2 id="check-it-against-understand">Check it against Understand</h2>
+<p>If you have Understand installed and licensed, both databases can be built
+from the same source and every difference reported:</p>
+<p>The result is a ranked defect report. Understand must be installed and
+licensed, so it is kept outside this repository -- ask if you want to run it.</p>
+<p>The comparison is the specification: the only thing that decides whether a
+reference is right is what the real tool reports for it.</p>
+<p>Alongside it, <code>tests/</code> holds unit tests for the passes whose rules were derived
+from that comparison -- what counts as a <code>Set</code> against a dereferenced target,
+where a <code>Modify</code> sits on <code>++i</code>, which names a type resolves to. Each runs in
+about a second and needs no database:</p>
+<pre><code class="language-bash">for t in tests/test_*.py; do .venv/bin/python -W ignore &quot;$t&quot;; done
+</code></pre>
+<p>They exist to stop a rule regressing between comparison runs, not to replace
+one -- a pass can satisfy every test here and still disagree with Understand.</p>
+<h2 id="where-to-go-next">Where to go next</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="api/">API reference</a></td>
+<td>Every class and method, and what is not implemented</td>
+</tr>
+<tr>
+<td><a href="kinds/">Kinds</a></td>
+<td>The 237 entity and 106 reference kinds</td>
+</tr>
+<tr>
+<td><a href="architecture/">Architecture</a></td>
+<td>How a file becomes rows, and how to add a pass</td>
+</tr>
+<tr>
+<td><a href="parity/">Parity</a></td>
+<td>Current measured agreement with Understand</td>
+</tr>
+<tr>
+<td><a href="mcp/">MCP server</a></td>
+<td>Query your code from an assistant</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
                 
-              
-              
-                
-
-
-              
-            </article>
-          </div>
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
         </div>
         
       </main>
       
-        
-<footer class="md-footer">
-  
-    <nav class="md-footer__inner md-grid" aria-label="Footer">
-      
-      
-        
-        <a href="entity_kinds/" class="md-footer__link md-footer__link--next" aria-label="Next: Entity kinds" rel="next">
-          <div class="md-footer__title">
-            <div class="md-ellipsis">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              Entity kinds
-            </div>
-          </div>
-          <div class="md-footer__button md-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
-          </div>
-        </a>
-      
-    </nav>
+        <footer class="md-footer">
   
   <div class="md-footer-meta md-typeset">
     <div class="md-footer-meta__inner md-grid">
-      <div class="md-footer-copyright">
-        
-          <div class="md-footer-copyright__highlight">
-            © 2021-2022 OpenUnderstand project - IUST Reverse Engineering Research Laboratory
-          </div>
-        
-        Made with
-        <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
-          Material for MkDocs
-        </a>
-        
-      </div>
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      © 2021-2022 OpenUnderstand project - IUST Reverse Engineering Research Laboratory
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
       
     </div>
   </div>
@@ -992,10 +844,15 @@ Tests oracles are generated by Understand v6.0 automatically. </p>
     <div class="md-dialog" data-md-component="dialog">
       <div class="md-dialog__inner md-typeset"></div>
     </div>
-    <script id="__config" type="application/json">{"base": ".", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "assets/javascripts/workers/search.409db549.min.js", "version": null}</script>
     
     
-      <script src="assets/javascripts/bundle.56a63758.min.js"></script>
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": [], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>

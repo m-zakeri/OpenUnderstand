@@ -1,0 +1,4295 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="An open-source implementation of Understand Python API for Java language">
+      
+      
+        <meta name="author" content="Morteza Zakeri">
+      
+      
+        <link rel="canonical" href="https://m-zakeri.github.io/OpenUnderstand/parity/">
+      
+      
+        <link rel="prev" href="../architecture/">
+      
+      
+        <link rel="next" href="../metric-parity/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+    
+    
+      
+        <title>Parity with Understand - OpenUnderstand Docs (v0.1.1dev)</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="orange" data-md-color-accent="orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#parity-with-understand" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="OpenUnderstand Docs (v0.1.1dev)" class="md-header__button md-logo" aria-label="OpenUnderstand Docs (v0.1.1dev)" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            OpenUnderstand Docs (v0.1.1dev)
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Parity with Understand
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="orange" data-md-color-accent="orange"  aria-label="Dark mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Dark mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 6H7c-3.31 0-6 2.69-6 6s2.69 6 6 6h10c3.31 0 6-2.69 6-6s-2.69-6-6-6m0 10H7c-2.21 0-4-1.79-4-4s1.79-4 4-4h10c2.21 0 4 1.79 4 4s-1.79 4-4 4M7 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="orange" data-md-color-accent="orange"  aria-label="Light mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Light mode" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 7H7a5 5 0 0 0-5 5 5 5 0 0 0 5 5h10a5 5 0 0 0 5-5 5 5 0 0 0-5-5m0 8a3 3 0 0 1-3-3 3 3 0 0 1 3-3 3 3 0 0 1 3 3 3 3 0 0 1-3 3"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/m-zakeri/OpenUnderstand" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="OpenUnderstand Docs (v0.1.1dev)" class="md-nav__button md-logo" aria-label="OpenUnderstand Docs (v0.1.1dev)" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    OpenUnderstand Docs (v0.1.1dev)
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/m-zakeri/OpenUnderstand" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../kinds/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kinds
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parity with Understand
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Parity with Understand
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#105_freemind" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        105_freemind
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="105_freemind">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entities-by-kind-family" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entities by kind family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#largest-reference-gaps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Largest reference gaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-findings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open findings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JSON
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="JSON">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entities-by-kind-family_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entities by kind family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#largest-reference-gaps_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Largest reference gaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-findings_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open findings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#salarycalculator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SalaryCalculator
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SalaryCalculator">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entities-by-kind-family_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entities by kind family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#largest-reference-gaps_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Largest reference gaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-findings_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open findings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#thealgorithms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TheAlgorithms
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="TheAlgorithms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entities-by-kind-family_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entities by kind family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#largest-reference-gaps_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Largest reference gaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-findings_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open findings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#calculator_app" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calculator_app
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="calculator_app">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entities-by-kind-family_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entities by kind family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#largest-reference-gaps_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Largest reference gaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-findings_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open findings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ganttproject" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ganttproject
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ganttproject">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entities-by-kind-family_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entities by kind family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#largest-reference-gaps_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Largest reference gaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-findings_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open findings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#jfreechart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jfreechart
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="jfreechart">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entities-by-kind-family_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entities by kind family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#largest-reference-gaps_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Largest reference gaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-findings_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open findings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#jhotdraw-develop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jhotdraw-develop
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="jhotdraw-develop">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entities-by-kind-family_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entities by kind family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#largest-reference-gaps_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Largest reference gaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-findings_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open findings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#jvlt-132" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jvlt-1.3.2
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="jvlt-1.3.2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entities-by-kind-family_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entities by kind family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#largest-reference-gaps_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Largest reference gaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-findings_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open findings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing_legacy_code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        testing_legacy_code
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="testing_legacy_code">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entities-by-kind-family_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entities by kind family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#largest-reference-gaps_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Largest reference gaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-findings_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open findings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#xerces2j" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        xerces2j
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="xerces2j">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entities-by-kind-family_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entities by kind family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#largest-reference-gaps_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Largest reference gaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-findings_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open findings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../metric-parity/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Metric parity
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../mcp/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    MCP server
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../idea-plugin/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    IntelliJ IDEA plugin
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="https://github.com/m-zakeri/OpenUnderstand/issues" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Issue tracker
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#105_freemind" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        105_freemind
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="105_freemind">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entities-by-kind-family" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entities by kind family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#largest-reference-gaps" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Largest reference gaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-findings" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open findings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#json" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        JSON
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="JSON">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entities-by-kind-family_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entities by kind family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#largest-reference-gaps_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Largest reference gaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-findings_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open findings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#salarycalculator" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        SalaryCalculator
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="SalaryCalculator">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entities-by-kind-family_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entities by kind family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#largest-reference-gaps_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Largest reference gaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-findings_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open findings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#thealgorithms" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        TheAlgorithms
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="TheAlgorithms">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entities-by-kind-family_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entities by kind family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#largest-reference-gaps_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Largest reference gaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-findings_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open findings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#calculator_app" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        calculator_app
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="calculator_app">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entities-by-kind-family_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entities by kind family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#largest-reference-gaps_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Largest reference gaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-findings_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open findings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ganttproject" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ganttproject
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="ganttproject">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entities-by-kind-family_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entities by kind family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#largest-reference-gaps_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Largest reference gaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-findings_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open findings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#jfreechart" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jfreechart
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="jfreechart">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entities-by-kind-family_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entities by kind family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#largest-reference-gaps_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Largest reference gaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-findings_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open findings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#jhotdraw-develop" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jhotdraw-develop
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="jhotdraw-develop">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entities-by-kind-family_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entities by kind family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#largest-reference-gaps_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Largest reference gaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-findings_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open findings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#jvlt-132" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        jvlt-1.3.2
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="jvlt-1.3.2">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entities-by-kind-family_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entities by kind family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#largest-reference-gaps_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Largest reference gaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-findings_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open findings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#testing_legacy_code" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        testing_legacy_code
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="testing_legacy_code">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entities-by-kind-family_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entities by kind family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#largest-reference-gaps_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Largest reference gaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-findings_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open findings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#xerces2j" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        xerces2j
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="xerces2j">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#entities-by-kind-family_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Entities by kind family
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#largest-reference-gaps_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Largest reference gaps
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#open-findings_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Open findings
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+  
+
+
+<h1 id="parity-with-understand">Parity with Understand</h1>
+<p>How close OpenUnderstand's output is to SciTools Understand's on the
+same source. Generated by <code>scripts/gen_docs.py</code> from the comparison
+output; it needs a licensed Understand install, so
+it lives outside this repository.</p>
+<p>Both tools analyse the same fixture. Entities are matched on
+(kind family, normalised long name); references on (kind, entity,
+scope, file, line, column).</p>
+<h2 id="105_freemind">105_freemind</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Entities</td>
+<td style="text-align: right;">22975</td>
+<td style="text-align: right;">27643</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Entities matched: <strong>22075</strong> of 22975</li>
+<li>Entities with no Understand counterpart: 5568</li>
+<li>Open findings: 14</li>
+</ul>
+<h3 id="entities-by-kind-family">Entities by kind family</h3>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+<th style="text-align: right;">Δ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>variable</td>
+<td style="text-align: right;">8583</td>
+<td style="text-align: right;">9563</td>
+<td style="text-align: right;">+980</td>
+</tr>
+<tr>
+<td>parameter</td>
+<td style="text-align: right;">6680</td>
+<td style="text-align: right;">6143</td>
+<td style="text-align: right;">-537</td>
+</tr>
+<tr>
+<td>method</td>
+<td style="text-align: right;">5901</td>
+<td style="text-align: right;">8085</td>
+<td style="text-align: right;">+2184</td>
+</tr>
+<tr>
+<td>class</td>
+<td style="text-align: right;">984</td>
+<td style="text-align: right;">2530</td>
+<td style="text-align: right;">+1546</td>
+</tr>
+<tr>
+<td>constructor</td>
+<td style="text-align: right;">684</td>
+<td style="text-align: right;">684</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>interface</td>
+<td style="text-align: right;">90</td>
+<td style="text-align: right;">90</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>package</td>
+<td style="text-align: right;">53</td>
+<td style="text-align: right;">53</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>file</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">486</td>
+<td style="text-align: right;">+486</td>
+</tr>
+<tr>
+<td>unknown</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">+9</td>
+</tr>
+</tbody>
+</table>
+<h3 id="largest-reference-gaps">Largest reference gaps</h3>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+<th style="text-align: right;">Missing</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Java Endby</code></td>
+<td style="text-align: right;">7659</td>
+<td style="text-align: right;">6841</td>
+<td style="text-align: right;">+818</td>
+</tr>
+<tr>
+<td><code>Java End</code></td>
+<td style="text-align: right;">7659</td>
+<td style="text-align: right;">6841</td>
+<td style="text-align: right;">+818</td>
+</tr>
+<tr>
+<td><code>Java Begin</code></td>
+<td style="text-align: right;">7653</td>
+<td style="text-align: right;">6841</td>
+<td style="text-align: right;">+812</td>
+</tr>
+<tr>
+<td><code>Java Beginby</code></td>
+<td style="text-align: right;">7653</td>
+<td style="text-align: right;">6841</td>
+<td style="text-align: right;">+812</td>
+</tr>
+<tr>
+<td><code>Java Define</code></td>
+<td style="text-align: right;">22446</td>
+<td style="text-align: right;">22294</td>
+<td style="text-align: right;">+152</td>
+</tr>
+<tr>
+<td><code>Java Set Init</code></td>
+<td style="text-align: right;">6980</td>
+<td style="text-align: right;">6926</td>
+<td style="text-align: right;">+54</td>
+</tr>
+<tr>
+<td><code>Java Setby Init</code></td>
+<td style="text-align: right;">6980</td>
+<td style="text-align: right;">6926</td>
+<td style="text-align: right;">+54</td>
+</tr>
+<tr>
+<td><code>Java Use Return</code></td>
+<td style="text-align: right;">1188</td>
+<td style="text-align: right;">1154</td>
+<td style="text-align: right;">+34</td>
+</tr>
+<tr>
+<td><code>Java Useby Return</code></td>
+<td style="text-align: right;">1188</td>
+<td style="text-align: right;">1154</td>
+<td style="text-align: right;">+34</td>
+</tr>
+<tr>
+<td><code>Java Extendby Coupleby</code></td>
+<td style="text-align: right;">259</td>
+<td style="text-align: right;">236</td>
+<td style="text-align: right;">+23</td>
+</tr>
+</tbody>
+</table>
+<h3 id="open-findings">Open findings</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">Score</th>
+<th>Severity</th>
+<th>Finding</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">20.6</td>
+<td>wrong-data</td>
+<td>5568 of 27643 OpenUnderstand entities have no Understand counterpart</td>
+</tr>
+<tr>
+<td style="text-align: right;">16.4</td>
+<td>wrong-data</td>
+<td>337 duplicate entity rows across 253 logical entities</td>
+</tr>
+<tr>
+<td style="text-align: right;">15.9</td>
+<td>wrong-data</td>
+<td>281 references written as 'Java Extendby Coupleby External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">15.9</td>
+<td>wrong-data</td>
+<td>281 references written as 'Java Extend Couple External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">15.7</td>
+<td>wrong-data</td>
+<td>255 references written as 'Java Extendby Coupleby Implicit External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">15.7</td>
+<td>wrong-data</td>
+<td>255 references written as 'Java Extend Couple Implicit External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">14.5</td>
+<td>missing-data</td>
+<td>24118 references Understand finds are absent, ignoring position (recall 89%)</td>
+</tr>
+<tr>
+<td style="text-align: right;">9.8</td>
+<td>missing-data</td>
+<td>900 of 22975 entities Understand finds are absent from OpenUnderstand</td>
+</tr>
+<tr>
+<td style="text-align: right;">9.6</td>
+<td>wrong-data</td>
+<td>29 references written as 'Java Import Demand', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">8.3</td>
+<td>wrong-data</td>
+<td>32 references have the right line but the wrong column (204062 of 204094 match once the column is included)</td>
+</tr>
+<tr>
+<td style="text-align: right;">6.8</td>
+<td>wrong-data</td>
+<td>10 references match only once ent and scope are swapped</td>
+</tr>
+<tr>
+<td style="text-align: right;">6.5</td>
+<td>wrong-data</td>
+<td>14 entity long names are structurally malformed</td>
+</tr>
+</tbody>
+</table>
+<h2 id="json">JSON</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Entities</td>
+<td style="text-align: right;">4928</td>
+<td style="text-align: right;">5190</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Entities matched: <strong>4567</strong> of 4928</li>
+<li>Entities with no Understand counterpart: 623</li>
+<li>Open findings: 56</li>
+</ul>
+<h3 id="entities-by-kind-family_1">Entities by kind family</h3>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+<th style="text-align: right;">Δ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>variable</td>
+<td style="text-align: right;">2402</td>
+<td style="text-align: right;">2437</td>
+<td style="text-align: right;">+35</td>
+</tr>
+<tr>
+<td>method</td>
+<td style="text-align: right;">1243</td>
+<td style="text-align: right;">1465</td>
+<td style="text-align: right;">+222</td>
+</tr>
+<tr>
+<td>parameter</td>
+<td style="text-align: right;">1057</td>
+<td style="text-align: right;">766</td>
+<td style="text-align: right;">-291</td>
+</tr>
+<tr>
+<td>constructor</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;">100</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>class</td>
+<td style="text-align: right;">99</td>
+<td style="text-align: right;">312</td>
+<td style="text-align: right;">+213</td>
+</tr>
+<tr>
+<td>unknown</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">-9</td>
+</tr>
+<tr>
+<td>interface</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>package</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>annotation</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>file</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">92</td>
+<td style="text-align: right;">+92</td>
+</tr>
+</tbody>
+</table>
+<h3 id="largest-reference-gaps_1">Largest reference gaps</h3>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+<th style="text-align: right;">Missing</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Java Endby</code></td>
+<td style="text-align: right;">1441</td>
+<td style="text-align: right;">1388</td>
+<td style="text-align: right;">+53</td>
+</tr>
+<tr>
+<td><code>Java End</code></td>
+<td style="text-align: right;">1441</td>
+<td style="text-align: right;">1388</td>
+<td style="text-align: right;">+53</td>
+</tr>
+<tr>
+<td><code>Java Define</code></td>
+<td style="text-align: right;">4827</td>
+<td style="text-align: right;">4783</td>
+<td style="text-align: right;">+44</td>
+</tr>
+<tr>
+<td><code>Java Useby Return</code></td>
+<td style="text-align: right;">205</td>
+<td style="text-align: right;">177</td>
+<td style="text-align: right;">+28</td>
+</tr>
+<tr>
+<td><code>Java Use Return</code></td>
+<td style="text-align: right;">205</td>
+<td style="text-align: right;">177</td>
+<td style="text-align: right;">+28</td>
+</tr>
+<tr>
+<td><code>Java Set Init</code></td>
+<td style="text-align: right;">2210</td>
+<td style="text-align: right;">2189</td>
+<td style="text-align: right;">+21</td>
+</tr>
+<tr>
+<td><code>Java Setby Init</code></td>
+<td style="text-align: right;">2210</td>
+<td style="text-align: right;">2189</td>
+<td style="text-align: right;">+21</td>
+</tr>
+<tr>
+<td><code>Java Beginby</code></td>
+<td style="text-align: right;">1406</td>
+<td style="text-align: right;">1388</td>
+<td style="text-align: right;">+18</td>
+</tr>
+<tr>
+<td><code>Java Begin</code></td>
+<td style="text-align: right;">1406</td>
+<td style="text-align: right;">1388</td>
+<td style="text-align: right;">+18</td>
+</tr>
+<tr>
+<td><code>Java Definein Implicit</code></td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">+12</td>
+</tr>
+</tbody>
+</table>
+<h3 id="open-findings_1">Open findings</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">Score</th>
+<th>Severity</th>
+<th>Finding</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">15.4</td>
+<td>wrong-data</td>
+<td>637 of 5204 OpenUnderstand entities have no Understand counterpart</td>
+</tr>
+<tr>
+<td style="text-align: right;">15.4</td>
+<td>wrong-data</td>
+<td>233 duplicate entity rows across 127 logical entities</td>
+</tr>
+<tr>
+<td style="text-align: right;">12.1</td>
+<td>missing-data</td>
+<td>4534 references Understand finds are absent, ignoring position (recall 92%)</td>
+</tr>
+<tr>
+<td style="text-align: right;">12.0</td>
+<td>wrong-data</td>
+<td>69 references written as 'Java Extend Couple Implicit External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">12.0</td>
+<td>wrong-data</td>
+<td>69 references written as 'Java Extendby Coupleby Implicit External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">10.9</td>
+<td>wrong-data</td>
+<td>47 references written as 'Java Importby', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">10.5</td>
+<td>wrong-data</td>
+<td>40 referencemodel._scope_id values are text, not integer</td>
+</tr>
+<tr>
+<td style="text-align: right;">10.5</td>
+<td>wrong-data</td>
+<td>40 referencemodel._file_id values are text, not integer</td>
+</tr>
+<tr>
+<td style="text-align: right;">10.5</td>
+<td>wrong-data</td>
+<td>40 references written as 'Java Import Demand', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">9.9</td>
+<td>wrong-data</td>
+<td>CountOutput disagrees with Understand on 95 of 119 entities (20% agreement)</td>
+</tr>
+<tr>
+<td style="text-align: right;">9.8</td>
+<td>missing-data</td>
+<td>4 reference pairs have unequal forward/inverse row counts</td>
+</tr>
+<tr>
+<td style="text-align: right;">9.4</td>
+<td>wrong-data</td>
+<td>CountInput disagrees with Understand on 74 of 119 entities (38% agreement)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="salarycalculator">SalaryCalculator</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Entities</td>
+<td style="text-align: right;">50</td>
+<td style="text-align: right;">69</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Entities matched: <strong>50</strong> of 50</li>
+<li>Entities with no Understand counterpart: 19</li>
+<li>Open findings: 12</li>
+</ul>
+<h3 id="entities-by-kind-family_2">Entities by kind family</h3>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+<th style="text-align: right;">Δ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>method</td>
+<td style="text-align: right;">22</td>
+<td style="text-align: right;">26</td>
+<td style="text-align: right;">+4</td>
+</tr>
+<tr>
+<td>variable</td>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>parameter</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>class</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">+10</td>
+</tr>
+<tr>
+<td>package</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>file</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">+5</td>
+</tr>
+</tbody>
+</table>
+<h3 id="largest-reference-gaps_2">Largest reference gaps</h3>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+<th style="text-align: right;">Missing</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Java Setby Init</code></td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">+4</td>
+</tr>
+<tr>
+<td><code>Java Set Init</code></td>
+<td style="text-align: right;">9</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">+4</td>
+</tr>
+<tr>
+<td><code>Java Containin</code></td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td><code>Java Contain</code></td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td><code>Java Call Nondynamic</code></td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td><code>Java Setby</code></td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">7</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td><code>Java Useby Deref Partial</code></td>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td><code>Java Begin</code></td>
+<td style="text-align: right;">27</td>
+<td style="text-align: right;">27</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td><code>Java Extendby Coupleby</code></td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td><code>Java End</code></td>
+<td style="text-align: right;">27</td>
+<td style="text-align: right;">27</td>
+<td style="text-align: right;">+0</td>
+</tr>
+</tbody>
+</table>
+<h3 id="open-findings_2">Open findings</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">Score</th>
+<th>Severity</th>
+<th>Finding</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">7.2</td>
+<td>wrong-data</td>
+<td>19 of 69 OpenUnderstand entities have no Understand counterpart</td>
+</tr>
+<tr>
+<td style="text-align: right;">5.7</td>
+<td>wrong-data</td>
+<td>10 references have the right line but the wrong column (350 of 360 match once the column is included)</td>
+</tr>
+<tr>
+<td style="text-align: right;">5.1</td>
+<td>wrong-data</td>
+<td>5 references written as 'Java Declarein', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">5.1</td>
+<td>wrong-data</td>
+<td>5 references written as 'Java Callby', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">5.1</td>
+<td>wrong-data</td>
+<td>5 references written as 'Java Call', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">4.8</td>
+<td>missing-data</td>
+<td>28 references Understand finds are absent, ignoring position (recall 93%)</td>
+</tr>
+<tr>
+<td style="text-align: right;">3.1</td>
+<td>wrong-data</td>
+<td>2 references written as 'Java Useby Annotation', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">3.1</td>
+<td>wrong-data</td>
+<td>2 references written as 'Java Overrides', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">3.1</td>
+<td>wrong-data</td>
+<td>2 references written as 'Java Use Annotation', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">3.1</td>
+<td>wrong-data</td>
+<td>2 references written as 'Java Overriddenby', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">3.1</td>
+<td>wrong-data</td>
+<td>2 references written as 'Java Extendby Coupleby Implicit External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">3.1</td>
+<td>wrong-data</td>
+<td>2 references written as 'Java Extend Couple Implicit External', which Understand never emits here</td>
+</tr>
+</tbody>
+</table>
+<h2 id="thealgorithms">TheAlgorithms</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Entities</td>
+<td style="text-align: right;">4626</td>
+<td style="text-align: right;">5286</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Entities matched: <strong>4487</strong> of 4626</li>
+<li>Entities with no Understand counterpart: 799</li>
+<li>Open findings: 61</li>
+</ul>
+<h3 id="entities-by-kind-family_3">Entities by kind family</h3>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+<th style="text-align: right;">Δ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>variable</td>
+<td style="text-align: right;">2050</td>
+<td style="text-align: right;">2057</td>
+<td style="text-align: right;">+7</td>
+</tr>
+<tr>
+<td>parameter</td>
+<td style="text-align: right;">1150</td>
+<td style="text-align: right;">1116</td>
+<td style="text-align: right;">-34</td>
+</tr>
+<tr>
+<td>method</td>
+<td style="text-align: right;">941</td>
+<td style="text-align: right;">1167</td>
+<td style="text-align: right;">+226</td>
+</tr>
+<tr>
+<td>class</td>
+<td style="text-align: right;">293</td>
+<td style="text-align: right;">537</td>
+<td style="text-align: right;">+244</td>
+</tr>
+<tr>
+<td>constructor</td>
+<td style="text-align: right;">106</td>
+<td style="text-align: right;">106</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>unknown</td>
+<td style="text-align: right;">56</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">-18</td>
+</tr>
+<tr>
+<td>package</td>
+<td style="text-align: right;">27</td>
+<td style="text-align: right;">28</td>
+<td style="text-align: right;">+1</td>
+</tr>
+<tr>
+<td>interface</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">3</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>file</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">234</td>
+<td style="text-align: right;">+234</td>
+</tr>
+</tbody>
+</table>
+<h3 id="largest-reference-gaps_3">Largest reference gaps</h3>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+<th style="text-align: right;">Missing</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Java Set Init</code></td>
+<td style="text-align: right;">1656</td>
+<td style="text-align: right;">1543</td>
+<td style="text-align: right;">+113</td>
+</tr>
+<tr>
+<td><code>Java Setby Init</code></td>
+<td style="text-align: right;">1656</td>
+<td style="text-align: right;">1543</td>
+<td style="text-align: right;">+113</td>
+</tr>
+<tr>
+<td><code>Java Set</code></td>
+<td style="text-align: right;">1094</td>
+<td style="text-align: right;">1014</td>
+<td style="text-align: right;">+80</td>
+</tr>
+<tr>
+<td><code>Java Setby</code></td>
+<td style="text-align: right;">1094</td>
+<td style="text-align: right;">1014</td>
+<td style="text-align: right;">+80</td>
+</tr>
+<tr>
+<td><code>Java End</code></td>
+<td style="text-align: right;">1343</td>
+<td style="text-align: right;">1311</td>
+<td style="text-align: right;">+32</td>
+</tr>
+<tr>
+<td><code>Java Endby</code></td>
+<td style="text-align: right;">1343</td>
+<td style="text-align: right;">1311</td>
+<td style="text-align: right;">+32</td>
+</tr>
+<tr>
+<td><code>Java Useby Return</code></td>
+<td style="text-align: right;">248</td>
+<td style="text-align: right;">224</td>
+<td style="text-align: right;">+24</td>
+</tr>
+<tr>
+<td><code>Java Use Return</code></td>
+<td style="text-align: right;">248</td>
+<td style="text-align: right;">224</td>
+<td style="text-align: right;">+24</td>
+</tr>
+<tr>
+<td><code>Java Beginby</code></td>
+<td style="text-align: right;">1324</td>
+<td style="text-align: right;">1311</td>
+<td style="text-align: right;">+13</td>
+</tr>
+<tr>
+<td><code>Java Begin</code></td>
+<td style="text-align: right;">1324</td>
+<td style="text-align: right;">1311</td>
+<td style="text-align: right;">+13</td>
+</tr>
+</tbody>
+</table>
+<h3 id="open-findings_3">Open findings</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">Score</th>
+<th>Severity</th>
+<th>Finding</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">16.0</td>
+<td>wrong-data</td>
+<td>799 of 5286 OpenUnderstand entities have no Understand counterpart</td>
+</tr>
+<tr>
+<td style="text-align: right;">15.9</td>
+<td>wrong-data</td>
+<td>279 references written as 'Java Extend Couple Implicit External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">15.9</td>
+<td>wrong-data</td>
+<td>279 references written as 'Java Extendby Coupleby Implicit External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">12.1</td>
+<td>wrong-data</td>
+<td>72 duplicate entity rows across 54 logical entities</td>
+</tr>
+<tr>
+<td style="text-align: right;">11.6</td>
+<td>wrong-data</td>
+<td>59 references written as 'Java Use Annotation', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">11.6</td>
+<td>wrong-data</td>
+<td>59 references written as 'Java Useby Annotation', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">11.4</td>
+<td>wrong-data</td>
+<td>CountInput disagrees with Understand on 190 of 325 entities (42% agreement)</td>
+</tr>
+<tr>
+<td style="text-align: right;">11.2</td>
+<td>missing-data</td>
+<td>4 reference pairs have unequal forward/inverse row counts</td>
+</tr>
+<tr>
+<td style="text-align: right;">11.1</td>
+<td>missing-data</td>
+<td>2230 references Understand finds are absent, ignoring position (recall 95%)</td>
+</tr>
+<tr>
+<td style="text-align: right;">10.7</td>
+<td>wrong-data</td>
+<td>43 references written as 'Java Useby Constrains Coupleby', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">10.7</td>
+<td>wrong-data</td>
+<td>43 references written as 'Java Use Constrains Couple', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">10.2</td>
+<td>wrong-data</td>
+<td>CountOutput disagrees with Understand on 108 of 325 entities (67% agreement)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="calculator_app">calculator_app</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Entities</td>
+<td style="text-align: right;">72</td>
+<td style="text-align: right;">96</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Entities matched: <strong>67</strong> of 72</li>
+<li>Entities with no Understand counterpart: 29</li>
+<li>Open findings: 33</li>
+</ul>
+<h3 id="entities-by-kind-family_4">Entities by kind family</h3>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+<th style="text-align: right;">Δ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>parameter</td>
+<td style="text-align: right;">26</td>
+<td style="text-align: right;">21</td>
+<td style="text-align: right;">-5</td>
+</tr>
+<tr>
+<td>method</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">23</td>
+<td style="text-align: right;">+6</td>
+</tr>
+<tr>
+<td>variable</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">+3</td>
+</tr>
+<tr>
+<td>class</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">20</td>
+<td style="text-align: right;">+12</td>
+</tr>
+<tr>
+<td>package</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>file</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">+8</td>
+</tr>
+</tbody>
+</table>
+<h3 id="largest-reference-gaps_4">Largest reference gaps</h3>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+<th style="text-align: right;">Missing</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Java Use Return</code></td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">+3</td>
+</tr>
+<tr>
+<td><code>Java Useby Return</code></td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">+3</td>
+</tr>
+<tr>
+<td><code>Java Containin</code></td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td><code>Java End</code></td>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td><code>Java Begin</code></td>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td><code>Java Createby</code></td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td><code>Java Create</code></td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td><code>Java Endby</code></td>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td><code>Java Setby</code></td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td><code>Java Contain</code></td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">+0</td>
+</tr>
+</tbody>
+</table>
+<h3 id="open-findings_4">Open findings</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">Score</th>
+<th>Severity</th>
+<th>Finding</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">8.1</td>
+<td>wrong-data</td>
+<td>29 of 96 OpenUnderstand entities have no Understand counterpart</td>
+</tr>
+<tr>
+<td style="text-align: right;">5.5</td>
+<td>missing-data</td>
+<td>2 reference pairs have unequal forward/inverse row counts</td>
+</tr>
+<tr>
+<td style="text-align: right;">5.1</td>
+<td>wrong-data</td>
+<td>5 references written as 'Java Extend Couple Implicit External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">5.1</td>
+<td>wrong-data</td>
+<td>5 references written as 'Java Extendby Coupleby Implicit External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">5.0</td>
+<td>wrong-data</td>
+<td>SumCyclomatic disagrees with Understand on 9 of 28 entities (68% agreement)</td>
+</tr>
+<tr>
+<td style="text-align: right;">4.8</td>
+<td>wrong-data</td>
+<td>CountStmt disagrees with Understand on 8 of 28 entities (71% agreement)</td>
+</tr>
+<tr>
+<td style="text-align: right;">4.2</td>
+<td>wrong-data</td>
+<td>CountInput disagrees with Understand on 6 of 14 entities (57% agreement)</td>
+</tr>
+<tr>
+<td style="text-align: right;">4.2</td>
+<td>wrong-data</td>
+<td>CountStmtExe disagrees with Understand on 6 of 28 entities (79% agreement)</td>
+</tr>
+<tr>
+<td style="text-align: right;">3.9</td>
+<td>wrong-data</td>
+<td>3 duplicate entity rows across 3 logical entities</td>
+</tr>
+<tr>
+<td style="text-align: right;">3.9</td>
+<td>wrong-data</td>
+<td>CountLineCodeDecl disagrees with Understand on 5 of 28 entities (82% agreement)</td>
+</tr>
+<tr>
+<td style="text-align: right;">3.9</td>
+<td>wrong-data</td>
+<td>CountOutput disagrees with Understand on 5 of 14 entities (64% agreement)</td>
+</tr>
+<tr>
+<td style="text-align: right;">3.7</td>
+<td>missing-data</td>
+<td>12 references Understand finds are absent, ignoring position (recall 98%)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="ganttproject">ganttproject</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Entities</td>
+<td style="text-align: right;">26076</td>
+<td style="text-align: right;">30429</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Entities matched: <strong>24693</strong> of 26076</li>
+<li>Entities with no Understand counterpart: 5736</li>
+<li>Open findings: 19</li>
+</ul>
+<h3 id="entities-by-kind-family_5">Entities by kind family</h3>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+<th style="text-align: right;">Δ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>variable</td>
+<td style="text-align: right;">9016</td>
+<td style="text-align: right;">10108</td>
+<td style="text-align: right;">+1092</td>
+</tr>
+<tr>
+<td>method</td>
+<td style="text-align: right;">7413</td>
+<td style="text-align: right;">9332</td>
+<td style="text-align: right;">+1919</td>
+</tr>
+<tr>
+<td>parameter</td>
+<td style="text-align: right;">7058</td>
+<td style="text-align: right;">6437</td>
+<td style="text-align: right;">-621</td>
+</tr>
+<tr>
+<td>class</td>
+<td style="text-align: right;">1486</td>
+<td style="text-align: right;">2716</td>
+<td style="text-align: right;">+1230</td>
+</tr>
+<tr>
+<td>constructor</td>
+<td style="text-align: right;">756</td>
+<td style="text-align: right;">756</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>interface</td>
+<td style="text-align: right;">180</td>
+<td style="text-align: right;">180</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>package</td>
+<td style="text-align: right;">102</td>
+<td style="text-align: right;">106</td>
+<td style="text-align: right;">+4</td>
+</tr>
+<tr>
+<td>unknown</td>
+<td style="text-align: right;">65</td>
+<td style="text-align: right;">54</td>
+<td style="text-align: right;">-11</td>
+</tr>
+<tr>
+<td>file</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">740</td>
+<td style="text-align: right;">+740</td>
+</tr>
+</tbody>
+</table>
+<h3 id="largest-reference-gaps_5">Largest reference gaps</h3>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+<th style="text-align: right;">Missing</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Java Endby</code></td>
+<td style="text-align: right;">9775</td>
+<td style="text-align: right;">8150</td>
+<td style="text-align: right;">+1625</td>
+</tr>
+<tr>
+<td><code>Java End</code></td>
+<td style="text-align: right;">9775</td>
+<td style="text-align: right;">8150</td>
+<td style="text-align: right;">+1625</td>
+</tr>
+<tr>
+<td><code>Java Beginby</code></td>
+<td style="text-align: right;">9703</td>
+<td style="text-align: right;">8150</td>
+<td style="text-align: right;">+1553</td>
+</tr>
+<tr>
+<td><code>Java Begin</code></td>
+<td style="text-align: right;">9703</td>
+<td style="text-align: right;">8150</td>
+<td style="text-align: right;">+1553</td>
+</tr>
+<tr>
+<td><code>Java Define</code></td>
+<td style="text-align: right;">25163</td>
+<td style="text-align: right;">24564</td>
+<td style="text-align: right;">+599</td>
+</tr>
+<tr>
+<td><code>Java Useby Deref Partial</code></td>
+<td style="text-align: right;">15833</td>
+<td style="text-align: right;">15611</td>
+<td style="text-align: right;">+222</td>
+</tr>
+<tr>
+<td><code>Java Use Deref Partial</code></td>
+<td style="text-align: right;">15833</td>
+<td style="text-align: right;">15611</td>
+<td style="text-align: right;">+222</td>
+</tr>
+<tr>
+<td><code>Java Extend Couple</code></td>
+<td style="text-align: right;">472</td>
+<td style="text-align: right;">296</td>
+<td style="text-align: right;">+176</td>
+</tr>
+<tr>
+<td><code>Java Extendby Coupleby</code></td>
+<td style="text-align: right;">472</td>
+<td style="text-align: right;">296</td>
+<td style="text-align: right;">+176</td>
+</tr>
+<tr>
+<td><code>Java Define Implicit</code></td>
+<td style="text-align: right;">90</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">+90</td>
+</tr>
+</tbody>
+</table>
+<h3 id="open-findings_5">Open findings</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">Score</th>
+<th>Severity</th>
+<th>Finding</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">22.6</td>
+<td>wrong-data</td>
+<td>3054 references written as 'Java Useby Annotation', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">22.6</td>
+<td>wrong-data</td>
+<td>3054 references written as 'Java Use Annotation', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">20.7</td>
+<td>wrong-data</td>
+<td>5736 of 30429 OpenUnderstand entities have no Understand counterpart</td>
+</tr>
+<tr>
+<td style="text-align: right;">17.9</td>
+<td>wrong-data</td>
+<td>563 duplicate entity rows across 423 logical entities</td>
+</tr>
+<tr>
+<td style="text-align: right;">17.0</td>
+<td>wrong-data</td>
+<td>417 references written as 'Java Extend Couple Implicit External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">17.0</td>
+<td>wrong-data</td>
+<td>417 references written as 'Java Extendby Coupleby Implicit External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">15.3</td>
+<td>wrong-data</td>
+<td>229 references written as 'Java Import Demand', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">15.0</td>
+<td>missing-data</td>
+<td>35726 references Understand finds are absent, ignoring position (recall 87%)</td>
+</tr>
+<tr>
+<td style="text-align: right;">13.4</td>
+<td>wrong-data</td>
+<td>115 references written as 'Java Extendby Coupleby External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">13.4</td>
+<td>wrong-data</td>
+<td>115 references written as 'Java Extend Couple External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">11.0</td>
+<td>wrong-data</td>
+<td>98 references have the right line but the wrong column (236492 of 236590 match once the column is included)</td>
+</tr>
+<tr>
+<td style="text-align: right;">10.4</td>
+<td>missing-data</td>
+<td>1383 of 26076 entities Understand finds are absent from OpenUnderstand</td>
+</tr>
+</tbody>
+</table>
+<h2 id="jfreechart">jfreechart</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Entities</td>
+<td style="text-align: right;">44277</td>
+<td style="text-align: right;">47640</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Entities matched: <strong>44223</strong> of 44277</li>
+<li>Entities with no Understand counterpart: 3417</li>
+<li>Open findings: 25</li>
+</ul>
+<h3 id="entities-by-kind-family_6">Entities by kind family</h3>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+<th style="text-align: right;">Δ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>variable</td>
+<td style="text-align: right;">19674</td>
+<td style="text-align: right;">20126</td>
+<td style="text-align: right;">+452</td>
+</tr>
+<tr>
+<td>parameter</td>
+<td style="text-align: right;">11972</td>
+<td style="text-align: right;">11931</td>
+<td style="text-align: right;">-41</td>
+</tr>
+<tr>
+<td>method</td>
+<td style="text-align: right;">10496</td>
+<td style="text-align: right;">11739</td>
+<td style="text-align: right;">+1243</td>
+</tr>
+<tr>
+<td>class</td>
+<td style="text-align: right;">929</td>
+<td style="text-align: right;">1395</td>
+<td style="text-align: right;">+466</td>
+</tr>
+<tr>
+<td>constructor</td>
+<td style="text-align: right;">840</td>
+<td style="text-align: right;">840</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>unknown</td>
+<td style="text-align: right;">207</td>
+<td style="text-align: right;">268</td>
+<td style="text-align: right;">+61</td>
+</tr>
+<tr>
+<td>interface</td>
+<td style="text-align: right;">114</td>
+<td style="text-align: right;">114</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>package</td>
+<td style="text-align: right;">44</td>
+<td style="text-align: right;">204</td>
+<td style="text-align: right;">+160</td>
+</tr>
+<tr>
+<td>module</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">-1</td>
+</tr>
+<tr>
+<td>file</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">1023</td>
+<td style="text-align: right;">+1023</td>
+</tr>
+</tbody>
+</table>
+<h3 id="largest-reference-gaps_6">Largest reference gaps</h3>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+<th style="text-align: right;">Missing</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Java Use</code></td>
+<td style="text-align: right;">62690</td>
+<td style="text-align: right;">49186</td>
+<td style="text-align: right;">+13504</td>
+</tr>
+<tr>
+<td><code>Java Useby</code></td>
+<td style="text-align: right;">62690</td>
+<td style="text-align: right;">49186</td>
+<td style="text-align: right;">+13504</td>
+</tr>
+<tr>
+<td><code>Java Use Return</code></td>
+<td style="text-align: right;">2714</td>
+<td style="text-align: right;">1271</td>
+<td style="text-align: right;">+1443</td>
+</tr>
+<tr>
+<td><code>Java Useby Return</code></td>
+<td style="text-align: right;">2714</td>
+<td style="text-align: right;">1271</td>
+<td style="text-align: right;">+1443</td>
+</tr>
+<tr>
+<td><code>Java End</code></td>
+<td style="text-align: right;">12297</td>
+<td style="text-align: right;">11660</td>
+<td style="text-align: right;">+637</td>
+</tr>
+<tr>
+<td><code>Java Endby</code></td>
+<td style="text-align: right;">12297</td>
+<td style="text-align: right;">11660</td>
+<td style="text-align: right;">+637</td>
+</tr>
+<tr>
+<td><code>Java Call</code></td>
+<td style="text-align: right;">34733</td>
+<td style="text-align: right;">34135</td>
+<td style="text-align: right;">+598</td>
+</tr>
+<tr>
+<td><code>Java Callby</code></td>
+<td style="text-align: right;">34733</td>
+<td style="text-align: right;">34135</td>
+<td style="text-align: right;">+598</td>
+</tr>
+<tr>
+<td><code>Java Use Deref Partial</code></td>
+<td style="text-align: right;">30644</td>
+<td style="text-align: right;">30063</td>
+<td style="text-align: right;">+581</td>
+</tr>
+<tr>
+<td><code>Java Useby Deref Partial</code></td>
+<td style="text-align: right;">30644</td>
+<td style="text-align: right;">30063</td>
+<td style="text-align: right;">+581</td>
+</tr>
+</tbody>
+</table>
+<h3 id="open-findings_6">Open findings</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">Score</th>
+<th>Severity</th>
+<th>Finding</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">23.9</td>
+<td>wrong-data</td>
+<td>4787 references written as 'Java Use Annotation', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">23.9</td>
+<td>wrong-data</td>
+<td>4787 references written as 'Java Useby Annotation', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">23.6</td>
+<td>wrong-data</td>
+<td>4341 duplicate entity rows across 2668 logical entities</td>
+</tr>
+<tr>
+<td style="text-align: right;">19.8</td>
+<td>wrong-data</td>
+<td>1094 references written as 'Java Importby', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">19.4</td>
+<td>wrong-data</td>
+<td>3417 of 47640 OpenUnderstand entities have no Understand counterpart</td>
+</tr>
+<tr>
+<td style="text-align: right;">19.2</td>
+<td>wrong-data</td>
+<td>895 references written as 'Java Throwby', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">19.2</td>
+<td>wrong-data</td>
+<td>895 references written as 'Java Throw', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">17.8</td>
+<td>wrong-data</td>
+<td>550 references written as 'Java Extendby Coupleby Implicit External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">17.8</td>
+<td>wrong-data</td>
+<td>550 references written as 'Java Extend Couple Implicit External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">16.0</td>
+<td>missing-data</td>
+<td>71364 references Understand finds are absent, ignoring position (recall 87%)</td>
+</tr>
+<tr>
+<td style="text-align: right;">15.0</td>
+<td>wrong-data</td>
+<td>201 references written as 'Java Useby Constrains Coupleby', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">15.0</td>
+<td>wrong-data</td>
+<td>201 references written as 'Java Use Constrains Couple', which Understand never emits here</td>
+</tr>
+</tbody>
+</table>
+<h2 id="jhotdraw-develop">jhotdraw-develop</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Entities</td>
+<td style="text-align: right;">27694</td>
+<td style="text-align: right;">31957</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Entities matched: <strong>25345</strong> of 27694</li>
+<li>Entities with no Understand counterpart: 6612</li>
+<li>Open findings: 23</li>
+</ul>
+<h3 id="entities-by-kind-family_7">Entities by kind family</h3>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+<th style="text-align: right;">Δ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>variable</td>
+<td style="text-align: right;">10514</td>
+<td style="text-align: right;">12386</td>
+<td style="text-align: right;">+1872</td>
+</tr>
+<tr>
+<td>parameter</td>
+<td style="text-align: right;">8317</td>
+<td style="text-align: right;">6763</td>
+<td style="text-align: right;">-1554</td>
+</tr>
+<tr>
+<td>method</td>
+<td style="text-align: right;">6843</td>
+<td style="text-align: right;">8623</td>
+<td style="text-align: right;">+1780</td>
+</tr>
+<tr>
+<td>class</td>
+<td style="text-align: right;">1027</td>
+<td style="text-align: right;">2495</td>
+<td style="text-align: right;">+1468</td>
+</tr>
+<tr>
+<td>constructor</td>
+<td style="text-align: right;">791</td>
+<td style="text-align: right;">791</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>package</td>
+<td style="text-align: right;">73</td>
+<td style="text-align: right;">74</td>
+<td style="text-align: right;">+1</td>
+</tr>
+<tr>
+<td>unknown</td>
+<td style="text-align: right;">72</td>
+<td style="text-align: right;">43</td>
+<td style="text-align: right;">-29</td>
+</tr>
+<tr>
+<td>interface</td>
+<td style="text-align: right;">57</td>
+<td style="text-align: right;">57</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>file</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">725</td>
+<td style="text-align: right;">+725</td>
+</tr>
+</tbody>
+</table>
+<h3 id="largest-reference-gaps_7">Largest reference gaps</h3>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+<th style="text-align: right;">Missing</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Java End</code></td>
+<td style="text-align: right;">8678</td>
+<td style="text-align: right;">7740</td>
+<td style="text-align: right;">+938</td>
+</tr>
+<tr>
+<td><code>Java Endby</code></td>
+<td style="text-align: right;">8678</td>
+<td style="text-align: right;">7740</td>
+<td style="text-align: right;">+938</td>
+</tr>
+<tr>
+<td><code>Java Begin</code></td>
+<td style="text-align: right;">8677</td>
+<td style="text-align: right;">7740</td>
+<td style="text-align: right;">+937</td>
+</tr>
+<tr>
+<td><code>Java Beginby</code></td>
+<td style="text-align: right;">8677</td>
+<td style="text-align: right;">7740</td>
+<td style="text-align: right;">+937</td>
+</tr>
+<tr>
+<td><code>Java Modify Deref Partial</code></td>
+<td style="text-align: right;">248</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">+232</td>
+</tr>
+<tr>
+<td><code>Java Modifyby Deref Partial</code></td>
+<td style="text-align: right;">248</td>
+<td style="text-align: right;">16</td>
+<td style="text-align: right;">+232</td>
+</tr>
+<tr>
+<td><code>Java Define</code></td>
+<td style="text-align: right;">26953</td>
+<td style="text-align: right;">26738</td>
+<td style="text-align: right;">+215</td>
+</tr>
+<tr>
+<td><code>Java Setby Init</code></td>
+<td style="text-align: right;">7901</td>
+<td style="text-align: right;">7765</td>
+<td style="text-align: right;">+136</td>
+</tr>
+<tr>
+<td><code>Java Set Init</code></td>
+<td style="text-align: right;">7901</td>
+<td style="text-align: right;">7765</td>
+<td style="text-align: right;">+136</td>
+</tr>
+<tr>
+<td><code>Java Define Implicit</code></td>
+<td style="text-align: right;">60</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">+60</td>
+</tr>
+</tbody>
+</table>
+<h3 id="open-findings_7">Open findings</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">Score</th>
+<th>Severity</th>
+<th>Finding</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">23.1</td>
+<td>wrong-data</td>
+<td>3621 references written as 'Java Use Annotation', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">23.1</td>
+<td>wrong-data</td>
+<td>3621 references written as 'Java Useby Annotation', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">21.0</td>
+<td>wrong-data</td>
+<td>6612 of 31957 OpenUnderstand entities have no Understand counterpart</td>
+</tr>
+<tr>
+<td style="text-align: right;">20.9</td>
+<td>wrong-data</td>
+<td>1628 references written as 'Java Import Demand', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">18.7</td>
+<td>wrong-data</td>
+<td>754 duplicate entity rows across 474 logical entities</td>
+</tr>
+<tr>
+<td style="text-align: right;">18.0</td>
+<td>wrong-data</td>
+<td>584 references written as 'Java Throw', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">18.0</td>
+<td>wrong-data</td>
+<td>584 references written as 'Java Throwby', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">14.7</td>
+<td>missing-data</td>
+<td>29050 references Understand finds are absent, ignoring position (recall 90%)</td>
+</tr>
+<tr>
+<td style="text-align: right;">14.7</td>
+<td>wrong-data</td>
+<td>182 references written as 'Java Extend Couple External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">14.7</td>
+<td>wrong-data</td>
+<td>182 references written as 'Java Extendby Coupleby External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">14.7</td>
+<td>wrong-data</td>
+<td>179 references written as 'Java Extend Couple Implicit External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">14.7</td>
+<td>wrong-data</td>
+<td>179 references written as 'Java Extendby Coupleby Implicit External', which Understand never emits here</td>
+</tr>
+</tbody>
+</table>
+<h2 id="jvlt-132">jvlt-1.3.2</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Entities</td>
+<td style="text-align: right;">7945</td>
+<td style="text-align: right;">10268</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Entities matched: <strong>7636</strong> of 7945</li>
+<li>Entities with no Understand counterpart: 2632</li>
+<li>Open findings: 17</li>
+</ul>
+<h3 id="entities-by-kind-family_8">Entities by kind family</h3>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+<th style="text-align: right;">Δ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>variable</td>
+<td style="text-align: right;">3666</td>
+<td style="text-align: right;">4602</td>
+<td style="text-align: right;">+936</td>
+</tr>
+<tr>
+<td>parameter</td>
+<td style="text-align: right;">1779</td>
+<td style="text-align: right;">1615</td>
+<td style="text-align: right;">-164</td>
+</tr>
+<tr>
+<td>method</td>
+<td style="text-align: right;">1706</td>
+<td style="text-align: right;">2434</td>
+<td style="text-align: right;">+728</td>
+</tr>
+<tr>
+<td>class</td>
+<td style="text-align: right;">405</td>
+<td style="text-align: right;">1001</td>
+<td style="text-align: right;">+596</td>
+</tr>
+<tr>
+<td>constructor</td>
+<td style="text-align: right;">344</td>
+<td style="text-align: right;">344</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>package</td>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">25</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>interface</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">15</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>unknown</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">11</td>
+<td style="text-align: right;">+6</td>
+</tr>
+<tr>
+<td>file</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">221</td>
+<td style="text-align: right;">+221</td>
+</tr>
+</tbody>
+</table>
+<h3 id="largest-reference-gaps_8">Largest reference gaps</h3>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+<th style="text-align: right;">Missing</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Java Beginby</code></td>
+<td style="text-align: right;">2456</td>
+<td style="text-align: right;">2371</td>
+<td style="text-align: right;">+85</td>
+</tr>
+<tr>
+<td><code>Java Begin</code></td>
+<td style="text-align: right;">2456</td>
+<td style="text-align: right;">2371</td>
+<td style="text-align: right;">+85</td>
+</tr>
+<tr>
+<td><code>Java Endby</code></td>
+<td style="text-align: right;">2456</td>
+<td style="text-align: right;">2371</td>
+<td style="text-align: right;">+85</td>
+</tr>
+<tr>
+<td><code>Java End</code></td>
+<td style="text-align: right;">2456</td>
+<td style="text-align: right;">2371</td>
+<td style="text-align: right;">+85</td>
+</tr>
+<tr>
+<td><code>Java Use Deref Partial</code></td>
+<td style="text-align: right;">6912</td>
+<td style="text-align: right;">6834</td>
+<td style="text-align: right;">+78</td>
+</tr>
+<tr>
+<td><code>Java Useby Deref Partial</code></td>
+<td style="text-align: right;">6912</td>
+<td style="text-align: right;">6834</td>
+<td style="text-align: right;">+78</td>
+</tr>
+<tr>
+<td><code>Java Useby Return</code></td>
+<td style="text-align: right;">371</td>
+<td style="text-align: right;">341</td>
+<td style="text-align: right;">+30</td>
+</tr>
+<tr>
+<td><code>Java Use Return</code></td>
+<td style="text-align: right;">371</td>
+<td style="text-align: right;">341</td>
+<td style="text-align: right;">+30</td>
+</tr>
+<tr>
+<td><code>Java Define</code></td>
+<td style="text-align: right;">7627</td>
+<td style="text-align: right;">7602</td>
+<td style="text-align: right;">+25</td>
+</tr>
+<tr>
+<td><code>Java Definein Implicit</code></td>
+<td style="text-align: right;">21</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">+21</td>
+</tr>
+</tbody>
+</table>
+<h3 id="open-findings_8">Open findings</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">Score</th>
+<th>Severity</th>
+<th>Finding</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">18.8</td>
+<td>wrong-data</td>
+<td>2632 of 10268 OpenUnderstand entities have no Understand counterpart</td>
+</tr>
+<tr>
+<td style="text-align: right;">15.6</td>
+<td>wrong-data</td>
+<td>252 references written as 'Java Useby Annotation', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">15.6</td>
+<td>wrong-data</td>
+<td>252 references written as 'Java Use Annotation', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">13.9</td>
+<td>wrong-data</td>
+<td>138 duplicate entity rows across 108 logical entities</td>
+</tr>
+<tr>
+<td style="text-align: right;">13.9</td>
+<td>wrong-data</td>
+<td>135 references written as 'Java Extendby Coupleby Implicit External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">13.9</td>
+<td>wrong-data</td>
+<td>135 references written as 'Java Extend Couple Implicit External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">12.6</td>
+<td>wrong-data</td>
+<td>87 references written as 'Java Extend Couple External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">12.6</td>
+<td>wrong-data</td>
+<td>87 references written as 'Java Extendby Coupleby External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">12.6</td>
+<td>missing-data</td>
+<td>6604 references Understand finds are absent, ignoring position (recall 93%)</td>
+</tr>
+<tr>
+<td style="text-align: right;">8.2</td>
+<td>missing-data</td>
+<td>309 of 7945 entities Understand finds are absent from OpenUnderstand</td>
+</tr>
+<tr>
+<td style="text-align: right;">4.5</td>
+<td>wrong-data</td>
+<td>4 references written as 'Java Use Constrains Couple', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">4.5</td>
+<td>wrong-data</td>
+<td>4 references written as 'Java Useby Constrains Coupleby', which Understand never emits here</td>
+</tr>
+</tbody>
+</table>
+<h2 id="testing_legacy_code">testing_legacy_code</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Entities</td>
+<td style="text-align: right;">399</td>
+<td style="text-align: right;">306</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Entities matched: <strong>197</strong> of 399</li>
+<li>Entities with no Understand counterpart: 109</li>
+<li>Open findings: 12</li>
+</ul>
+<h3 id="entities-by-kind-family_9">Entities by kind family</h3>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+<th style="text-align: right;">Δ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>method</td>
+<td style="text-align: right;">170</td>
+<td style="text-align: right;">98</td>
+<td style="text-align: right;">-72</td>
+</tr>
+<tr>
+<td>variable</td>
+<td style="text-align: right;">147</td>
+<td style="text-align: right;">87</td>
+<td style="text-align: right;">-60</td>
+</tr>
+<tr>
+<td>class</td>
+<td style="text-align: right;">36</td>
+<td style="text-align: right;">53</td>
+<td style="text-align: right;">+17</td>
+</tr>
+<tr>
+<td>parameter</td>
+<td style="text-align: right;">35</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">-16</td>
+</tr>
+<tr>
+<td>package</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">6</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>constructor</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>file</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">38</td>
+<td style="text-align: right;">+38</td>
+</tr>
+</tbody>
+</table>
+<h3 id="largest-reference-gaps_9">Largest reference gaps</h3>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+<th style="text-align: right;">Missing</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Java Typedby GenericArgument</code></td>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">+6</td>
+</tr>
+<tr>
+<td><code>Java Typed GenericArgument</code></td>
+<td style="text-align: right;">24</td>
+<td style="text-align: right;">18</td>
+<td style="text-align: right;">+6</td>
+</tr>
+<tr>
+<td><code>Java Useby GenericArgument</code></td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td><code>Java Begin</code></td>
+<td style="text-align: right;">211</td>
+<td style="text-align: right;">211</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td><code>Java Setby Init</code></td>
+<td style="text-align: right;">146</td>
+<td style="text-align: right;">146</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td><code>Java Setby</code></td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">2</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td><code>Java Use GenericArgument</code></td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">4</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td><code>Java Extend Couple</code></td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td><code>Java End</code></td>
+<td style="text-align: right;">211</td>
+<td style="text-align: right;">211</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td><code>Java Extendby Coupleby</code></td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">12</td>
+<td style="text-align: right;">+0</td>
+</tr>
+</tbody>
+</table>
+<h3 id="open-findings_9">Open findings</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">Score</th>
+<th>Severity</th>
+<th>Finding</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">14.4</td>
+<td>wrong-data</td>
+<td>165 references written as 'Java Useby Annotation', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">14.4</td>
+<td>wrong-data</td>
+<td>165 references written as 'Java Use Annotation', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">11.2</td>
+<td>wrong-data</td>
+<td>109 of 306 OpenUnderstand entities have no Understand counterpart</td>
+</tr>
+<tr>
+<td style="text-align: right;">8.7</td>
+<td>wrong-data</td>
+<td>21 references written as 'Java Importby Demand', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">8.7</td>
+<td>wrong-data</td>
+<td>21 references written as 'Java Import Demand', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">7.6</td>
+<td>wrong-data</td>
+<td>14 references written as 'Java Extend Couple Implicit External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">7.6</td>
+<td>wrong-data</td>
+<td>14 references written as 'Java Extendby Coupleby Implicit External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">7.6</td>
+<td>missing-data</td>
+<td>202 of 399 entities Understand finds are absent from OpenUnderstand</td>
+</tr>
+<tr>
+<td style="text-align: right;">6.5</td>
+<td>missing-data</td>
+<td>90 references Understand finds are absent, ignoring position (recall 97%)</td>
+</tr>
+<tr>
+<td style="text-align: right;">3.9</td>
+<td>wrong-data</td>
+<td>3 duplicate entity rows across 1 logical entities</td>
+</tr>
+<tr>
+<td style="text-align: right;">3.1</td>
+<td>wrong-data</td>
+<td>2 references written as 'Java Extendby Coupleby External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">3.1</td>
+<td>wrong-data</td>
+<td>2 references written as 'Java Extend Couple External', which Understand never emits here</td>
+</tr>
+</tbody>
+</table>
+<h2 id="xerces2j">xerces2j</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Entities</td>
+<td style="text-align: right;">35218</td>
+<td style="text-align: right;">37183</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Entities matched: <strong>32745</strong> of 35218</li>
+<li>Entities with no Understand counterpart: 4438</li>
+<li>Open findings: 11</li>
+</ul>
+<h3 id="entities-by-kind-family_10">Entities by kind family</h3>
+<table>
+<thead>
+<tr>
+<th>Family</th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+<th style="text-align: right;">Δ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>variable</td>
+<td style="text-align: right;">13596</td>
+<td style="text-align: right;">14130</td>
+<td style="text-align: right;">+534</td>
+</tr>
+<tr>
+<td>parameter</td>
+<td style="text-align: right;">11203</td>
+<td style="text-align: right;">9753</td>
+<td style="text-align: right;">-1450</td>
+</tr>
+<tr>
+<td>method</td>
+<td style="text-align: right;">8554</td>
+<td style="text-align: right;">9697</td>
+<td style="text-align: right;">+1143</td>
+</tr>
+<tr>
+<td>constructor</td>
+<td style="text-align: right;">862</td>
+<td style="text-align: right;">862</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>class</td>
+<td style="text-align: right;">801</td>
+<td style="text-align: right;">1808</td>
+<td style="text-align: right;">+1007</td>
+</tr>
+<tr>
+<td>interface</td>
+<td style="text-align: right;">157</td>
+<td style="text-align: right;">157</td>
+<td style="text-align: right;">+0</td>
+</tr>
+<tr>
+<td>package</td>
+<td style="text-align: right;">45</td>
+<td style="text-align: right;">48</td>
+<td style="text-align: right;">+3</td>
+</tr>
+<tr>
+<td>file</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">711</td>
+<td style="text-align: right;">+711</td>
+</tr>
+<tr>
+<td>unknown</td>
+<td style="text-align: right;">0</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">+17</td>
+</tr>
+</tbody>
+</table>
+<h3 id="largest-reference-gaps_10">Largest reference gaps</h3>
+<table>
+<thead>
+<tr>
+<th>Kind</th>
+<th style="text-align: right;">Understand</th>
+<th style="text-align: right;">OpenUnderstand</th>
+<th style="text-align: right;">Missing</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Java Begin</code></td>
+<td style="text-align: right;">10374</td>
+<td style="text-align: right;">9408</td>
+<td style="text-align: right;">+966</td>
+</tr>
+<tr>
+<td><code>Java End</code></td>
+<td style="text-align: right;">10374</td>
+<td style="text-align: right;">9408</td>
+<td style="text-align: right;">+966</td>
+</tr>
+<tr>
+<td><code>Java Beginby</code></td>
+<td style="text-align: right;">10374</td>
+<td style="text-align: right;">9408</td>
+<td style="text-align: right;">+966</td>
+</tr>
+<tr>
+<td><code>Java Endby</code></td>
+<td style="text-align: right;">10374</td>
+<td style="text-align: right;">9408</td>
+<td style="text-align: right;">+966</td>
+</tr>
+<tr>
+<td><code>Java Setby Init</code></td>
+<td style="text-align: right;">11420</td>
+<td style="text-align: right;">10961</td>
+<td style="text-align: right;">+459</td>
+</tr>
+<tr>
+<td><code>Java Set Init</code></td>
+<td style="text-align: right;">11420</td>
+<td style="text-align: right;">10961</td>
+<td style="text-align: right;">+459</td>
+</tr>
+<tr>
+<td><code>Java Use Return</code></td>
+<td style="text-align: right;">2113</td>
+<td style="text-align: right;">1822</td>
+<td style="text-align: right;">+291</td>
+</tr>
+<tr>
+<td><code>Java Useby Return</code></td>
+<td style="text-align: right;">2113</td>
+<td style="text-align: right;">1822</td>
+<td style="text-align: right;">+291</td>
+</tr>
+<tr>
+<td><code>Java Modifyby Deref Partial</code></td>
+<td style="text-align: right;">315</td>
+<td style="text-align: right;">76</td>
+<td style="text-align: right;">+239</td>
+</tr>
+<tr>
+<td><code>Java Modify Deref Partial</code></td>
+<td style="text-align: right;">315</td>
+<td style="text-align: right;">76</td>
+<td style="text-align: right;">+239</td>
+</tr>
+</tbody>
+</table>
+<h3 id="open-findings_10">Open findings</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align: right;">Score</th>
+<th>Severity</th>
+<th>Finding</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: right;">20.1</td>
+<td>wrong-data</td>
+<td>4438 of 37183 OpenUnderstand entities have no Understand counterpart</td>
+</tr>
+<tr>
+<td style="text-align: right;">18.9</td>
+<td>wrong-data</td>
+<td>821 duplicate entity rows across 569 logical entities</td>
+</tr>
+<tr>
+<td style="text-align: right;">16.3</td>
+<td>wrong-data</td>
+<td>317 references written as 'Java Extendby Coupleby Implicit External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">16.3</td>
+<td>wrong-data</td>
+<td>317 references written as 'Java Extend Couple Implicit External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">15.1</td>
+<td>missing-data</td>
+<td>36798 references Understand finds are absent, ignoring position (recall 91%)</td>
+</tr>
+<tr>
+<td style="text-align: right;">11.7</td>
+<td>wrong-data</td>
+<td>61 references written as 'Java Extend Couple External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">11.7</td>
+<td>wrong-data</td>
+<td>61 references written as 'Java Extendby Coupleby External', which Understand never emits here</td>
+</tr>
+<tr>
+<td style="text-align: right;">11.2</td>
+<td>missing-data</td>
+<td>2473 of 35218 entities Understand finds are absent from OpenUnderstand</td>
+</tr>
+<tr>
+<td style="text-align: right;">8.6</td>
+<td>wrong-data</td>
+<td>20 references match only once ent and scope are swapped</td>
+</tr>
+<tr>
+<td style="text-align: right;">7.7</td>
+<td>wrong-data</td>
+<td>24 references have the right line but the wrong column (395224 of 395248 match once the column is included)</td>
+</tr>
+<tr>
+<td style="text-align: right;">2.6</td>
+<td>wrong-data</td>
+<td>2 entity long names are structurally malformed</td>
+</tr>
+</tbody>
+</table>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      © 2021-2022 OpenUnderstand project - IUST Reverse Engineering Research Laboratory
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      
+    
+  </body>
+</html>
