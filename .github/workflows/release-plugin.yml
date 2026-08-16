@@ -2,7 +2,8 @@ name: release-plugin
 
 # Publishes the IDEA plugin to the JetBrains Marketplace when a plugin-v* tag is
 # pushed. Separate from release.yml and its v* tags because the plugin and the
-# library version independently -- plugin 0.1.1 bundles analyser 0.2.1.
+# library version independently: a plugin release bundles whatever analyser
+# version is current.
 #
 # Needs one secret, PUBLISH_TOKEN: plugins.jetbrains.com -> your profile ->
 # My Tokens -> Generate. The plugin must already exist on the Marketplace; the

@@ -244,12 +244,28 @@ RESOURCES = (
     ("openunderstand://metrics", "metric-names", metric_names),
 )
 
+# Resources a client that wires up only tools would otherwise never see.
+#
+# `metric_names` is the one that costs something to miss: `entity_metrics` takes
+# these names and answers None for a name it does not know, so a client guessing
+# at them fails silently rather than being told.
+#
+# `entity_kinds` and `reference_kinds` are deliberately absent -- the `list_kinds`
+# tool already runs the same query with a filter on top, and a second way to ask
+# the same question is surface without reach.
+ALSO_TOOLS = (current_database, metric_names)
+
 
 # ----------------------------------------------------------------------- prompts
 #
 # Workflows a user starts deliberately, as opposed to actions the model decides
 # to take. Each one names the tools it needs so the model does not have to
 # rediscover the sequence.
+#
+# Registered as tools as well, because a client that wires up only tools -- and
+# many do -- cannot see a prompt at all, so these were invisible to it. They
+# return their instructions either way; nothing about them changes with the
+# surface they are reached through.
 
 def review_class(longname: str) -> str:
     """Review one class: size, complexity, what it declares and couples to."""
@@ -320,7 +336,7 @@ def build_server():
             "every other tool operates on whatever is open."
         ),
     )
-    for tool in TOOLS:
+    for tool in TOOLS + PROMPTS + ALSO_TOOLS:
         server.add_tool(tool, name=tool.__name__, description=tool.__doc__)
     for uri, name, reader in RESOURCES:
         server.resource(uri, name=name, description=reader.__doc__,
