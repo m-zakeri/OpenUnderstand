@@ -1,6 +1,13 @@
 name: release
 
-# Publishes to PyPI when a v* tag is pushed.
+# Publishes to PyPI when a v* tag is pushed, or when a merge to master raises
+# __version__.
+#
+# Merging cannot simply publish: PyPI refuses to reuse a version, so every other
+# merge would fail the build. The `version` job below is the gate -- it publishes
+# only when this push actually changed the `__version__` line, which is the one
+# thing that makes a release a release. Bump the version in the pull request and
+# merging it ships; merge anything else and this does nothing.
 #
 # Uses Trusted Publishing (OIDC) -- no API token is stored anywhere. Set it up
 # once at pypi.org -> Your projects -> Publishing -> Add a pending publisher,
@@ -9,11 +16,36 @@ name: release
 
 on:
   push:
+    branches: [master]
     tags: ["v*"]
   workflow_dispatch:
 
 jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.check.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - id: check
+        name: Did this push change __version__?
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            echo "tag push -- publishing"; echo "publish=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          BEFORE="${{ github.event.before }}"
+          # All-zero on a branch's first push, and absent on workflow_dispatch.
+          case "$BEFORE" in ""|0000000000000000000000000000000000000000) BEFORE="${GITHUB_SHA}^" ;; esac
+          if git diff "$BEFORE" "$GITHUB_SHA" -- openunderstand/__init__.py | grep -q '^+__version__'; then
+            echo "__version__ changed -- publishing"; echo "publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "__version__ unchanged -- nothing to release"; echo "publish=false" >> "$GITHUB_OUTPUT"
+          fi
+
   build:
+    needs: version
+    if: needs.version.outputs.publish == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -66,9 +98,10 @@ jobs:
         with: { name: dist, path: dist/ }
 
   publish:
+    # `build` only runs when the version gate opened, so reaching here is
+    # already the decision -- a tag, or a merge that raised __version__.
     needs: build
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
     environment: pypi
     permissions:
       id-token: write        # required for Trusted Publishing
