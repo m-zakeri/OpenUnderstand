@@ -13,40 +13,39 @@ scope, file, line, column).
 
 | | Understand | OpenUnderstand |
 | --- | ---: | ---: |
-| Entities | 22975 | 27643 |
+| Entities | 22975 | 23695 |
 
-- Entities matched: **22075** of 22975
-- Entities with no Understand counterpart: 5568
+- Entities matched: **22055** of 22975
+- Entities with no Understand counterpart: 1640
 - Open findings: 14
 
 ### Entities by kind family
 
 | Family | Understand | OpenUnderstand | Δ |
 | --- | ---: | ---: | ---: |
-| variable | 8583 | 9563 | +980 |
+| variable | 8583 | 9292 | +709 |
 | parameter | 6680 | 6143 | -537 |
-| method | 5901 | 8085 | +2184 |
-| class | 984 | 2530 | +1546 |
+| method | 5901 | 5903 | +2 |
+| class | 984 | 1044 | +60 |
 | constructor | 684 | 684 | +0 |
 | interface | 90 | 90 | +0 |
 | package | 53 | 53 | +0 |
 | file | 0 | 486 | +486 |
-| unknown | 0 | 9 | +9 |
 
 ### Largest reference gaps
 
 | Kind | Understand | OpenUnderstand | Missing |
 | --- | ---: | ---: | ---: |
+| `Java Coupleby` | 4460 | 3038 | +1422 |
+| `Java Callby` | 12011 | 10794 | +1217 |
 | `Java Endby` | 7659 | 6841 | +818 |
 | `Java End` | 7659 | 6841 | +818 |
 | `Java Begin` | 7653 | 6841 | +812 |
 | `Java Beginby` | 7653 | 6841 | +812 |
+| `Java Callby Nondynamic` | 2881 | 2357 | +524 |
+| `Java Useby` | 18350 | 17893 | +457 |
 | `Java Define` | 22446 | 22294 | +152 |
-| `Java Set Init` | 6980 | 6926 | +54 |
-| `Java Setby Init` | 6980 | 6926 | +54 |
-| `Java Use Return` | 1188 | 1154 | +34 |
-| `Java Useby Return` | 1188 | 1154 | +34 |
-| `Java Extendby Coupleby` | 259 | 236 | +23 |
+| `Java DotRefby` | 1671 | 1559 | +112 |
 
 ### Open findings
 
@@ -69,21 +68,21 @@ scope, file, line, column).
 
 | | Understand | OpenUnderstand |
 | --- | ---: | ---: |
-| Entities | 4928 | 5190 |
+| Entities | 4928 | 4702 |
 
 - Entities matched: **4567** of 4928
-- Entities with no Understand counterpart: 623
+- Entities with no Understand counterpart: 135
 - Open findings: 56
 
 ### Entities by kind family
 
 | Family | Understand | OpenUnderstand | Δ |
 | --- | ---: | ---: | ---: |
-| variable | 2402 | 2437 | +35 |
-| method | 1243 | 1465 | +222 |
+| variable | 2402 | 2378 | -24 |
+| method | 1243 | 1243 | +0 |
 | parameter | 1057 | 766 | -291 |
 | constructor | 100 | 100 | +0 |
-| class | 99 | 312 | +213 |
+| class | 99 | 105 | +6 |
 | unknown | 16 | 7 | -9 |
 | interface | 5 | 5 | +0 |
 | package | 4 | 4 | +0 |
@@ -94,16 +93,16 @@ scope, file, line, column).
 
 | Kind | Understand | OpenUnderstand | Missing |
 | --- | ---: | ---: | ---: |
+| `Java Callby` | 4651 | 4504 | +147 |
+| `Java DotRefby` | 1019 | 901 | +118 |
+| `Java Callby Nondynamic` | 1043 | 975 | +68 |
 | `Java Endby` | 1441 | 1388 | +53 |
 | `Java End` | 1441 | 1388 | +53 |
-| `Java Define` | 4827 | 4783 | +44 |
-| `Java Useby Return` | 205 | 177 | +28 |
-| `Java Use Return` | 205 | 177 | +28 |
-| `Java Set Init` | 2210 | 2189 | +21 |
-| `Java Setby Init` | 2210 | 2189 | +21 |
-| `Java Beginby` | 1406 | 1388 | +18 |
-| `Java Begin` | 1406 | 1388 | +18 |
-| `Java Definein Implicit` | 12 | 0 | +12 |
+| `Java Useby` | 4886 | 4834 | +52 |
+| `Java Useby Return` | 205 | 154 | +51 |
+| `Java Define` | 4827 | 4784 | +43 |
+| `Java Createby` | 1087 | 1045 | +42 |
+| `Java Typedby` | 1380 | 1347 | +33 |
 
 ### Open findings
 
@@ -126,20 +125,20 @@ scope, file, line, column).
 
 | | Understand | OpenUnderstand |
 | --- | ---: | ---: |
-| Entities | 50 | 69 |
+| Entities | 50 | 55 |
 
 - Entities matched: **50** of 50
-- Entities with no Understand counterpart: 19
+- Entities with no Understand counterpart: 5
 - Open findings: 12
 
 ### Entities by kind family
 
 | Family | Understand | OpenUnderstand | Δ |
 | --- | ---: | ---: | ---: |
-| method | 22 | 26 | +4 |
+| method | 22 | 22 | +0 |
 | variable | 14 | 14 | +0 |
 | parameter | 8 | 8 | +0 |
-| class | 5 | 15 | +10 |
+| class | 5 | 5 | +0 |
 | package | 1 | 1 | +0 |
 | file | 0 | 5 | +5 |
 
@@ -149,14 +148,14 @@ scope, file, line, column).
 | --- | ---: | ---: | ---: |
 | `Java Setby Init` | 9 | 5 | +4 |
 | `Java Set Init` | 9 | 5 | +4 |
-| `Java Containin` | 5 | 5 | +0 |
-| `Java Contain` | 5 | 5 | +0 |
+| `Java Setby` | 7 | 4 | +3 |
+| `Java Useby` | 17 | 17 | +0 |
+| `Java Use Return` | 11 | 11 | +0 |
+| `Java Callby Nondynamic` | 16 | 16 | +0 |
+| `Java Extend Couple` | 3 | 3 | +0 |
 | `Java Call Nondynamic` | 16 | 16 | +0 |
-| `Java Setby` | 7 | 7 | +0 |
+| `Java Endby` | 27 | 27 | +0 |
 | `Java Useby Deref Partial` | 14 | 14 | +0 |
-| `Java Begin` | 27 | 27 | +0 |
-| `Java Extendby Coupleby` | 3 | 3 | +0 |
-| `Java End` | 27 | 27 | +0 |
 
 ### Open findings
 
@@ -179,20 +178,20 @@ scope, file, line, column).
 
 | | Understand | OpenUnderstand |
 | --- | ---: | ---: |
-| Entities | 4626 | 5286 |
+| Entities | 4626 | 4846 |
 
 - Entities matched: **4487** of 4626
-- Entities with no Understand counterpart: 799
+- Entities with no Understand counterpart: 359
 - Open findings: 61
 
 ### Entities by kind family
 
 | Family | Understand | OpenUnderstand | Δ |
 | --- | ---: | ---: | ---: |
-| variable | 2050 | 2057 | +7 |
+| variable | 2050 | 2023 | -27 |
 | parameter | 1150 | 1116 | -34 |
-| method | 941 | 1167 | +226 |
-| class | 293 | 537 | +244 |
+| method | 941 | 942 | +1 |
+| class | 293 | 356 | +63 |
 | constructor | 106 | 106 | +0 |
 | unknown | 56 | 38 | -18 |
 | package | 27 | 28 | +1 |
@@ -203,16 +202,16 @@ scope, file, line, column).
 
 | Kind | Understand | OpenUnderstand | Missing |
 | --- | ---: | ---: | ---: |
+| `Java Callby Nondynamic` | 799 | 657 | +142 |
+| `Java Setby Init` | 1656 | 1523 | +133 |
 | `Java Set Init` | 1656 | 1543 | +113 |
-| `Java Setby Init` | 1656 | 1543 | +113 |
 | `Java Set` | 1094 | 1014 | +80 |
 | `Java Setby` | 1094 | 1014 | +80 |
+| `Java Typedby` | 572 | 494 | +78 |
+| `Java Useby GenericArgument` | 65 | 33 | +32 |
 | `Java End` | 1343 | 1311 | +32 |
 | `Java Endby` | 1343 | 1311 | +32 |
-| `Java Useby Return` | 248 | 224 | +24 |
-| `Java Use Return` | 248 | 224 | +24 |
-| `Java Beginby` | 1324 | 1311 | +13 |
-| `Java Begin` | 1324 | 1311 | +13 |
+| `Java Useby` | 6021 | 5991 | +30 |
 
 ### Open findings
 
@@ -235,10 +234,10 @@ scope, file, line, column).
 
 | | Understand | OpenUnderstand |
 | --- | ---: | ---: |
-| Entities | 72 | 96 |
+| Entities | 72 | 78 |
 
 - Entities matched: **67** of 72
-- Entities with no Understand counterpart: 29
+- Entities with no Understand counterpart: 11
 - Open findings: 33
 
 ### Entities by kind family
@@ -246,9 +245,9 @@ scope, file, line, column).
 | Family | Understand | OpenUnderstand | Δ |
 | --- | ---: | ---: | ---: |
 | parameter | 26 | 21 | -5 |
-| method | 17 | 23 | +6 |
+| method | 17 | 17 | +0 |
 | variable | 15 | 18 | +3 |
-| class | 8 | 20 | +12 |
+| class | 8 | 8 | +0 |
 | package | 6 | 6 | +0 |
 | file | 0 | 8 | +8 |
 
@@ -258,14 +257,14 @@ scope, file, line, column).
 | --- | ---: | ---: | ---: |
 | `Java Use Return` | 4 | 1 | +3 |
 | `Java Useby Return` | 4 | 1 | +3 |
-| `Java Containin` | 8 | 8 | +0 |
-| `Java End` | 25 | 25 | +0 |
-| `Java Begin` | 25 | 25 | +0 |
-| `Java Createby` | 5 | 5 | +0 |
-| `Java Create` | 5 | 5 | +0 |
-| `Java Endby` | 25 | 25 | +0 |
-| `Java Setby` | 6 | 6 | +0 |
+| `Java Callby Nondynamic` | 8 | 7 | +1 |
 | `Java Contain` | 8 | 8 | +0 |
+| `Java Modifyby` | 5 | 5 | +0 |
+| `Java Overriddenby` | 1 | 1 | +0 |
+| `Java Set Init` | 15 | 15 | +0 |
+| `Java Useby Deref Partial` | 5 | 5 | +0 |
+| `Java Beginby` | 25 | 25 | +0 |
+| `Java Use Deref Partial` | 5 | 5 | +0 |
 
 ### Open findings
 
@@ -288,40 +287,40 @@ scope, file, line, column).
 
 | | Understand | OpenUnderstand |
 | --- | ---: | ---: |
-| Entities | 26076 | 30429 |
+| Entities | 26076 | 26425 |
 
-- Entities matched: **24693** of 26076
-- Entities with no Understand counterpart: 5736
+- Entities matched: **24663** of 26076
+- Entities with no Understand counterpart: 1762
 - Open findings: 19
 
 ### Entities by kind family
 
 | Family | Understand | OpenUnderstand | Δ |
 | --- | ---: | ---: | ---: |
-| variable | 9016 | 10108 | +1092 |
-| method | 7413 | 9332 | +1919 |
+| variable | 9016 | 9659 | +643 |
+| method | 7413 | 7428 | +15 |
 | parameter | 7058 | 6437 | -621 |
-| class | 1486 | 2716 | +1230 |
+| class | 1486 | 1066 | -420 |
 | constructor | 756 | 756 | +0 |
 | interface | 180 | 180 | +0 |
 | package | 102 | 106 | +4 |
-| unknown | 65 | 54 | -11 |
+| unknown | 65 | 53 | -12 |
 | file | 0 | 740 | +740 |
 
 ### Largest reference gaps
 
 | Kind | Understand | OpenUnderstand | Missing |
 | --- | ---: | ---: | ---: |
+| `Java Callby` | 15157 | 12862 | +2295 |
+| `Java Coupleby` | 6581 | 4492 | +2089 |
 | `Java Endby` | 9775 | 8150 | +1625 |
 | `Java End` | 9775 | 8150 | +1625 |
 | `Java Beginby` | 9703 | 8150 | +1553 |
 | `Java Begin` | 9703 | 8150 | +1553 |
 | `Java Define` | 25163 | 24564 | +599 |
-| `Java Useby Deref Partial` | 15833 | 15611 | +222 |
-| `Java Use Deref Partial` | 15833 | 15611 | +222 |
-| `Java Extend Couple` | 472 | 296 | +176 |
-| `Java Extendby Coupleby` | 472 | 296 | +176 |
-| `Java Define Implicit` | 90 | 0 | +90 |
+| `Java Typedby` | 8094 | 7559 | +535 |
+| `Java Typedby GenericArgument` | 1400 | 976 | +424 |
+| `Java DotRefby` | 2792 | 2420 | +372 |
 
 ### Open findings
 
@@ -344,24 +343,24 @@ scope, file, line, column).
 
 | | Understand | OpenUnderstand |
 | --- | ---: | ---: |
-| Entities | 44277 | 47640 |
+| Entities | 44277 | 42746 |
 
-- Entities matched: **44223** of 44277
-- Entities with no Understand counterpart: 3417
+- Entities matched: **41263** of 44277
+- Entities with no Understand counterpart: 1483
 - Open findings: 25
 
 ### Entities by kind family
 
 | Family | Understand | OpenUnderstand | Δ |
 | --- | ---: | ---: | ---: |
-| variable | 19674 | 20126 | +452 |
-| parameter | 11972 | 11931 | -41 |
-| method | 10496 | 11739 | +1243 |
-| class | 929 | 1395 | +466 |
+| variable | 19674 | 19142 | -532 |
+| parameter | 11972 | 9877 | -2095 |
+| method | 10496 | 10549 | +53 |
+| class | 929 | 990 | +61 |
 | constructor | 840 | 840 | +0 |
-| unknown | 207 | 268 | +61 |
+| unknown | 207 | 164 | -43 |
 | interface | 114 | 114 | +0 |
-| package | 44 | 204 | +160 |
+| package | 44 | 47 | +3 |
 | module | 1 | 0 | -1 |
 | file | 0 | 1023 | +1023 |
 
@@ -369,16 +368,16 @@ scope, file, line, column).
 
 | Kind | Understand | OpenUnderstand | Missing |
 | --- | ---: | ---: | ---: |
-| `Java Use` | 62690 | 49186 | +13504 |
-| `Java Useby` | 62690 | 49186 | +13504 |
+| `Java Callby` | 34733 | 31722 | +3011 |
+| `Java Useby Return` | 2714 | 1263 | +1451 |
 | `Java Use Return` | 2714 | 1271 | +1443 |
-| `Java Useby Return` | 2714 | 1271 | +1443 |
-| `Java End` | 12297 | 11660 | +637 |
 | `Java Endby` | 12297 | 11660 | +637 |
-| `Java Call` | 34733 | 34135 | +598 |
-| `Java Callby` | 34733 | 34135 | +598 |
-| `Java Use Deref Partial` | 30644 | 30063 | +581 |
-| `Java Useby Deref Partial` | 30644 | 30063 | +581 |
+| `Java End` | 12297 | 11660 | +637 |
+| `Java Createby` | 7634 | 7066 | +568 |
+| `Java Callby Nondynamic` | 5321 | 4775 | +546 |
+| `Java Beginby` | 12205 | 11660 | +545 |
+| `Java Begin` | 12205 | 11660 | +545 |
+| `Java Coupleby` | 5444 | 5076 | +368 |
 
 ### Open findings
 
@@ -401,20 +400,20 @@ scope, file, line, column).
 
 | | Understand | OpenUnderstand |
 | --- | ---: | ---: |
-| Entities | 27694 | 31957 |
+| Entities | 27694 | 27010 |
 
-- Entities matched: **25345** of 27694
-- Entities with no Understand counterpart: 6612
+- Entities matched: **25315** of 27694
+- Entities with no Understand counterpart: 1695
 - Open findings: 23
 
 ### Entities by kind family
 
 | Family | Understand | OpenUnderstand | Δ |
 | --- | ---: | ---: | ---: |
-| variable | 10514 | 12386 | +1872 |
+| variable | 10514 | 10882 | +368 |
 | parameter | 8317 | 6763 | -1554 |
-| method | 6843 | 8623 | +1780 |
-| class | 1027 | 2495 | +1468 |
+| method | 6843 | 6843 | +0 |
+| class | 1027 | 832 | -195 |
 | constructor | 791 | 791 | +0 |
 | package | 73 | 74 | +1 |
 | unknown | 72 | 43 | -29 |
@@ -425,16 +424,16 @@ scope, file, line, column).
 
 | Kind | Understand | OpenUnderstand | Missing |
 | --- | ---: | ---: | ---: |
-| `Java End` | 8678 | 7740 | +938 |
+| `Java Callby` | 13428 | 11895 | +1533 |
+| `Java Coupleby` | 4330 | 3171 | +1159 |
 | `Java Endby` | 8678 | 7740 | +938 |
-| `Java Begin` | 8677 | 7740 | +937 |
+| `Java End` | 8678 | 7740 | +938 |
 | `Java Beginby` | 8677 | 7740 | +937 |
-| `Java Modify Deref Partial` | 248 | 16 | +232 |
-| `Java Modifyby Deref Partial` | 248 | 16 | +232 |
-| `Java Define` | 26953 | 26738 | +215 |
-| `Java Setby Init` | 7901 | 7765 | +136 |
-| `Java Set Init` | 7901 | 7765 | +136 |
-| `Java Define Implicit` | 60 | 0 | +60 |
+| `Java Begin` | 8677 | 7740 | +937 |
+| `Java Useby` | 28771 | 27863 | +908 |
+| `Java Callby Nondynamic` | 3583 | 2912 | +671 |
+| `Java Typedby` | 5323 | 4986 | +337 |
+| `Java Createby` | 2018 | 1744 | +274 |
 
 ### Open findings
 
@@ -457,40 +456,40 @@ scope, file, line, column).
 
 | | Understand | OpenUnderstand |
 | --- | ---: | ---: |
-| Entities | 7945 | 10268 |
+| Entities | 7945 | 8861 |
 
-- Entities matched: **7636** of 7945
-- Entities with no Understand counterpart: 2632
+- Entities matched: **7633** of 7945
+- Entities with no Understand counterpart: 1228
 - Open findings: 17
 
 ### Entities by kind family
 
 | Family | Understand | OpenUnderstand | Δ |
 | --- | ---: | ---: | ---: |
-| variable | 3666 | 4602 | +936 |
+| variable | 3666 | 4479 | +813 |
 | parameter | 1779 | 1615 | -164 |
-| method | 1706 | 2434 | +728 |
-| class | 405 | 1001 | +596 |
+| method | 1706 | 1706 | +0 |
+| class | 405 | 451 | +46 |
 | constructor | 344 | 344 | +0 |
 | package | 25 | 25 | +0 |
 | interface | 15 | 15 | +0 |
-| unknown | 5 | 11 | +6 |
+| unknown | 5 | 5 | +0 |
 | file | 0 | 221 | +221 |
 
 ### Largest reference gaps
 
 | Kind | Understand | OpenUnderstand | Missing |
 | --- | ---: | ---: | ---: |
-| `Java Beginby` | 2456 | 2371 | +85 |
-| `Java Begin` | 2456 | 2371 | +85 |
-| `Java Endby` | 2456 | 2371 | +85 |
+| `Java Callby` | 4068 | 3648 | +420 |
+| `Java Coupleby` | 1753 | 1440 | +313 |
+| `Java Useby` | 7170 | 6911 | +259 |
+| `Java DotRefby` | 1339 | 1103 | +236 |
+| `Java Typedby` | 1798 | 1699 | +99 |
 | `Java End` | 2456 | 2371 | +85 |
+| `Java Begin` | 2456 | 2371 | +85 |
+| `Java Beginby` | 2456 | 2371 | +85 |
+| `Java Endby` | 2456 | 2371 | +85 |
 | `Java Use Deref Partial` | 6912 | 6834 | +78 |
-| `Java Useby Deref Partial` | 6912 | 6834 | +78 |
-| `Java Useby Return` | 371 | 341 | +30 |
-| `Java Use Return` | 371 | 341 | +30 |
-| `Java Define` | 7627 | 7602 | +25 |
-| `Java Definein Implicit` | 21 | 0 | +21 |
 
 ### Open findings
 
@@ -513,19 +512,19 @@ scope, file, line, column).
 
 | | Understand | OpenUnderstand |
 | --- | ---: | ---: |
-| Entities | 399 | 306 |
+| Entities | 399 | 235 |
 
 - Entities matched: **197** of 399
-- Entities with no Understand counterpart: 109
+- Entities with no Understand counterpart: 38
 - Open findings: 12
 
 ### Entities by kind family
 
 | Family | Understand | OpenUnderstand | Δ |
 | --- | ---: | ---: | ---: |
-| method | 170 | 98 | -72 |
-| variable | 147 | 87 | -60 |
-| class | 36 | 53 | +17 |
+| method | 170 | 84 | -86 |
+| variable | 147 | 63 | -84 |
+| class | 36 | 20 | -16 |
 | parameter | 35 | 19 | -16 |
 | package | 6 | 6 | +0 |
 | constructor | 5 | 5 | +0 |
@@ -535,16 +534,16 @@ scope, file, line, column).
 
 | Kind | Understand | OpenUnderstand | Missing |
 | --- | ---: | ---: | ---: |
-| `Java Typedby GenericArgument` | 24 | 18 | +6 |
 | `Java Typed GenericArgument` | 24 | 18 | +6 |
+| `Java Typedby GenericArgument` | 24 | 18 | +6 |
+| `Java DotRefby` | 9 | 9 | +0 |
+| `Java Useby Deref Partial` | 158 | 158 | +0 |
 | `Java Useby GenericArgument` | 4 | 4 | +0 |
-| `Java Begin` | 211 | 211 | +0 |
 | `Java Setby Init` | 146 | 146 | +0 |
-| `Java Setby` | 2 | 2 | +0 |
-| `Java Use GenericArgument` | 4 | 4 | +0 |
-| `Java Extend Couple` | 12 | 12 | +0 |
+| `Java Use Return` | 4 | 4 | +0 |
 | `Java End` | 211 | 211 | +0 |
-| `Java Extendby Coupleby` | 12 | 12 | +0 |
+| `Java Useby Castby` | 15 | 15 | +0 |
+| `Java Createby` | 69 | 69 | +0 |
 
 ### Open findings
 
@@ -567,40 +566,39 @@ scope, file, line, column).
 
 | | Understand | OpenUnderstand |
 | --- | ---: | ---: |
-| Entities | 35218 | 37183 |
+| Entities | 35218 | 34259 |
 
-- Entities matched: **32745** of 35218
-- Entities with no Understand counterpart: 4438
+- Entities matched: **32700** of 35218
+- Entities with no Understand counterpart: 1559
 - Open findings: 11
 
 ### Entities by kind family
 
 | Family | Understand | OpenUnderstand | Δ |
 | --- | ---: | ---: | ---: |
-| variable | 13596 | 14130 | +534 |
+| variable | 13596 | 13295 | -301 |
 | parameter | 11203 | 9753 | -1450 |
-| method | 8554 | 9697 | +1143 |
+| method | 8554 | 8554 | +0 |
 | constructor | 862 | 862 | +0 |
-| class | 801 | 1808 | +1007 |
+| class | 801 | 879 | +78 |
 | interface | 157 | 157 | +0 |
 | package | 45 | 48 | +3 |
 | file | 0 | 711 | +711 |
-| unknown | 0 | 17 | +17 |
 
 ### Largest reference gaps
 
 | Kind | Understand | OpenUnderstand | Missing |
 | --- | ---: | ---: | ---: |
-| `Java Begin` | 10374 | 9408 | +966 |
-| `Java End` | 10374 | 9408 | +966 |
+| `Java Callby` | 14304 | 12030 | +2274 |
+| `Java Useby` | 57121 | 55257 | +1864 |
+| `Java Callby Nondynamic` | 6530 | 5082 | +1448 |
 | `Java Beginby` | 10374 | 9408 | +966 |
 | `Java Endby` | 10374 | 9408 | +966 |
-| `Java Setby Init` | 11420 | 10961 | +459 |
+| `Java Begin` | 10374 | 9408 | +966 |
+| `Java End` | 10374 | 9408 | +966 |
+| `Java Setby Init` | 11420 | 10868 | +552 |
 | `Java Set Init` | 11420 | 10961 | +459 |
-| `Java Use Return` | 2113 | 1822 | +291 |
-| `Java Useby Return` | 2113 | 1822 | +291 |
-| `Java Modifyby Deref Partial` | 315 | 76 | +239 |
-| `Java Modify Deref Partial` | 315 | 76 | +239 |
+| `Java Setby` | 9914 | 9566 | +348 |
 
 ### Open findings
 

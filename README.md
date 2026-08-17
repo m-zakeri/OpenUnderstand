@@ -92,14 +92,28 @@ Honestly measured, not claimed. Every release is compared against a licensed
 SciTools Understand install on the same source, entity by entity, reference by
 reference, metric by metric.
 
-Current agreement, on three benchmarks:
+Current agreement, over eleven Java systems and 174,260 Understand entities:
+
+| | pooled | range across subjects |
+| --- | ---: | :--- |
+| Entities recovered -- recall | 0.935 | 0.49 -- 1.00 |
+| -- precision | 0.943 | 0.84 -- 0.97 |
+| References at the exact position -- recall | | 0.90 -- 0.98 |
+| -- precision | | 0.62 -- 0.88 |
+
+Three of the subjects, for comparison with earlier releases:
 
 | | calculator_app | org.json | TheAlgorithms |
 | --- | ---: | ---: | ---: |
-| Java files | 8 | 22 | 228 |
-| Metric values matching Understand | 80% | 72% | 73% |
-| References reproduced at the exact position -- recall | 0.92 | 0.87 | 0.86 |
-| -- precision | 0.89 | 0.87 | 0.84 |
+| Java files | 8 | 85 | 228 |
+| Reference recall / precision | 0.98 / 0.86 | 0.97 / 0.84 | 0.96 / 0.83 |
+
+Both sides are scoped the same way: Understand indexes the whole Java library
+whether or not a JDK is added to the project, and its dump keeps only entities
+declared under the fixture root, so this project's placeholders for those same
+names -- `java.lang.String`, `java.util.ArrayList` -- are excluded too.
+Counting ours while its counterparts were dropped understated entity precision
+by 5 to 14 points depending on the subject.
 
 [docs/parity.md](https://m-zakeri.github.io/OpenUnderstand/parity/) has the per-kind breakdown.
 
@@ -151,9 +165,14 @@ See [docs/idea-plugin.md](https://m-zakeri.github.io/OpenUnderstand/idea-plugin/
   blocks and `yield`.
 - **No external resolution.** The JDK and third-party jars are not analysed, so
   `java.lang.String` exists but has no members.
-- **Partial coverage.** Roughly half of Understand's references are reproduced.
-  Unimplemented API methods raise `NotImplementedError` rather than returning
-  something plausible and wrong.
+- **Partial coverage.** 90 to 98% of Understand's references are reproduced at
+  the exact position, at 62 to 88% precision. 46 of the 49 public API methods
+  are implemented.
+- **Silence, not refusal, on what is missing.** The three unimplemented methods
+  -- `Db.close`, `Db.lookup_uniquename`, `Violation.add_fixit_hint` -- return
+  `None`. Querying a reference kind no pass emits returns an empty list, which
+  reads exactly like an entity that has none. `NotImplementedError` is *not*
+  raised anywhere in the query API, whatever this file used to say.
 
 ## Documentation
 

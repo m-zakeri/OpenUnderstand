@@ -572,6 +572,15 @@ def create_db(
     db.bind([KindModel, EntityModel, ReferenceModel, ProjectModel])
     db.create_tables([KindModel, EntityModel, ReferenceModel, ProjectModel])
 
+    # Build without the reference table's four foreign-key indexes. Each insert
+    # would otherwise update four B-trees as well as the table -- about two
+    # million index updates on the largest benchmark, each costlier as the tree
+    # grows. Nothing reads references during the per-file loop; the passes only
+    # write. merge_placeholder_entities() rebuilds them before the first pass
+    # that reads, so a finished database is always fully indexed.
+    from openunderstand.oudb.models import drop_reference_indexes
+    drop_reference_indexes(db)
+
     ProjectModel.get_or_create(
         name=project_name or os.path.basename(project_dir),
         root=project_dir,

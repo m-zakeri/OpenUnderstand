@@ -578,6 +578,27 @@ def declaring_type(type_longname: str, member: str) -> str | None:
     return INDEX.declaring_type(type_longname, member)
 
 
+def is_project_type(longname: str) -> bool:
+    """True when this long name is a type declared in the analysed source.
+
+    Distinct from "does this name resolve": `java.lang.String` resolves through
+    the JDK index and is not a project type. Understand needs the distinction
+    because it writes some inverse references only for entities the project
+    actually declares -- a `Java Couple` to `java.lang.String` carries no
+    `Java Coupleby`, because there is no analysed entity to hang it on. On
+    JSON the split is exact: 228 of Understand's 840 forward couples have an
+    inverse, and all 228 target project types while none of the other 612 do.
+
+    Tested against the whole index rather than the per-file catalogue a pass
+    happens to hold: keying on one file's classes reported 364 forward couples
+    against 3 inverses, because a couple to a class declared elsewhere in the
+    project looked external.
+    """
+    if not longname:
+        return False
+    return longname in INDEX.types.get(longname.rsplit(".", 1)[-1], ())
+
+
 def resolve_type(simple_name: str, scope_longname: str = "",
                  local_only: bool = False) -> str | None:
     """Long name for a *type's* simple name, or None if none resolves.

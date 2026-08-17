@@ -1,3 +1,4 @@
+import os
 from functools import lru_cache
 
 from peewee import *
@@ -529,6 +530,34 @@ def purge_file(file_entity_id):
 EXTERNAL_ROOTS = ("java.", "javax.")
 
 
+#: Reference-table foreign-key indexes, dropped for the per-file loop and
+#: rebuilt once before anything reads references. Building an index over a
+#: finished table sorts once; maintaining it per row re-balances a growing tree
+#: on every insert.
+_REFERENCE_INDEXES = {
+    "referencemodel__kind_id": "_kind_id",
+    "referencemodel__file_id": "_file_id",
+    "referencemodel__ent_id": "_ent_id",
+    "referencemodel__scope_id": "_scope_id",
+}
+
+
+def drop_reference_indexes(database=None):
+    """Drop the reference indexes so the build does not maintain them."""
+    database = database or ReferenceModel._meta.database
+    for name in _REFERENCE_INDEXES:
+        database.execute_sql(f'DROP INDEX IF EXISTS "{name}"')
+
+
+def ensure_reference_indexes(database=None):
+    """Rebuild them. Idempotent, so an already-indexed database is untouched."""
+    database = database or ReferenceModel._meta.database
+    for name, column in _REFERENCE_INDEXES.items():
+        database.execute_sql(
+            f'CREATE INDEX IF NOT EXISTS "{name}" ON "referencemodel" ("{column}")'
+        )
+
+
 def merge_placeholder_entities():
     """Fold Unknown/Unresolved entities into the real entity they describe.
 
@@ -549,6 +578,7 @@ def merge_placeholder_entities():
 
     Returns the number of rows merged.
     """
+    ensure_reference_indexes()
     placeholders = [
         e for e in EntityModel.select() if is_placeholder_kind(e._kind_id)
     ]
@@ -676,6 +706,68 @@ def drop_nonvariable_deref_refs():
         return 0
     ReferenceModel.delete().where(ReferenceModel._id << list(doomed)).execute()
     return len(doomed)
+
+
+def drop_external_inverse_refs():
+    """Delete inverse references whose referenced entity is a placeholder.
+
+    Understand writes an inverse only when the referenced entity is one the
+    project declares. A call to `java.lang.String.trim` gets a `Java Call` and
+    no `Java Callby`, because there is no analysed entity to hang the inverse
+    on; a call to a project method gets both. Measured on JSON, the split is
+    exact across every asymmetric kind -- of 8,251 `Java Call` rows Understand
+    emits, the 4,651 carrying an inverse target a project entity and the other
+    3,600 target none, with no exception either way. The same 100/0 split holds
+    for Typed (1,380 of 3,357), Create (1,087 of 1,467), DotRef, Overrides,
+    Use Cast, Use Annotation (11 of 798) and Typed GenericArgument (26 of 378).
+
+    Writing both halves unconditionally is therefore wrong on 18 reference
+    kinds at once, and every surplus row is unmatchable by construction. On
+    JSON it costs roughly 9,000 rows: `Java Callby` alone stood at 7,633
+    against Understand's 4,651.
+
+    The test is the entity's kind. Placeholders -- the kinds carrying `Unknown`
+    or `Unresolved` -- are exactly the entities this project never saw
+    declared, which is the same population Understand declines to hang an
+    inverse on. Verified against its output: of our `Java Callby` rows whose
+    callee is a real kind, Understand keeps 3,370 of 3,375; of those whose
+    callee is `Java Unknown Method Member` or `Java Unknown Class Type Member`,
+    it keeps 0 of 3,129.
+
+    Runs after merge_placeholder_entities(), which upgrades every placeholder
+    it can resolve -- deciding before the merge would delete inverses for
+    entities that are about to become real.
+
+    Returns the number of references deleted.
+    """
+    # Which half of a pair is the inverse comes from the seed file, whose lines
+    # are `forward | inverse`. It cannot come from KindModel._inv: that is set
+    # on *both* halves and they point at each other, so a `_inv_id IS NULL`
+    # test selects entity kinds and quietly deletes nothing.
+    seed = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "java_ref_kinds.txt")
+    inverse_names = []
+    with open(seed, encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if line and not line.startswith("#") and "|" in line:
+                inverse_names.append(line.split("|", 1)[1].strip())
+    if not inverse_names:
+        return 0
+
+    placeholders = ",".join("?" * len(inverse_names))
+    cursor = ReferenceModel._meta.database.execute_sql(
+        f"""
+        DELETE FROM referencemodel
+         WHERE _kind_id IN (SELECT _id FROM kindmodel WHERE _name IN ({placeholders}))
+           AND _scope_id IN (SELECT e._id FROM entitymodel e
+                              JOIN kindmodel k ON k._id = e._kind_id
+                             WHERE k._name LIKE '%Unknown%'
+                                OR k._name LIKE '%Unresolved%')
+        """,
+        inverse_names,
+    )
+    return cursor.rowcount
 
 
 def drop_shadowed_use_refs():

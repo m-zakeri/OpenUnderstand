@@ -2034,18 +2034,35 @@ class Project:
                                 _ent=ent[0],
                                 _scope=scope[0],
                             )
-                            # The inverse used to live inside the `key in
-                            # classes` branch, so a couple to a class this file
-                            # had not catalogued produced a forward reference
-                            # with no inverse: 364 Couple rows against 3.
-                            CoupleBy_ref = ReferenceModel.get_or_create(
-                                _kind=kind_id("Java Coupleby"),
-                                _file=file_ent,
-                                _line=0,
-                                _column=0,
-                                _ent=scope[0],
-                                _scope=ent[0],
-                            )
+                            # Understand writes the inverse only when the
+                            # coupled target is a type the project declares. On
+                            # JSON, 228 of its 840 forward couples carry a
+                            # `Java Coupleby` and every one of those 228 targets
+                            # a project type, while none of the other 612 do:
+                            # `java.lang.String`, `org.junit.Test` and
+                            # `java.lang.Class` are coupled *to* and never
+                            # coupled *from*, because no analysed entity exists
+                            # to hang the inverse on.
+                            #
+                            # This guard was removed once, on the reasoning that
+                            # a pair should be symmetric -- 364 forward rows
+                            # against 3 inverses looked like a bug. It was the
+                            # test that was wrong, not the asymmetry: it keyed
+                            # on the file's own class catalogue rather than the
+                            # project index, so a couple to a class declared in
+                            # another file counted as external. Emitting both
+                            # halves unconditionally instead took
+                            # `Java Coupleby` to 761 rows against Understand's
+                            # 228, i.e. 0.28 precision.
+                            if symbol_table.is_project_type(key):
+                                CoupleBy_ref = ReferenceModel.get_or_create(
+                                    _kind=kind_id("Java Coupleby"),
+                                    _file=file_ent,
+                                    _line=0,
+                                    _column=0,
+                                    _ent=scope[0],
+                                    _scope=ent[0],
+                                )
 
             except Exception as e:
                 print(e)

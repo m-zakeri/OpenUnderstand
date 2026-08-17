@@ -1,9 +1,14 @@
 # API reference
 
 The API mirrors SciTools Understand's Python API. Where a method is
-implemented, it takes the same arguments and returns the same shape. Where it
-is not, it raises `NotImplementedError` rather than returning something
-plausible and wrong.
+implemented, it takes the same arguments and returns the same shape.
+
+46 of the 49 public methods are implemented. The three that are not --
+`Db.close`, `Db.lookup_uniquename` and `Violation.add_fixit_hint` -- have empty
+bodies and return `None`. **Nothing raises `NotImplementedError`**; earlier
+versions of this page said it did, and that was wrong. A caller cannot
+currently distinguish "not implemented" from "found nothing", which is the
+opposite of what this project argues for elsewhere and is on the roadmap.
 
 ```python
 import openunderstand.ounderstand as und
@@ -132,8 +137,10 @@ References in this file entity.
 
 ### `metric(names)` → `dict`
 
-Metric values. An unrecognised name maps to `None`; a recognised but
-unimplemented one raises `NotImplementedError`.
+Metric values. `Ent.metric()` dispatches through a chain with no fallback, so
+an unrecognised name is simply absent from the returned dictionary. That
+matches Understand's documented behaviour -- its own docs say an unavailable
+metric's value is `None` -- but it is silence, not refusal.
 
 ```python
 cls.metric(["CountDeclMethodAll", "Cyclomatic"])
@@ -142,8 +149,10 @@ cls.metric(["CountDeclMethodAll", "Cyclomatic"])
 
 ### `metrics()` → `list[str]`
 
-Names accepted by `metric()`. 63 names; 39 return values, 24 raise
-`NotImplementedError`. The list is deduplicated and ordered.
+Names accepted by `metric()`. 67 names, scoped to the entity's kind, because
+Understand answers a metric only for the kinds it is defined on. The list is
+deduplicated and ordered. Names outside the kind's set are absent from the
+result rather than raising.
 
 *Not implemented:* `comments`, `depends`, `dependsby`, `draw`, `freetext`,
 `ib`, `lexer`, `parameters`, `parsetime`, `uniquename`.

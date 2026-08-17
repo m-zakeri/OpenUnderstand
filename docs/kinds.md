@@ -38,7 +38,7 @@ is one kind, not five attributes.
 | `Java Annotation Interface Type Protected` | -- |
 | `Java Annotation Interface Type Public` | yes |
 | `Java Bean Primary Variable` | -- |
-| `Java Bean Variable` | -- |
+| `Java Bean Variable` | yes |
 | `Java Catch Parameter` | yes |
 | `Java Class Type Anonymous Member` | -- |
 | `Java Class Type Default Member` | yes |

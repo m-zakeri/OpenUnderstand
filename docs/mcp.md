@@ -63,8 +63,9 @@ vocabulary first removes the guess.
 
 Each names the tools it needs, so the model does not have to rediscover the
 sequence. They also tell it what the numbers do *not* mean -- `trace_callers`
-says an empty result means "none found", not "none exist", because this
-analysis resolves about half of Understand's references.
+says an empty result means "none found", not "none exist": this analysis
+reproduces 90 to 98% of Understand's references at the exact position, so an
+empty result is usually but not always complete.
 
 `kind` and `reference_kind` take [Understand's filter
 grammar](api.md#filter-strings): tokens are ANDed, `~` excludes, `,` ors. So

@@ -185,3 +185,5 @@ tests
 idea-plugin/.*
 idea-plugin/.gradle
 idea-plugin/*.csv
+
+paper

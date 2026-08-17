@@ -1,5 +1,6 @@
 from openunderstand.ounderstand.project import Project
 from openunderstand.ounderstand.listeners_and_parsers import ListenersAndParsers
+from openunderstand.oudb.models import ReferenceModel
 import os
 from openunderstand.utils.utilities import setup_config
 from fnmatch import fnmatch
@@ -19,7 +20,7 @@ def get_files(dirName: str = ""):
     return allFiles
 
 
-def process_file(file_address):
+def _process_file(file_address):
     p = Project()
     lap = ListenersAndParsers()
     tree, parse_tree, file_ent = lap.parser(file_address=file_address, p=p)
@@ -94,3 +95,22 @@ def process_file(file_address):
         file_address=file_address,
         p=p,
     )
+
+def process_file(file_address):
+    """Analyse one file inside a single database transaction.
+
+    Every ``create()`` outside a transaction is its own implicit transaction,
+    and one file produces hundreds of reference rows -- half a million across
+    jfreechart. WAL and ``synchronous=0`` are already set in ``api.py``, so the
+    cost being removed here is per-statement commit overhead, not fsync.
+
+    The boundary is one file because that is the unit ``runner`` retries and
+    the unit whose failure is already logged-and-swallowed: a file that raises
+    mid-way now leaves no partial rows instead of some, which is strictly
+    better for a database whose entity identity is enforced in Python.
+
+    Batching changes when rows commit, never which rows are written, so the
+    committed fingerprints must reproduce byte for byte.
+    """
+    with ReferenceModel._meta.database.atomic():
+        return _process_file(file_address)
