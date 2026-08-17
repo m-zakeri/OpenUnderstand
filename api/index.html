@@ -1135,9 +1135,13 @@
 
 <h1 id="api-reference">API reference</h1>
 <p>The API mirrors SciTools Understand's Python API. Where a method is
-implemented, it takes the same arguments and returns the same shape. Where it
-is not, it raises <code>NotImplementedError</code> rather than returning something
-plausible and wrong.</p>
+implemented, it takes the same arguments and returns the same shape.</p>
+<p>46 of the 49 public methods are implemented. The three that are not --
+<code>Db.close</code>, <code>Db.lookup_uniquename</code> and <code>Violation.add_fixit_hint</code> -- have empty
+bodies and return <code>None</code>. <strong>Nothing raises <code>NotImplementedError</code></strong>; earlier
+versions of this page said it did, and that was wrong. A caller cannot
+currently distinguish "not implemented" from "found nothing", which is the
+opposite of what this project argues for elsewhere and is on the roadmap.</p>
 <pre><code class="language-python">import openunderstand.ounderstand as und
 db = und.open(&quot;myproject.udb&quot;)
 </code></pre>
@@ -1276,14 +1280,18 @@ references thrown away.</p>
 <h3 id="filerefsrefkindstring-entkindstring-unique-listref"><code>filerefs([refkindstring [, entkindstring [, unique]]])</code> → <code>list[Ref]</code></h3>
 <p>References in this file entity.</p>
 <h3 id="metricnames-dict"><code>metric(names)</code> → <code>dict</code></h3>
-<p>Metric values. An unrecognised name maps to <code>None</code>; a recognised but
-unimplemented one raises <code>NotImplementedError</code>.</p>
+<p>Metric values. <code>Ent.metric()</code> dispatches through a chain with no fallback, so
+an unrecognised name is simply absent from the returned dictionary. That
+matches Understand's documented behaviour -- its own docs say an unavailable
+metric's value is <code>None</code> -- but it is silence, not refusal.</p>
 <pre><code class="language-python">cls.metric([&quot;CountDeclMethodAll&quot;, &quot;Cyclomatic&quot;])
 # {'CountDeclMethodAll': 12, 'Cyclomatic': 34}
 </code></pre>
 <h3 id="metrics-liststr"><code>metrics()</code> → <code>list[str]</code></h3>
-<p>Names accepted by <code>metric()</code>. 63 names; 39 return values, 24 raise
-<code>NotImplementedError</code>. The list is deduplicated and ordered.</p>
+<p>Names accepted by <code>metric()</code>. 67 names, scoped to the entity's kind, because
+Understand answers a metric only for the kinds it is defined on. The list is
+deduplicated and ordered. Names outside the kind's set are absent from the
+result rather than raising.</p>
 <p><em>Not implemented:</em> <code>comments</code>, <code>depends</code>, <code>dependsby</code>, <code>draw</code>, <code>freetext</code>,
 <code>ib</code>, <code>lexer</code>, <code>parameters</code>, <code>parsetime</code>, <code>uniquename</code>.</p>
 <hr />

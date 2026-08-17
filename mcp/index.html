@@ -833,8 +833,9 @@ vocabulary first removes the guess.</p>
 </table>
 <p>Each names the tools it needs, so the model does not have to rediscover the
 sequence. They also tell it what the numbers do <em>not</em> mean -- <code>trace_callers</code>
-says an empty result means "none found", not "none exist", because this
-analysis resolves about half of Understand's references.</p>
+says an empty result means "none found", not "none exist": this analysis
+reproduces 90 to 98% of Understand's references at the exact position, so an
+empty result is usually but not always complete.</p>
 <p><code>kind</code> and <code>reference_kind</code> take <a href="../api/#filter-strings">Understand's filter
 grammar</a>: tokens are ANDed, <code>~</code> excludes, <code>,</code> ors. So
 <code>"Class ~Unknown"</code>, <code>"Method ~Static"</code> and <code>"Class,Interface"</code> all work.</p>
