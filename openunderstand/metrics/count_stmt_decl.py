@@ -5,7 +5,7 @@ from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
 from openunderstand.ounderstand.project import Project
 
-from openunderstand.metrics.utils_g10 import get_keys
+from openunderstand.metrics.utils import get_keys
 
 
 class StatementListener(JavaParserLabeledListener):

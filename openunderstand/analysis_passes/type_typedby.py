@@ -19,7 +19,7 @@ Understand emits no Typed for a primitive or for `void`; those were
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 import openunderstand.analysis_passes.class_properties as class_properties
-from openunderstand.analysis_passes.cast_cast_by import _declaring_generic
+from openunderstand.analysis_passes.cast_castby import _declaring_generic
 
 
 #: A declaration of one of these is not a reference to anything.

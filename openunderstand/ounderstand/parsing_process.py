@@ -7,6 +7,14 @@ from fnmatch import fnmatch
 
 
 def get_files(dirName: str = ""):
+    """Every .java file under ``dirName``, sorted by path.
+
+    Sorted because an entity's ``_parent`` is set by whichever file created it
+    first, so os.listdir order -- which is neither sorted nor stable across
+    machines -- decides it. Twelve of calculator_app's 90 entities landed under
+    a different parent depending on the walk, and the comparison harness
+    carried its own sorted walk to work around exactly this.
+    """
     listOfFile = os.listdir(dirName)
     allFiles = list()
     for entry in listOfFile:
@@ -17,7 +25,7 @@ def get_files(dirName: str = ""):
         # checks whether the fullPath content is a .java or not
         elif fnmatch(fullPath, "*.java"):
             allFiles.append(fullPath)
-    return allFiles
+    return sorted(allFiles)
 
 
 def _process_file(file_address):

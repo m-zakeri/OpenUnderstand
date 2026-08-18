@@ -6,7 +6,7 @@ derived it its own way. `method_calls.owner_longname`, `field_uses._owner` and
 lived in two of them at once: a nested class's scope assigned on entry and
 never restored, so `this.refTokens` in `JSONPointer.queryFrom` resolved to
 `JSONPointer.Builder.refTokens`, a field of the inner class that happens to
-share the name. `couple_coupleby__G12` had a fourth answer that ended in an
+share the name. `couple_coupleby` had a fourth answer that ended in an
 unconditional `"java.lang." + name` and so reported `java.lang.Map`.
 
 This is the one answer. It reads scopes off the parse tree by walking *up* from

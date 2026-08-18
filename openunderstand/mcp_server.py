@@ -56,7 +56,7 @@ def analyze(source_dir: str, database: str = "") -> str:
     """
     from openunderstand.oudb.api import create_db, open as ou_open
     from openunderstand.oudb.fill import fill
-    from openunderstand.ounderstand.parsing_process import process_file
+    from openunderstand.ounderstand.parsing_process import process_file, get_files
     from openunderstand.ounderstand import symbol_table
     from openunderstand.oudb.models import (merge_placeholder_entities,
                                             relabel_nondynamic_calls)
@@ -72,9 +72,10 @@ def analyze(source_dir: str, database: str = "") -> str:
         create_db(dbname=name, project_dir=source_dir, db_path=out_dir)
         fill(udb_path=out_dir)
         symbol_table.build(source_dir)
-        files = [os.path.join(r, f)
-                 for r, _, fs in os.walk(source_dir)
-                 for f in fs if f.endswith(".java")]
+        # get_files, not a local os.walk: an entity's _parent is set by
+        # whichever file created it first, so the walk order decides it and
+        # os.walk order is neither sorted nor stable across machines.
+        files = get_files(source_dir)
         for path in files:
             process_file(path)
         merge_placeholder_entities()

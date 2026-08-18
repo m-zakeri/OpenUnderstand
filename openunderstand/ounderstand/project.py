@@ -9,7 +9,7 @@ from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
 from openunderstand.oudb.models import (KindModel, EntityModel, ReferenceModel,
                                         col_1based, resolve_entity_ref, kind_family)
-from openunderstand.analysis_passes.g6_class_properties import (
+from openunderstand.analysis_passes.class_properties_simple import (
     ClassPropertiesListener,
     InterfacePropertiesListener,
 )

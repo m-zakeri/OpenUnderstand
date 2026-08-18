@@ -1,17 +1,17 @@
-from openunderstand.analysis_passes.Throws_ThrowsBy import Throws_TrowsBy
-from openunderstand.analysis_passes.DotRef_DorRefBy import DotRef_DotRefBy
-from openunderstand.analysis_passes.callNonDynamic_callNonDynamicby import (
+from openunderstand.analysis_passes.throws_throwsby import Throws_TrowsBy
+from openunderstand.analysis_passes.dotref_dotrefby import DotRef_DotRefBy
+from openunderstand.analysis_passes.callnondynamic_callnondynamicby import (
     CallNonDynamicAndCallNonDynamicBy,
 )
 
-from openunderstand.analysis_passes.cast_cast_by import CastAndCastBy
-from openunderstand.analysis_passes.contain_contain_by import ContainAndContainBy
+from openunderstand.analysis_passes.cast_castby import CastAndCastBy
+from openunderstand.analysis_passes.contain_containby import ContainAndContainBy
 from openunderstand.analysis_passes.extends_implicit_couple_coupleby import (
     PackageImportListener,
     DSCmetric,
 )
-from openunderstand.analysis_passes.import_importby_g10_2 import ImportListener, ImportedEntityListener
-from openunderstand.analysis_passes.import_demand_g9 import ImportListenerDemand
+from openunderstand.analysis_passes.import_importby import ImportListener, ImportedEntityListener
+from openunderstand.analysis_passes.import_demand import ImportListenerDemand
 
 from openunderstand.analysis_passes.define_definein import DefineListener
 from openunderstand.analysis_passes.use_variants import UseVariantListener
@@ -21,9 +21,8 @@ from openunderstand.analysis_passes.static_imports import StaticImportListener
 from openunderstand.analysis_passes.lambdas import LambdaListener
 from openunderstand.analysis_passes.field_uses import FieldUseListener
 
-# from analysis_passes.define_and_definin_g6 import DefineListener
 from openunderstand.analysis_passes.modify_modifyby import ModifyListener
-from openunderstand.analysis_passes.entity_manager_g11 import (
+from openunderstand.analysis_passes.entity_manager import (
     EntityGenerator,
     FileEntityManager,
     get_created_entity,
@@ -34,15 +33,15 @@ from openunderstand.analysis_passes.type_typedby import TypedAndTypedByListener
 from openunderstand.analysis_passes.set_setby import SetAndSetByListener
 from openunderstand.analysis_passes.setinit_setinitby import SetInitAndSetByInitListener
 from openunderstand.analysis_passes.setpartial_setpartialby import SetPartialAndSetByPartialListener
-from openunderstand.ounderstand.override_overrideby__G12 import overridelistener
-from openunderstand.analysis_passes.couple_coupleby__G12 import CoupleAndCoupleBy
-from openunderstand.analysis_passes.create_createby_g9 import CreateAndCreateBy
+from openunderstand.ounderstand.override_overrideby import overridelistener
+from openunderstand.analysis_passes.couple_coupleby import CoupleAndCoupleBy
+from openunderstand.analysis_passes.create_createby import CreateAndCreateBy
 from openunderstand.analysis_passes.declare_declarein import DeclareAndDeclareinListener
-from openunderstand.analysis_passes.extend_listener_g6 import ExtendListener
+from openunderstand.analysis_passes.extend_listener import ExtendListener
 from openunderstand.analysis_passes.extendcouple_extendcoupleby import ExtendCoupleAndExtendCoupleBy
-from openunderstand.analysis_passes.variable_listener_g11 import VariableListener
+from openunderstand.analysis_passes.variable_listener import VariableListener
 from openunderstand.analysis_passes.open_openby import OpenListener
-from openunderstand.analysis_passes.usemodule_usemoduleby_g11 import UseModuleUseModuleByListener
+from openunderstand.analysis_passes.usemodule_usemoduleby import UseModuleUseModuleByListener
 from openunderstand.utils.utilities import setup_logger, timer_decorator
 import os
 from pathlib import Path
