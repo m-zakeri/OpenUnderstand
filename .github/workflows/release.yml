@@ -71,12 +71,13 @@ jobs:
             echo "a py3-none-any wheel is present -- the accelerator silently did not build" >&2
             exit 1
           fi
-          # Five: cp39 through cp313, Linux x86_64 only. Raise this in step
-          # with wheels.yml's matrix -- it is what catches a platform whose
-          # job failed while the others succeeded.
+          # Fifteen: cp39 through cp313 on each of Linux x86_64, macOS
+          # arm64 and Windows x64. Move this in step with wheels.yml's matrix
+          # -- it is what catches a platform whose job failed while the
+          # others succeeded.
           COUNT=$(ls dist/*.whl | wc -l)
           echo "$COUNT binary wheels"
-          [ "$COUNT" -ge 5 ] || { echo "too few wheels; part of the matrix failed" >&2; exit 1; }
+          [ "$COUNT" -ge 15 ] || { echo "too few wheels; part of the matrix failed" >&2; exit 1; }
 
       - name: The tag must match the package version
         run: |

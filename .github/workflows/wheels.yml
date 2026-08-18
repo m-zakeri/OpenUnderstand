@@ -36,23 +36,12 @@ jobs:
       matrix:
         include:
           - { os: ubuntu-latest,  arch: x86_64 }
-          # Linux only, for now. macOS arm64 and Windows x64 both fail inside
-          # `python -m build` after 29s and 45s -- too fast to have reached a
-          # compiler, so it is the toolchain probe in setup.py or the isolated
-          # build env, not the C++ build. Diagnosing it needs the job log.
-          # Restore them by uncommenting:
-          #   - { os: macos-14,       arch: arm64 }
-          #   - { os: windows-latest, arch: AMD64 }
-          # and putting release.yml's wheel-count floor back to 15.
-          #
-          # No Intel macOS in either case: GitHub retired the macos-13 runner
-          # and every macOS image it still offers is Apple silicon, so such a
-          # job does not fail, it queues forever and the release waits on it.
-          #
-          # Shipping Linux alone costs nobody anything. With no py3-none-any
-          # wheel published, macOS and Windows resolve to the sdist, whose
-          # setup.py finds no toolchain and builds the pure-Python package --
-          # which is exactly what 0.2.4 gave them.
+          - { os: macos-14,       arch: arm64 }
+          - { os: windows-latest, arch: AMD64 }
+          # No Intel macOS. GitHub retired the macos-13 runner and every macOS
+          # image it still offers is Apple silicon, so such a job does not
+          # fail, it queues forever and the release waits on it. Intel Macs
+          # resolve to the sdist and the pure-Python parser.
     steps:
       - uses: actions/checkout@v4
 
@@ -65,8 +54,15 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
 
+      # v2.23, not v2.21: cibuildwheel exports its pinned constraints as
+      # PIP_CONSTRAINT into the isolated build environment, and 2.21 pinned
+      # packaging==24.1. setuptools>=77 needs packaging>=24.2 to canonicalise
+      # this project's SPDX license expression, so every macOS and Windows
+      # wheel died in get_requires_for_build_wheel. 2.22 pins 24.2 and 2.23
+      # pins 25.0. Linux happened to escape it; the pyproject floor now makes
+      # that independent of which cibuildwheel is in use.
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.21
+        uses: pypa/cibuildwheel@v2.23
         env:
           CIBW_BUILD: cp39-* cp310-* cp311-* cp312-* cp313-*
           CIBW_SKIP: "*-musllinux_* *_i686 *-win32"

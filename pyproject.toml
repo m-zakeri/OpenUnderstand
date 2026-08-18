@@ -3,7 +3,14 @@
 # it to generate the C++ accelerator's sources, and the finished wheel never
 # imports it. A machine without a JDK or cmake still builds fine -- setup.py
 # probes and falls back to the pure-Python package.
-requires = ["setuptools>=64", "wheel", "speedy-antlr-tool>=1.4"]
+#
+# packaging>=24.2 is not decoration. `license = "MIT"` below is a PEP 639 SPDX
+# expression, and setuptools>=77 canonicalises it through `packaging.licenses`,
+# which 24.1 does not have. Without the floor, any build environment holding an
+# older packaging dies in get_requires_for_build_wheel with "Cannot import
+# packaging.licenses" before setup.py runs at all -- which is what cibuildwheel
+# 2.21's pinned constraints did to every macOS and Windows wheel.
+requires = ["setuptools>=64", "wheel", "speedy-antlr-tool>=1.4", "packaging>=24.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
