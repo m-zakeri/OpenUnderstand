@@ -25,10 +25,11 @@ comparison, taken while other jobs were on the box, read 2.5%.
 
 ## Getting it
 
-`pip install openunderstand` is enough on Linux x86_64, macOS (Intel and Apple
-silicon) and Windows x64 for CPython 3.9 through 3.13: those wheels ship the
-compiled extension. Everything else falls back to the sdist, which builds the
-pure-Python package.
+`pip install openunderstand` is enough on Linux x86_64, macOS arm64 and
+Windows x64 for CPython 3.9 through 3.13: those wheels ship the compiled
+extension. Everything else falls back to the sdist, which builds the
+pure-Python package. Intel macOS is not in the matrix because GitHub has
+retired every Intel runner.
 
 There is no abi3 shortcut, which is why the matrix is that shape.
 `speedy-antlr-tool` generates raw CPython C API code with no `Py_LIMITED_API`,

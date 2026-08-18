@@ -36,9 +36,14 @@ jobs:
       matrix:
         include:
           - { os: ubuntu-latest,  arch: x86_64 }
-          - { os: macos-13,       arch: x86_64 }   # Intel runner
-          - { os: macos-14,       arch: arm64 }    # Apple silicon runner
+          - { os: macos-14,       arch: arm64 }
           - { os: windows-latest, arch: AMD64 }
+          # No Intel macOS. GitHub retired the macos-13 runner and every macOS
+          # image it still offers is Apple silicon, so a `macos-13` job does
+          # not fail -- it queues forever, and the release waits on it. Intel
+          # Macs get the sdist and the pure-Python parser. Cross-compiling one
+          # here would need CMAKE_OSX_ARCHITECTURES threaded into the runtime
+          # build and could not run CIBW_TEST_COMMAND to prove the result.
     steps:
       - uses: actions/checkout@v4
 
@@ -59,10 +64,19 @@ jobs:
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_BUILD_FRONTEND: build
 
-          # Inside the manylinux container, not on the runner.
-          CIBW_BEFORE_ALL_LINUX: >
-            yum install -y java-17-openjdk-devel cmake gcc-c++ ||
-            (apt-get update && apt-get install -y openjdk-17-jdk-headless cmake g++)
+          # The compiler's own output. Without it a failed build reports only
+          # "python -m build failed with code 1", which is not diagnosable.
+          CIBW_BUILD_VERBOSITY: "1"
+
+          # manylinux2014 is CentOS 7, whose yum mirrors were retired when it
+          # went EOL in June 2024: `yum install` fails, the apt-get fallback
+          # does not exist there, and the shell exits 127. manylinux_2_28 is
+          # AlmaLinux 8 with live repos and dnf.
+          CIBW_MANYLINUX_X86_64_IMAGE: manylinux_2_28
+
+          # Inside the manylinux container, not on the runner. The runner's
+          # own JDK is not visible in there, which is why this installs one.
+          CIBW_BEFORE_ALL_LINUX: dnf install -y java-17-openjdk-devel cmake gcc-c++
 
           # The C++ runtime build and the generated sources are identical for
           # every Python in the matrix, so let them be reused across the five

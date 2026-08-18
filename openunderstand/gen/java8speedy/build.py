@@ -230,7 +230,13 @@ def compile_extension(cpp: Path, inc: Path, lib: Path, out_so: Path):
     objs_dir = cpp / "obj"
     objs_dir.mkdir(exist_ok=True)
 
-    cflags = (["/O2", "/std:c++17", "/EHsc"] if msvc
+    # /bigobj: the generated JavaLabeledParser.cpp is one translation unit
+    # holding the whole Java grammar's serialised ATN, and MSVC's default
+    # object format caps a COFF file at 65,536 sections -- ANTLR's own C++
+    # target documents this as the flag every non-toy grammar needs. Without
+    # it the compile dies with "C1128: number of sections exceeded object file
+    # format limit". It costs nothing on a small file, so it is unconditional.
+    cflags = (["/O2", "/std:c++17", "/EHsc", "/bigobj"] if msvc
               else ["-O2", "-std=c++17", "-fvisibility=hidden"])
     objects = cc.compile(
         [str(cpp / s) for s in CPP_SOURCES],
