@@ -174,6 +174,13 @@ def build_cpp_runtime(cache: Path, jobs: int) -> tuple[Path, Path]:
         "-DANTLR_BUILD_STATIC=ON",
         "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
         "-DWITH_DEMO=OFF",
+        # ANTLR defaults WITH_STATIC_CRT to On, which builds the runtime /MT.
+        # A CPython extension must be /MD, because Python itself links the
+        # dynamic CRT and every object in one image has to agree. Without this
+        # the compile succeeds and the *link* fails with 146 LNK2038s --
+        # "'MT_StaticRelease' doesn't match value 'MD_DynamicRelease'" -- one
+        # per runtime object. Ignored by every generator that is not MSVC.
+        "-DWITH_STATIC_CRT=OFF",
     ], cwd=build)
     # `cmake --build`, not `make`: the same line drives Makefiles, Ninja and
     # MSBuild, and --config is what the Visual Studio generator needs to
@@ -264,12 +271,10 @@ def compile_extension(cpp: Path, inc: Path, lib: Path, out_so: Path):
     objs_dir = cpp / "obj"
     objs_dir.mkdir(exist_ok=True)
 
-    # /bigobj: the generated JavaLabeledParser.cpp is one translation unit
-    # holding the whole Java grammar's serialised ATN, and MSVC's default
-    # object format caps a COFF file at 65,536 sections -- ANTLR's own C++
-    # target documents this as the flag every non-toy grammar needs. Without
-    # it the compile dies with "C1128: number of sections exceeded object file
-    # format limit". It costs nothing on a small file, so it is unconditional.
+    # /bigobj is insurance, not a fix for anything observed: MSVC caps a COFF
+    # object at 65,536 sections and ANTLR's C++ target documents the flag for
+    # large grammars, but this one compiles without it. Kept because it costs
+    # nothing and the grammar only grows.
     cflags = (["/O2", "/std:c++17", "/EHsc", "/bigobj"] if msvc
               else ["-O2", "-std=c++17", "-fvisibility=hidden"])
     objects = cc.compile(
