@@ -25,15 +25,11 @@ comparison, taken while other jobs were on the box, read 2.5%.
 
 ## Getting it
 
-`pip install openunderstand` is enough on Linux x86_64 for CPython 3.9 through
-3.13: those wheels ship the compiled extension. Everything else falls back to
-the sdist, which builds the pure-Python package.
-
-macOS arm64 and Windows x64 were in the matrix and are commented out of
-`.github/workflows/wheels.yml`: both fail inside `python -m build` in under a
-minute, which is too fast to have reached a compiler, so the fault is in the
-toolchain probe or the isolated build environment rather than the C++ build.
-Intel macOS cannot come back at all -- GitHub has retired every Intel runner.
+`pip install openunderstand` is enough on Linux x86_64, macOS arm64 and Windows
+x64 for CPython 3.9 through 3.13: those wheels ship the compiled extension.
+Everything else falls back to the sdist, which builds the pure-Python package.
+Intel macOS is one of those -- GitHub has retired every Intel runner, and a
+`macos-13` job does not fail, it queues forever.
 
 There is no abi3 shortcut, which is why the matrix is one wheel per Python
 minor per platform.
@@ -84,7 +80,7 @@ name off the `parser_cls` passed in at runtime, and we pass the real
 `gen.javaLabeled.JavaParserLabeled`. Both grammars yield the same 218 context
 classes.
 
-## Two things that will bite a port
+## Four things that will bite a port
 
 The link step needs `target_lang="c++"`. Without it setuptools links with the C
 driver and the extension imports with an undefined `__cxxabiv1` symbol, having
@@ -93,6 +89,21 @@ compiled without complaint.
 The compile needs `ANTLR4CPP_STATIC` defined. Without it the runtime headers
 declare their symbols `__declspec(dllimport)` on Windows and the link fails
 against the static library the build just produced.
+
+The runtime build needs `-DWITH_STATIC_CRT=OFF`. ANTLR defaults it On, which
+builds `/MT`; a CPython extension is `/MD`, because Python links the dynamic
+CRT and every object in one image has to agree. The compile succeeds either
+way and the *link* fails with one `LNK2038` per runtime object -- 146 of them,
+then `LNK1319`.
+
+`ProfilingATNSimulator.cpp` needs patching. ANTLR 4.13.2 writes `using
+namespace std::chrono` and calls `high_resolution_clock::now()` without
+including `<chrono>`; it compiles only where another header leaks that in. gcc
+and libc++ do, MSVC 19.51 does not. `patch_runtime_sources()` inserts the
+include after extraction and refuses if upstream reshuffles its includes.
+
+The last two only appear on MSVC, so a Linux-only or macOS-only build will
+never reveal them.
 
 ## Known behavioural differences
 

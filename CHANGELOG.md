@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.3.1
+
+### macOS arm64 and Windows x64 wheels
+
+0.3.0 shipped the accelerator for Linux alone because the other two platforms
+failed in CI and the cause was unknown. It was three separate faults stacked on
+one another, each hidden by the one before it:
+
+* cibuildwheel 2.21 pinned `packaging==24.1` through `PIP_CONSTRAINT`, and
+  setuptools>=77 needs `packaging>=24.2` to canonicalise this project's SPDX
+  `license` expression. The build died in `get_requires_for_build_wheel`,
+  before `setup.py` ran at all. Fixed by naming the floor in
+  `build-system.requires` and moving to cibuildwheel 2.23.
+* ANTLR 4.13.2's `ProfilingATNSimulator.cpp` uses `std::chrono` without
+  including `<chrono>`. It compiles wherever another header leaks it, which gcc
+  and libc++ do and MSVC 19.51 does not. `build.py` now patches the extracted
+  source.
+* The ANTLR runtime defaults to `WITH_STATIC_CRT=On`, building `/MT`, while a
+  CPython extension must be `/MD`. The compile succeeded and the link failed
+  with 146 `LNK2038`s. Now configured `-DWITH_STATIC_CRT=OFF`.
+
+Intel macOS is not coming back: GitHub has retired every Intel runner. Those
+machines resolve to the sdist and the pure-Python parser.
+
 ## 0.3.0
 
 ### The C++ parse accelerator now ships compiled
