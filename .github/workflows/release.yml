@@ -124,9 +124,18 @@ jobs:
           PY
 
       - name: The installed wheel must carry the accelerator
+        # cd /tmp, for the same reason the step above does it: this job checks
+        # the repository out, and `python -c` puts the cwd first on sys.path,
+        # so `import openunderstand` resolves to the *source* tree rather than
+        # the wheel just installed. The compiled extension is gitignored, so a
+        # checkout never carries one and this reported a missing accelerator
+        # for a wheel that had it. The path assertion is what keeps the
+        # mistake from coming back silently.
         run: |
-          /tmp/clean/bin/python -c "
+          cd /tmp && /tmp/clean/bin/python -c "
+          import openunderstand
           from openunderstand.utils import antler_parser as a
+          assert '/tmp/clean/' in openunderstand.__file__, openunderstand.__file__
           assert a.is_available(), a.unavailable_reason()
           print('accelerator present in the published wheel')
           "
