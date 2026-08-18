@@ -25,13 +25,18 @@ comparison, taken while other jobs were on the box, read 2.5%.
 
 ## Getting it
 
-`pip install openunderstand` is enough on Linux x86_64, macOS arm64 and
-Windows x64 for CPython 3.9 through 3.13: those wheels ship the compiled
-extension. Everything else falls back to the sdist, which builds the
-pure-Python package. Intel macOS is not in the matrix because GitHub has
-retired every Intel runner.
+`pip install openunderstand` is enough on Linux x86_64 for CPython 3.9 through
+3.13: those wheels ship the compiled extension. Everything else falls back to
+the sdist, which builds the pure-Python package.
 
-There is no abi3 shortcut, which is why the matrix is that shape.
+macOS arm64 and Windows x64 were in the matrix and are commented out of
+`.github/workflows/wheels.yml`: both fail inside `python -m build` in under a
+minute, which is too fast to have reached a compiler, so the fault is in the
+toolchain probe or the isolated build environment rather than the C++ build.
+Intel macOS cannot come back at all -- GitHub has retired every Intel runner.
+
+There is no abi3 shortcut, which is why the matrix is one wheel per Python
+minor per platform.
 `speedy-antlr-tool` generates raw CPython C API code with no `Py_LIMITED_API`,
 so a wheel is specific to one Python minor *and* one platform.
 

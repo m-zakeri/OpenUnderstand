@@ -4,12 +4,16 @@
 
 ### The C++ parse accelerator now ships compiled
 
-`pip install openunderstand` gets it, on Linux x86_64, macOS arm64 and Windows
-x64, for CPython 3.9 through 3.13. Until now it existed only
-for whoever ran `openunderstand/gen/java8speedy/build.py` by hand with a JDK,
-cmake and a C++17 compiler on the machine, which in practice meant nobody: the
-published wheel was `py3-none-any` and could not carry a compiled extension at
-all.
+`pip install openunderstand` gets it on Linux x86_64, for CPython 3.9 through
+3.13. Until now it existed only for whoever ran
+`openunderstand/gen/java8speedy/build.py` by hand with a JDK, cmake and a C++17
+compiler on the machine, which in practice meant nobody: the published wheel
+was `py3-none-any` and could not carry a compiled extension at all.
+
+macOS and Windows wheels are not in this release. Both fail in CI inside
+`python -m build` before reaching a compiler, and the cause is not yet known.
+Those platforms install from the sdist and get the pure-Python parser, which is
+what 0.2.4 gave them, so nothing regresses.
 
 Measured on `benchmark/JSON`, 85 files, three runs back to back on an otherwise
 idle machine:

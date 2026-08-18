@@ -33,10 +33,10 @@ same kind names.
 pip install openunderstand
 ```
 
-Python 3.9+. On Linux x86_64, macOS arm64 and Windows x64 that wheel carries the C++ parse accelerator, which is 7.8x faster at parsing
-and takes about 17% off a full analysis. Anywhere else the pure-Python ANTLR
-runtime is used instead and everything works the same, just slower -- both
-engines produce byte-identical databases.
+Python 3.9+. On Linux x86_64 that wheel carries the C++ parse accelerator,
+which is 7.8x faster at parsing and takes about 17% off a full analysis.
+Everywhere else the pure-Python ANTLR runtime is used instead and everything
+works the same, just slower -- both engines produce byte-identical databases.
 
 Optional extras:
 
