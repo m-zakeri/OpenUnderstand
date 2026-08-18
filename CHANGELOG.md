@@ -89,6 +89,18 @@ part of a rename.
   fingerprints byte for byte on both fixtures -- calculator_app
   `30e18610cfd26ae7` and org.json `0a7d28a303441ba1`, every digest and kind
   histogram equal.
+- **The MCP server built a different database than the CLI.**
+  `mcp_server.analyze()` ran only `merge_placeholder_entities()` and
+  `relabel_nondynamic_calls()`, not the four `drop_*` passes that
+  `start_parsing()` and `scripts/compare` also run, so the server -- and the
+  IDEA plugin that reads it -- held rows the CLI deletes: plain `Java Use`
+  references shadowed by a more specific variant, inverses hung on entities
+  the project does not declare, and placeholders nothing resolved. On
+  calculator_app that was **96 entities and 659 references against the correct
+  90 and 578**, the surplus falling on `Java Use` (74 against 48), `Java
+  Useby` (74 against 44), `Java Callby` (17 against 12), `Java Typedby`,
+  `Java DotRefby` and `Java Useby Annotation`. All six passes run now, in the
+  same order, and `analyze()` reproduces the harness fingerprint.
 - **The file walk was unordered.** An entity's `_parent` is set by whichever
   file creates it first, so `get_files()`'s `os.listdir` order decided it and
   12 of calculator_app's 90 entities changed parent between walks.
