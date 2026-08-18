@@ -155,3 +155,12 @@ jobs:
       - uses: actions/download-artifact@v4
         with: { name: dist, path: dist/ }
       - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # A commit that both lands on master and carries a tag opens the
+          # version gate twice, so two runs publish the same version at once.
+          # The loser gets "400 File already exists" and shows red for a
+          # release that in fact succeeded. skip-existing makes it a no-op
+          # instead. It cannot mask a real problem: `verify` has already
+          # proved these wheels install and carry the accelerator, and PyPI
+          # refuses to overwrite a file whatever this is set to.
+          skip-existing: true
