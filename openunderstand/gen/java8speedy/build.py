@@ -112,6 +112,39 @@ def _static_lib(build: Path) -> Path | None:
     return None
 
 
+def patch_runtime_sources(src: Path) -> None:
+    """Fix the one upstream source that will not compile on a strict toolchain.
+
+    ANTLR 4.13.2's ``ProfilingATNSimulator.cpp`` writes ``using namespace
+    std::chrono`` and calls ``high_resolution_clock::now()`` without ever
+    including ``<chrono>``. It compiles only where some other header happens to
+    drag that in, which gcc and libc++ both do -- so Linux and macOS never see
+    it. MSVC 19.51 (Visual Studio 2026, on the windows-latest runner) does not,
+    and every Windows wheel died with::
+
+        error C2653: 'high_resolution_clock': is not a class or namespace name
+
+    Upstream's bug, not ours, and the runtime version is pinned to the Python
+    runtime's 4.13.2, so patching the extracted copy is the fix rather than
+    moving to a release that has it corrected.
+    """
+    f = src / "runtime" / "src" / "atn" / "ProfilingATNSimulator.cpp"
+    if not f.is_file():
+        raise SystemExit(f"expected upstream source is missing: {f}")
+    text = f.read_text(encoding="utf8")
+    if "#include <chrono>" in text:
+        return
+    # Anchor on the file's first include rather than a line number, and refuse
+    # rather than guess if upstream reshuffles them.
+    marker = '#include "atn/PredicateEvalInfo.h"'
+    if marker not in text:
+        raise SystemExit(
+            "ProfilingATNSimulator.cpp no longer opens with the include this "
+            "patch anchors on; re-check the <chrono> fix against the runtime")
+    f.write_text(text.replace(marker, "#include <chrono>\n\n" + marker, 1), encoding="utf8")
+    print("  patched ProfilingATNSimulator.cpp: added #include <chrono>")
+
+
 def build_cpp_runtime(cache: Path, jobs: int) -> tuple[Path, Path]:
     """Return (include_dir, static_lib), building the runtime if needed."""
     src = cache / f"antlr4-cpp-runtime-{ANTLR_VERSION}"
@@ -128,6 +161,7 @@ def build_cpp_runtime(cache: Path, jobs: int) -> tuple[Path, Path]:
 
     with zipfile.ZipFile(zip_path) as z:
         z.extractall(src)
+    patch_runtime_sources(src)
 
     need("cmake")
     build.mkdir(exist_ok=True)
