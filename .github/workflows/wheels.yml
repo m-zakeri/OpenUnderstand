@@ -54,17 +54,23 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
 
-      # v2.23, not v2.21: cibuildwheel exports its pinned constraints as
-      # PIP_CONSTRAINT into the isolated build environment, and 2.21 pinned
-      # packaging==24.1. setuptools>=77 needs packaging>=24.2 to canonicalise
-      # this project's SPDX license expression, so every macOS and Windows
-      # wheel died in get_requires_for_build_wheel. 2.22 pins 24.2 and 2.23
-      # pins 25.0. Linux happened to escape it; the pyproject floor now makes
-      # that independent of which cibuildwheel is in use.
+      # v4.2, for cp314: 2.23 has no Python 3.14 target at all, so adding
+      # cp314-* to CIBW_BUILD below matches nothing before 3.0.
+      #
+      # Do not go back below 2.22. cibuildwheel exports its pinned constraints
+      # as PIP_CONSTRAINT into the isolated build environment, and 2.21 pinned
+      # packaging==24.1, while setuptools>=77 needs packaging>=24.2 to
+      # canonicalise this project's SPDX license expression -- every macOS and
+      # Windows wheel died in get_requires_for_build_wheel. The pyproject floor
+      # makes that independent of cibuildwheel now, but the pin is still what
+      # decides which packaging the build environment gets.
+      #
+      # Free-threaded builds stay out: their identifiers are cp314t-*, which
+      # cp314-* does not match, and 4.x keeps them behind an opt-in anyway.
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.23
+        uses: pypa/cibuildwheel@v4.2
         env:
-          CIBW_BUILD: cp39-* cp310-* cp311-* cp312-* cp313-*
+          CIBW_BUILD: cp39-* cp310-* cp311-* cp312-* cp313-* cp314-*
           CIBW_SKIP: "*-musllinux_* *_i686 *-win32"
           CIBW_ARCHS: ${{ matrix.arch }}
           CIBW_BUILD_FRONTEND: build

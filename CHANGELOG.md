@@ -1,5 +1,23 @@
 # Changelog
 
+## Unreleased
+
+### CPython 3.14 wheels
+
+`CIBW_BUILD` gains `cp314-*`, taking the matrix to 18 wheels. This needed
+cibuildwheel 4.2: 2.23 carries no Python 3.14 target at all, so the pattern
+would have matched nothing and the gap would have been silent.
+
+It is worth doing because the gap was already costing people speed. pypistats
+shows 3.14 installs arriving with no 3.14 wheel to serve them, so those
+resolved to the sdist and the pure-Python parser.
+
+Verified locally before changing CI, since 3.14 removed a number of C APIs the
+generated extension might have used: built against CPython 3.14.4, and
+`speedy_antlr_tool.validate` confirms the C++ tree is identical to the Python
+one. Analysis under 3.14 reports the accelerator present and returns the same
+entities.
+
 ## 0.3.1
 
 ### macOS arm64 and Windows x64 wheels

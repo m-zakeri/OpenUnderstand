@@ -26,7 +26,7 @@ comparison, taken while other jobs were on the box, read 2.5%.
 ## Getting it
 
 `pip install openunderstand` is enough on Linux x86_64, macOS arm64 and Windows
-x64 for CPython 3.9 through 3.13: those wheels ship the compiled extension.
+x64 for CPython 3.9 through 3.14: those wheels ship the compiled extension.
 Everything else falls back to the sdist, which builds the pure-Python package.
 Intel macOS is one of those -- GitHub has retired every Intel runner, and a
 `macos-13` job does not fail, it queues forever.
