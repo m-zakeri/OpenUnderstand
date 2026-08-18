@@ -90,15 +90,22 @@ jobs:
 
       - name: The wheel must install and work
         # PyPI versions cannot be reused, so a broken release is permanent.
-        # Self-contained for the same reason parity.yml is: a release must not
-        # depend on files that may not be in the repository, nor on a third
-        # party being reachable.
         run: |
+          VERSION=$(python -c "import re,pathlib; \
+            print(re.search(r'__version__ = \"([^\"]+)\"', \
+            pathlib.Path('openunderstand/__init__.py').read_text()).group(1))")
           python -m venv /tmp/clean
-          # --find-links, not dist/*.whl: there are ~20 wheels here and only
-          # one matches this interpreter. Let pip choose it.
+          # --find-links, not dist/*.whl: dist/ holds one wheel per Python
+          # minor and only one matches this interpreter, so let pip choose.
+          #
+          # The index stays enabled, and --no-index is what broke this step
+          # the first time it ran: dist/ carries openunderstand and nothing
+          # else, so antlr4-python3-runtime and peewee cannot resolve without
+          # it. Pinning the exact version is what still guarantees the wheel
+          # under test is the one installed -- no index carries this version
+          # yet, since publishing it is the next job.
           /tmp/clean/bin/pip install --force-reinstall \
-              --no-index --find-links dist/ openunderstand
+              --find-links dist/ "openunderstand==$VERSION"
           mkdir -p /tmp/src && printf 'public class T { public int f(int a) { return a > 0 ? a : -a; } }\n' > /tmp/src/T.java
           cd /tmp && /tmp/clean/bin/python - <<'PY'
           import contextlib, io, os, tempfile
