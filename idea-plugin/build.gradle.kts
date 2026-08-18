@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "org.openunderstand"
-version = "0.1.3"  // Marketplace rejects a re-upload under the version it verified
+version = "0.2.0"  // Marketplace rejects a re-upload under the version it verified
 
 kotlin { jvmToolchain(21) }
 
@@ -39,8 +39,15 @@ tasks.processResources {
     // falls back to `pip install openunderstand`, and building the plugin does
     // not require a Python toolchain.
     //
-    //     python -m build --wheel      # writes dist/*.whl
-    from("../dist") { include("*.whl"); rename { "openunderstand.whl" } }
+    //     OPENUNDERSTAND_BUILD_ACCELERATOR=0 python -m build --wheel
+    //
+    // Only the py3-none-any wheel. `dist/` may also hold the ~20 compiled
+    // wheels a release builds, and those are specific to one platform and one
+    // Python minor -- bundling one would ship a jar that works on the machine
+    // that built it. It would also make this rename collide, since every match
+    // becomes the same filename. The plugin upgrades to a compiled wheel from
+    // PyPI at first run instead.
+    from("../dist") { include("*-py3-none-any.whl"); rename { "openunderstand.whl" } }
 }
 
 // Nothing here registers searchable settings, and the task starts a headless

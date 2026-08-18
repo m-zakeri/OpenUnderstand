@@ -1,5 +1,9 @@
 [build-system]
-requires = ["setuptools>=64", "wheel"]
+# speedy-antlr-tool is a *build* dependency, not a runtime one: setup.py uses
+# it to generate the C++ accelerator's sources, and the finished wheel never
+# imports it. A machine without a JDK or cmake still builds fine -- setup.py
+# probes and falls back to the pure-Python package.
+requires = ["setuptools>=64", "wheel", "speedy-antlr-tool>=1.4"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -43,10 +47,13 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# The speedy-antlr C++ parser: roughly 8x faster at parsing, though parsing is
-# only a few percent of a full analysis. Build it with
-# `python -m openunderstand.gen.java8speedy.build` after installing.
-speedy = ["pybind11>=2.11.1", "speedy-antlr-tool>=1.4"]
+# Building the C++ parser accelerator from source. Not needed to *use* it: the
+# published wheels ship it compiled, and `pip install openunderstand` is
+# enough. This extra is for a checkout or an sdist build, and a JDK, cmake and
+# a C++17 compiler have to be present alongside it. pybind11 used to be listed
+# here and never belonged -- speedy-antlr-tool generates raw CPython C API
+# code and does not use it.
+speedy = ["speedy-antlr-tool>=1.4"]
 metrics = ["pandas>=1.1.5", "GitPython>=3.1.32"]
 # An MCP server exposing the analysis as tools, for assistants.
 mcp = ["mcp>=1.2"]

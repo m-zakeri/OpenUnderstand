@@ -112,7 +112,51 @@ private fun interpreter(progress: (String) -> Unit): Pair<String?, String?> {
         wheel?.absolutePath ?: "openunderstand")
     if (installed.exitCode != 0)
         return null to "Could not install openunderstand:\n\n${installed.stderr.take(2000)}"
+
+    upgradeToAccelerated(python.absolutePath, wheelVersion(wheel), progress)
     return python.absolutePath to null
+}
+
+/**
+ * Swap the bundled pure-Python wheel for the compiled one, if PyPI has a match.
+ *
+ * The analyser ships an optional C++ parse accelerator that parses Java about
+ * 7.8x faster. It cannot be bundled: `speedy-antlr-tool` emits raw CPython C
+ * API code with no `Py_LIMITED_API`, so a wheel is specific to one Python minor
+ * *and* one platform, and the jar cannot know either until it is running on the
+ * user's machine. PyPI can: `pip install` resolves the tag itself.
+ *
+ * So the bundled wheel stays the pure-Python one -- guaranteed to install, no
+ * network, correct version -- and this is a best-effort upgrade on top of it.
+ * `--only-binary` because compiling here would need a JDK, cmake and a C++17
+ * compiler, and silently spending five minutes on that at first use is worse
+ * than staying on the Python parser. Pinned to the same version so an upgrade
+ * can only ever change the parser, never the analyser.
+ *
+ * Every failure is non-fatal by design: no network, no matching wheel, a
+ * python the matrix does not cover. The analyser already falls back to the
+ * pure-Python ANTLR runtime and says so once in its log.
+ */
+private fun upgradeToAccelerated(python: String, version: String, progress: (String) -> Unit) {
+    // "pypi" is wheelVersion()'s answer when no wheel was bundled, which means
+    // the install above already came from PyPI and pip already picked the best
+    // wheel for this interpreter. Nothing to upgrade.
+    if (version == "pypi") return
+    progress("Looking for a compiled parser for this platform")
+    val r = try {
+        exec(python, "-m", "pip", "install", "--upgrade", "--only-binary=:all:",
+            "openunderstand==$version")
+    } catch (e: Exception) {
+        return
+    }
+    if (r.exitCode != 0) return
+    val accelerated = try {
+        exec(python, "-c",
+            "from openunderstand.utils import antler_parser as a; print(a.is_available())")
+    } catch (e: Exception) {
+        return
+    }
+    if (accelerated.stdout.trim() == "True") progress("Using the C++ parser")
 }
 
 /** One row of `scripts/idea_metrics.py` output: `path:line: longname  K=V K=V`. */

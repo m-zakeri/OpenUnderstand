@@ -9,7 +9,7 @@ def save_config(
     db_address: str,
     db_name: str,
     log_address: str,
-    engine_core: str = "Python",
+    engine_core: str = "auto",
 ) -> None:
     config = configparser.ConfigParser()
     config.read("config.ini")
@@ -61,7 +61,7 @@ def parse_arguments() -> None:
     )
     db_address = args.db_address if args.db_address else path.join(getcwd())
     db_name = args.db_name if args.db_name else "default.oudb"
-    engine_core = args.engine_core if args.engine_core else "Python"
+    engine_core = args.engine_core if args.engine_core else "auto"
     log_address = (
         args.log_address if args.log_address else path.join(getcwd(), "app.log")
     )

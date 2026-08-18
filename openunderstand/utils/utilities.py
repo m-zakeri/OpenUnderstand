@@ -83,7 +83,14 @@ import os
 #: and until these defaults existed the first call raised KeyError('Logging')
 #: from a file they were never told to create.
 _DEFAULTS = {
-    "Config": {"engine_core": "Python"},
+    # "auto": use the C++ parse accelerator when the installed wheel carries
+    # one, and the pure-Python ANTLR runtime when it does not. Hardcoding
+    # "Python" here meant a user who pip-installed a wheel that ships the
+    # accelerator never got it; hardcoding "C++" would log a fallback warning
+    # on every pure-Python install. Both trees are identical -- build.py
+    # asserts that with speedy_antlr_tool.validate, and both engines produce
+    # the same database fingerprint on every fixture.
+    "Config": {"engine_core": "auto"},
     "Logging": {"filename": "", "level": "INFO"},
 }
 
