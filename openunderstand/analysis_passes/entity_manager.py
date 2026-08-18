@@ -28,7 +28,7 @@ from openunderstand.oudb.models import EntityModel, KindModel, resolve_entity_re
 from antlr4 import *
 
 # Listeners
-from openunderstand.analysis_passes.package_entity_listener_g11 import PackageListener
+from openunderstand.analysis_passes.package_entity_listener import PackageListener
 from openunderstand.analysis_passes.class_properties import (
     ClassPropertiesListener,
     InterfacePropertiesListener,

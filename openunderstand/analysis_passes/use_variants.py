@@ -18,7 +18,7 @@ alternative:
 
 ``Java Use Cast`` is *not* here. It shares expression5 with this pass but needs
 a primitive filter and type-parameter resolution that none of the others do, so
-it lives in ``cast_cast_by.py`` -- and while both emitted it, every cast got
+it lives in ``cast_castby.py`` -- and while both emitted it, every cast got
 two rows and every ``(int) x`` got one it should not have.
 
 The listener only collects; resolving a name to an entity is the write

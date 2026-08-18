@@ -1,5 +1,106 @@
 # Changelog
 
+## 0.2.4
+
+### Module names
+
+Every module carrying a course-group suffix or a CamelCase filename was
+renamed. The suffixes (`_g6`, `_g9`, `_g10_2`, `_g11`, `_G12`) recorded which
+student group wrote a module and said nothing about what it does, and the
+mixed casing meant `grep` for a pass needed two spellings. Nothing about the
+analysis changed: the renames are import-only, and both fingerprints are
+byte-identical to their baselines (calculator_app `30e18610cfd26ae7`, org.json
+`0a7d28a303441ba1`), as is every metric value on both fixtures.
+
+**This is a breaking change only for code importing these modules directly.**
+The documented surface is untouched: `openunderstand.oudb.api`,
+`start_parsing`, the `openunderstand` and `openunderstand-mcp` entry points,
+and every metric and kind *name* keep their spelling. In particular the metric
+strings `AvgCyclomatic`, `RatioCommentToCode` and `PercentLackOfCohesion` are
+Understand's vocabulary, not module names, and did not move.
+
+`analysis_passes/`:
+
+| was | is |
+| --- | --- |
+| `DotRef_DorRefBy.py` | `dotref_dotrefby.py` |
+| `Throws_ThrowsBy.py` | `throws_throwsby.py` |
+| `callNonDynamic_callNonDynamicby.py` | `callnondynamic_callnondynamicby.py` |
+| `cast_cast_by.py` | `cast_castby.py` |
+| `contain_contain_by.py` | `contain_containby.py` |
+| `couple_coupleby__G12.py` | `couple_coupleby.py` |
+| `create_createby_g9.py` | `create_createby.py` |
+| `entity_manager_g11.py` | `entity_manager.py` |
+| `extend_listener_g6.py` | `extend_listener.py` |
+| `g6_class_properties.py` | `class_properties_simple.py` |
+| `import_demand_g9.py` | `import_demand.py` |
+| `import_importby_g10_2.py` | `import_importby.py` |
+| `package_entity_listener_g11.py` | `package_entity_listener.py` |
+| `usemodule_usemoduleby_g11.py` | `usemodule_usemoduleby.py` |
+| `variable_listener_g11.py` | `variable_listener.py` |
+
+`metrics/`:
+
+| was | is |
+| --- | --- |
+| `AvgCyclomatic.py` | `avg_cyclomatic.py` |
+| `AvgCyclomaticModified.py` | `avg_cyclomatic_modified.py` |
+| `AvgCyclomaticStrict.py` | `avg_cyclomatic_strict.py` |
+| `AvgEssential.py` | `avg_essential.py` |
+| `CyclomaticModified_G12.py` | `cyclomatic_modified.py` |
+| `Cyclomatic_G12.py` | `cyclomatic_listener.py` |
+| `CyclomaticStrict_G12.py` | `cyclomatic_strict_listener.py` |
+| `Essential_G12.py` | `essential_listener.py` |
+| `Lineofcode.py` | `line_of_code.py` |
+| `MaxCalculator_G12.py` | `max_calculator.py` |
+| `PercentLackOfCohesion.py` | `percent_lack_of_cohesion.py` |
+| `PercentLackOfCohesionModified.py` | `percent_lack_of_cohesion_modified.py` |
+| `RatioCommentToCode.py` | `ratio_comment_to_code.py` |
+| `sumOfCyclomatics.py` | `sum_of_cyclomatics.py` |
+| `utils_g10.py` | `utils.py` |
+
+`ounderstand/override_overrideby__G12.py` became
+`ounderstand/override_overrideby.py`.
+
+Three of the metric modules could not take the obvious name because a
+different, live module already holds it: `api.py` computes Cyclomatic,
+CyclomaticStrict and Essential from `cyclomatic.py`, `cyclomatic_strict.py`
+and `essential.py`, while `max_calculator.py` reaches for its own second
+listener for each of the three. Those duplicates are what `_listener.py`
+names. Making `max_calculator` use the live modules would delete three files
+and free the names, but it changes what the Max* metrics answer, so it is not
+part of a rename.
+
+### Corrected
+
+- **`start_parsing()` built a fraction of the database.** The documented
+  programmatic entry point -- the one CodART uses -- ran `runner.py`'s `Pool`,
+  and forked workers inherited the parent's already-open SQLite connection
+  while each got its own copy of the process-local entity-identity cache.
+  Writes were lost and duplicated with no exception raised, because
+  `pool.map_async` without `.get()` discards whatever a worker raises.
+  calculator_app committed **12 entities and 27 references against the correct
+  90 and 578**, and was not even stable: the same files under `pool.map` gave
+  43 and 208. JSON was worse: **1323 entities and 14920 references against
+  5240 and 67794**, three quarters of the analysis discarded.
+  `runner()` is sequential now, which is what
+  `mcp_server.analyze()` and `scripts/compare` had always done for this
+  reason, and `start_parsing()` reproduces the comparison harness's
+  fingerprints byte for byte on both fixtures -- calculator_app
+  `30e18610cfd26ae7` and org.json `0a7d28a303441ba1`, every digest and kind
+  histogram equal.
+- **The file walk was unordered.** An entity's `_parent` is set by whichever
+  file creates it first, so `get_files()`'s `os.listdir` order decided it and
+  12 of calculator_app's 90 entities changed parent between walks.
+  `get_files()` sorts now, and `mcp_server.analyze()` calls it instead of the
+  third unsorted `os.walk` it carried.
+
+### Removed
+
+- **`metrics/G11_knots.py`** -- unreachable from the CLI, `oudb.api`, the MCP
+  server, `scripts/` or `tests/`. `api.py` computes the knot metrics from
+  `metrics/knots.py`.
+
 ## 0.2.3
 
 Reference and metric agreement with SciTools Understand 7.0.1217, measured on

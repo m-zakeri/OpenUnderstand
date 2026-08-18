@@ -6,17 +6,17 @@ from functools import reduce
 from openunderstand.ounderstand.parsing_process import process_file
 from openunderstand.metrics.count_decl_method_all import count_decl_method_all
 from openunderstand.metrics.count_decl_class_variable import declare_class_variables
-from openunderstand.metrics.AvgCyclomatic import avg_cyclomatic
-from openunderstand.metrics.AvgCyclomaticModified import avg_cyclomatic_modified
-from openunderstand.metrics.AvgCyclomaticStrict import avg_cyclomatic_strict
-from openunderstand.metrics.AvgEssential import avg_essential
+from openunderstand.metrics.avg_cyclomatic import avg_cyclomatic
+from openunderstand.metrics.avg_cyclomatic_modified import avg_cyclomatic_modified
+from openunderstand.metrics.avg_cyclomatic_strict import avg_cyclomatic_strict
+from openunderstand.metrics.avg_essential import avg_essential
 from openunderstand.metrics.count_decl_class_method import declare_method_count
-from openunderstand.metrics.RatioCommentToCode import get_ratio_comment_to_code
+from openunderstand.metrics.ratio_comment_to_code import get_ratio_comment_to_code
 from openunderstand.metrics.count_stmt import statement_counter
 from openunderstand.metrics.count_stmt_decl import statement_counter_delc
 from openunderstand.metrics.sum_cyclomatic_modified import get_sum_cyclomatic_modified
 from openunderstand.metrics.sum_cyclomatic_strict import get_sum_cyclomatic_strict
-from openunderstand.metrics.sumOfCyclomatics import get_sum_of_cyclomatics
+from openunderstand.metrics.sum_of_cyclomatics import get_sum_of_cyclomatics
 from openunderstand.metrics.count_decl_method_private import count_decl_method_private
 from openunderstand.metrics.count_decl_method_protected import (
     count_decl_method_protected,
@@ -26,10 +26,10 @@ from openunderstand.metrics.count_decl_file import declare_file
 from openunderstand.metrics.sum_essentials import get_sum_essentials
 from openunderstand.metrics.count_decl_executable_unit import declare_executable_unit
 from openunderstand.metrics.namm import get_namm
-from openunderstand.metrics.MaxCalculator_G12 import max_cyclomatic
-from openunderstand.metrics.MaxCalculator_G12 import max_essential
-from openunderstand.metrics.MaxCalculator_G12 import max_cyclomatic_modified
-from openunderstand.metrics.MaxCalculator_G12 import max_cyclomatic_stricts
+from openunderstand.metrics.max_calculator import max_cyclomatic
+from openunderstand.metrics.max_calculator import max_essential
+from openunderstand.metrics.max_calculator import max_cyclomatic_modified
+from openunderstand.metrics.max_calculator import max_cyclomatic_stricts
 from openunderstand.metrics.max_nesting import MaxNesting
 from openunderstand.metrics.max_inheritance import FindAllInheritances
 from openunderstand.metrics.knots_inheritance_nesting import get_knot_inheritance_nested
@@ -44,7 +44,7 @@ from openunderstand.metrics.count_stmt_exe import statement_counter_exe
 from openunderstand.metrics.cyclomatic import cyclomatic
 from openunderstand.metrics.cyclomatic_strict import cyclomatic_strict
 from openunderstand.metrics.essential import essential
-from openunderstand.metrics.CyclomaticModified_G12 import cyclomatic_modified
+from openunderstand.metrics.cyclomatic_modified import cyclomatic_modified
 from openunderstand.metrics import knots
 from openunderstand.metrics.knots import knot
 
@@ -1314,7 +1314,7 @@ class Ent:
                         graph_metrics.percent_lack_of_cohesion(self)}
                 )
             elif item == "PercentLackOfCohesionModified":
-                # The listener in metrics/PercentLackOfCohesionModified.py is
+                # The listener in metrics/percent_lack_of_cohesion_modified.py is
                 # the reparsing version that found no uses at all; this is the
                 # same reference-graph answer PercentLackOfCohesion already
                 # gives, with the accessor allowance the name promises.
