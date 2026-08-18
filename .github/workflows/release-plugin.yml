@@ -57,10 +57,22 @@ jobs:
         with: { python-version: "3.11" }
 
       - name: Build the analyser wheel to bundle
+        # OPENUNDERSTAND_BUILD_ACCELERATOR=0 on purpose. The bundled wheel must
+        # be py3-none-any: the jar is one artifact for every platform and every
+        # Python, and a compiled wheel is specific to both. The plugin installs
+        # this one to guarantee a working first run, then best-effort upgrades
+        # to a compiled wheel from PyPI for whatever interpreter it ends up
+        # with -- see upgradeToAccelerated() in MetricsToolWindow.kt.
+        env:
+          OPENUNDERSTAND_BUILD_ACCELERATOR: "0"
         run: |
           python -m pip install --upgrade pip build
           python -m build --wheel --outdir dist
           ls -l dist
+          ls dist/*-py3-none-any.whl >/dev/null || {
+            echo "bundled wheel is platform-specific; it must be py3-none-any" >&2
+            exit 1
+          }
 
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: "21" }

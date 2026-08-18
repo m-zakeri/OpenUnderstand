@@ -59,7 +59,11 @@ def analyze(source_dir: str, database: str = "") -> str:
     from openunderstand.ounderstand.parsing_process import process_file, get_files
     from openunderstand.ounderstand import symbol_table
     from openunderstand.oudb.models import (merge_placeholder_entities,
-                                            relabel_nondynamic_calls)
+                                            relabel_nondynamic_calls,
+                                            drop_nonvariable_deref_refs,
+                                            drop_shadowed_use_refs,
+                                            drop_external_inverse_refs,
+                                            drop_orphan_placeholders)
 
     source_dir = os.path.abspath(os.path.expanduser(source_dir))
     if not os.path.isdir(source_dir):
@@ -78,8 +82,20 @@ def analyze(source_dir: str, database: str = "") -> str:
         files = get_files(source_dir)
         for path in files:
             process_file(path)
+        # All six, in this order, exactly as start_parsing() and
+        # scripts/compare/02_build_ou.py run them. Stopping after the first
+        # two left this server -- and the IDEA plugin that reads it -- holding
+        # rows the CLI deletes: plain Use references shadowed by a variant,
+        # inverses hung on entities the project does not declare, and
+        # placeholders nothing resolved.
         merge_placeholder_entities()
         relabel_nondynamic_calls()
+        drop_nonvariable_deref_refs()
+        drop_shadowed_use_refs()
+        # After the merge, so an entity about to become real is not treated as
+        # external and stripped of its inverses.
+        drop_external_inverse_refs()
+        drop_orphan_placeholders()
         return len(files), ou_open(os.path.join(out_dir, name))
 
     (count, db), _ = _quiet(run)

@@ -9,15 +9,21 @@ skipping this build only costs speed.
 
     python openunderstand/gen/java8speedy/build.py
 
-Measured on the calculator_app + JSON fixtures: 8.1x faster than the pure
-Python parser, producing a structurally identical parse tree (verified with
-speedy_antlr_tool.validate, which asserts equality of every context type,
-child list, token, and source position).
+Measured on benchmark/JSON's 85 files: 7.8x faster at parsing (2.53s against
+19.72s) and about 17% off a full analysis (187.4s against 225.8s), producing a
+structurally identical parse tree -- verified with speedy_antlr_tool.validate,
+which asserts equality of every context type, child list, token and source
+position, and confirmed by both engines reaching the same database
+fingerprint.
 
-Requirements: a JDK (for the ANTLR tool), cmake, make, g++ with C++17, Python
-development headers, and the ``speedy-antlr-tool`` package. The ANTLR tool jar
-and the C++ runtime source are downloaded into the cache directory on first
-run.
+``setup.py`` calls the functions below to build the extension into a wheel, so
+this is the single recipe rather than one that drifts from the packaging.
+
+Requirements: a JDK (for the ANTLR tool), cmake, a C++17 compiler, Python
+development headers, and the ``speedy-antlr-tool`` package. The compiler is
+whichever one Python was built with -- setuptools' abstraction picks it, which
+is what makes MSVC work without a separate code path. The ANTLR tool jar and
+the C++ runtime source are downloaded into the cache directory on first run.
 
 Two naming constraints drive the grammar renaming below, and getting either
 wrong produces a confusing failure:
@@ -88,13 +94,32 @@ def fetch(url, dest: Path):
     return dest
 
 
+def _static_lib(build: Path) -> Path | None:
+    """The runtime's static library, wherever this generator put it.
+
+    Makefile generators write ``runtime/libantlr4-runtime.a``; the Visual
+    Studio generator writes ``runtime/Release/antlr4-runtime-static.lib``, and
+    Ninja on Windows drops the same name without the config directory. Search
+    rather than assume, so a generator change surfaces as "not found" instead
+    of linking something stale.
+    """
+    for pattern in ("runtime/libantlr4-runtime.a",
+                    "runtime/**/antlr4-runtime-static.lib",
+                    "runtime/**/libantlr4-runtime.a"):
+        hits = sorted(build.glob(pattern))
+        if hits:
+            return hits[0]
+    return None
+
+
 def build_cpp_runtime(cache: Path, jobs: int) -> tuple[Path, Path]:
     """Return (include_dir, static_lib), building the runtime if needed."""
     src = cache / f"antlr4-cpp-runtime-{ANTLR_VERSION}"
-    lib = src / "build" / "runtime" / "libantlr4-runtime.a"
+    build = src / "build"
     inc = src / "runtime" / "src"
-    if lib.exists():
-        print("  cached libantlr4-runtime.a")
+    lib = _static_lib(build) if build.is_dir() else None
+    if lib is not None:
+        print(f"  cached {lib.name}")
         return inc, lib
 
     zip_path = fetch(CPP_RUNTIME_URL, cache / f"antlr4-cpp-runtime-{ANTLR_VERSION}-source.zip")
@@ -105,8 +130,6 @@ def build_cpp_runtime(cache: Path, jobs: int) -> tuple[Path, Path]:
         z.extractall(src)
 
     need("cmake")
-    need("make")
-    build = src / "build"
     build.mkdir(exist_ok=True)
     run([
         "cmake", "..",
@@ -118,9 +141,15 @@ def build_cpp_runtime(cache: Path, jobs: int) -> tuple[Path, Path]:
         "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
         "-DWITH_DEMO=OFF",
     ], cwd=build)
-    run(["make", f"-j{jobs}", "antlr4_static"], cwd=build)
-    if not lib.exists():
-        raise SystemExit(f"runtime build finished but {lib} is missing")
+    # `cmake --build`, not `make`: the same line drives Makefiles, Ninja and
+    # MSBuild, and --config is what the Visual Studio generator needs to
+    # produce a Release library rather than a Debug one.
+    run(["cmake", "--build", ".", "--config", "Release",
+         "--target", "antlr4_static", "--parallel", str(jobs)], cwd=build)
+    lib = _static_lib(build)
+    if lib is None:
+        raise SystemExit(
+            f"runtime build finished but no static library was found under {build}")
     return inc, lib
 
 
@@ -169,29 +198,85 @@ def generate(work: Path, jar: Path):
 
 
 def compile_extension(cpp: Path, inc: Path, lib: Path, out_so: Path):
-    need("g++")
-    pyinc = sysconfig.get_paths()["include"]
+    """Compile and link the extension with whatever compiler Python was built with.
+
+    This used to shell out to ``g++`` with a hand-written flag list, which is
+    correct on Linux and macOS and cannot work on Windows. setuptools already
+    carries the compiler abstraction -- it knows MSVC's flags, the object
+    suffix, where ``pythonXY.lib`` lives and what a shared object is called on
+    each platform -- so the flag matrix is two lines instead of a port.
+
+    ``ANTLR4CPP_STATIC`` is required: without it the runtime headers declare
+    their symbols ``__declspec(dllimport)`` on Windows and the link fails
+    against the static library we just built.
+    """
     missing = [s for s in CPP_SOURCES if not (cpp / s).exists()]
     if missing:
         raise SystemExit(f"generated sources missing: {missing}")
 
+    # setuptools' vendored copy, not stdlib ``distutils``: that module is gone
+    # in Python 3.12 and deprecated before it. setuptools has shipped
+    # ``_distutils`` since v60 and pyproject pins >=64, so there is no version
+    # this project supports where the fallback would fire -- and a dead except
+    # branch importing a module that cannot exist is worse than no branch.
+    from setuptools._distutils.ccompiler import new_compiler
+    from setuptools._distutils.sysconfig import customize_compiler
+
+    cc = new_compiler()
+    customize_compiler(cc)
+    msvc = cc.compiler_type == "msvc"
+
     out_so.parent.mkdir(parents=True, exist_ok=True)
-    run([
-        "g++", "-O2", "-std=c++17", "-fPIC", "-shared", "-fvisibility=hidden",
-        "-I", str(inc), "-I", str(cpp), "-I", pyinc,
-        *[str(cpp / s) for s in CPP_SOURCES],
-        str(lib),
-        "-o", str(out_so),
-    ])
+    objs_dir = cpp / "obj"
+    objs_dir.mkdir(exist_ok=True)
+
+    cflags = (["/O2", "/std:c++17", "/EHsc"] if msvc
+              else ["-O2", "-std=c++17", "-fvisibility=hidden"])
+    objects = cc.compile(
+        [str(cpp / s) for s in CPP_SOURCES],
+        output_dir=str(objs_dir),
+        include_dirs=[str(inc), str(cpp), sysconfig.get_paths()["include"]],
+        macros=[("ANTLR4CPP_STATIC", None)],
+        extra_postargs=cflags,
+    )
+
+    # MSVC finds pythonXY.lib through a pragma in pyconfig.h, but only if the
+    # directory holding it is on the library path.
+    lib_dirs = [d for d in (sysconfig.get_config_var("LIBDIR"),
+                            os.path.join(sys.base_prefix, "libs")) if d and os.path.isdir(d)]
+    # target_lang="c++" is load-bearing: without it distutils links with the C
+    # driver and the extension imports with an undefined `__cxxabiv1` symbol
+    # because libstdc++ was never pulled in.
+    cc.link_shared_object(
+        objects + [str(lib)],
+        str(out_so),
+        library_dirs=lib_dirs,
+        extra_postargs=[] if msvc else ["-std=c++17"],
+        target_lang="c++",
+    )
 
 
 def verify(out_so: Path) -> bool:
-    """Parse a real fixture both ways and assert the trees are identical."""
+    """Parse a real fixture both ways and assert the trees are identical.
+
+    The extension is loaded from ``out_so`` rather than imported by name. The
+    file just built is the thing under test, and importing
+    ``gen.java8speedy.sa_javalabeled_cpp_parser`` would happily pick up a stale
+    copy from somewhere else on sys.path -- including, when setup.py drives
+    this, the one already installed in the environment doing the building.
+    """
+    import importlib.util
+
     sys.path[:0] = [str(REPO_ROOT), str(REPO_ROOT / "openunderstand")]
     from antlr4 import FileStream, CommonTokenStream
     from gen.javaLabeled.JavaLexer import JavaLexer
     from gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-    from gen.java8speedy import sa_javalabeled_cpp_parser as sa
+
+    if not out_so.is_file():
+        raise SystemExit(f"nothing to verify: {out_so} was not produced")
+    spec = importlib.util.spec_from_file_location(MODULE_NAME, out_so)
+    sa = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(sa)
 
     samples = sorted((REPO_ROOT / "benchmark" / "calculator_app").rglob("*.java"))[:3]
     if not samples:
@@ -244,8 +329,9 @@ def main() -> int:
     if not a.keep_work:
         shutil.rmtree(work, ignore_errors=True)
     print(f"\nbuilt {out_so}")
-    print("Enable it with engine_core = C++ in config.ini (the pure-Python "
-          "parser remains the default).")
+    print("Nothing to enable: engine_core defaults to `auto`, which uses this "
+          "when it is present. `Python` in config.ini pins the pure-Python "
+          "parser.")
     return 0
 
 

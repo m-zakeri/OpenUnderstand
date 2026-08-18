@@ -1,6 +1,76 @@
 # Changelog
 
-## 0.2.4
+## 0.3.0
+
+### The C++ parse accelerator now ships compiled
+
+`pip install openunderstand` gets it, on Linux x86_64, macOS x86_64, macOS
+arm64 and Windows x64, for CPython 3.9 through 3.13. Until now it existed only
+for whoever ran `openunderstand/gen/java8speedy/build.py` by hand with a JDK,
+cmake and a C++17 compiler on the machine, which in practice meant nobody: the
+published wheel was `py3-none-any` and could not carry a compiled extension at
+all.
+
+Measured on `benchmark/JSON`, 85 files, three runs back to back on an otherwise
+idle machine:
+
+| engine | total | fingerprint |
+| --- | ---: | --- |
+| C++ | 187.4s, 189.2s | `0a7d28a303441ba1` |
+| Python | 225.8s | `0a7d28a303441ba1` |
+
+37.5s, about 17%, with the two C++ runs agreeing within 1%. Parse-only over the
+same files is 2.53s against 19.72s. The fingerprints are identical, which is
+the whole point -- the accelerator changes how long the analysis takes and
+nothing about what it produces.
+
+`java8speedy/README.md` previously claimed "roughly 9%" and `CLAUDE.md` claimed
+parsing was "only ~1% of runtime". Both are corrected. Measure this with
+nothing else running: the same comparison taken under load reads 2.5%.
+
+- **`engine_core` now defaults to `auto`** -- use the accelerator when the
+  installed package has one, the pure-Python runtime when it does not. It
+  defaulted to `Python`, which would have meant shipping compiled wheels that
+  nobody ever used. An explicit `C++` or `Python` in `config.ini` still wins,
+  and `C++` without a built extension still warns once and falls back.
+- **`setup.py` is new** and does nothing but attach the extension. It probes
+  for java, cmake and `speedy-antlr-tool` and declares no extension when any
+  is missing, so installing the sdist on a machine with no toolchain still
+  produces the working pure-Python package it always did.
+  `OPENUNDERSTAND_BUILD_ACCELERATOR=1` turns a missing toolchain into a hard
+  error instead, which is what CI sets so a silently pure wheel can never be
+  published under a platform tag; `0` skips the extension even where it would
+  build.
+- **`build.py` builds through setuptools' compiler abstraction** rather than a
+  hardcoded `g++` command line, which is what makes Windows a matrix entry
+  rather than a port, and drives the ANTLR runtime with `cmake --build` rather
+  than `make`. Two things that cost time and are now commented in place:
+  the link needs `target_lang="c++"` or the extension compiles cleanly and
+  imports with an undefined `__cxxabiv1` symbol, and the compile needs
+  `ANTLR4CPP_STATIC` or the runtime headers declare `dllimport` on Windows.
+- **`.github/workflows/wheels.yml` is new** and builds the matrix plus the
+  sdist; `release.yml` calls it. Two guards on the publish set: no
+  `py3-none-any` wheel may be present, because one on PyPI would shadow every
+  binary wheel for the platforms it claims, and at least 15 wheels must have
+  been produced.
+
+There is no abi3 shortcut, which is why the matrix is that shape.
+`speedy-antlr-tool` generates raw CPython C API code with no `Py_LIMITED_API`,
+so a wheel is specific to one Python minor *and* one platform.
+
+### The IDEA plugin upgrades itself to a compiled parser
+
+The jar is one artifact for every platform and every Python, so it cannot
+bundle a compiled wheel. It still bundles the `py3-none-any` one, which
+guarantees a working first run with no network, and then best-effort runs
+`pip install --only-binary=:all: openunderstand==<same version>` to swap in a
+compiled wheel for whatever interpreter the venv ended up with. Every failure
+path -- no network, no matching wheel, an unsupported Python -- leaves the
+pure-Python parser in place, which is what happened before.
+
+Gradle's `processResources` now takes `*-py3-none-any.whl` specifically. It
+took `*.whl` and renamed the match to `openunderstand.whl`, which would have
+collided the moment `dist/` held more than one wheel.
 
 ### Module names
 

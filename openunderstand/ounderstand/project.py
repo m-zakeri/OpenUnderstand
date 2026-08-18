@@ -43,9 +43,17 @@ def _use_cpp_engine():
             requested = utilities.setup_config()["Config"]["engine_core"]
         except Exception:
             requested = "Python"
-        # The CLI default is "Python", config.ini has said "Python3", and the
-        # README says "C++ or Python". Accept anything that starts with a "c".
-        _ENGINE = requested.strip().lower().startswith("c")
+        # The CLI default is "auto", config.ini has said "Python3", and the
+        # README says "C++ or Python". Accept anything that starts with a "c";
+        # "auto" asks for the accelerator only when it is actually present, so
+        # the common install does not log a fallback warning it can do nothing
+        # about.
+        requested = requested.strip().lower()
+        if requested.startswith("auto"):
+            from openunderstand.utils import antler_parser
+            _ENGINE = antler_parser.is_available()
+        else:
+            _ENGINE = requested.startswith("c")
     return _ENGINE
 
 

@@ -1,10 +1,26 @@
+# Developer convenience. pyproject.toml is authoritative for what an installed
+# package actually needs; this file is what `pip install -r` sets up a checkout
+# with.
+#
+# Seven entries used to sit here that nothing imports -- gitdb, openpyxl,
+# packaging, pybind11, javalang, tabulate and pandas. pandas and pybind11 were
+# real once: pandas was a module-scope import in oudb/api.py before it moved
+# inside the function that needs it, and pybind11 predates the accelerator
+# using speedy-antlr-tool, which generates raw CPython C API code and does not
+# need it. The rest appear in no import statement anywhere in openunderstand/,
+# scripts/ or tests/.
+
+# Runtime.
 antlr4-python3-runtime==4.13.2
-gitdb==4.0.10
-GitPython==3.1.32
-openpyxl==3.0.10
-packaging==23.1
 peewee>=3.17,<4
-pybind11==2.11.1
-javalang
-tabulate
-pandas
+
+# Imported inside the one function that uses it (oudb/api.py), never at module
+# scope, so it stays out of pyproject's dependencies.
+GitPython==3.1.32
+
+# Builds the optional C++ parse accelerator, via
+# openunderstand/gen/java8speedy/build.py or setup.py. Also in pyproject's
+# build-system.requires, which is what building a wheel reads. Needs a JDK,
+# cmake and a C++17 compiler alongside it; without them the build quietly
+# produces the pure-Python package instead.
+speedy-antlr-tool>=1.4
