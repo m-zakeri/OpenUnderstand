@@ -67,15 +67,27 @@ def _kind_id_by_name(_database, kind_name):
     return kind._id if kind is not None else None
 
 
-def _refs(entity_id, kind_name):
-    kind_id = _kind_id_by_name(EntityModel._meta.database.database, kind_name)
+@lru_cache(maxsize=200000)
+def _refs_cached(_database, entity_id, kind_name):
+    kind_id = _kind_id_by_name(_database, kind_name)
     if kind_id is None:
-        return []
-    return list(
+        return ()
+    return tuple(
         ReferenceModel.select().where(
             (ReferenceModel._kind == kind_id) & (ReferenceModel._scope == entity_id)
         )
     )
+
+
+def _refs(entity_id, kind_name):
+    """References of one kind scoped to one entity.
+
+    Memoised because a single entity is asked the same question many times:
+    `Ent.metric()` computes each of its ~33 names independently and they share
+    kinds -- CountInput alone walks ten Use variants, and CountOutput the Set
+    and Modify families. References do not change while a database is queried.
+    """
+    return _refs_cached(EntityModel._meta.database.database, entity_id, kind_name)
 
 
 #: (database, entity id) -> row or None. Entities do not change while a
@@ -87,9 +99,10 @@ _ENTITY_CACHE = {}
 
 
 def clear_entity_cache():
-    """Forget the per-database entity rows. Called when a database is opened."""
+    """Forget everything remembered about a database. Called when one is opened."""
     _ENTITY_CACHE.clear()
     _kind_id_by_name.cache_clear()
+    _refs_cached.cache_clear()
 
 
 def _targets(entity_id, kind_name, family=None):

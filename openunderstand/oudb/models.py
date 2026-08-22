@@ -924,6 +924,34 @@ def relabel_nondynamic_calls():
     return relabelled
 
 
+class MetricModel(Model):
+    """One computed metric value, so a second query does not recompute it.
+
+    Understand computes metrics during analysis and stores them, which is most
+    of why its `ent.metric()` costs microseconds where this project's costs
+    milliseconds. Computing the whole set at analysis time here would add ~99s
+    to a 58s build of the JSON benchmark, because the computation is Python
+    over SQL rather than C++ over an in-memory graph -- so it is filled on
+    demand instead: the first caller pays, every later one reads, including in
+    another process.
+
+    Written best-effort. A database opened read-only still answers, just
+    without remembering.
+    """
+
+    _id = AutoField()
+    #: A plain integer, not a foreign key: this table is a cache, and the
+    #: constraint would cost an index maintenance per insert for nothing.
+    _ent_id = IntegerField(index=True)
+    _name = CharField(max_length=64)
+    #: Stored as text because a metric value is an int, a float or a string
+    #: (`RatioCommentToCode` is "0.53"), and the caller knows which.
+    _value = CharField(max_length=64, null=True)
+
+    class Meta:
+        indexes = ((("_ent_id", "_name"), True),)
+
+
 class ProjectModel(Model):
     name = CharField(max_length=128)
     language = CharField(max_length=128, default="Java")

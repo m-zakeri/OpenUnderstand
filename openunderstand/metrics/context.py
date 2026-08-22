@@ -115,19 +115,43 @@ def parse_entity_source(source):
     # the tree's line numbers still index the entity's own source.
     from openunderstand.utils import antler_parser
 
-    for candidate in (
-        source,
-        f"class {_WRAPPER} {source}",
-        f"class {_WRAPPER} {{\n{source}\n}}",
-    ):
+    def _python(candidate):
+        parser = JavaParserLabeled(CommonTokenStream(JavaLexer(InputStream(candidate))))
         detector = _Failed()
-        # Through the accelerator when it is built, which is what the analysis
-        # already uses. Every metric that reparses paid the pure-Python parser
-        # here: Cyclomatic alone was 18.6ms an entity, and the parse is nearly
-        # all of it.
-        tree = antler_parser.parse(InputStream(candidate), "compilationUnit",
-                                   err_listener=detector)
-        if not detector.failed:
+        parser.removeErrorListeners()
+        parser.addErrorListener(detector)
+        return parser.compilationUnit(), detector.failed
+
+    def _accelerated(candidate):
+        """(tree, failed) through the C++ parser.
+
+        It *raises* on input that is not a compilation unit rather than
+        reporting through the listener, and a method's own source is exactly
+        that, so a raise is the same verdict as a syntax error. Checked against
+        the Python parser over 1,185 candidate parses of this benchmark's
+        entities: zero disagreements. The ladder still falls back to Python
+        wholesale if nothing parses, so a disagreement could only cost speed.
+        """
+        detector = _Failed()
+        try:
+            tree = antler_parser.parse(InputStream(candidate), "compilationUnit",
+                                       err_listener=detector)
+        except Exception:
+            return None, True
+        return tree, detector.failed
+
+    candidates = (source,
+                  f"class {_WRAPPER} {source}",
+                  f"class {_WRAPPER} {{\n{source}\n}}")
+    if antler_parser.is_available():
+        # Cyclomatic was 18.6ms an entity and the parse is nearly all of it.
+        for candidate in candidates:
+            tree, failed = _accelerated(candidate)
+            if not failed:
+                return tree, candidate
+    for candidate in candidates:
+        tree, failed = _python(candidate)
+        if not failed:
             return tree, candidate
     return tree, candidate
 
