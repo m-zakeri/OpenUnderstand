@@ -1,6 +1,6 @@
 from openunderstand.ounderstand.project import Project
 from openunderstand.ounderstand.listeners_and_parsers import ListenersAndParsers
-from openunderstand.oudb.models import ReferenceModel
+from openunderstand.oudb.models import ReferenceModel, flush_reference_writes
 import os
 from fnmatch import fnmatch
 
@@ -68,6 +68,8 @@ def _process_file(file_address):
         file_address=file_address,
         p=p,
     )
+    # One batched insert per file rather than one statement per reference.
+    flush_reference_writes()
 
 
 def process_file(file_address):

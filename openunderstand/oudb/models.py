@@ -420,6 +420,30 @@ _REFERENCE_KEYS_DB = None
 _REFERENCE_FIELDS = ("_kind", "_file", "_line", "_column", "_ent", "_scope")
 
 
+#: Reference rows written but not yet inserted. Flushed per file, and by
+#: every project-wide pass before it reads.
+_PENDING_REFERENCES = []
+#: The same rows by identity key, so a repeat within one file resolves to the
+#: buffered row instead of asking a database that cannot see it yet.
+_PENDING_BY_KEY = {}
+
+
+def flush_reference_writes():
+    """Insert the buffered reference rows. Returns how many were written."""
+    global _PENDING_REFERENCES
+    if not _PENDING_REFERENCES:
+        return 0
+    rows, _PENDING_REFERENCES = _PENDING_REFERENCES, []
+    _PENDING_BY_KEY.clear()
+    database = ReferenceModel._meta.database
+    with database.atomic():
+        # SQLite caps the variables in one statement; 400 rows of six columns
+        # stays well inside it on every build of Python it ships with.
+        for start in range(0, len(rows), 400):
+            ReferenceModel.insert_many(rows[start:start + 400]).execute()
+    return len(rows)
+
+
 def _row_id(value):
     """A field value as it is stored: a foreign key's id, or the value itself."""
     if isinstance(value, Model):
@@ -471,9 +495,25 @@ class ReferenceModel(Model):
             }
             _REFERENCE_KEYS_DB = database
         if key in _REFERENCE_KEYS:
+            # A key written earlier in this file is still in the buffer, so the
+            # database cannot see it: falling through to peewee would SELECT,
+            # miss, and INSERT a second copy that the flush then duplicates.
+            buffered = _PENDING_BY_KEY.get(key)
+            if buffered is not None:
+                return buffered, False
             return super().get_or_create(defaults=defaults, **kwargs)
         _REFERENCE_KEYS.add(key)
-        return super().create(**fields), True
+        # Buffered, not inserted. peewee's per-row INSERT was the rest of the
+        # write layer once the SELECT above was gone -- 18,932 statements for
+        # one build of the JSON benchmark. Nothing reads a reference during
+        # analysis: every reader is in the query layer or in a project-wide
+        # pass, and both flush first.
+        row = cls(**fields)
+        pending = dict(row.__data__)
+        pending.pop("_id", None)
+        _PENDING_REFERENCES.append(pending)
+        _PENDING_BY_KEY[key] = row
+        return row, True
 
     def __str__(self):
         return f"{self._kind} {self._ent} {self._file}({self._line}, {self._column})"
@@ -507,6 +547,7 @@ def dependent_files(file_entity_ids):
     Transitive, because inheritance chains: editing C must reach B extends C
     and A extends B. Returns the closure *including* the starting files.
     """
+    flush_reference_writes()
     define = KindModel.get_or_none(_name="Java Define")
     if define is None:
         return set(file_entity_ids)
@@ -548,6 +589,7 @@ def purge_file(file_entity_id):
 
     Returns (entities_removed, references_removed).
     """
+    flush_reference_writes()
     define = KindModel.get_or_none(_name="Java Define")
     declared = set()
     if define is not None:
@@ -626,6 +668,7 @@ def drop_reference_indexes(database=None):
 
 def ensure_reference_indexes(database=None):
     """Rebuild them. Idempotent, so an already-indexed database is untouched."""
+    flush_reference_writes()
     database = database or ReferenceModel._meta.database
     for name, column in _REFERENCE_INDEXES.items():
         database.execute_sql(
@@ -653,6 +696,7 @@ def merge_placeholder_entities():
 
     Returns the number of rows merged.
     """
+    flush_reference_writes()
     ensure_reference_indexes()
     placeholders = [e for e in EntityModel.select() if is_placeholder_kind(e._kind_id)]
     if not placeholders:
@@ -722,6 +766,7 @@ def drop_orphan_placeholders():
 
     Returns the number of rows deleted.
     """
+    flush_reference_writes()
     doomed = [
         e._id
         for e in EntityModel.select()
@@ -772,6 +817,7 @@ def drop_nonvariable_deref_refs():
 
     Returns the number of references deleted.
     """
+    flush_reference_writes()
     # The target is _ent on the forward reference and _scope on its inverse.
     doomed = set()
     for name, side in (
@@ -831,6 +877,7 @@ def drop_external_inverse_refs():
 
     Returns the number of references deleted.
     """
+    flush_reference_writes()
     # Which half of a pair is the inverse comes from the seed file, whose lines
     # are `forward | inverse`. It cannot come from KindModel._inv: that is set
     # on *both* halves and they point at each other, so a `_inv_id IS NULL`
@@ -879,6 +926,7 @@ def drop_shadowed_use_refs():
 
     Returns the number of references deleted.
     """
+    flush_reference_writes()
     # Any other kind at the identical position wins, whatever its endpoints.
     # Matching endpoints too was stricter than Understand: a DotRef resolves
     # its receiver to java.lang.Character where the use pass leaves an
@@ -914,6 +962,7 @@ def relabel_nondynamic_calls():
 
     Returns the number of references relabelled.
     """
+    flush_reference_writes()
     pairs = [
         ("Java Call", "Java Callby"),
         ("Java Call Nondynamic", "Java Callby Nondynamic"),
