@@ -76,6 +76,7 @@ def parse(
     stream: InputStream,
     entry_rule_name: str = "compilationUnit",
     prefer_cpp: bool = True,
+    err_listener=None,
 ) -> ParseTree:
     """Parse, using the accelerator when it is available and wanted.
 
@@ -85,8 +86,12 @@ def parse(
     """
     global _warned
     if prefer_cpp and _accelerator is not None:
-        return _cpp_parse(stream, entry_rule_name)
+        return _cpp_parse(stream, entry_rule_name, sa_err_listener=err_listener)
     if prefer_cpp and not _warned:
         _warned = True
         logger.warning("%s; falling back to the Python parser", unavailable_reason())
-    return _py_parse(stream, entry_rule_name)
+    parser = JavaParserLabeled(CommonTokenStream(JavaLexer(stream)))
+    if err_listener is not None:
+        parser.removeErrorListeners()
+        parser.addErrorListener(err_listener)
+    return getattr(parser, entry_rule_name)()
