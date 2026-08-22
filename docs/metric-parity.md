@@ -21,8 +21,8 @@ comparison keyed on the name says nothing.
 
 | | macro | micro |
 | --- | ---: | ---: |
-| F1 | **0.966** | **0.963** |
-| F1 over pairs Understand answers | **0.968** | **0.966** |
+| F1 | **0.969** | **0.968** |
+| F1 over pairs Understand answers | **0.970** | **0.970** |
 
 The two rows used to be far apart, because `Ent.metric()` answered 0
 for every entity while Understand answers only for the kinds a metric
@@ -90,11 +90,11 @@ what is left is genuine disagreement about values.
 | `Knots` | 0.941 | 0.944 | 0.94 | 0.94 | 982 | 1048 | 1040 |
 | `CountDeclMethodAll` | 0.943 | 0.943 | 0.94 | 0.94 | 100 | 106 | 106 |
 | `CountStmtExe` | 0.927 | 0.930 | 0.92 | 0.93 | 1070 | 1158 | 1150 |
-| `PercentLackOfCohesion` | 0.922 | 0.922 | 0.92 | 0.92 | 94 | 102 | 102 |
+| `CountOutput` | 0.916 | 0.919 | 0.91 | 0.92 | 956 | 1048 | 1040 |
+| `PercentLackOfCohesion` | 0.912 | 0.912 | 0.91 | 0.91 | 93 | 102 | 102 |
+| `PercentLackOfCohesionModified` | 0.912 | 0.912 | 0.91 | 0.91 | 93 | 102 | 102 |
 | `CountClassCoupled` | 0.906 | 0.906 | 0.91 | 0.91 | 96 | 106 | 106 |
-| `PercentLackOfCohesionModified` | 0.902 | 0.902 | 0.90 | 0.90 | 92 | 102 | 102 |
-| `CountInput` | 0.815 | 0.818 | 0.81 | 0.82 | 851 | 1048 | 1040 |
-| `CountOutput` | 0.813 | 0.816 | 0.81 | 0.82 | 849 | 1048 | 1040 |
+| `CountInput` | 0.882 | 0.886 | 0.88 | 0.89 | 921 | 1048 | 1040 |
 
 ## No Understand value on this fixture
 

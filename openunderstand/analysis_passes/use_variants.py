@@ -54,7 +54,8 @@ class UseVariantListener(JavaParserLabeledListener):
             return
         self.imports[longname.split(".")[-1]] = longname
 
-    def _add(self, kind, name, ctx, token, suffix=None, ent_longname=None):
+    def _add(self, kind, name, ctx, token, suffix=None, ent_longname=None,
+             ent_kind=None):
         if not name or name in LITERALS:
             return
         parents = class_properties.ClassPropertiesListener.findParents(ctx)
@@ -72,6 +73,10 @@ class UseVariantListener(JavaParserLabeledListener):
             # its own type parameter, so entity and scope are the same thing;
             # resolving "E" by name instead found an arbitrary other E.
             "ent_longname": scope_longname if ent_longname is True else ent_longname,
+            # Set when the entity is outside the analysed source and its long
+            # name is therefore a bare simple name. The kind is what keeps that
+            # safe: `external` is the token merge_placeholder_entities() skips.
+            "ent_kind": ent_kind,
             "line": token.line,
             "col": token.column,
         })
@@ -145,6 +150,30 @@ class UseVariantListener(JavaParserLabeledListener):
             ".".join(class_properties.ClassPropertiesListener.findParents(ctx)))
         self._add("Java Use Annotation", name, ctx, qualified.start,
                   suffix=annotated, ent_longname=resolved)
+
+    def enterElementValuePair(self, ctx):
+        """`@Test(expected=X.class)` reads the annotation's `expected` element.
+
+        Understand writes a plain `Java Use` on it, scoped to the annotated
+        declaration and positioned on the element's own name -- 65 of JSON's
+        methods carry one and this pass emitted none, which is the largest
+        single item in CountInput's gap. The element belongs to an annotation
+        the project does not declare, so it is recorded the way an unresolved
+        external callee is: the bare name Understand uses, under a kind the
+        merge refuses to fold.
+        """
+        identifier = ctx.IDENTIFIER()
+        if identifier is None:
+            return
+        node = ctx.parentCtx
+        while node is not None and not type(node).__name__.startswith("Annotation"):
+            node = node.parentCtx
+        if node is None:
+            return
+        self._add("Java Use", identifier.getText(), ctx, identifier.symbol,
+                  suffix=_annotated_name(node),
+                  ent_longname=identifier.getText(),
+                  ent_kind="Java Unresolved External Method Public Member")
 
     def enterTypeArguments(self, ctx: JavaParserLabeled.TypeArgumentsContext):
         """`List<T>` -- the T, labelled by where the list is written.

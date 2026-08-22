@@ -30,6 +30,9 @@ class CreateAndCreateBy(JavaParserLabeledListener):
         self.isBlockStatement1 = False
         self.isVariableInitializer1 = False
         self.isStatement15 = False  # New flag
+        self.file_address = ""
+        #: Resolved-type table for this file, built on first use.
+        self._binder = None
 
     def findmethodreturntype(self, c):
         parents = ""
@@ -136,22 +139,17 @@ class CreateAndCreateBy(JavaParserLabeledListener):
         self.isStatement15 = False
 
     def enterExpression4(self, ctx: JavaParserLabeled.Expression4Context):
-        # Check for specific sequences
-        if self.isBlockStatement1 and self.isStatement15:
-            # Process Expression4 only if followed by statement15 in a blockStatement1
-            self.processExpression4(ctx)
-        elif self.isVariableInitializer1:
-            # Process Expression4 only if it follows a variableInitializer1
-            # Assuming you are 'throwing away' variable declarators before this
-            self.processExpression4(ctx)
-        # Reset flags after checking for the specific sequence
-        self.isBlockStatement1 = False
-        self.isVariableInitializer1 = False
-        self.isStatement15 = False
+        """Every `new X(...)`, wherever it is written.
 
-    def enterExpression4(self, ctx: JavaParserLabeled.Expression4Context):
-        # Perform the context check before processing the expression4
-        if self.isBlockStatement1 or self.isVariableInitializer1:
+        This used to fire only inside a block statement or a variable
+        initialiser, which is two of the places a creator can appear: `throw
+        new JSONException(...)` is statement11 and `return new X(...)` is
+        statement10, and a creator in an argument list is neither. Understand
+        records a Create for all of them, and the constructor call with it --
+        `org.json.JSONException.JSONException` alone was missing from 33
+        methods' callee sets.
+        """
+        if True:
             modifiers, parent_type = self.findmethodaccess(ctx)
             methodreturn, methodcontext = self.findmethodreturntype(ctx)
 
@@ -200,6 +198,7 @@ class CreateAndCreateBy(JavaParserLabeledListener):
                         "col": col,
                         # An array creation runs no constructor, so it is a Create and not a Call.
                         "is_array": creator.arrayCreatorRest() is not None,
+                        "arguments": self.constructor_arguments(creator),
                         "refent": createdName.getText(),
                         # Resolved here rather than left bare: a bare
                         # `StringBuilder` is folded by
@@ -220,6 +219,34 @@ class CreateAndCreateBy(JavaParserLabeledListener):
         # Reset the flags whether context condition was met or not
         self.isBlockStatement1 = False
         self.isVariableInitializer1 = False
+
+    def binder(self, ctx):
+        """The resolved-type table for this file, built from the tree's root."""
+        if self._binder is None:
+            from openunderstand.ounderstand.type_binding import TypeBinder
+
+            root = ctx
+            while root.parentCtx is not None:
+                root = root.parentCtx
+            self._binder = TypeBinder(root, self.file_address)
+        return self._binder
+
+    def constructor_arguments(self, creator):
+        """Types of the arguments `new X(...)` passes, for overload selection.
+
+        org.json.JSONObject has fifteen constructors and org.json.JSONArray
+        twelve, so `new JSONObject(map)` and `new JSONObject(string)` are two
+        callees to Understand and were one here.
+        """
+        from openunderstand.ounderstand import type_binding
+
+        rest = creator.classCreatorRest()
+        arguments = rest.arguments() if rest is not None else None
+        listed = arguments.expressionList() if arguments is not None else None
+        if arguments is None:
+            return None                     # an array creation runs no constructor
+        return tuple(type_binding.argument_type(self.binder(expression), expression)
+                     for expression in (listed.expression() if listed else []))
 
     def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
         longname = ctx.qualifiedName().getText()

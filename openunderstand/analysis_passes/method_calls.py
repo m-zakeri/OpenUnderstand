@@ -142,6 +142,51 @@ class MethodCallListener(JavaParserLabeledListener):
         return (jdk_index.return_type(owner, member)
                 or symbol_table.return_type(owner, member, scope_longname))
 
+    def enterMethodCall1(self, ctx: JavaParserLabeled.MethodCall1Context):
+        """`this(...)` calls another constructor of the same class."""
+        self._constructor_call(ctx, ctx.THIS(), own=True)
+
+    def enterMethodCall2(self, ctx: JavaParserLabeled.MethodCall2Context):
+        """`super(...)` calls the superclass's constructor.
+
+        Understand records it, and records the implicit parent too:
+        `GenericBean.GenericBean`'s `super();` is a Java Call to
+        java.lang.Object.Object because GenericBean extends nothing. Only
+        methodCall0 was handled here, so every `this(...)` and `super(...)` in
+        the project was invisible -- 19 of JSON's 45 constructors carry one.
+        """
+        self._constructor_call(ctx, ctx.SUPER(), own=False)
+
+    def _constructor_call(self, ctx, keyword, own):
+        from openunderstand.ounderstand import symbol_table
+
+        if keyword is None or self.enclosing_type is None:
+            return
+        owner = (self.enclosing_type if own
+                 else symbol_table.superclass_of(self.enclosing_type))
+        if not owner:
+            return
+        listed = ctx.expressionList()
+        self.calls.append({
+            "name": owner.rsplit(".", 1)[-1],
+            "receiver": None,
+            # The write layer's static-import branch: it joins owner and name
+            # and picks the overload, which is exactly what is wanted here.
+            "owner_longname": owner,
+            "arguments": tuple(self.argument_type(a)
+                               for a in (listed.expression() if listed else [])),
+            "scope_longname": ".".join(
+                class_properties.ClassPropertiesListener.findParents(ctx)),
+            "line": keyword.symbol.line,
+            "col": keyword.symbol.column,
+        })
+
+    def argument_type(self, ctx):
+        """Type of one argument expression -- shared with the create pass."""
+        from openunderstand.ounderstand import type_binding
+
+        return type_binding.argument_type(self.binder(ctx), ctx)
+
     def binder(self, ctx):
         """The type table for this file, built from the tree `ctx` sits in."""
         if self._binder is None:
@@ -285,11 +330,13 @@ class MethodCallListener(JavaParserLabeledListener):
                 receiver_ctx = expression
         scope_longname = ".".join(
             class_properties.ClassPropertiesListener.findParents(ctx))
-        # How many arguments the call passes, which is what tells one overload
-        # from another where their arities differ: 68 of JSON's 100 overloaded
-        # names are separated by it alone.
+        # The argument types, which is what tells one overload from another.
+        # Arity alone separates 68 of JSON's 100 overloaded names and none of
+        # the ones that matter: org.json.JSONArray.put is 17 overloads and
+        # org.json.JSONObject.put 8 taking two arguments each.
         listed = ctx.expressionList()
-        arguments = len(listed.expression()) if listed is not None else 0
+        arguments = tuple(self.argument_type(a)
+                          for a in (listed.expression() if listed else []))
         self.calls.append({
             "name": identifier.getText(),
             "receiver": receiver,

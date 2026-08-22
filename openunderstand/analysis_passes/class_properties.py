@@ -47,6 +47,46 @@ def _anonymous_names(root):
     return names
 
 
+@lru_cache(maxsize=2)
+def _lambda_names(root):
+    """{id(lambdaExpression): "(lambda_expr_N)"} for every lambda in a tree.
+
+    Numbered from 1 within the method that encloses it, in source order, which
+    is Understand's naming: `testOptBigDecimalVariousTypes` holds
+    `(lambda_expr_1)` through `(lambda_expr_3)`.
+    """
+    names, counts = {}, {}
+
+    def enclosing(node):
+        node = node.parentCtx
+        while node is not None:
+            if node.getRuleIndex() in ClassPropertiesListener._SCOPE_RULES:
+                return id(node)
+            node = node.parentCtx
+        return None
+
+    def walk(node):
+        if isinstance(node, JavaParserLabeled.LambdaExpressionContext):
+            key = enclosing(node)
+            counts[key] = counts.get(key, 0) + 1
+            names[id(node)] = "(lambda_expr_%d)" % counts[key]
+        for i in range(node.getChildCount()):
+            child = node.getChild(i)
+            if isinstance(child, ParserRuleContext):
+                walk(child)
+
+    walk(root)
+    return names
+
+
+def lambda_name(ctx):
+    """`(lambda_expr_N)` for a lambda expression."""
+    root = ctx
+    while root.parentCtx is not None:
+        root = root.parentCtx
+    return _lambda_names(root).get(id(ctx))
+
+
 def anonymous_name(ctx):
     """`(Anon_N)` for a classCreatorRest that carries a body, else None."""
     if ctx.classBody() is None:
@@ -130,6 +170,7 @@ class ClassPropertiesListener(JavaParserLabeledListener):
             current = current.parentCtx
 
         anonymous = _anonymous_names(root) if root is not None else {}
+        lambdas = _lambda_names(root) if root is not None else {}
         parents = []
         for current in chain:
             rule = current.getRuleIndex()
@@ -146,6 +187,15 @@ class ClassPropertiesListener(JavaParserLabeledListener):
                 # was 0 -- CountDeclMethod 0 against 1, MaxCyclomatic 0
                 # against 1.
                 name = anonymous.get(id(current))
+                if name is not None:
+                    parents.append(name)
+            elif rule == JavaParserLabeled.RULE_lambdaExpression:
+                # A lambda body is its own scope, and Understand gives it its
+                # own entity. Leaving it out put every call inside one on the
+                # enclosing method: JSONObjectTest.testOptBigDecimalVariousTypes
+                # counted 13 callees against Understand's 2, because its three
+                # lambdas own the rest.
+                name = lambdas.get(id(current))
                 if name is not None:
                     parents.append(name)
         parents.reverse()

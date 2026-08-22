@@ -30,6 +30,56 @@ references it records.
 
 from openunderstand.analysis_passes import class_properties
 
+#: A literal's type where it is *passed* rather than called on. `type_of`
+#: answers only for the two literals that can be a receiver and returns None
+#: for the rest, because a number cannot be called on -- but telling
+#: `put(String, int)` from `put(String, Object)` is exactly that question.
+_ARGUMENT_LITERALS = {
+    "Literal0Context": "int",
+    "Literal1Context": "double",
+    "Literal2Context": "char",
+    "Literal3Context": "java.lang.String",
+    "Literal4Context": "boolean",
+    "Literal5Context": "null",
+}
+
+
+def literal_type(ctx):
+    """The literal type of `ctx` when it is nothing but a literal, else None."""
+    node = ctx
+    for _ in range(3):
+        name = type(node).__name__
+        if name in _ARGUMENT_LITERALS:
+            written = ctx.getText()[-1:].lower()
+            kind = _ARGUMENT_LITERALS[name]
+            if kind == "int" and written == "l":
+                return "long"
+            if kind == "double" and written == "f":
+                return "float"
+            return kind
+        children = [c for c in (getattr(node, "children", None) or ())
+                    if hasattr(c, "getRuleIndex")]
+        if len(children) != 1:
+            return None
+        node = children[0]
+    return None
+
+
+def argument_type(binder, ctx):
+    """Type of one argument expression: a long name, a primitive, or None.
+
+    None is not a failure the caller has to guard. The overload matcher judges
+    nothing on an unknown argument and refuses the call when that leaves more
+    than one candidate, which is the same answer as before this existed.
+    """
+    literal = literal_type(ctx)
+    if literal is not None:
+        return literal
+    try:
+        return binder.type_of(ctx)
+    except Exception:
+        return None
+
 #: Contexts that open a scope holding declarations.
 _SCOPE = ("MethodDeclaration", "ConstructorDeclaration",
           "GenericMethodDeclaration", "GenericConstructorDeclaration",

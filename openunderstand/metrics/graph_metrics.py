@@ -400,11 +400,26 @@ def _fan_targets(entity_id, ref_kinds, owner_longname):
     425 of the JSON benchmark's variable entities are `Java Unknown Variable
     Member` placeholders no pass ever upgraded, where kind says nothing.
     """
-    prefix = (owner_longname or "") + "."
+    prefixes = [(owner_longname or "") + "."]
+    # A lambda body and an anonymous class body are scopes inside a
+    # declaration, and that declaration's locals are still locals: the `jo` a
+    # lambda reads is `...testOptBigDecimalVariousTypes.jo`, which does not
+    # start with the lambda's own long name and was counted as a global.
+    parts = (owner_longname or "").split(".")
+    for index in range(len(parts) - 1, 0, -1):
+        if parts[index].startswith("("):
+            prefixes.append(".".join(parts[:index]) + ".")
     out = set()
     for kind in ref_kinds:
         for target in _targets(entity_id, kind):
             if kind_family(target._kind_id) != "variable":
+                # An annotation element is a method in Java and reads like a
+                # global here: `@Test(expected=X.class)` is the whole of
+                # CDLTest.exceptionOnNullString's CountInput of 1, and 65 of
+                # JSON's methods carry one. Anything `external` is outside the
+                # analysed source, so it can never be a local of the asker.
+                if "external" in (_kind_name(target._kind_id) or "").lower().split():
+                    out.add(target._id)
                 continue
             # A parameter and a local are both the "variable" family -- Java
             # Parameter maps to it too -- so only the kind name tells them
@@ -412,7 +427,7 @@ def _fan_targets(entity_id, ref_kinds, owner_longname):
             if "Parameter" in (_kind_name(target._kind_id) or ""):
                 out.add(target._id)
             elif not (owner_longname
-                      and (target._longname or "").startswith(prefix)):
+                      and (target._longname or "").startswith(tuple(prefixes))):
                 out.add(target._id)
     return out
 
@@ -420,15 +435,26 @@ def _fan_targets(entity_id, ref_kinds, owner_longname):
 def _field_targets(entity_id, ref_kinds, owner_longname):
     """Distinct variables an entity touches that are neither its own locals
     nor its own parameters -- that is, fields."""
-    prefix = (owner_longname or "") + "."
+    prefixes = [(owner_longname or "") + "."]
+    # A lambda body and an anonymous class body are scopes inside a
+    # declaration, and that declaration's locals are still locals: the `jo` a
+    # lambda reads is `...testOptBigDecimalVariousTypes.jo`, which does not
+    # start with the lambda's own long name and was counted as a global.
+    parts = (owner_longname or "").split(".")
+    for index in range(len(parts) - 1, 0, -1):
+        if parts[index].startswith("("):
+            prefixes.append(".".join(parts[:index]) + ".")
     out = set()
     for kind in ref_kinds:
         for target in _targets(entity_id, kind):
+            # Only variables are set. An annotation element is read, never
+            # written, so the `external` allowance _fan_targets makes has no
+            # counterpart here.
             if kind_family(target._kind_id) != "variable":
                 continue
             if "Parameter" in (_kind_name(target._kind_id) or ""):
                 continue
-            if owner_longname and (target._longname or "").startswith(prefix):
+            if owner_longname and (target._longname or "").startswith(tuple(prefixes)):
                 continue        # a local
             out.add(target._id)
     return out
@@ -462,7 +488,10 @@ def count_output(ent_model):
                           entity._longname)
     kind = _kind_name(entity._kind_id) or ""
     declared = (entity._type or "").strip()
-    returns_something = "Constructor" in kind or (declared and declared != "void")
+    # A lambda earns the same 1 a non-void return does, and declares no type to
+    # say so: all 35 of JSON's are exactly their callees plus one.
+    returns_something = ("Constructor" in kind or "Lambda" in kind
+                         or (declared and declared != "void"))
     if returns_something and kind_family(entity._kind_id) == "method":
         fan.add(("return", entity._id))
     return len(fan)

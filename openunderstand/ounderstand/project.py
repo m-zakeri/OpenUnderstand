@@ -115,6 +115,18 @@ def callee_of(longname, name, arguments, file_ent):
         _parent=file_ent, _longname=longname, _contents="")[0]
 
 
+
+def synthetic_scope(longname):
+    """Whether a long name ends in a scope the source never named.
+
+    `(lambda_expr_1)` and `(Anon_2)` are Understand's names for a lambda body
+    and an anonymous class body. A pass that meets one before it is declared
+    must not hand it the *enclosing method's* source as its contents: the
+    create pass did, and all four lambdas of one JSONParserConfigurationTest
+    method reported their method's 13 semicolons where Understand reports 0.
+    """
+    return (longname or "").rsplit(".", 1)[-1].startswith("(")
+
 def scope_of(longname, line=None):
     """The entity a reference at `line` is scoped to.
 
@@ -749,6 +761,15 @@ class Project:
                 # constructor -- for the `Vertex` of `Comparable<Vertex>`.
                 stated = symbol_table.resolve_type_name(
                     name, scope_longname=scope_longname)
+            if ref_dict.get("ent_kind"):
+                # The pass already knows this names something outside the
+                # analysed source, and the kind is what makes its bare long
+                # name safe to store.
+                ent = EntityModel.get_or_create(
+                    _kind=kind_id(ref_dict["ent_kind"]), _name=name,
+                    _parent=file_ent, _longname=stated or name, _contents="")[0]
+                self._write_use_variant(ref_dict, ent, scope, file_ent)
+                continue
             ent = EntityModel.get_or_none(
                 EntityModel._longname == (stated or f"{scope_longname}.{name}")
             )
@@ -797,6 +818,25 @@ class Project:
                     _ent=a,
                     _scope=b,
                 )
+
+    @staticmethod
+    def _write_use_variant(ref_dict, ent, scope, file_ent):
+        """Write one Use variant and its inverse at the reference's position."""
+        forward = ref_dict["kind"]
+        row = KindModel.get_or_none(_name=forward)
+        if row is None or row._inv_id is None:
+            return
+        for kind, (a, b) in ((forward, (ent, scope)),
+                             (KindModel.get_by_id(row._inv_id)._name,
+                              (scope, ent))):
+            ReferenceModel.get_or_create(
+                _kind=kind_id(kind),
+                _file=file_ent,
+                _line=ref_dict["line"],
+                _column=col_1based(ref_dict["col"]),
+                _ent=a,
+                _scope=b,
+            )
 
     def addImplementOrImplementByRefs(self, ref_dicts, file_ent, file_address):
         pass
@@ -1334,8 +1374,10 @@ class Project:
                         # ["scopecontent"], so every entity this pass created
                         # first carried the string "['scopecontent']" as its
                         # source, and every metric that reparses contents
-                        # returned 0.
-                        _contents=ref_dict["scopecontent"],
+                        # returned 0. Empty for a synthetic scope, whose text
+                        # is not this method's.
+                        _contents=("" if synthetic_scope(ref_dict["scopelongname"])
+                                   else ref_dict["scopecontent"]),
                     )[0]
 
                 # The pass resolves the created type against the file's
@@ -1414,15 +1456,19 @@ class Project:
                     # TemporaryFolder, and merge_placeholder_entities() then
                     # folded the *class* into its own constructor -- two
                     # couples pointing at a constructor.
+                    kind = kind_id(
+                        "Java Method Constructor Member Public"
+                        if symbol_table.is_project_type(created)
+                        else "Java Unresolved External Method Public Member")
+                    site = symbol_table.overload_site(
+                        f"{created}.{simple}", ref_dict.get("arguments"))
                     constructor, _ = EntityModel.get_or_create(
-                        _kind=kind_id(
-                            "Java Method Constructor Member Public"
-                            if symbol_table.is_project_type(created)
-                            else "Java Unresolved External Method Public Member"),
+                        _kind=kind,
                         _name=simple,
                         _parent=file_ent,
                         _longname=f"{created}.{simple}",
                         _contents="",
+                        **({"_line": site[0], "_column": site[1]} if site else {}),
                     )
                     for kind, (a, b) in (("Java Call", (constructor, scope)),
                                          ("Java Callby", (scope, constructor))):
@@ -1940,7 +1986,8 @@ class Project:
                     _name=ref_dict["scopename"],
                     _parent=resolve_entity_ref(ref_dict["scope_parent"], file_ent),
                     _longname=ref_dict["scopelongname"],
-                    _contents=ref_dict["scopecontent"],
+                    _contents=("" if synthetic_scope(ref_dict["scopelongname"])
+                               else ref_dict["scopecontent"]),
                 )[0]
 
             if not Throw:

@@ -34,10 +34,12 @@ class LambdaListener(JavaParserLabeledListener):
         if not parents:
             return
         scope = ".".join(parents)
-        # Numbered per enclosing method, not per file: A_Star has one
-        # lambda_expr_1 in aStar and Kruskal another in kruskal.
-        index = self._counts[scope] = self._counts.get(scope, 0) + 1
-        name = f"(lambda_expr_{index})"
+        # The name comes from class_properties, which is also what puts the
+        # segment into every scope chain running through the body: one
+        # numbering, so an entity and its declaring scope cannot disagree.
+        name = class_properties.lambda_name(ctx)
+        if name is None:
+            return
 
         token = ctx.start
         self.relations.append({

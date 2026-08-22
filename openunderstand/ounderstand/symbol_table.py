@@ -80,12 +80,21 @@ class _DeclarationIndex:
         #: a class, which is the difference between Understand's two bases for
         #: it and its one.
         self.interfaces: set[str] = set()
-        #: Method or constructor long name -> [(parameter count, line, column)],
-        #: one entry per overload. Overloads share a long name and are separate
+        #: Method or constructor long name ->
+        #: [(parameter types as written, line, column, declaring file)], one
+        #: entry per overload. Overloads share a long name and are separate
         #: rows only because their declaration positions differ, so a caller
-        #: that knows how many arguments a call passes can address the right
-        #: one. Columns are 1-based, the way an entity row stores them.
+        #: that knows the call's argument types can address the right one. The
+        #: types stay as written and are resolved on demand, because the
+        #: imports that place them belong to the declaring file and the index
+        #: is not complete while it is being built. Columns are 1-based, the
+        #: way an entity row stores them.
         self.overloads: dict[str, list] = {}
+        #: Class long name -> (superclass as written, declaring file). Absent
+        #: means the class extends nothing, which is java.lang.Object.
+        #: `supertypes` cannot answer: it mixes the superclass with every
+        #: interface and drops it when it is Object.
+        self.superclasses: dict[str, tuple] = {}
         self.files = 0
 
     def add(self, simple_name: str, longname: str, is_type: bool = False):
@@ -354,6 +363,7 @@ def build(root: str) -> _DeclarationIndex:
 
         def __init__(self):
             self.pairs = []
+            self.superclasses = {}
             self.methods = {}
             self.returns = {}
             self.fields = {}
@@ -372,6 +382,8 @@ def build(root: str) -> _DeclarationIndex:
                            for t in ctx.typeList().typeType()]
             if supers:
                 self.pairs.append((longname, supers))
+            if ctx.EXTENDS() is not None and ctx.typeType() is not None:
+                self.superclasses[longname] = ctx.typeType().getText().split("<")[0]
 
         def enterEnumDeclaration(self, ctx):
             """`enum MyEnum implements JSONString` -- plus the implicit parent.
@@ -455,7 +467,7 @@ def build(root: str) -> _DeclarationIndex:
             longname = ".".join(parents + [identifier.getText()])
             symbol = identifier.symbol
             self.overloads.setdefault(longname, []).append(
-                (len(parameter_types(ctx)), symbol.line, symbol.column + 1))
+                (parameter_types(ctx), symbol.line, symbol.column + 1))
 
         def _signature(self, ctx):
             identifier = ctx.IDENTIFIER()
@@ -509,7 +521,12 @@ def build(root: str) -> _DeclarationIndex:
         index.files += 1
         index.supertypes.update(supertypes.pairs)
         index.methods.update(supertypes.methods)
-        index.overloads.update(supertypes.overloads)
+        index.overloads.update(
+            {name: [entry + (path,) for entry in entries]
+             for name, entries in supertypes.overloads.items()})
+        index.superclasses.update(
+            {name: (written, path)
+             for name, written in supertypes.superclasses.items()})
         index.return_types.update(
             {k: v for k, v in supertypes.returns.items() if v})
         index.field_types.update(supertypes.fields)
@@ -654,25 +671,143 @@ def declaring_type(type_longname: str, member: str) -> str | None:
     return INDEX.declaring_type(type_longname, member)
 
 
-def overload_site(longname: str, argument_count) -> tuple | None:
-    """(line, column) of the overload taking `argument_count` arguments.
+#: A primitive may be passed where a wider one is expected.
+_WIDENING = {
+    "byte": {"short", "int", "long", "float", "double"},
+    "short": {"int", "long", "float", "double"},
+    "char": {"int", "long", "float", "double"},
+    "int": {"long", "float", "double"},
+    "long": {"float", "double"},
+    "float": {"double"},
+}
+_BOXES = {
+    "boolean": "java.lang.Boolean", "byte": "java.lang.Byte",
+    "char": "java.lang.Character", "short": "java.lang.Short",
+    "int": "java.lang.Integer", "long": "java.lang.Long",
+    "float": "java.lang.Float", "double": "java.lang.Double",
+}
+#: Every box except Boolean and Character is a java.lang.Number.
+_NOT_A_NUMBER = {"java.lang.Boolean", "java.lang.Character"}
+_PRIMITIVES = frozenset(_BOXES) | {"void"}
 
-    None unless exactly one declaration matches, and None when the name is not
-    overloaded at all -- there is nothing to disambiguate then, and resolving
-    by long name alone is what every other pass does.
+
+def _parameter_longname(written, imports, wildcards, scope):
+    """A declared parameter type as a long name, or None when it will not place.
+
+    None means "do not judge this argument on it": a type variable (`T`) never
+    resolves, and refusing the whole candidate over one would throw away every
+    generic method.
+    """
+    base = written.split("<")[0].replace("...", "").strip()
+    arrays = "[]" * base.count("[")
+    base = base.split("[")[0]
+    if not base:
+        return None
+    if base in _PRIMITIVES:
+        return base + arrays
+    resolved = (resolve_type_name(base, imports, wildcards, scope)
+                or jdk_index.resolve_simple(base))
+    return (resolved + arrays) if resolved else None
+
+
+def _argument_fits(argument, parameter):
+    """0 no, 1 assignable, 2 exactly this type -- Java's "most specific" rule.
+
+    Scored rather than boolean because that is how the overload is chosen:
+    `put(String, int)` and `put(String, Object)` both accept an int and Java
+    calls the first, so an exact match has to outrank a widening one.
+    """
+    if parameter is None or argument is None:
+        return 1                            # unknown on either side judges nothing
+    if argument == parameter:
+        return 2
+    if argument == "null":
+        return 0 if parameter in _PRIMITIVES else 1
+    if argument in _PRIMITIVES:
+        if parameter in _WIDENING.get(argument, ()):
+            return 1
+        boxed = _BOXES.get(argument)
+        if parameter == boxed:
+            return 1
+        if parameter == "java.lang.Object":
+            return 1
+        if parameter == "java.lang.Number" and boxed not in _NOT_A_NUMBER:
+            return 1
+        return 0
+    if parameter in _PRIMITIVES:
+        return 1 if _BOXES.get(parameter) == argument else 0
+    if parameter == "java.lang.Object":
+        return 1
+    return 1 if parameter in ancestors(argument) else 0
+
+
+def overload_site(longname: str, argument_types) -> tuple | None:
+    """(line, column) of the overload a call with these argument types names.
 
     Understand counts distinct callee *entities*, and two overloads are two
     entities. Resolving `JSONObject.put(...)` by long name returned whichever
     row was created first, so a method calling three overloads counted one
     callee: 80 of JSON's methods had a callee name set identical to
     Understand's and a lower CountOutput for exactly that.
+
+    Arity settles 68 of JSON's 100 overloaded names and none of the ones that
+    matter -- `org.json.JSONArray.put` is 17 overloads and
+    `org.json.JSONObject.put` 8 taking two arguments each -- so the types are
+    matched too, scored for specificity the way Java resolves a call.
+
+    None whenever the answer is not unique. A wrong overload is a wrong callee,
+    and falling back to the first row is no worse than what came before.
     """
-    sites = INDEX.overloads.get(longname)
-    if not sites or len(sites) < 2 or argument_count is None:
+    entries = INDEX.overloads.get(longname)
+    if not entries or len(entries) < 2 or argument_types is None:
         return None
-    matching = [(line, column) for count, line, column in sites
-                if count == argument_count]
-    return matching[0] if len(matching) == 1 else None
+    count = len(argument_types)
+    scope = longname.rsplit(".", 1)[0]
+    scored = []
+    for written, line, column, path in entries:
+        variadic = bool(written) and written[-1].endswith("...")
+        if len(written) != count and not (variadic and count >= len(written) - 1):
+            continue
+        imports, wildcards = INDEX.file_imports.get(path, (None, None))
+        total, fits = 0, True
+        for index, argument in enumerate(argument_types):
+            if index >= len(written):
+                break                       # swallowed by the variadic tail
+            declared = _parameter_longname(written[index], imports, wildcards, scope)
+            points = _argument_fits(argument, declared)
+            if not points:
+                fits = False
+                break
+            total += points
+        if fits:
+            # A fixed-arity candidate beats a variadic one taking the same
+            # arguments, which is what Java does.
+            scored.append((total + (0 if variadic else 1), line, column))
+    if not scored:
+        return None
+    best = max(entry[0] for entry in scored)
+    winners = [entry for entry in scored if entry[0] == best]
+    return (winners[0][1], winners[0][2]) if len(winners) == 1 else None
+
+
+def superclass_of(longname: str) -> str | None:
+    """The class `longname` extends, java.lang.Object when it extends nothing.
+
+    `super(...)` in a constructor calls the superclass's constructor, and
+    Understand records it: `GenericBean.GenericBean`'s `super();` is a
+    `Java Call` to java.lang.Object.Object. An enum's is java.lang.Enum.
+    """
+    if longname in INDEX.interfaces:
+        return None
+    entry = INDEX.superclasses.get(longname)
+    if entry is None:
+        parents = INDEX.supertypes.get(longname) or []
+        if "java.lang.Enum" in parents:
+            return "java.lang.Enum"
+        return "java.lang.Object"
+    written, path = entry
+    imports, wildcards = INDEX.file_imports.get(path, (None, None))
+    return resolve_type_name(written, imports, wildcards, longname)
 
 
 def declaring_type_anywhere(type_longname: str, member: str) -> str | None:

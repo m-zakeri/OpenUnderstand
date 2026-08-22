@@ -146,6 +146,7 @@ class ListenersAndParsers:
     def create_listener(self, tree, file_ent, file_address, p):
         try:
             listener = CreateAndCreateBy()
+            listener.file_address = file_address
             p.Walk(listener, tree)
             p.addCreateRefs(listener.create, file_ent, file_address)
             self.logger.info("create refs success ")

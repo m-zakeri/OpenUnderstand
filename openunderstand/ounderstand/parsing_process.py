@@ -45,6 +45,12 @@ def _process_file(file_address):
         # then captured all 110 of the class's Define references, leaving the
         # real class entity with none.
         lap.create_listener,
+        # Before any pass that scopes a reference into a lambda body. A lambda
+        # is a scope of its own -- findParents() puts `(lambda_expr_N)` into
+        # the chain -- and the entity is declared here and nowhere else, so a
+        # call inside one was resolved against a scope that did not exist yet
+        # and dropped: every one of JSON's 35 lambdas had no callee at all.
+        lap.lambda_listener,
         lap.use_variant_listener,
         lap.method_call_listener,
         lap.declare_listener,
@@ -66,7 +72,6 @@ def _process_file(file_address):
         # removed 43 wrong ones and 15 placeholder entities, taking Call
         # precision from 48.9% to 51.7% and Call Nondynamic from 92.3% to 97.3%.
         lap.field_use_listener,
-        lap.lambda_listener,
         lap.static_import_listener,
         lap.overrides_listener,
         lap.couple_listener,
