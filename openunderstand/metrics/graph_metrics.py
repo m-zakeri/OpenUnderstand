@@ -55,27 +55,69 @@ def _by_entity(function):
     return wrapper
 
 
-def _refs(entity_id, kind_name):
+@lru_cache(maxsize=512)
+def _kind_id_by_name(_database, kind_name):
+    """Id of a reference kind, memoised.
+
+    The kind table is written by fill() and never changes, and
+    `_use_kind_names()` alone asks for ten of them on every entity a fan metric
+    touches.
+    """
     kind = KindModel.get_or_none(_name=kind_name)
-    if kind is None:
+    return kind._id if kind is not None else None
+
+
+def _refs(entity_id, kind_name):
+    kind_id = _kind_id_by_name(EntityModel._meta.database.database, kind_name)
+    if kind_id is None:
         return []
     return list(
         ReferenceModel.select().where(
-            (ReferenceModel._kind == kind._id) & (ReferenceModel._scope == entity_id)
+            (ReferenceModel._kind == kind_id) & (ReferenceModel._scope == entity_id)
         )
     )
 
 
+#: (database, entity id) -> row or None. Entities do not change while a
+#: database is being *queried*, and _targets() needs one per reference.
+#: Cleared by api.open(), which is the only way a caller reaches a new one.
+#: ponytail: unbounded, which is one row per entity in the database -- 5,270 on
+#: the JSON benchmark. Bound it if a process ever opens many large databases.
+_ENTITY_CACHE = {}
+
+
+def clear_entity_cache():
+    """Forget the per-database entity rows. Called when a database is opened."""
+    _ENTITY_CACHE.clear()
+    _kind_id_by_name.cache_clear()
+
+
 def _targets(entity_id, kind_name, family=None):
-    """Distinct entities on the far side of a reference kind."""
+    """Distinct entities on the far side of a reference kind.
+
+    This used to issue `EntityModel.get_or_none` per reference -- a textbook
+    N+1, and the reason `refs()` cost 677us an entity against Understand's 5us.
+    The rows a reference set needs are fetched in one query and remembered.
+    """
+    refs = _refs(entity_id, kind_name)
+    if not refs:
+        return []
+    database = EntityModel._meta.database.database
+    wanted = {ref._ent_id for ref in refs}
+    missing = [i for i in wanted if (database, i) not in _ENTITY_CACHE]
+    if missing:
+        found = {row._id: row for row in
+                 EntityModel.select().where(EntityModel._id.in_(missing))}
+        for i in missing:
+            _ENTITY_CACHE[(database, i)] = found.get(i)
     out = {}
-    for ref in _refs(entity_id, kind_name):
-        target = EntityModel.get_or_none(_id=ref._ent_id)
-        if target is None:
+    for i in wanted:
+        entity = _ENTITY_CACHE[(database, i)]
+        if entity is None:
             continue
-        if family and kind_family(target._kind_id) != family:
+        if family and kind_family(entity._kind_id) != family:
             continue
-        out[target._id] = target
+        out[entity._id] = entity
     return list(out.values())
 
 

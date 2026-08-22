@@ -1,6 +1,9 @@
 import re
 from peewee import fn
 from openunderstand.oudb.models import *
+# Explicit: `import *` skips a leading underscore, and kindname() needs
+# the memoised lookup rather than a SELECT per call.
+from openunderstand.oudb.models import _kind_name
 from dataclasses import dataclass
 from functools import reduce
 from openunderstand.ounderstand.parsing_process import process_file
@@ -729,6 +732,10 @@ def create_db(
     return open(path_of_db_file)
 
 
+#: Every column of a reference row, in a fixed order, for cheap identity.
+_REFERENCE_COLUMNS = ("_id", "_kind", "_file", "_line", "_column", "_ent", "_scope")
+
+
 def open(dbname):  # real signature unknown; restored from __doc__
     """
     ounderstand.open(dbname) -> ounderstand.Db
@@ -759,6 +766,9 @@ def open(dbname):  # real signature unknown; restored from __doc__
     )
 
     db.bind([KindModel, EntityModel, ReferenceModel, ProjectModel])
+    # The query layer remembers entity rows and kind ids between calls, which
+    # is only sound while the database it read them from is the one bound.
+    graph_metrics.clear_entity_cache()
 
     # db_path is whatever absolute path the database was built at, so an exact
     # match fails as soon as the file is copied or opened by a different route,
@@ -1220,9 +1230,12 @@ class Ent:
         Return the simple name for the kind of the entity.
 
         This is similar to ent.kind().name(), but does not create a Kind
-        object.
+        object -- and it must not, which is the point. Going through kind()
+        cost a SELECT and a Kind construction per call, 186us an entity where
+        Understand does a pointer dereference. `_kind_name` is memoised on the
+        id, and the kind table never changes after fill().
         """
-        return self.kind().name()
+        return _kind_name(self._kind) or self.kind().name()
 
     def language(self):  # real signature unknown; restored from __doc__
         """
@@ -1702,7 +1715,10 @@ class Ent:
         seen_ents = set()
         for row in query:
             data = row.__dict__.get("__data__")
-            key = tuple(sorted(data.items(), key=lambda kv: kv[0]))
+            # A fixed column order, not sorted(data.items()). The columns are
+            # the same for every row, so sorting them per row was 43,272 dict
+            # sorts to read one project's references.
+            key = tuple(data.get(column) for column in _REFERENCE_COLUMNS)
             if key in seen_refs:
                 continue
             seen_refs.add(key)
