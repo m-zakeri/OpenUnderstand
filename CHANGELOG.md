@@ -4,7 +4,7 @@
 
 ### Analysis is 30% faster, and the fingerprint does not move
 
-A build of the JSON benchmark went 58s to 40.6s, and calculator_app's
+A build of the JSON benchmark went 58s to 39.7s, and calculator_app's
 fingerprint is identical to its baseline throughout. Where the time went, timed
 directly rather than under cProfile: the write layer was 63% of a build, parse
 19%, tree walking 17%.
@@ -17,6 +17,15 @@ directly rather than under cProfile: the write layer was 63% of a build, parse
   each, 18,932 of them per build. Nothing reads a reference during analysis --
   every reader is in the query layer or in a project-wide pass, and both flush
   first.
+* A repeated reference key inside one file resolved against the database,
+  which cannot see a row that is still buffered, so it would have inserted a
+  second copy. Buffered rows are keyed as well as listed. Found by the unit
+  test, not by the fingerprint: the benchmarks happen to contain no such
+  repeat.
+* The tree is flattened once per file and replayed, rather than descended 33
+  times, and each pass is handed an object carrying only the hooks it actually
+  implements -- `JavaParserLabeledListener` defines all 392 as `pass`, so every
+  node was calling a no-op once per pass.
 * The tree walker no longer dispatches on tokens. No pass implements
   `visitTerminal`, `visitErrorNode` or the `EveryRule` hooks, and 44% of a Java
   parse tree's nodes are terminals, so nearly half of every walk was calling

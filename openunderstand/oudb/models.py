@@ -604,6 +604,15 @@ def purge_file(file_entity_id):
     refs_removed = (
         ReferenceModel.delete().where(ReferenceModel._file == file_entity_id).execute()
     )
+    # The metric store is derived from the reference graph, and re-analysing one
+    # file can change any entity's value -- a caller's CountInput moves when its
+    # callee's file is rewritten. Dropping the lot is the only answer that is
+    # right without tracking dependencies, and it costs a recompute rather than
+    # a wrong number.
+    try:
+        MetricModel.delete().execute()
+    except Exception:
+        pass
 
     entities_removed = 0
     for entity_id in declared:

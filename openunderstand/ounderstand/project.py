@@ -194,18 +194,88 @@ def _dispatches_on_every_node(listener):
     return False
 
 
+from functools import lru_cache
+
 from antlr4.tree.Tree import TerminalNodeImpl as _TerminalNodeImpl
 
 
-def _walk_rules(listener, node):
-    """ANTLR's walk with the terminal dispatch removed."""
-    node.enterRule(listener)
-    for child in (node.children or ()):
-        # An identity test on the class, not isinstance and not a name
-        # comparison: this runs once per node per listener per file.
-        if child.__class__ is not _TerminalNodeImpl:
-            _walk_rules(listener, child)
-    node.exitRule(listener)
+#: The last tree flattened, and its event list. One entry, because a file is
+#: finished before the next is parsed.
+_FLAT_TREE = None
+_FLAT_EVENTS = ()
+
+
+def _flatten(parse_tree):
+    """[(node, entering)] in walk order, for the rule nodes only.
+
+    The tree is walked 33 times per file, once per pass, and the descent is
+    identical every time: the same children, the same terminals skipped, the
+    same order. Doing it once and replaying a flat list leaves each pass with
+    only the part that differs, which is the dispatch.
+    """
+    global _FLAT_TREE, _FLAT_EVENTS
+    if _FLAT_TREE is parse_tree:
+        return _FLAT_EVENTS
+    events = []
+    append = events.append
+    stack = [(parse_tree, True)]
+    while stack:
+        node, entering = stack.pop()
+        if not entering:
+            append((node, False))
+            continue
+        append((node, True))
+        stack.append((node, False))
+        children = node.children or ()
+        for i in range(len(children) - 1, -1, -1):
+            child = children[i]
+            if child.__class__ is not _TerminalNodeImpl:
+                stack.append((child, True))
+    _FLAT_TREE, _FLAT_EVENTS = parse_tree, events
+    return events
+
+
+class _Hooks:
+    """Carries only the hooks one pass implements.
+
+    A generated context dispatches with `if hasattr(listener, "enterX")`, and
+    `JavaParserLabeledListener` defines all 392 of them as `pass` -- so every
+    node called a no-op once per pass, and `method_calls` implements 8 of the
+    392. Handing the walk an object that has only the real handlers turns 98%
+    of those calls into a failed attribute lookup.
+    """
+
+
+@lru_cache(maxsize=256)
+def _overridden_hooks(listener_cls):
+    """Hook names a pass defines itself, not the ones it inherits as no-ops."""
+    from antlr4.tree.Tree import ParseTreeListener
+    from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+        JavaParserLabeledListener)
+
+    stop = (JavaParserLabeledListener, ParseTreeListener, object)
+    names = set()
+    for klass in listener_cls.__mro__:
+        if klass in stop:
+            break
+        names |= {name for name, value in klass.__dict__.items()
+                  if name.startswith(("enter", "exit")) and callable(value)}
+    return frozenset(names)
+
+
+def _hooks_of(listener):
+    """The object to dispatch to, or None when the pass implements nothing."""
+    names = set(_overridden_hooks(type(listener)))
+    # A handler attached to the instance rather than the class still counts.
+    names |= {name for name in vars(listener)
+              if name.startswith(("enter", "exit"))
+              and callable(getattr(listener, name, None))}
+    if not names:
+        return None
+    target = _Hooks()
+    for name in names:
+        setattr(target, name, getattr(listener, name))
+    return target
 
 
 def _walk(listener, parse_tree):
@@ -213,7 +283,14 @@ def _walk(listener, parse_tree):
     if _dispatches_on_every_node(listener):
         ParseTreeWalker().walk(listener=listener, t=parse_tree)
         return
-    _walk_rules(listener, parse_tree)
+    target = _hooks_of(listener)
+    if target is None:
+        return
+    for node, entering in _flatten(parse_tree):
+        if entering:
+            node.enterRule(target)
+        else:
+            node.exitRule(target)
 
 
 class Project:
