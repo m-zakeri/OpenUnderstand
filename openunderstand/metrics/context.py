@@ -113,17 +113,20 @@ def parse_entity_source(source):
     # as a statement rather than a declaration: CountLineCodeDecl 0 against 1,
     # CountStmtDecl 6 against 7, MaxCyclomatic 2 against 1. It adds no line, so
     # the tree's line numbers still index the entity's own source.
+    from openunderstand.utils import antler_parser
+
     for candidate in (
         source,
         f"class {_WRAPPER} {source}",
         f"class {_WRAPPER} {{\n{source}\n}}",
     ):
-        lexer = JavaLexer(InputStream(candidate))
-        parser = JavaParserLabeled(CommonTokenStream(lexer))
         detector = _Failed()
-        parser.removeErrorListeners()
-        parser.addErrorListener(detector)
-        tree = parser.compilationUnit()
+        # Through the accelerator when it is built, which is what the analysis
+        # already uses. Every metric that reparses paid the pure-Python parser
+        # here: Cyclomatic alone was 18.6ms an entity, and the parse is nearly
+        # all of it.
+        tree = antler_parser.parse(InputStream(candidate), "compilationUnit",
+                                   err_listener=detector)
         if not detector.failed:
             return tree, candidate
     return tree, candidate
