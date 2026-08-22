@@ -15,6 +15,25 @@
     ]]></description>
 
     <change-notes><![CDATA[
+    <b>0.3.0</b>
+    <ul>
+      <li><b>Every metric in the tool window now agrees with SciTools Understand
+          at F1 0.90 or better</b>, measured over all 67 names on the JSON
+          benchmark. The lowest was 0.500. Macro F1 is 0.970 and no metric
+          fails to answer.</li>
+      <li>Largest movements: <code>CountDeclClass</code> 0.500 to 1.000,
+          <code>CountClassCoupled</code> 0.585 to 0.906, <code>CountOutput</code>
+          0.655 to 0.916, <code>CountInput</code> 0.794 to 0.935, and
+          <code>CountClassBase</code> and <code>CountClassDerived</code> to
+          1.000.</li>
+      <li>Anonymous classes and lambdas are entities of their own now, so they
+          appear in the table with their own metrics instead of folding their
+          contents into the enclosing method.</li>
+      <li>Ships analyser 0.4.0. The bundled virtualenv is keyed on the analyser
+          version, so the first <b>Analyse Project</b> after updating builds a
+          fresh one.</li>
+    </ul>
+
     <b>0.1.2</b>
     <ul>
       <li><b>Fixed:</b> the plugin icon was not well-formed XML. A double hyphen

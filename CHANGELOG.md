@@ -1,6 +1,77 @@
 # Changelog
 
-## Unreleased
+## 0.4.0
+
+### Every metric is at or above 0.90 against Understand
+
+`docs/metric-parity.md` scores all 67 names in `Ent.metrics()`; the lowest was
+0.500 and is now 0.906. Macro F1 0.970, micro 0.970, and no metric raises.
+The names that moved most:
+
+| metric | before | after |
+| --- | ---: | ---: |
+| `CountDeclClass` | 0.500 | 1.000 |
+| `CountClassBase` | 0.957 | 1.000 |
+| `CountClassDerived` | 0.979 | 1.000 |
+| `CountClassCoupled` | 0.585 | 0.906 |
+| `CountClassCoupledModified` | 0.851 | 0.972 |
+| `CountOutput` | 0.655 | 0.916 |
+| `CountInput` | 0.794 | 0.935 |
+| `CountDeclMethodAll` | 0.894 | 0.943 |
+| `PercentLackOfCohesion` | 0.870 | 0.912 |
+| `PercentLackOfCohesionModified` | 0.837 | 0.912 |
+
+Reference parity moved with it: `Java Create` is now 1467 of Understand's 1467
+on the raw dump, precision and recall both 1.000, and `Java Couple` is 831 of
+840 with none we emit that it does not have.
+
+Every rule below was derived by reading Understand's own reference graph rather
+than by inferring one from Java source.
+
+**Entities the analysis never created.** An anonymous class body is a class:
+`class_properties.anonymous_name()` numbers each `(Anon_N)` over the file in
+source order, `findParents()` puts that segment into every scope chain running
+through the body, and `define_listener` declares it. Twelve entities on the
+JSON benchmark, and entity recall went 92.7% to 93.0%.
+
+**Overload resolution at the call site.** Understand counts distinct callee
+entities, and two overloads are two entities, so a method calling three
+`JSONObject.put` overloads counted one callee. `symbol_table.INDEX.overloads`
+records each declaration's parameter types and position, and `overload_site()`
+scores candidates the way Java resolves a call. Arity alone settles 68 of the
+benchmark's 100 overloaded names and none of the ones that matter, so the
+argument types are matched too, with `type_binding.argument_type()` typing a
+literal that is being passed rather than called on.
+
+**References that were never emitted at all.** `super(...)` and `this(...)`
+(only the identifier alternative of `methodCall` was handled), the annotation
+element in `@Test(expected=X.class)`, `int.class` as a read of
+`java.lang.Class`, an enum's implicit `java.lang.Enum` supertype, and every
+`new X(...)` written outside a block statement or a variable initialiser --
+`throw new JSONException(...)` and `return new X(...)` among them.
+
+**Resolution fixes.** A long name can name two things: `PersonRecord.name` is a
+field and its accessor, and `StringBuilderWriter.write` is four overloads.
+`project.scope_of()` resolves a reference's scope by kind family and by
+declaration position, which moved four metrics at once. A lambda body is a
+scope, so its calls are its own. `symbol_table.declaring_type_anywhere()` walks
+a member to its declaring type across the project/JDK boundary.
+
+**Metric definitions corrected against `understand.Metric.description`.**
+Neither cohesion metric is defined on an enum. `CountDeclMethodAll` is RFC and
+counts every declared member of the whole superclass chain, constructors and
+private ones included, which needed two new columns in the JDK index. A
+placeholder entity's *kind* cannot be trusted but its name can: an Unknown row
+whose owner is a known type names a member of it, which is how
+`java.lang.Boolean.TRUE` came to be counted as the global read it is.
+
+### JDK index
+
+`jdk_index.txt.gz` gains an interface flag in column 2 (`F` final, `I`
+interface, `FI` both, `-` neither) and two columns: the number of members a
+type declares and its superclass. Five columns still load, so an older index
+is readable. Regenerated from the same JDK; the first four columns are
+byte-identical.
 
 ### CPython 3.14 wheels
 
