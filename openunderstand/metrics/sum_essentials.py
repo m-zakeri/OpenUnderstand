@@ -3,7 +3,9 @@ from openunderstand.metrics import context
 from openunderstand.oudb.models import kind_id, EntityModel
 from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 
 
 class EssentialListener(JavaParserLabeledListener):
@@ -71,7 +73,6 @@ class EssentialListener(JavaParserLabeledListener):
         if not self.entered_switch:
             if self.layers[-1] < 2:
                 self.layers[-1] += 1
-
 
 
 def _enclosing_file_contents(entity_longname):

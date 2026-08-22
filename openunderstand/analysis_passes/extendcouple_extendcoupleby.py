@@ -11,7 +11,9 @@ This module find all OpenUnderstand call and callby references in a Java project
 __author__ = "Shaghayegh Mobasher , Setayesh kouloubandi ,Parisa Alaie"
 __version__ = "0.1.0"
 
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 import openunderstand.analysis_passes.class_properties as class_properties
 
@@ -47,36 +49,39 @@ class ExtendCoupleAndExtendCoupleBy(JavaParserLabeledListener):
 
         scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
         scope_longname = ".".join(scope_parents + [ctx.IDENTIFIER().__str__()])
-        self.relations.append({
-            "kind": "Java Extend Couple Implicit External",
-            "scope_longname": scope_longname,
-            "ent_longname": "java.lang.Enum",
-            "name": "Enum",
-            "line": ctx.start.line,
-            "col": 0,
-            "column_is_absolute": True,
-        })
+        self.relations.append(
+            {
+                "kind": "Java Extend Couple Implicit External",
+                "scope_longname": scope_longname,
+                "ent_longname": "java.lang.Enum",
+                "name": "Enum",
+                "line": ctx.start.line,
+                "col": 0,
+                "column_is_absolute": True,
+            }
+        )
         if ctx.typeList() is None:
             return
         for type_ctx in ctx.typeList().typeType():
             written = type_ctx.getText().split("<")[0]
             longname = symbol_table.resolve_type_name(
-                written, self.imports, self.wildcards, scope_longname)
+                written, self.imports, self.wildcards, scope_longname
+            )
             if longname is None:
                 continue
             token = type_ctx.start
-            self.relations.append({
-                "kind": "Java Implement Couple",
-                "scope_longname": scope_longname,
-                "ent_longname": longname,
-                "name": longname.rsplit(".", 1)[-1],
-                "line": token.line,
-                "col": token.column,
-            })
+            self.relations.append(
+                {
+                    "kind": "Java Implement Couple",
+                    "scope_longname": scope_longname,
+                    "ent_longname": longname,
+                    "name": longname.rsplit(".", 1)[-1],
+                    "line": token.line,
+                    "col": token.column,
+                }
+            )
 
-    def enterClassCreatorRest(
-        self, ctx: JavaParserLabeled.ClassCreatorRestContext
-    ):
+    def enterClassCreatorRest(self, ctx: JavaParserLabeled.ClassCreatorRestContext):
         """`new Iterable<Integer>() { ... }` -- what an anonymous class inherits.
 
         Understand gives it two bases when the created type is an interface:
@@ -104,37 +109,46 @@ class ExtendCoupleAndExtendCoupleBy(JavaParserLabeledListener):
         scope_longname = ".".join(scope_parents + [name])
         written = created.getText().split("<")[0]
         longname = symbol_table.resolve_type_name(
-            written, self.imports, self.wildcards, scope_longname)
+            written, self.imports, self.wildcards, scope_longname
+        )
         if longname is None:
-            return          # a wrong supertype is worse than a missing one
-        in_project = symbol_table.resolve_type(
-            written.rsplit(".", 1)[-1], scope_longname) is not None
-        interface = (symbol_table.is_interface(longname) if in_project
-                     else jdk_index.is_interface(longname))
+            return  # a wrong supertype is worse than a missing one
+        in_project = (
+            symbol_table.resolve_type(written.rsplit(".", 1)[-1], scope_longname)
+            is not None
+        )
+        interface = (
+            symbol_table.is_interface(longname)
+            if in_project
+            else jdk_index.is_interface(longname)
+        )
         if interface:
             kind = "Java Implement Couple"
         else:
-            kind = ("Java Extend Couple" if in_project
-                    else "Java Extend Couple External")
+            kind = "Java Extend Couple" if in_project else "Java Extend Couple External"
         token = created.start
-        self.relations.append({
-            "kind": kind,
-            "scope_longname": scope_longname,
-            "ent_longname": longname,
-            "name": longname.rsplit(".", 1)[-1],
-            "line": token.line,
-            "col": token.column,
-        })
-        if interface:
-            self.relations.append({
-                "kind": "Java Extend Couple Implicit External",
+        self.relations.append(
+            {
+                "kind": kind,
                 "scope_longname": scope_longname,
-                "ent_longname": "java.lang.Object",
-                "name": "Object",
-                "line": ctx.classBody().start.line,
-                "col": 0,
-                "column_is_absolute": True,
-            })
+                "ent_longname": longname,
+                "name": longname.rsplit(".", 1)[-1],
+                "line": token.line,
+                "col": token.column,
+            }
+        )
+        if interface:
+            self.relations.append(
+                {
+                    "kind": "Java Extend Couple Implicit External",
+                    "scope_longname": scope_longname,
+                    "ent_longname": "java.lang.Object",
+                    "name": "Object",
+                    "line": ctx.classBody().start.line,
+                    "col": 0,
+                    "column_is_absolute": True,
+                }
+            )
 
     @staticmethod
     def _created_name(ctx):
@@ -175,18 +189,25 @@ class ExtendCoupleAndExtendCoupleBy(JavaParserLabeledListener):
 
         written = type_ctx.getText()
         longname = symbol_table.resolve_type_name(
-            written, self.imports, self.wildcards, scope_longname)
+            written, self.imports, self.wildcards, scope_longname
+        )
         if longname is None:
             return
-        in_project = symbol_table.resolve_type(
-            written.split("<")[0], scope_longname) is not None
+        in_project = (
+            symbol_table.resolve_type(written.split("<")[0], scope_longname) is not None
+        )
         token = type_ctx.start
-        self.relations.append({
-            "kind": ("Java Extend Couple" if in_project
-                     else "Java Extend Couple External"),
-            "scope_longname": scope_longname,
-            "ent_longname": longname,
-            "name": longname.rsplit(".", 1)[-1],
-            "line": token.line,
-            "col": token.column,
-        })
+        self.relations.append(
+            {
+                "kind": (
+                    "Java Extend Couple"
+                    if in_project
+                    else "Java Extend Couple External"
+                ),
+                "scope_longname": scope_longname,
+                "ent_longname": longname,
+                "name": longname.rsplit(".", 1)[-1],
+                "line": token.line,
+                "col": token.column,
+            }
+        )

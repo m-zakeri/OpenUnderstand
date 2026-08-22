@@ -48,8 +48,9 @@ def resolve_entity_ref(value, fallback=None):
     text = str(value).strip()
     if not text or text in {"NOT FOUND", "None", "null"}:
         return fallback
-    found = (EntityModel.get_or_none(EntityModel._longname == text)
-             or EntityModel.get_or_none(EntityModel._name == text))
+    found = EntityModel.get_or_none(
+        EntityModel._longname == text
+    ) or EntityModel.get_or_none(EntityModel._name == text)
     return found if found is not None else fallback
 
 
@@ -103,17 +104,30 @@ def kind_id(name: str) -> int:
         _KIND_NAMES[row._id] = name
     return _KIND_IDS[name]
 
+
 # Coarse groupings of entity kinds. Two rows with the same longname in the same
 # family are the same thing; two in different families are a genuine kind
 # disagreement and are left alone so the harness can still report them.
 # Longest-matching token wins, so "typevariable" does not read as "variable".
 _FAMILY_TOKENS = (
-    ("typevariable", "type"), ("annotation", "type"), ("interface", "type"),
-    ("constructor", "method"), ("parameter", "variable"), ("namespace", "package"),
-    ("package", "package"), ("variable", "variable"), ("property", "variable"),
-    ("method", "method"), ("module", "module"), ("record", "type"),
-    ("class", "type"), ("field", "variable"), ("enum", "type"), ("file", "file"),
-    ("function", "method"), ("label", "label"),
+    ("typevariable", "type"),
+    ("annotation", "type"),
+    ("interface", "type"),
+    ("constructor", "method"),
+    ("parameter", "variable"),
+    ("namespace", "package"),
+    ("package", "package"),
+    ("variable", "variable"),
+    ("property", "variable"),
+    ("method", "method"),
+    ("module", "module"),
+    ("record", "type"),
+    ("class", "type"),
+    ("field", "variable"),
+    ("enum", "type"),
+    ("file", "file"),
+    ("function", "method"),
+    ("label", "label"),
 )
 
 
@@ -166,8 +180,9 @@ def _database_name():
 @lru_cache(maxsize=4096)
 def _find_kind(_database, family, wanted):
     candidates = _entity_kind_words(_database)
-    exact = [(row, words) for row, words in candidates
-             if family in words and wanted <= words]
+    exact = [
+        (row, words) for row, words in candidates if family in words and wanted <= words
+    ]
     if exact:
         return _least_specific(exact)
     # Nothing carries every modifier. The family alone still beats None, which
@@ -182,9 +197,12 @@ def _find_kind(_database, family, wanted):
     # word `EnumConstant`, which is the shape this function exists to stop
     # trusting -- but a None here is a NOT NULL failure and a dropped entity,
     # and that is the worse outcome.
-    loose = [(row, words) for row, words in candidates
-             if family in (row._name or "").lower()
-             and all(m in (row._name or "").lower() for m in wanted)]
+    loose = [
+        (row, words)
+        for row, words in candidates
+        if family in (row._name or "").lower()
+        and all(m in (row._name or "").lower() for m in wanted)
+    ]
     return _least_specific(loose) if loose else None
 
 
@@ -197,16 +215,19 @@ def _least_specific(candidates):
     Sorting on word count alone left the winner to whatever order the rows came
     back in.
     """
-    row, _ = min(candidates,
-                 key=lambda pair: (len(pair[1]), len(pair[0]._name or ""),
-                                   pair[0]._name or ""))
+    row, _ = min(
+        candidates,
+        key=lambda pair: (len(pair[1]), len(pair[0]._name or ""), pair[0]._name or ""),
+    )
     return row
 
 
 @lru_cache(maxsize=8)
 def _entity_kind_words(_database):
-    return [(row, frozenset(w.lower() for w in (row._name or "").split()))
-            for row in KindModel.select().where(KindModel.is_ent_kind == True)]  # noqa: E712
+    return [
+        (row, frozenset(w.lower() for w in (row._name or "").split()))
+        for row in KindModel.select().where(KindModel.is_ent_kind == True)
+    ]  # noqa: E712
 
 
 def kind_family(kind) -> str:
@@ -288,12 +309,19 @@ class EntityModel(Model):
         match = None
         for row in cls.select().where(cls._longname == longname):
             row_placeholder = is_placeholder_kind(row._kind_id)
-            if not (incoming_placeholder or row_placeholder
-                    or kind_family(row._kind_id) == incoming_family):
+            if not (
+                incoming_placeholder
+                or row_placeholder
+                or kind_family(row._kind_id) == incoming_family
+            ):
                 continue
             row_site = (row._line, row._column)
-            if (all(incoming_site) and all(row_site) and incoming_site != row_site
-                    and incoming_family == "method"):
+            if (
+                all(incoming_site)
+                and all(row_site)
+                and incoming_site != row_site
+                and incoming_family == "method"
+            ):
                 # Only methods overload. Two locals sharing a long name are the
                 # same declaration seen twice -- `main.name` declared in two
                 # blocks -- and splitting them by position produced 155 of the
@@ -304,8 +332,11 @@ class EntityModel(Model):
                 break  # prefer a row that already has a real kind
         if match is not None:
             dirty = False
-            if is_placeholder_kind(match._kind_id) and not incoming_placeholder \
-                    and incoming is not None:
+            if (
+                is_placeholder_kind(match._kind_id)
+                and not incoming_placeholder
+                and incoming is not None
+            ):
                 match._kind = incoming
                 dirty = True
             if all(incoming_site) and not all((match._line, match._column)):
@@ -394,7 +425,8 @@ class ReferenceModel(Model):
         database = cls._meta.database
         if _REFERENCE_KEYS is None or _REFERENCE_KEYS_DB is not database:
             _REFERENCE_KEYS = {
-                tuple(row) for row in cls.select(
+                tuple(row)
+                for row in cls.select(
                     cls._kind, cls._file, cls._line, cls._column, cls._ent, cls._scope
                 ).tuples()
             }
@@ -446,8 +478,7 @@ def dependent_files(file_entity_ids):
         current = pending.pop()
         declared = []
         for ref in ReferenceModel.select().where(
-            (ReferenceModel._kind == define._id)
-            & (ReferenceModel._file == current)
+            (ReferenceModel._kind == define._id) & (ReferenceModel._file == current)
         ):
             target = EntityModel.get_or_none(_id=ref._ent_id)
             if target is not None and kind_family(target._kind_id) == "type":
@@ -455,8 +486,7 @@ def dependent_files(file_entity_ids):
         if not declared:
             continue
         for ref in ReferenceModel.select().where(
-            (ReferenceModel._ent.in_(declared))
-            | (ReferenceModel._scope.in_(declared))
+            (ReferenceModel._ent.in_(declared)) | (ReferenceModel._scope.in_(declared))
         ):
             if ref._file_id is not None and ref._file_id not in closure:
                 closure.add(ref._file_id)
@@ -490,18 +520,23 @@ def purge_file(file_entity_id):
             )
         }
 
-    refs_removed = ReferenceModel.delete().where(
-        ReferenceModel._file == file_entity_id
-    ).execute()
+    refs_removed = (
+        ReferenceModel.delete().where(ReferenceModel._file == file_entity_id).execute()
+    )
 
     entities_removed = 0
     for entity_id in declared:
         entity = EntityModel.get_or_none(_id=entity_id)
         if entity is None or entity._id == file_entity_id:
             continue
-        still_used = ReferenceModel.select().where(
-            (ReferenceModel._ent == entity_id) | (ReferenceModel._scope == entity_id)
-        ).exists()
+        still_used = (
+            ReferenceModel.select()
+            .where(
+                (ReferenceModel._ent == entity_id)
+                | (ReferenceModel._scope == entity_id)
+            )
+            .exists()
+        )
         if still_used:
             # Named from another file, so the row has to stay -- but its
             # declaration is gone, so it is no longer a known method or class.
@@ -579,9 +614,7 @@ def merge_placeholder_entities():
     Returns the number of rows merged.
     """
     ensure_reference_indexes()
-    placeholders = [
-        e for e in EntityModel.select() if is_placeholder_kind(e._kind_id)
-    ]
+    placeholders = [e for e in EntityModel.select() if is_placeholder_kind(e._kind_id)]
     if not placeholders:
         return 0
 
@@ -649,20 +682,24 @@ def drop_orphan_placeholders():
     Returns the number of rows deleted.
     """
     doomed = [
-        e._id for e in EntityModel.select()
+        e._id
+        for e in EntityModel.select()
         if is_placeholder_kind(e._kind_id)
-        and not ReferenceModel.select().where(
+        and not ReferenceModel.select()
+        .where(
             (ReferenceModel._ent == e._id)
             | (ReferenceModel._scope == e._id)
             | (ReferenceModel._file == e._id)
-        ).exists()
+        )
+        .exists()
     ]
     if not doomed:
         return 0
     # Nothing may point at them as a parent either, or the delete leaves a
     # dangling foreign key behind.
     EntityModel.update({EntityModel._parent: None}).where(
-        EntityModel._parent << doomed).execute()
+        EntityModel._parent << doomed
+    ).execute()
     EntityModel.delete().where(EntityModel._id << doomed).execute()
     return len(doomed)
 
@@ -695,19 +732,24 @@ def drop_nonvariable_deref_refs():
     """
     # The target is _ent on the forward reference and _scope on its inverse.
     doomed = set()
-    for name, side in (("Java Use Deref Partial", "_ent_id"),
-                       ("Java Useby Deref Partial", "_scope_id"),
-                       ("Java Set Deref Partial", "_ent_id"),
-                       ("Java Setby Deref Partial", "_scope_id"),
-                       ("Java Modify Deref Partial", "_ent_id"),
-                       ("Java Modifyby Deref Partial", "_scope_id")):
+    for name, side in (
+        ("Java Use Deref Partial", "_ent_id"),
+        ("Java Useby Deref Partial", "_scope_id"),
+        ("Java Set Deref Partial", "_ent_id"),
+        ("Java Setby Deref Partial", "_scope_id"),
+        ("Java Modify Deref Partial", "_ent_id"),
+        ("Java Modifyby Deref Partial", "_scope_id"),
+    ):
         kind = KindModel.get_or_none(KindModel._name == name)
         if kind is None:
             continue
         for ref in ReferenceModel.select().where(ReferenceModel._kind == kind._id):
             target = EntityModel.get_or_none(_id=getattr(ref, side))
-            if target is None or is_placeholder_kind(target._kind_id) \
-                    or kind_family(target._kind_id) != "variable":
+            if (
+                target is None
+                or is_placeholder_kind(target._kind_id)
+                or kind_family(target._kind_id) != "variable"
+            ):
                 doomed.add(ref._id)
     if not doomed:
         return 0
@@ -751,8 +793,9 @@ def drop_external_inverse_refs():
     # are `forward | inverse`. It cannot come from KindModel._inv: that is set
     # on *both* halves and they point at each other, so a `_inv_id IS NULL`
     # test selects entity kinds and quietly deletes nothing.
-    seed = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                        "java_ref_kinds.txt")
+    seed = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "java_ref_kinds.txt"
+    )
     inverse_names = []
     with open(seed, encoding="utf-8") as fh:
         for line in fh:
@@ -804,8 +847,7 @@ def drop_shadowed_use_refs():
     # the day a new one is added. Measured: this drops 110 rows on JSON and 895
     # on TheAlgorithms, and not one of them is a reference Understand reports
     # as a plain Use.
-    cursor = ReferenceModel._meta.database.execute_sql(
-        """
+    cursor = ReferenceModel._meta.database.execute_sql("""
         DELETE FROM referencemodel
          WHERE _kind_id IN (SELECT _id FROM kindmodel
                              WHERE _name IN ('Java Use', 'Java Useby'))
@@ -816,8 +858,7 @@ def drop_shadowed_use_refs():
                           AND other._kind_id NOT IN
                               (SELECT _id FROM kindmodel
                                 WHERE _name IN ('Java Use', 'Java Useby')))
-        """
-    )
+        """)
     return cursor.rowcount if cursor.rowcount and cursor.rowcount > 0 else 0
 
 
@@ -831,8 +872,10 @@ def relabel_nondynamic_calls():
 
     Returns the number of references relabelled.
     """
-    pairs = [("Java Call", "Java Callby"),
-             ("Java Call Nondynamic", "Java Callby Nondynamic")]
+    pairs = [
+        ("Java Call", "Java Callby"),
+        ("Java Call Nondynamic", "Java Callby Nondynamic"),
+    ]
     ids = {}
     for forward, inverse in pairs:
         for name in (forward, inverse):

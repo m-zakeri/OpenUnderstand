@@ -57,8 +57,11 @@ def literal_type(ctx):
             if kind == "double" and written == "f":
                 return "float"
             return kind
-        children = [c for c in (getattr(node, "children", None) or ())
-                    if hasattr(c, "getRuleIndex")]
+        children = [
+            c
+            for c in (getattr(node, "children", None) or ())
+            if hasattr(c, "getRuleIndex")
+        ]
         if len(children) != 1:
             return None
         node = children[0]
@@ -80,15 +83,29 @@ def argument_type(binder, ctx):
     except Exception:
         return None
 
+
 #: Contexts that open a scope holding declarations.
-_SCOPE = ("MethodDeclaration", "ConstructorDeclaration",
-          "GenericMethodDeclaration", "GenericConstructorDeclaration",
-          "InterfaceMethodDeclaration", "LambdaExpression", "Block",
-          "CatchClause", "Statement3", "Statement6", "Statement7")
+_SCOPE = (
+    "MethodDeclaration",
+    "ConstructorDeclaration",
+    "GenericMethodDeclaration",
+    "GenericConstructorDeclaration",
+    "InterfaceMethodDeclaration",
+    "LambdaExpression",
+    "Block",
+    "CatchClause",
+    "Statement3",
+    "Statement6",
+    "Statement7",
+)
 
 #: Contexts that declare a type.
-_TYPE_DECLARATION = ("ClassDeclaration", "InterfaceDeclaration",
-                     "EnumDeclaration", "AnnotationTypeDeclaration")
+_TYPE_DECLARATION = (
+    "ClassDeclaration",
+    "InterfaceDeclaration",
+    "EnumDeclaration",
+    "AnnotationTypeDeclaration",
+)
 
 #: A literal's type. A `null` literal has none, and the primitives cannot be
 #: called on, so only the two that can be receivers are named.
@@ -99,8 +116,11 @@ _LITERAL_TYPES = {
 
 
 def _kids(ctx, prefix):
-    return [c for c in (getattr(ctx, "children", None) or ())
-            if type(c).__name__.startswith(prefix)]
+    return [
+        c
+        for c in (getattr(ctx, "children", None) or ())
+        if type(c).__name__.startswith(prefix)
+    ]
 
 
 def _common_prefix(a, b):
@@ -155,8 +175,11 @@ class TypeBinder:
                 elif node.STATIC() is None:
                     imports[longname.split(".")[-1]] = longname
                 continue
-            stack.extend(c for c in (getattr(node, "children", None) or ())
-                         if hasattr(c, "getRuleIndex"))
+            stack.extend(
+                c
+                for c in (getattr(node, "children", None) or ())
+                if hasattr(c, "getRuleIndex")
+            )
         return imports, wildcards
 
     def _resolve(self, written, scope_longname):
@@ -177,21 +200,24 @@ class TypeBinder:
         if local:
             return local
         return symbol_table.resolve_type_name(
-            written, self.imports, self.wildcards, scope_longname or "")
+            written, self.imports, self.wildcards, scope_longname or ""
+        )
 
     def _local_type(self, simple, scope_longname):
         """A type declared in this file, innermost enclosing scope first."""
         if not simple or "." in simple:
             return None
-        candidates = [longname for longname in self._declared_types()
-                      if longname.rsplit(".", 1)[-1] == simple]
+        candidates = [
+            longname
+            for longname in self._declared_types()
+            if longname.rsplit(".", 1)[-1] == simple
+        ]
         if not candidates:
             return None
         scope = scope_longname or ""
         # `Builder` inside JSONPointer means JSONPointer.Builder, not another
         # class of that name elsewhere in the file.
-        return max(candidates,
-                   key=lambda name: len(_common_prefix(name, scope)))
+        return max(candidates, key=lambda name: len(_common_prefix(name, scope)))
 
     # -------------------------------------------------------------- scopes
 
@@ -226,21 +252,25 @@ class TypeBinder:
             node = stack.pop()
             name = type(node).__name__
             if not first and name.startswith(_TYPE_DECLARATION):
-                continue                    # a nested type declares its own
+                continue  # a nested type declares its own
             first = False
             if name.startswith("FieldDeclaration"):
                 written = _written_name(node.typeType())
                 declarators = node.variableDeclarators()
-                for declarator in (declarators.variableDeclarator()
-                                   if declarators is not None else []):
+                for declarator in (
+                    declarators.variableDeclarator() if declarators is not None else []
+                ):
                     identifier = declarator.variableDeclaratorId()
                     if identifier is not None:
                         found[identifier.getText().split("[")[0]] = written
                 continue
             if name.startswith(("MethodBody", "ConstructorBody")):
-                continue                    # a body declares locals, not fields
-            stack.extend(c for c in (getattr(node, "children", None) or ())
-                         if hasattr(c, "getRuleIndex"))
+                continue  # a body declares locals, not fields
+            stack.extend(
+                c
+                for c in (getattr(node, "children", None) or ())
+                if hasattr(c, "getRuleIndex")
+            )
         self._fields[key] = found
         return found
 
@@ -291,8 +321,11 @@ class TypeBinder:
                 if identifier is not None and not isinstance(identifier, list):
                     parents = class_properties.ClassPropertiesListener.findParents(node)
                     found[".".join(parents + [identifier.getText()])] = node
-            stack.extend(c for c in (getattr(node, "children", None) or ())
-                         if hasattr(c, "getRuleIndex"))
+            stack.extend(
+                c
+                for c in (getattr(node, "children", None) or ())
+                if hasattr(c, "getRuleIndex")
+            )
         self._declared = found
         return found
 
@@ -308,8 +341,9 @@ class TypeBinder:
             written = self._own_fields(node).get(member)
             if written:
                 return self._resolve(written, owner)
-        return (symbol_table.member_type(owner, member)
-                or jdk_index.field_type(owner, member))
+        return symbol_table.member_type(owner, member) or jdk_index.field_type(
+            owner, member
+        )
 
     def return_type(self, owner, member):
         """Type `owner.member(...)` evaluates to, preferring this file."""
@@ -323,8 +357,9 @@ class TypeBinder:
             written = self._own_returns(node).get(member)
             if written:
                 return self._resolve(written, owner)
-        return (jdk_index.return_type(owner, member)
-                or symbol_table.return_type(owner, member, owner))
+        return jdk_index.return_type(owner, member) or symbol_table.return_type(
+            owner, member, owner
+        )
 
     def _own_returns(self, type_ctx):
         """`{method name: written return type}` for a type's own methods.
@@ -348,13 +383,21 @@ class TypeBinder:
                 declared = getattr(node, "typeTypeOrVoid", None)
                 declared = declared() if callable(declared) else None
                 written = _written_name(declared)
-                if (identifier is not None and not isinstance(identifier, list)
-                        and written and written != "void"):
+                if (
+                    identifier is not None
+                    and not isinstance(identifier, list)
+                    and written
+                    and written != "void"
+                ):
                     member = identifier.getText()
-                    found[member] = (written if found.get(member, written) == written
-                                     else "")
-            stack.extend(c for c in (getattr(node, "children", None) or ())
-                         if hasattr(c, "getRuleIndex"))
+                    found[member] = (
+                        written if found.get(member, written) == written else ""
+                    )
+            stack.extend(
+                c
+                for c in (getattr(node, "children", None) or ())
+                if hasattr(c, "getRuleIndex")
+            )
         found = {k: v for k, v in found.items() if v}
         self._returns[key] = found
         return found
@@ -377,7 +420,7 @@ class TypeBinder:
         key = id(ctx)
         if key in self._type_of:
             return self._type_of[key]
-        self._type_of[key] = None           # break cycles while computing
+        self._type_of[key] = None  # break cycles while computing
         answer = self._compute(ctx)
         self._type_of[key] = answer
         return answer
@@ -392,20 +435,20 @@ class TypeBinder:
         if name in _LITERAL_TYPES:
             return _LITERAL_TYPES[name]
         if name.startswith("Literal"):
-            return None                     # a number, a boolean, null
+            return None  # a number, a boolean, null
         if name == "Expression0Context":
             return self.type_of(ctx.primary())
-        if name == "Primary0Context":       # ( expression )
+        if name == "Primary0Context":  # ( expression )
             return self.type_of(ctx.expression())
-        if name == "Primary1Context":       # this
+        if name == "Primary1Context":  # this
             return scope
-        if name == "Primary2Context":       # super
+        if name == "Primary2Context":  # super
             return self._superclass(scope) if scope else None
-        if name == "Primary3Context":       # a literal
+        if name == "Primary3Context":  # a literal
             return self.type_of(ctx.literal())
-        if name == "Primary5Context":       # X.class
+        if name == "Primary5Context":  # X.class
             return "java.lang.Class"
-        if name == "Primary4Context":       # a bare name
+        if name == "Primary4Context":  # a bare name
             identifier = ctx.IDENTIFIER().getText()
             written = self.name_type(identifier, ctx)
             if written:
@@ -413,21 +456,21 @@ class TypeBinder:
             # Not a variable in scope, so the name is a type: `Math.abs(x)`.
             return self._resolve(identifier, scope)
 
-        if name == "Expression5Context":    # ( T ) x
+        if name == "Expression5Context":  # ( T ) x
             return self._resolve(_written_name(ctx.typeType()), scope)
-        if name == "Expression4Context":    # new T(...)
+        if name == "Expression4Context":  # new T(...)
             return self._created(ctx, scope)
-        if name == "Expression2Context":    # a[i] -- the element type
+        if name == "Expression2Context":  # a[i] -- the element type
             inner = ctx.expression()
             return self.type_of(inner[0] if isinstance(inner, list) else inner)
-        if name == "Expression3Context":    # f(...) with no receiver
+        if name == "Expression3Context":  # f(...) with no receiver
             call = ctx.methodCall()
             member = self._call_name(call)
             if not member:
                 return None
             owner = symbol_table.INDEX.declaring_type(scope, member) or scope
             return self.return_type(owner, member)
-        if name == "Expression1Context":    # a.b, a.f(), a.this, a.new
+        if name == "Expression1Context":  # a.b, a.f(), a.this, a.new
             receiver = ctx.expression()
             if isinstance(receiver, list):
                 receiver = receiver[0] if receiver else None
@@ -446,11 +489,15 @@ class TypeBinder:
                 return self.member_type(owner, identifier.getText())
             return None
 
-        if name in ("Expression6Context", "Expression7Context",
-                    "Expression8Context", "Expression21Context"):
+        if name in (
+            "Expression6Context",
+            "Expression7Context",
+            "Expression8Context",
+            "Expression21Context",
+        ):
             inner = ctx.expression()
             return self.type_of(inner[0] if isinstance(inner, list) else inner)
-        if name == "Expression20Context":   # a ? b : c
+        if name == "Expression20Context":  # a ? b : c
             branches = ctx.expression()
             for branch in (branches[1:] if isinstance(branches, list) else []):
                 found = self.type_of(branch)
@@ -483,8 +530,9 @@ class TypeBinder:
             written = ".".join(i.getText() for i in identifiers)
         else:
             written = identifiers.getText()
-        return self._resolve(written.split(".")[-1] if "." not in written
-                             else written, scope)
+        return self._resolve(
+            written.split(".")[-1] if "." not in written else written, scope
+        )
 
 
 def demo():
@@ -526,7 +574,8 @@ public class Outer {
 }
 """
     tree = JavaParserLabeled(
-        CommonTokenStream(JavaLexer(InputStream(source)))).compilationUnit()
+        CommonTokenStream(JavaLexer(InputStream(source)))
+    ).compilationUnit()
     binder = TypeBinder(tree, "Outer.java")
 
     # Collect every expression that is the receiver of a `.something`.
@@ -544,8 +593,11 @@ public class Outer {
                 # whole point of the scope walk.
                 key = (binder.enclosing_type(receiver), receiver.getText())
                 found.setdefault(key, binder.type_of(receiver))
-        stack.extend(c for c in (getattr(node, "children", None) or ())
-                     if hasattr(c, "getRuleIndex"))
+        stack.extend(
+            c
+            for c in (getattr(node, "children", None) or ())
+            if hasattr(c, "getRuleIndex")
+        )
 
     OUTER, INNER = "org.json.Outer", "org.json.Outer.Inner"
     expected = {

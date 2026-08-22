@@ -105,8 +105,9 @@ class _DeclarationIndex:
             self.types.setdefault(simple_name, set()).add(longname)
 
     @staticmethod
-    def _closest(candidates, simple_name: str, scope_longname: str,
-                 local_only: bool = False) -> str | None:
+    def _closest(
+        candidates, simple_name: str, scope_longname: str, local_only: bool = False
+    ) -> str | None:
         """The candidate an asking scope would bind, or None when ambiguous.
 
         Innermost scope first, the way Java resolves: a declaration in the
@@ -147,13 +148,16 @@ class _DeclarationIndex:
     def resolve(self, simple_name: str, scope_longname: str = "") -> str | None:
         """Long name for a simple name, or None when it is ambiguous."""
         return self._closest(
-            self.by_simple_name.get(simple_name), simple_name, scope_longname)
+            self.by_simple_name.get(simple_name), simple_name, scope_longname
+        )
 
-    def resolve_type(self, simple_name: str, scope_longname: str = "",
-                     local_only: bool = False) -> str | None:
+    def resolve_type(
+        self, simple_name: str, scope_longname: str = "", local_only: bool = False
+    ) -> str | None:
         """Long name for a *type's* simple name, or None when it is ambiguous."""
         return self._closest(
-            self.types.get(simple_name), simple_name, scope_longname, local_only)
+            self.types.get(simple_name), simple_name, scope_longname, local_only
+        )
 
     def declares(self, type_longname: str, member: str) -> bool:
         return f"{type_longname}.{member}" in self.by_simple_name.get(member, ())
@@ -186,8 +190,9 @@ class _DeclarationIndex:
             return None
         return None
 
-    def overridden_declaration(self, owner: str, member: str,
-                               parameters: tuple) -> str | None:
+    def overridden_declaration(
+        self, owner: str, member: str, parameters: tuple
+    ) -> str | None:
         """The supertype whose declaration of `member` this one overrides.
 
         Stricter than declaring_type(): an override has to match the
@@ -216,7 +221,8 @@ class _DeclarationIndex:
                 if not resolved:
                     continue
                 for declared, abstract, generic in self.methods.get(
-                        f"{resolved}.{member}", ()):
+                    f"{resolved}.{member}", ()
+                ):
                     if declared == parameters and not (abstract and generic):
                         return resolved
                 found = search(resolved)
@@ -237,7 +243,8 @@ INDEX = _DeclarationIndex()
 #: the generated JDK index rather than listed by hand -- the hand-written set
 #: had 61 names and missed whatever no benchmark had yet used.
 JAVA_LANG_TYPES = frozenset(
-    name for name, longnames in jdk_index._load()["by_simple"].items()
+    name
+    for name, longnames in jdk_index._load()["by_simple"].items()
     if any(l.rsplit(".", 1)[0] == "java.lang" for l in longnames)
 )
 
@@ -355,7 +362,8 @@ def build(root: str) -> _DeclarationIndex:
     from openunderstand.analysis_passes.define_definein import DefineListener
     from openunderstand.analysis_passes import class_properties
     from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
-        JavaParserLabeledListener)
+        JavaParserLabeledListener,
+    )
     from antlr4 import ParseTreeWalker
 
     class _Supertypes(JavaParserLabeledListener):
@@ -378,8 +386,7 @@ def build(root: str) -> _DeclarationIndex:
             if ctx.EXTENDS() is not None and ctx.typeType() is not None:
                 supers.append(ctx.typeType().getText().split("<")[0])
             if ctx.IMPLEMENTS() is not None and ctx.typeList() is not None:
-                supers += [t.getText().split("<")[0]
-                           for t in ctx.typeList().typeType()]
+                supers += [t.getText().split("<")[0] for t in ctx.typeList().typeType()]
             if supers:
                 self.pairs.append((longname, supers))
             if ctx.EXTENDS() is not None and ctx.typeType() is not None:
@@ -397,8 +404,7 @@ def build(root: str) -> _DeclarationIndex:
             longname = ".".join(parents + [ctx.IDENTIFIER().getText()])
             supers = ["java.lang.Enum"]
             if ctx.typeList() is not None:
-                supers += [t.getText().split("<")[0]
-                           for t in ctx.typeList().typeType()]
+                supers += [t.getText().split("<")[0] for t in ctx.typeList().typeType()]
             self.pairs.append((longname, supers))
 
         def enterInterfaceDeclaration(self, ctx):
@@ -407,8 +413,11 @@ def build(root: str) -> _DeclarationIndex:
             parents = class_properties.ClassPropertiesListener.findParents(ctx)
             longname = ".".join(parents + [ctx.IDENTIFIER().getText()])
             self.pairs.append(
-                (longname, [t.getText().split("<")[0]
-                            for t in ctx.typeList().typeType()]))
+                (
+                    longname,
+                    [t.getText().split("<")[0] for t in ctx.typeList().typeType()],
+                )
+            )
 
         # ------------------------------------------------------- signatures
 
@@ -430,8 +439,7 @@ def build(root: str) -> _DeclarationIndex:
             identifier = ctx.IDENTIFIER()
             if identifier is None:
                 return
-            owner = ".".join(
-                class_properties.ClassPropertiesListener.findParents(ctx))
+            owner = ".".join(class_properties.ClassPropertiesListener.findParents(ctx))
             self.fields[(owner, identifier.getText())] = owner
 
         def enterFieldDeclaration(self, ctx):
@@ -439,8 +447,7 @@ def build(root: str) -> _DeclarationIndex:
             declarators = ctx.variableDeclarators()
             if type_ctx is None or declarators is None:
                 return
-            owner = ".".join(
-                class_properties.ClassPropertiesListener.findParents(ctx))
+            owner = ".".join(class_properties.ClassPropertiesListener.findParents(ctx))
             written = type_ctx.getText().split("<")[0]
             for declarator in declarators.variableDeclarator() or []:
                 identifier = declarator.variableDeclaratorId()
@@ -467,7 +474,8 @@ def build(root: str) -> _DeclarationIndex:
             longname = ".".join(parents + [identifier.getText()])
             symbol = identifier.symbol
             self.overloads.setdefault(longname, []).append(
-                (parameter_types(ctx), symbol.line, symbol.column + 1))
+                (parameter_types(ctx), symbol.line, symbol.column + 1)
+            )
 
         def _signature(self, ctx):
             identifier = ctx.IDENTIFIER()
@@ -490,7 +498,8 @@ def build(root: str) -> _DeclarationIndex:
                 and ctx.typeParameters() is not None
             )
             self.methods.setdefault(longname, []).append(
-                (parameter_types(ctx), abstract, generic))
+                (parameter_types(ctx), abstract, generic)
+            )
             self._overload(ctx)
 
             declared = getattr(ctx, "typeTypeOrVoid", None)
@@ -522,21 +531,23 @@ def build(root: str) -> _DeclarationIndex:
         index.supertypes.update(supertypes.pairs)
         index.methods.update(supertypes.methods)
         index.overloads.update(
-            {name: [entry + (path,) for entry in entries]
-             for name, entries in supertypes.overloads.items()})
+            {
+                name: [entry + (path,) for entry in entries]
+                for name, entries in supertypes.overloads.items()
+            }
+        )
         index.superclasses.update(
-            {name: (written, path)
-             for name, written in supertypes.superclasses.items()})
-        index.return_types.update(
-            {k: v for k, v in supertypes.returns.items() if v})
+            {name: (written, path) for name, written in supertypes.superclasses.items()}
+        )
+        index.return_types.update({k: v for k, v in supertypes.returns.items() if v})
         index.field_types.update(supertypes.fields)
         index.file_imports[path] = (supertypes.imports, supertypes.wildcards)
         for declaration in listener.defines:
             index.add(
                 declaration["ent"],
                 declaration["ent_longname"],
-                is_type=declaration.get("decl") in ("class", "interface", "enum",
-                                                    "annotation"),
+                is_type=declaration.get("decl")
+                in ("class", "interface", "enum", "annotation"),
             )
             if declaration.get("decl") in ("interface", "annotation"):
                 index.interfaces.add(declaration["ent_longname"])
@@ -681,10 +692,14 @@ _WIDENING = {
     "float": {"double"},
 }
 _BOXES = {
-    "boolean": "java.lang.Boolean", "byte": "java.lang.Byte",
-    "char": "java.lang.Character", "short": "java.lang.Short",
-    "int": "java.lang.Integer", "long": "java.lang.Long",
-    "float": "java.lang.Float", "double": "java.lang.Double",
+    "boolean": "java.lang.Boolean",
+    "byte": "java.lang.Byte",
+    "char": "java.lang.Character",
+    "short": "java.lang.Short",
+    "int": "java.lang.Integer",
+    "long": "java.lang.Long",
+    "float": "java.lang.Float",
+    "double": "java.lang.Double",
 }
 #: Every box except Boolean and Character is a java.lang.Number.
 _NOT_A_NUMBER = {"java.lang.Boolean", "java.lang.Character"}
@@ -705,8 +720,9 @@ def _parameter_longname(written, imports, wildcards, scope):
         return None
     if base in _PRIMITIVES:
         return base + arrays
-    resolved = (resolve_type_name(base, imports, wildcards, scope)
-                or jdk_index.resolve_simple(base))
+    resolved = resolve_type_name(
+        base, imports, wildcards, scope
+    ) or jdk_index.resolve_simple(base)
     return (resolved + arrays) if resolved else None
 
 
@@ -718,7 +734,7 @@ def _argument_fits(argument, parameter):
     calls the first, so an exact match has to outrank a widening one.
     """
     if parameter is None or argument is None:
-        return 1                            # unknown on either side judges nothing
+        return 1  # unknown on either side judges nothing
     if argument == parameter:
         return 2
     if argument == "null":
@@ -772,7 +788,7 @@ def overload_site(longname: str, argument_types) -> tuple | None:
         total, fits = 0, True
         for index, argument in enumerate(argument_types):
             if index >= len(written):
-                break                       # swallowed by the variadic tail
+                break  # swallowed by the variadic tail
             declared = _parameter_longname(written[index], imports, wildcards, scope)
             points = _argument_fits(argument, declared)
             if not points:
@@ -891,8 +907,9 @@ def is_project_type(longname: str) -> bool:
     return longname in INDEX.types.get(longname.rsplit(".", 1)[-1], ())
 
 
-def resolve_type(simple_name: str, scope_longname: str = "",
-                 local_only: bool = False) -> str | None:
+def resolve_type(
+    simple_name: str, scope_longname: str = "", local_only: bool = False
+) -> str | None:
     """Long name for a *type's* simple name, or None if none resolves.
 
     resolve() searches every declaration, so a variable named `value` and a

@@ -15,7 +15,9 @@ __author__ = "zahra habibolah, G4"
 # __version__ = "0.1.0"
 
 # Omitted imports and other code for brevity
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 import openunderstand.analysis_passes.class_properties as class_properties
 
@@ -206,7 +208,8 @@ class CreateAndCreateBy(JavaParserLabeledListener):
                         # project entity shares the name, where Understand
                         # reports java.lang.StringBuilder.
                         "refent_longname": self.resolve_created_type(
-                            createdName.getText(), scope_longname),
+                            createdName.getText(), scope_longname
+                        ),
                         "scope_parent": (
                             all_parents[-2] if len(all_parents) > 1 else None
                         ),
@@ -244,15 +247,17 @@ class CreateAndCreateBy(JavaParserLabeledListener):
         arguments = rest.arguments() if rest is not None else None
         listed = arguments.expressionList() if arguments is not None else None
         if arguments is None:
-            return None                     # an array creation runs no constructor
-        return tuple(type_binding.argument_type(self.binder(expression), expression)
-                     for expression in (listed.expression() if listed else []))
+            return None  # an array creation runs no constructor
+        return tuple(
+            type_binding.argument_type(self.binder(expression), expression)
+            for expression in (listed.expression() if listed else [])
+        )
 
     def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
         longname = ctx.qualifiedName().getText()
         if ctx.getText().rstrip(";").endswith(".*"):
             self.wildcard_imports.append(longname)
-            return          # a package, not a type
+            return  # a package, not a type
         self.imports[longname.split(".")[-1]] = longname
 
     def resolve_created_type(self, name, scope_longname):
@@ -263,7 +268,8 @@ class CreateAndCreateBy(JavaParserLabeledListener):
         # near-copy; the shared one also resolves a type reached through one of
         # several `import x.y.*`, which is most of what Hanoi.java constructs.
         return symbol_table.resolve_type_name(
-            name, self.imports, self.wildcard_imports, scope_longname)
+            name, self.imports, self.wildcard_imports, scope_longname
+        )
 
     def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
         self.package_long_name = ctx.qualifiedName().getText()

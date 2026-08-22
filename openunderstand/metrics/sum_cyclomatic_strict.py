@@ -4,7 +4,9 @@ from openunderstand.metrics import context
 from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
 from openunderstand.oudb.models import kind_id, EntityModel
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 
 
 class CyclomaticStrictListener(JavaParserLabeledListener):
@@ -50,7 +52,6 @@ class CyclomaticStrictListener(JavaParserLabeledListener):
     # ?
     def enterExpression20(self, ctx: JavaParserLabeled.Expression20Context):
         self.sum += 1
-
 
 
 def _enclosing_file_contents(entity_longname):

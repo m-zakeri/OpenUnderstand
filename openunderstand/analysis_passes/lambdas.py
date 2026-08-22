@@ -17,7 +17,9 @@ merge_placeholder_entities() folds those into whatever shares the simple name.
 """
 
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 import openunderstand.analysis_passes.class_properties as class_properties
 
 
@@ -42,12 +44,14 @@ class LambdaListener(JavaParserLabeledListener):
             return
 
         token = ctx.start
-        self.relations.append({
-            "kind": "Java Use Ptr",
-            "scope_longname": scope,
-            "ent_longname": f"{scope}.{name}",
-            "ent_kind": "Java Method Lambda",
-            "name": name,
-            "line": token.line,
-            "col": token.column,
-        })
+        self.relations.append(
+            {
+                "kind": "Java Use Ptr",
+                "scope_longname": scope,
+                "ent_longname": f"{scope}.{name}",
+                "ent_kind": "Java Method Lambda",
+                "name": name,
+                "line": token.line,
+                "col": token.column,
+            }
+        )

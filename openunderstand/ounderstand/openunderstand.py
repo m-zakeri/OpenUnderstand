@@ -86,11 +86,14 @@ def start_parsing(
     from openunderstand.oudb.fill import fill
     from openunderstand.ounderstand.runner import runner
     from openunderstand.ounderstand import symbol_table
-    from openunderstand.oudb.models import (drop_shadowed_use_refs, drop_orphan_placeholders,
-                                            drop_external_inverse_refs,
-                                        drop_nonvariable_deref_refs,
-                                            merge_placeholder_entities,
-                                            relabel_nondynamic_calls)
+    from openunderstand.oudb.models import (
+        drop_shadowed_use_refs,
+        drop_orphan_placeholders,
+        drop_external_inverse_refs,
+        drop_nonvariable_deref_refs,
+        merge_placeholder_entities,
+        relabel_nondynamic_calls,
+    )
 
     if (
         repo_address is not None

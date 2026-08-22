@@ -109,6 +109,7 @@ def _process_file(file_address):
         p=p,
     )
 
+
 def process_file(file_address):
     """Analyse one file inside a single database transaction.
 

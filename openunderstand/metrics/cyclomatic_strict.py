@@ -35,8 +35,11 @@ def _short_circuits(ent_model):
         if type(node).__name__ in _SHORT_CIRCUIT:
             if get_method_ctx(node) in (outermost, None):
                 total += 1
-        stack.extend(c for c in (getattr(node, "children", None) or ())
-                     if hasattr(c, "getRuleIndex"))
+        stack.extend(
+            c
+            for c in (getattr(node, "children", None) or ())
+            if hasattr(c, "getRuleIndex")
+        )
     return total
 
 
@@ -46,13 +49,18 @@ def _outermost_declaration(tree):
     while stack:
         node = stack.pop()
         if type(node).__name__ in (
-                "MethodDeclarationContext", "ConstructorDeclarationContext",
-                "GenericMethodDeclarationContext",
-                "GenericConstructorDeclarationContext"):
+            "MethodDeclarationContext",
+            "ConstructorDeclarationContext",
+            "GenericMethodDeclarationContext",
+            "GenericConstructorDeclarationContext",
+        ):
             if found is None or node.start.start < found.start.start:
                 found = node
-        stack.extend(c for c in (getattr(node, "children", None) or ())
-                     if hasattr(c, "getRuleIndex"))
+        stack.extend(
+            c
+            for c in (getattr(node, "children", None) or ())
+            if hasattr(c, "getRuleIndex")
+        )
     return found
 
 

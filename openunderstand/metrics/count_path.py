@@ -39,7 +39,7 @@ import math
 
 from openunderstand.metrics import context
 
-_MAX = 10 ** 9  # A path count is a product; deep nesting overflows meaning.
+_MAX = 10**9  # A path count is a product; deep nesting overflows meaning.
 
 #: `complete, exits` for a statement that just runs, and for one that leaves.
 _RUNS = (1, 0)
@@ -47,8 +47,11 @@ _LEAVES = (0, 1)
 
 
 def _kids(ctx, prefix):
-    return [c for c in (getattr(ctx, "children", None) or ())
-            if type(c).__name__.startswith(prefix)]
+    return [
+        c
+        for c in (getattr(ctx, "children", None) or ())
+        if type(c).__name__.startswith(prefix)
+    ]
 
 
 def _sequence(statements):
@@ -74,19 +77,19 @@ def _flow(ctx):
         inner = _kids(ctx, "Statement")
         return _flow(inner[0]) if inner else _RUNS
 
-    if name == "Statement0Context":                     # bare block
+    if name == "Statement0Context":  # bare block
         return _flow(_kids(ctx, "Block")[0])
-    if name == "Statement2Context":                     # if / else
+    if name == "Statement2Context":  # if / else
         branches = _kids(ctx, "Statement")
         then_c, then_e = _flow(branches[0])
-        else_c, else_e = (_flow(branches[1]) if len(branches) > 1 else _RUNS)
+        else_c, else_e = _flow(branches[1]) if len(branches) > 1 else _RUNS
         return min(then_c + else_c, _MAX), min(then_e + else_e, _MAX)
-    if name in ("Statement3Context", "Statement4Context"):   # for, while
+    if name in ("Statement3Context", "Statement4Context"):  # for, while
         body_c, body_e = _flow(_kids(ctx, "Statement")[0])
         return min(body_c + 1, _MAX), body_e
-    if name == "Statement5Context":                     # do-while
+    if name == "Statement5Context":  # do-while
         return _flow(_kids(ctx, "Statement")[0])
-    if name in ("Statement6Context", "Statement7Context"):   # try
+    if name in ("Statement6Context", "Statement7Context"):  # try
         blocks = _kids(ctx, "Block")
         complete, exits = _flow(blocks[0]) if blocks else _RUNS
         for clause in _kids(ctx, "CatchClause"):
@@ -95,23 +98,28 @@ def _flow(ctx):
         for block in _kids(ctx, "FinallyBlock"):
             complete *= _flow(_kids(block, "Block")[0])[0]
         return min(complete, _MAX), min(exits, _MAX)
-    if name == "Statement8Context":                     # switch
+    if name == "Statement8Context":  # switch
         groups = _kids(ctx, "SwitchBlockStatementGroup")
         complete = exits = 0
         for group in groups:
             group_c, group_e = _sequence(_kids(group, "BlockStatement"))
             complete, exits = complete + group_c, exits + group_e
         labels = _kids(ctx, "SwitchLabel") + [
-            label for group in groups for label in _kids(group, "SwitchLabel")]
+            label for group in groups for label in _kids(group, "SwitchLabel")
+        ]
         if not any(label.getText().startswith("default") for label in labels):
             complete += 1  # falling straight out of the switch is a path
         return min(complete, _MAX), min(exits, _MAX)
-    if name == "Statement9Context":                     # synchronized
+    if name == "Statement9Context":  # synchronized
         return _flow(_kids(ctx, "Block")[0])
-    if name == "Statement16Context":                    # label: statement
+    if name == "Statement16Context":  # label: statement
         return _flow(_kids(ctx, "Statement")[0])
-    if name in ("Statement10Context", "Statement11Context",     # return, throw
-                "Statement12Context", "Statement13Context"):    # break, continue
+    if name in (
+        "Statement10Context",
+        "Statement11Context",  # return, throw
+        "Statement12Context",
+        "Statement13Context",
+    ):  # break, continue
         return _LEAVES
     return _RUNS
 
@@ -155,8 +163,11 @@ def demo():
         ("{ switch (x) { case 1: x++; break; default: x--; break; } }", 2),
         ("{ switch (x) { case 1: break; case 2: break; default: break; } }", 3),
         ("{ try { x++; } catch (Exception e) { x--; } }", 2),
-        ("{ try { x++; } catch (RuntimeException e) { x--; }"
-         " catch (Exception e) { x = 0; } }", 3),
+        (
+            "{ try { x++; } catch (RuntimeException e) { x--; }"
+            " catch (Exception e) { x = 0; } }",
+            3,
+        ),
         ("{ try { x++; } finally { x--; } }", 1),
         ("{ try { x++; } catch (Exception e) { x--; } finally { x = 0; } }", 2),
         ("{ return x > 0 ? 1 : 2; }", 1),
@@ -169,8 +180,11 @@ def demo():
         ("{ if (x > 0) { return 1; } else { return 2; } }", 2),
         ("{ if (x > 0) { x++; } return x; }", 2),
         ("{ if (x > 0) return; x++; }", 2),
-        ("{ if (x == 1) return 1; else if (x == 2) return 2;"
-         " else if (x == 3) return 3; return 4; }", 4),
+        (
+            "{ if (x == 1) return 1; else if (x == 2) return 2;"
+            " else if (x == 3) return 3; return 4; }",
+            4,
+        ),
         ("{ if (x == 1) return 1; else if (x == 2) return 2; else return 3; }", 3),
         ("{ while (x > 0) { if (x == 5) return 1; x--; } return 2; }", 3),
         ("{ while (x > 0) { x--; } return 2; }", 2),
@@ -181,11 +195,20 @@ def demo():
         ("{ switch (x) { case 1: return 1; default: return 2; } }", 2),
         ("{ try { return 1; } catch (Exception e) { return 2; } }", 2),
         ("{ if (x > 0) { x++; } if (x > 1) { x++; } return x; }", 4),
-        ("{ if (x > 0) { x++; } if (x > 1) { x++; } if (x > 2) { x++; } return x; }", 8),
-        ("{ if (x > 0) return 1; if (x > 1) { x++; } if (x > 2) { x++; } return x; }", 5),
+        (
+            "{ if (x > 0) { x++; } if (x > 1) { x++; } if (x > 2) { x++; } return x; }",
+            8,
+        ),
+        (
+            "{ if (x > 0) return 1; if (x > 1) { x++; } if (x > 2) { x++; } return x; }",
+            5,
+        ),
         ("{ if (x > 0) { if (x > 1) { return 1; } x++; } return 2; }", 3),
         ("{ for (int i = 0; i < x; i++) { if (i == 3) return i; } return -1; }", 3),
-        ("{ if (x>0){ if(x>1){ if(x>2){ return 3; } return 2; } return 1; } return 0; }", 4),
+        (
+            "{ if (x>0){ if(x>1){ if(x>2){ return 3; } return 2; } return 1; } return 0; }",
+            4,
+        ),
         ("{ if (x > 0) { return 1; } throw new RuntimeException(); }", 2),
     ]
     for source, expected in cases:

@@ -67,7 +67,8 @@ def _load() -> dict:
                 "interface": "I" in flags,
                 "supers": supers.split(",") if supers else [],
                 "fields": dict(
-                    pair.split("=", 1) for pair in fields.split(",") if "=" in pair),
+                    pair.split("=", 1) for pair in fields.split(",") if "=" in pair
+                ),
                 "methods": arities,
                 "returns": returns,
                 # Declared members at this type -- constructors included, every
@@ -101,7 +102,7 @@ def resolve_simple(name: str, packages=()) -> str | None:
         if len(offered) == 1:
             return offered[0]
         if offered:
-            return None                 # the imports do not settle it either
+            return None  # the imports do not settle it either
     return candidates[0] if len(candidates) == 1 else None
 
 
@@ -189,16 +190,18 @@ def inherited_members(longname: str) -> int:
     if entry is None or entry["interface"]:
         return 0
     total, seen = 0, {longname}
-    current = entry["superclass"] or ("java.lang.Object"
-                                      if longname != "java.lang.Object" else "")
+    current = entry["superclass"] or (
+        "java.lang.Object" if longname != "java.lang.Object" else ""
+    )
     while current and current not in seen:
         seen.add(current)
         parent = types.get(current)
         if parent is None:
             break
         total += parent["members"]
-        current = parent["superclass"] or ("java.lang.Object"
-                                           if current != "java.lang.Object" else "")
+        current = parent["superclass"] or (
+            "java.lang.Object" if current != "java.lang.Object" else ""
+        )
     return total
 
 
@@ -246,7 +249,7 @@ def return_type(longname: str, member: str) -> str | None:
         if member in entry["returns"]:
             return entry["returns"][member]
         if member in entry["methods"]:
-            return None       # declared here and returns nothing chainable
+            return None  # declared here and returns nothing chainable
         pending.extend(entry["supers"])
     return None
 

@@ -4,8 +4,16 @@ from antlr4 import *
 
 from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel, col_1based, kind_id
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
+from openunderstand.oudb.models import (
+    KindModel,
+    EntityModel,
+    ReferenceModel,
+    col_1based,
+    kind_id,
+)
 
 PRJ_INDEX = 4
 
@@ -54,12 +62,14 @@ class ClassTypeData:
     # Methods are deliberately absent: a class local to a method is named for
     # its enclosing *type* here, and adding the method would invent a component
     # no other pass writes.
-    _TYPE_SCOPES = frozenset({
-        JavaParserLabeled.RULE_classDeclaration,
-        JavaParserLabeled.RULE_interfaceDeclaration,
-        JavaParserLabeled.RULE_enumDeclaration,
-        JavaParserLabeled.RULE_annotationTypeDeclaration,
-    })
+    _TYPE_SCOPES = frozenset(
+        {
+            JavaParserLabeled.RULE_classDeclaration,
+            JavaParserLabeled.RULE_interfaceDeclaration,
+            JavaParserLabeled.RULE_enumDeclaration,
+            JavaParserLabeled.RULE_annotationTypeDeclaration,
+        }
+    )
 
     def _enclosing_types(self) -> list:
         """Names of the types this class is nested in, outermost first."""
@@ -91,8 +101,11 @@ class ClassTypeData:
         already uses the right accessor; get_contents() genuinely wants the
         body text.
         """
-        parts = [self.package_name, *self._enclosing_types(),
-                 str(self.childClass.IDENTIFIER())]
+        parts = [
+            self.package_name,
+            *self._enclosing_types(),
+            str(self.childClass.IDENTIFIER()),
+        ]
         return ".".join(p for p in parts if p)
 
     def get_type(self) -> str:
@@ -267,8 +280,9 @@ def add_java_file_entity(file_path, file_name):
     return obj
 
 
-def add_references(importing_ent, imported_ent, cls_data: ClassTypeData, file_path,
-                   file_ent=None):
+def add_references(
+    importing_ent, imported_ent, cls_data: ClassTypeData, file_path, file_ent=None
+):
     """Record `class X` implicitly extending java.lang.Object.
 
     The kind is the *External* variant: the supertype is outside the analysed
@@ -282,8 +296,7 @@ def add_references(importing_ent, imported_ent, cls_data: ClassTypeData, file_pa
     """
     reference_file = file_ent or importing_ent
     ref, _ = ReferenceModel.get_or_create(
-        _kind=KindModel.get_or_none(
-            _name="Java Extend Couple Implicit External")._id,
+        _kind=KindModel.get_or_none(_name="Java Extend Couple Implicit External")._id,
         # _file is the file the reference occurs in. This was the *class*
         # entity, which is what every other pass had wrong before it was fixed.
         _file_id=reference_file._id,
@@ -295,7 +308,8 @@ def add_references(importing_ent, imported_ent, cls_data: ClassTypeData, file_pa
 
     inverse_ref, _ = ReferenceModel.get_or_create(
         _kind=KindModel.get_or_none(
-            _name="Java Extendby Coupleby Implicit External")._id,
+            _name="Java Extendby Coupleby Implicit External"
+        )._id,
         _file_id=reference_file._id,
         _line=cls_data.line,
         _column=0,

@@ -12,7 +12,9 @@ need the type of a field on another class.
 
 from antlr4 import ParseTreeWalker
 
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 
 
 class DeclaredTypeCollector(JavaParserLabeledListener):
@@ -85,8 +87,12 @@ class DeclaredTypeCollector(JavaParserLabeledListener):
 
 
 #: Declarations that open a scope of their own.
-_NESTED_TYPE = ("ClassDeclaration", "InterfaceDeclaration", "EnumDeclaration",
-                "AnnotationTypeDeclaration")
+_NESTED_TYPE = (
+    "ClassDeclaration",
+    "InterfaceDeclaration",
+    "EnumDeclaration",
+    "AnnotationTypeDeclaration",
+)
 
 
 def collect(ctx) -> dict:
@@ -122,8 +128,9 @@ def collect_own(ctx) -> dict:
         handler = handlers.get(type(node).__name__)
         if handler is not None:
             handler(node)
-        for child in (getattr(node, "children", None) or ()):
-            if hasattr(child, "getRuleIndex") and not type(
-                    child).__name__.startswith(_NESTED_TYPE):
+        for child in getattr(node, "children", None) or ():
+            if hasattr(child, "getRuleIndex") and not type(child).__name__.startswith(
+                _NESTED_TYPE
+            ):
                 stack.append(child)
     return collector.types

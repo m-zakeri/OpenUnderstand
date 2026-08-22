@@ -18,12 +18,22 @@ pass took ctx.start, one column short of where Understand puts it every time.
 """
 
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 import openunderstand.analysis_passes.class_properties as class_properties
 
 #: A cast to one of these names no entity, so it is not a reference.
 PRIMITIVES = {
-    "int", "long", "short", "byte", "char", "float", "double", "boolean", "void",
+    "int",
+    "long",
+    "short",
+    "byte",
+    "char",
+    "float",
+    "double",
+    "boolean",
+    "void",
 }
 
 
@@ -34,6 +44,7 @@ def _declaring_generic(ctx, name):
     name in its `<...>`. Returns None when nothing did, which is the common
     case -- most casts name an ordinary type.
     """
+
     def type_parameters(node):
         getter = getattr(node, "typeParameters", None)
         return getter() if callable(getter) else None
@@ -79,7 +90,7 @@ class CastAndCastBy(JavaParserLabeledListener):
 
         type_ctx = ctx.typeType()
         if type_ctx is None or type_ctx.classOrInterfaceType() is None:
-            return                                   # primitive, or `(int[])`
+            return  # primitive, or `(int[])`
         named = type_ctx.classOrInterfaceType()
         identifiers = named.IDENTIFIER()
         name = ".".join(i.getText() for i in identifiers)
@@ -100,16 +111,19 @@ class CastAndCastBy(JavaParserLabeledListener):
             # Never a bare simple name: merge_placeholder_entities() would fold
             # it into whichever single project entity happens to share it.
             target = symbol_table.resolve_type_name(
-                name, self.imports, self.wildcards, scope)
+                name, self.imports, self.wildcards, scope
+            )
         if not target or "." not in target:
             return
 
         token = named.start
-        self.relations.append({
-            "kind": "Java Use Cast",
-            "scope_longname": scope,
-            "ent_longname": target,
-            "name": identifiers[-1].getText(),
-            "line": token.line,
-            "col": token.column,
-        })
+        self.relations.append(
+            {
+                "kind": "Java Use Cast",
+                "scope_longname": scope,
+                "ent_longname": target,
+                "name": identifiers[-1].getText(),
+                "line": token.line,
+                "col": token.column,
+            }
+        )

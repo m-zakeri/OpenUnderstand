@@ -10,7 +10,10 @@ from openunderstand.analysis_passes.extends_implicit_couple_coupleby import (
     PackageImportListener,
     DSCmetric,
 )
-from openunderstand.analysis_passes.import_importby import ImportListener, ImportedEntityListener
+from openunderstand.analysis_passes.import_importby import (
+    ImportListener,
+    ImportedEntityListener,
+)
 from openunderstand.analysis_passes.import_demand import ImportListenerDemand
 
 from openunderstand.analysis_passes.define_definein import DefineListener
@@ -32,16 +35,22 @@ from openunderstand.analysis_passes.use_useby import UseAndUseByListener
 from openunderstand.analysis_passes.type_typedby import TypedAndTypedByListener
 from openunderstand.analysis_passes.set_setby import SetAndSetByListener
 from openunderstand.analysis_passes.setinit_setinitby import SetInitAndSetByInitListener
-from openunderstand.analysis_passes.setpartial_setpartialby import SetPartialAndSetByPartialListener
+from openunderstand.analysis_passes.setpartial_setpartialby import (
+    SetPartialAndSetByPartialListener,
+)
 from openunderstand.ounderstand.override_overrideby import overridelistener
 from openunderstand.analysis_passes.couple_coupleby import CoupleAndCoupleBy
 from openunderstand.analysis_passes.create_createby import CreateAndCreateBy
 from openunderstand.analysis_passes.declare_declarein import DeclareAndDeclareinListener
 from openunderstand.analysis_passes.extend_listener import ExtendListener
-from openunderstand.analysis_passes.extendcouple_extendcoupleby import ExtendCoupleAndExtendCoupleBy
+from openunderstand.analysis_passes.extendcouple_extendcoupleby import (
+    ExtendCoupleAndExtendCoupleBy,
+)
 from openunderstand.analysis_passes.variable_listener import VariableListener
 from openunderstand.analysis_passes.open_openby import OpenListener
-from openunderstand.analysis_passes.usemodule_usemoduleby import UseModuleUseModuleByListener
+from openunderstand.analysis_passes.usemodule_usemoduleby import (
+    UseModuleUseModuleByListener,
+)
 from openunderstand.utils.utilities import setup_logger, timer_decorator
 import os
 from pathlib import Path
@@ -165,7 +174,11 @@ class ListenersAndParsers:
         except Exception as e:
             self.logger.error(
                 "An Error occurred in field uses in file :"
-                + file_address + "\n" + str(e) + "\n" + traceback.format_exc()
+                + file_address
+                + "\n"
+                + str(e)
+                + "\n"
+                + traceback.format_exc()
             )
 
     @timer_decorator()
@@ -178,7 +191,11 @@ class ListenersAndParsers:
         except Exception as e:
             self.logger.error(
                 "An Error occurred in lambdas in file :"
-                + file_address + "\n" + str(e) + "\n" + traceback.format_exc()
+                + file_address
+                + "\n"
+                + str(e)
+                + "\n"
+                + traceback.format_exc()
             )
 
     @timer_decorator()
@@ -191,7 +208,11 @@ class ListenersAndParsers:
         except Exception as e:
             self.logger.error(
                 "An Error occurred in static imports in file :"
-                + file_address + "\n" + str(e) + "\n" + traceback.format_exc()
+                + file_address
+                + "\n"
+                + str(e)
+                + "\n"
+                + traceback.format_exc()
             )
 
     @timer_decorator()
@@ -204,7 +225,11 @@ class ListenersAndParsers:
         except Exception as e:
             self.logger.error(
                 "An Error occurred in overrides in file :"
-                + file_address + "\n" + str(e) + "\n" + traceback.format_exc()
+                + file_address
+                + "\n"
+                + str(e)
+                + "\n"
+                + traceback.format_exc()
             )
 
     @timer_decorator()
@@ -217,7 +242,11 @@ class ListenersAndParsers:
         except Exception as e:
             self.logger.error(
                 "An Error occurred in method calls in file :"
-                + file_address + "\n" + str(e) + "\n" + traceback.format_exc()
+                + file_address
+                + "\n"
+                + str(e)
+                + "\n"
+                + traceback.format_exc()
             )
 
     @timer_decorator()
@@ -353,9 +382,7 @@ class ListenersAndParsers:
             p.Walk(listener, tree)
             classescoupleby = listener.get_classes
             couple = listener.get_couples
-            p.addcouplereference(
-                classescoupleby , couple, file_ent
-            )
+            p.addcouplereference(classescoupleby, couple, file_ent)
             p.addTypeRelationRefs(listener.relations, file_ent)
             self.logger.info("couple success ")
         except Exception as e:

@@ -10,7 +10,9 @@ __version__ = "0.1.0"
 from antlr4 import *
 from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 import re
 
 from openunderstand.analysis_passes import class_properties
@@ -20,19 +22,21 @@ from openunderstand.analysis_passes import class_properties
 #: put local variables and string literals in the couple set.
 _QUALIFIED_NAME = re.compile(r"[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*")
 
+
 class CoupleAndCoupleBy(JavaParserLabeledListener):
     """
     #Todo: Implementing the ANTLR listener pass for Java Couple and Java Coupleby reference kind
     """
+
     def __init__(self):
         self.Couple = []
-        self.packageName = ''
+        self.packageName = ""
         self.Imports = {}
         self.Modifiers = []
         self.dic = {}
-        self.file =None
+        self.file = None
         self.classes = {}
-        self.classlongname = ''
+        self.classlongname = ""
         self.couplebyrefrences = []
         #: One (class dict, couple list) frame per open class declaration.
         self.stack = []
@@ -49,18 +53,13 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         #: Supertypes of the open frame's class, which are never couplings.
         self.ancestors = {"java.lang.Object"}
 
-
-
-
-    def set_file(self , filex):
+    def set_file(self, filex):
         self.file = filex
-
 
     def set_classesx(self, classesx):
         self.classes = classesx
 
-
-    def set_couples(self , couples):
+    def set_couples(self, couples):
         self.Couple = couples
 
     @property
@@ -79,17 +78,20 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         start, stop = ctx.start.start, ctx.stop.stop
         return input_stream.getText(start, stop)
 
-
-    def enterClassDeclaration(self, ctx:JavaParserLabeled.ClassDeclarationContext):
+    def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         self.push_scope(ctx, "Class")
 
-    def enterInterfaceDeclaration(self, ctx:JavaParserLabeled.InterfaceDeclarationContext):
+    def enterInterfaceDeclaration(
+        self, ctx: JavaParserLabeled.InterfaceDeclarationContext
+    ):
         self.push_scope(ctx, "Interface")
 
-    def enterAnnotationTypeDeclaration(self, ctx:JavaParserLabeled.AnnotationTypeDeclarationContext):
+    def enterAnnotationTypeDeclaration(
+        self, ctx: JavaParserLabeled.AnnotationTypeDeclarationContext
+    ):
         self.push_scope(ctx, "Annotation")
 
-    def enterEnumDeclaration(self, ctx:JavaParserLabeled.EnumDeclarationContext):
+    def enterEnumDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
         """`enum MyEnum { ... }` is a type and Understand couples it.
 
         Four of JSON's scopes -- MyEnum, MyEnumField, SingletonEnum and
@@ -104,7 +106,7 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         # which names no type at all.
         self.add("java.lang.String")
 
-    def enterClassCreatorRest(self, ctx:JavaParserLabeled.ClassCreatorRestContext):
+    def enterClassCreatorRest(self, ctx: JavaParserLabeled.ClassCreatorRestContext):
         """`new XMLXsiTypeConverter<Boolean>() { ... }` is a type of its own.
 
         Its members' annotations and the types they name belong to it, not to
@@ -118,10 +120,10 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
             return
         self.push_scope(ctx, "Class", name=name, body=ctx.classBody())
 
-    def exitEnumDeclaration(self, ctx:JavaParserLabeled.EnumDeclarationContext):
+    def exitEnumDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
         self.pop_scope()
 
-    def exitClassCreatorRest(self, ctx:JavaParserLabeled.ClassCreatorRestContext):
+    def exitClassCreatorRest(self, ctx: JavaParserLabeled.ClassCreatorRestContext):
         if class_properties.anonymous_name(ctx) is not None:
             self.pop_scope()
 
@@ -143,11 +145,17 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         scope_longname = ".".join(scope_parents + [name])
         line, col = body.start.line, body.start.column
         self.classlongname = scope_longname
-        self.dic = {"scope_kind": scope_kind, "scope_name": name,
-                                       "scope_longname": scope_longname,
-                                       "scope_parent": scope_parents[-2] if len(scope_parents) >= 2 else None,
-                                       "scope_contents": self.extract_original_text(body),
-                                       "scope_modifiers": self.Modifiers , 'File' : self.file , 'line':line ,  'col' : col }
+        self.dic = {
+            "scope_kind": scope_kind,
+            "scope_name": name,
+            "scope_longname": scope_longname,
+            "scope_parent": scope_parents[-2] if len(scope_parents) >= 2 else None,
+            "scope_contents": self.extract_original_text(body),
+            "scope_modifiers": self.Modifiers,
+            "File": self.file,
+            "line": line,
+            "col": col,
+        }
 
         # A nested class exits before the class that encloses it, so with a
         # single shared couple list `class JSONObject { ... static class
@@ -175,23 +183,26 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
 
     def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
         imported_class_longname = ctx.qualifiedName().getText()
-        if ctx.getText().rstrip(';').endswith('.*'):
+        if ctx.getText().rstrip(";").endswith(".*"):
             # `import java.util.*` names a package, not a type. Taking the last
             # segment registered 'util' -> 'java.util' as though util were a
             # class; the package is what an unqualified name falls back to.
             self.wildcard_imports.append(imported_class_longname)
             return
-        imported_class_name = imported_class_longname.split('.')[-1]
+        imported_class_name = imported_class_longname.split(".")[-1]
         self.Imports[imported_class_name] = imported_class_longname
 
-
-    def exitClassDeclaration(self, ctx:JavaParserLabeled.ClassDeclarationContext):
+    def exitClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         self.pop_scope()
 
-    def exitInterfaceDeclaration(self, ctx:JavaParserLabeled.InterfaceDeclarationContext):
+    def exitInterfaceDeclaration(
+        self, ctx: JavaParserLabeled.InterfaceDeclarationContext
+    ):
         self.pop_scope()
 
-    def exitAnnotationTypeDeclaration(self, ctx:JavaParserLabeled.AnnotationTypeDeclarationContext):
+    def exitAnnotationTypeDeclaration(
+        self, ctx: JavaParserLabeled.AnnotationTypeDeclarationContext
+    ):
         self.pop_scope()
 
     def pop_scope(self):
@@ -208,20 +219,16 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         self.ancestors = self.stack[-1][2] if self.stack else {"java.lang.Object"}
         self.classlongname = self.dic.get("scope_longname", "")
 
-
-
-
-
-
-
-    def enterClassOrInterfaceModifier(self, ctx:JavaParserLabeled.ClassOrInterfaceModifierContext):
+    def enterClassOrInterfaceModifier(
+        self, ctx: JavaParserLabeled.ClassOrInterfaceModifierContext
+    ):
         parent = ctx.parentCtx
-        if( type(parent).__name__ == 'TypeDeclarationContext'):
+        if type(parent).__name__ == "TypeDeclarationContext":
             self.Modifiers.append(ctx.getText())
 
-
-
-    def enterClassOrInterfaceType(self, ctx:JavaParserLabeled.ClassOrInterfaceTypeContext):
+    def enterClassOrInterfaceType(
+        self, ctx: JavaParserLabeled.ClassOrInterfaceTypeContext
+    ):
         """Collect the types this class is coupled to.
 
         Understand's Java Couple is purely type-level: every one of the 260
@@ -232,9 +239,9 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         (`JSONObject.quote.hhhh`) into the couple set -- 322 of our 364 rows
         had no Understand counterpart. Those two handlers are gone.
         """
-        if type(ctx.parentCtx).__name__ != 'TypeTypeContext':
+        if type(ctx.parentCtx).__name__ != "TypeTypeContext":
             return
-        if type(ctx.parentCtx.parentCtx).__name__.startswith('TypeArgument'):
+        if type(ctx.parentCtx.parentCtx).__name__.startswith("TypeArgument"):
             # A type argument counts only where it is *written in an
             # expression* -- `new HashMap<String, XMLXsiTypeConverter<?>>()` --
             # and not where it decorates a declared type. Understand's own
@@ -252,26 +259,34 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         # Understand emits no Java Couple for a supertype -- JSONException
         # extends RuntimeException produces none.
         grandparent = type(ctx.parentCtx.parentCtx).__name__
-        if grandparent == 'ClassDeclarationContext':
+        if grandparent == "ClassDeclarationContext":
             return
-        if grandparent == 'TypeListContext' and \
-                type(ctx.parentCtx.parentCtx.parentCtx).__name__ == 'ClassDeclarationContext':
+        if (
+            grandparent == "TypeListContext"
+            and type(ctx.parentCtx.parentCtx.parentCtx).__name__
+            == "ClassDeclarationContext"
+        ):
             # `implements Z` is its own relation, not a plain Couple.
-            self.record_relation('Java Implement Couple', ctx, self.classlongname)
+            self.record_relation("Java Implement Couple", ctx, self.classlongname)
             return
         bound = self.constrained_parameter(ctx)
         if bound is not None:
             # `<T extends Comparable<T>>` -- scoped to the type parameter
             # itself, which is how Understand names it: Searches.BinarySearch
             # .find.T -> java.lang.Comparable.
-            self.record_relation('Java Use Constrains Couple', ctx, bound)
+            self.record_relation("Java Use Constrains Couple", ctx, bound)
             return
 
         self.add(self.resolve_type_longname(ctx))
 
     #: Rules a type argument may sit under before reaching what encloses it.
-    _ARGUMENT_CHAIN = ("TypeType", "TypeArgument", "TypeArguments",
-                       "TypeArgumentsOrDiamond", "ClassOrInterfaceType")
+    _ARGUMENT_CHAIN = (
+        "TypeType",
+        "TypeArgument",
+        "TypeArguments",
+        "TypeArgumentsOrDiamond",
+        "ClassOrInterfaceType",
+    )
 
     @classmethod
     def _inside_creator(cls, ctx):
@@ -297,7 +312,7 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         """Long name of the type parameter this type bounds, or None."""
         node = ctx.parentCtx
         while node is not None:
-            if type(node).__name__.startswith('TypeParameter'):
+            if type(node).__name__.startswith("TypeParameter"):
                 identifier = node.IDENTIFIER()
                 if identifier is None:
                     return None
@@ -310,8 +325,8 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
                     # the class and the scope came out Searches.BinarySearch.T
                     # where Understand says Searches.BinarySearch.find.T.
                     parents = parents + [owner]
-                return '.'.join(parents + [identifier.getText()])
-            if type(node).__name__.startswith(('ClassBody', 'Block')):
+                return ".".join(parents + [identifier.getText()])
+            if type(node).__name__.startswith(("ClassBody", "Block")):
                 return None
             node = node.parentCtx
         return None
@@ -322,15 +337,16 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         current = node.parentCtx
         while current is not None:
             name = type(current).__name__
-            if name.startswith(('GenericMethodDeclaration',
-                                'GenericConstructorDeclaration')):
-                for attribute in ('methodDeclaration', 'constructorDeclaration'):
+            if name.startswith(
+                ("GenericMethodDeclaration", "GenericConstructorDeclaration")
+            ):
+                for attribute in ("methodDeclaration", "constructorDeclaration"):
                     inner = getattr(current, attribute, None)
                     inner = inner() if callable(inner) else None
                     if inner is not None and inner.IDENTIFIER() is not None:
                         return inner.IDENTIFIER().getText()
                 return None
-            if name.startswith(('ClassBody', 'ClassDeclaration')):
+            if name.startswith(("ClassBody", "ClassDeclaration")):
                 return None
             current = current.parentCtx
         return None
@@ -346,16 +362,18 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         if not longname or not scope_longname:
             return
         token = ctx.start
-        self.relations.append({
-            'kind': kind,
-            'scope_longname': scope_longname,
-            'ent_longname': longname,
-            'name': longname.rsplit('.', 1)[-1],
-            'line': token.line,
-            'col': token.column,
-        })
+        self.relations.append(
+            {
+                "kind": kind,
+                "scope_longname": scope_longname,
+                "ent_longname": longname,
+                "name": longname.rsplit(".", 1)[-1],
+                "line": token.line,
+                "col": token.column,
+            }
+        )
 
-    def enterAnnotation(self, ctx:JavaParserLabeled.AnnotationContext):
+    def enterAnnotation(self, ctx: JavaParserLabeled.AnnotationContext):
         """`@Override` couples the type to the annotation type."""
         if ctx.qualifiedName() is None:
             return
@@ -369,7 +387,7 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         else:
             self.add(keyname)
 
-    def enterExpression1(self, ctx:JavaParserLabeled.Expression1Context):
+    def enterExpression1(self, ctx: JavaParserLabeled.Expression1Context):
         """A static access couples the class to the receiver's type.
 
         `Integer.parseInt(s)`, `XML.toJSONObject(r)`. Collecting from
@@ -439,7 +457,7 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
             self._binder = TypeBinder(root, self.file)
         return self._binder
 
-    def enterPrimary5(self, ctx:JavaParserLabeled.Primary5Context):
+    def enterPrimary5(self, ctx: JavaParserLabeled.Primary5Context):
         """`NullPointerException.class` is a value of type java.lang.Class.
 
         Sixteen of JSON's classes couple to java.lang.Class and not one of them
@@ -449,7 +467,7 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         """
         self.add("java.lang.Class")
 
-    def enterMethodCall0(self, ctx:JavaParserLabeled.MethodCall0Context):
+    def enterMethodCall0(self, ctx: JavaParserLabeled.MethodCall0Context):
         """A call couples the class to what it uses: the member's declaring
         type and what the call evaluates to.
 
@@ -484,9 +502,9 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
             # has nothing to bind; accepted only when the name is one the JDK
             # index or the project actually declares.
             text = receiver_ctx.getText()
-            if (_QUALIFIED_NAME.fullmatch(text)
-                    and (jdk_index.known(text)
-                         or symbol_table.is_project_type(text))):
+            if _QUALIFIED_NAME.fullmatch(text) and (
+                jdk_index.known(text) or symbol_table.is_project_type(text)
+            ):
                 owner = text
         if not owner:
             return
@@ -503,7 +521,7 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         # java.io.Writer on three classes Understand does not couple to it.
         self.add(symbol_table.declaring_type_anywhere(owner, member))
 
-    def enterCreatedName0(self, ctx:JavaParserLabeled.CreatedName0Context):
+    def enterCreatedName0(self, ctx: JavaParserLabeled.CreatedName0Context):
         """`new JSONTokener(...)` -- createdName is not a classOrInterfaceType.
 
         Not for `new JSONString() { ... }`: the created type is then the
@@ -516,7 +534,7 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
             return
         self.add(self.lookup(".".join(i.getText() for i in ctx.IDENTIFIER())))
 
-    def enterCatchType(self, ctx:JavaParserLabeled.CatchTypeContext):
+    def enterCatchType(self, ctx: JavaParserLabeled.CatchTypeContext):
         """`catch (JSONException e)` -- catchType holds qualifiedNames."""
         for qualified_name in ctx.qualifiedName():
             self.add(self.lookup(qualified_name.getText()))
@@ -535,7 +553,7 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         if keyname not in self.couplebyrefrences:
             self.couplebyrefrences.append(keyname)
 
-    def enterTypeParameter(self, ctx:JavaParserLabeled.TypeParameterContext):
+    def enterTypeParameter(self, ctx: JavaParserLabeled.TypeParameterContext):
         """`<E>` declares a name that looks like a type but denotes none.
 
         Understand couples to no type parameter on the JSON benchmark; without
@@ -546,7 +564,7 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         """
         self.type_parameters.add(ctx.IDENTIFIER().getText())
 
-    def enterQualifiedNameList(self, ctx:JavaParserLabeled.QualifiedNameListContext):
+    def enterQualifiedNameList(self, ctx: JavaParserLabeled.QualifiedNameListContext):
         """A `throws` clause couples the class to the exception types.
 
         qualifiedNameList appears only after THROWS in this grammar. Because it
@@ -583,6 +601,5 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         # on JSON. resolve_type_name asks the JDK index instead, and refuses
         # when nothing settles it.
         return symbol_table.resolve_type_name(
-            name, self.Imports, self.wildcard_imports, self.classlongname)
-
-
+            name, self.Imports, self.wildcard_imports, self.classlongname
+        )

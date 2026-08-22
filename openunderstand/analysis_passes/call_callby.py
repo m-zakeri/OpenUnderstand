@@ -4,7 +4,9 @@ This module find all OpenUnderstand call and callby references in a Java project
 ## References
 """
 
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 import openunderstand.analysis_passes.class_properties as class_properties
 from openunderstand.analysis_passes.general_scope_listener import GeneralScopeListener
@@ -150,8 +152,11 @@ class CallAndCallBy(JavaParserLabeledListener):
                                         if methodCall is not None:
                                             called = methodCall.IDENTIFIER()
                                             called_longname = self.callee_longname(
-                                                called, self.receiver_of(exp3),
-                                                cls, context)
+                                                called,
+                                                self.receiver_of(exp3),
+                                                cls,
+                                                context,
+                                            )
                                             if called_longname is None:
                                                 continue
                                             scope_parents = class_properties.ClassPropertiesListener.findParents(
@@ -194,8 +199,8 @@ class CallAndCallBy(JavaParserLabeledListener):
                                     if methodCall is not None:
                                         called = methodCall.IDENTIFIER()
                                         called_longname = self.callee_longname(
-                                            called, self.receiver_of(exp),
-                                            cls, context)
+                                            called, self.receiver_of(exp), cls, context
+                                        )
                                         if called_longname is None:
                                             return
                                         scope_parents = class_properties.ClassPropertiesListener.findParents(

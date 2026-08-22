@@ -38,7 +38,6 @@ from openunderstand.oudb.models import find_kind, kind_id
 # Constants
 
 
-
 def get_created_entity(name):
     entity = EntityModel.get_or_none(_name=name)
     return entity
@@ -379,7 +378,9 @@ class FileEntityManager:
     @staticmethod
     def get_file_entity(longname):
         """get or return none for a file entity abased on its longname as address."""
-        file_ent = EntityModel.get_or_none(_kind=kind_id("Java File"), _longname=longname)
+        file_ent = EntityModel.get_or_none(
+            _kind=kind_id("Java File"), _longname=longname
+        )
         return file_ent
 
 
@@ -443,6 +444,7 @@ class PackageEntityManager:
     def get_package_entity(name, longname):
         """get or return none for a package entity abased on its longname as address."""
         package_ent = EntityModel.get_or_none(
-            _kind=kind_id("Java Package Unnamed") if name == "" else 72, _longname=longname
+            _kind=kind_id("Java Package Unnamed") if name == "" else 72,
+            _longname=longname,
         )
         return package_ent

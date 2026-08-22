@@ -30,7 +30,9 @@ TheAlgorithms' 47. Understand reports them against the enclosing method.
 """
 
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 import openunderstand.analysis_passes.class_properties as class_properties
 
 
@@ -57,32 +59,34 @@ class OverridesListener(JavaParserLabeledListener):
         parents = class_properties.ClassPropertiesListener.findParents(ctx)
         if not parents:
             return
-        owner = ".".join(parents)          # the class declaring this method
+        owner = ".".join(parents)  # the class declaring this method
         parameters = symbol_table.parameter_types(ctx)
 
-        declaring = symbol_table.INDEX.overridden_declaration(
-            owner, name, parameters)
+        declaring = symbol_table.INDEX.overridden_declaration(owner, name, parameters)
         if declaring is None:
             declaring = self._anonymous_supertype(
-                symbol_table, ctx, owner, name, parameters)
+                symbol_table, ctx, owner, name, parameters
+            )
         if declaring is None:
-            declaring = self._jdk_supertype(
-                symbol_table, owner, name, len(parameters))
+            declaring = self._jdk_supertype(symbol_table, owner, name, len(parameters))
         if declaring is None:
-            if (symbol_table.JDK_OVERRIDABLE["java.lang.Object"].get(name)
-                    == len(parameters)):
+            if symbol_table.JDK_OVERRIDABLE["java.lang.Object"].get(name) == len(
+                parameters
+            ):
                 declaring = "java.lang.Object"
         if declaring is None:
             return
 
-        self.relations.append({
-            "kind": "Java Overrides",
-            "scope_longname": f"{owner}.{name}",
-            "ent_longname": f"{declaring}.{name}",
-            "name": name,
-            "line": identifier.symbol.line,
-            "col": identifier.symbol.column,
-        })
+        self.relations.append(
+            {
+                "kind": "Java Overrides",
+                "scope_longname": f"{owner}.{name}",
+                "ent_longname": f"{declaring}.{name}",
+                "name": name,
+                "line": identifier.symbol.line,
+                "col": identifier.symbol.column,
+            }
+        )
 
     @staticmethod
     def _anonymous_supertype(symbol_table, ctx, owner, name, parameters):
@@ -102,14 +106,17 @@ class OverridesListener(JavaParserLabeledListener):
                     simple = identifiers[-1].getText()
                     in_project = symbol_table.resolve_type(simple, owner)
                     if in_project:
-                        for declared, abstract, generic in (
-                                symbol_table.INDEX.methods.get(
-                                    f"{in_project}.{name}", ())):
+                        for (
+                            declared,
+                            abstract,
+                            generic,
+                        ) in symbol_table.INDEX.methods.get(f"{in_project}.{name}", ()):
                             if declared == parameters and not (abstract and generic):
                                 return in_project
                     longname = symbol_table.JDK_OVERRIDABLE_BY_SIMPLE_NAME.get(simple)
                     if longname and symbol_table.JDK_OVERRIDABLE[longname].get(
-                            name) == len(parameters):
+                        name
+                    ) == len(parameters):
                         return longname
                 return None
             node = node.parentCtx
@@ -120,7 +127,8 @@ class OverridesListener(JavaParserLabeledListener):
         """A JDK interface this class names that declares `name`/`arity`."""
         for supertype in symbol_table.INDEX.supertypes.get(owner, []):
             longname = symbol_table.JDK_OVERRIDABLE_BY_SIMPLE_NAME.get(
-                supertype.rsplit(".", 1)[-1])
+                supertype.rsplit(".", 1)[-1]
+            )
             if longname is None:
                 continue
             if symbol_table.JDK_OVERRIDABLE[longname].get(name) == arity:

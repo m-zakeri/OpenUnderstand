@@ -77,7 +77,6 @@ def timer_decorator():
 
 import os
 
-
 #: Used when config.ini is absent, which is the normal case for an installed
 #: package: a user who runs `pip install openunderstand` has no config file,
 #: and until these defaults existed the first call raised KeyError('Logging')
@@ -105,12 +104,18 @@ def setup_config():
     """
     config = configparser.ConfigParser()
     config.read_dict(_DEFAULTS)
-    config.read([
-        os.path.join(os.getcwd(), "config.ini"),
-        os.path.join(
-            os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "config.ini"
-        ),
-    ])
+    config.read(
+        [
+            os.path.join(os.getcwd(), "config.ini"),
+            os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                "..",
+                "..",
+                "..",
+                "config.ini",
+            ),
+        ]
+    )
     return config
 
 
@@ -141,11 +146,10 @@ def setup_logger():
         handler = logging.FileHandler(filename) if filename else logging.StreamHandler()
     except OSError:
         handler = logging.StreamHandler()
-    handler.setLevel(getattr(logging, config["Logging"].get("level", "INFO").upper(),
-                             logging.INFO))
-    handler.setFormatter(
-        logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    handler.setLevel(
+        getattr(logging, config["Logging"].get("level", "INFO").upper(), logging.INFO)
     )
+    handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
     logger.addHandler(handler)
 
     _LOGGER = logger

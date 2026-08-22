@@ -1,4 +1,6 @@
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 from antlr4 import *
 from openunderstand.metrics import context
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled

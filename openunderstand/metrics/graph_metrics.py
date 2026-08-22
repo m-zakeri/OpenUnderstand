@@ -20,8 +20,14 @@ being papered over.
 import math
 from functools import lru_cache
 
-from openunderstand.oudb.models import (EntityModel, KindModel, ReferenceModel,
-                                        _kind_name, kind_family, kind_id)
+from openunderstand.oudb.models import (
+    EntityModel,
+    KindModel,
+    ReferenceModel,
+    _kind_name,
+    kind_family,
+    kind_id,
+)
 
 
 def _by_entity(function):
@@ -32,6 +38,7 @@ def _by_entity(function):
     the project each time. Keyed on the database file as well as the entity, so
     opening a second database cannot serve the first one's answers.
     """
+
     @lru_cache(maxsize=4096)
     def cached(_database, entity_id):
         return function(EntityModel.get_or_none(_id=entity_id))
@@ -52,9 +59,11 @@ def _refs(entity_id, kind_name):
     kind = KindModel.get_or_none(_name=kind_name)
     if kind is None:
         return []
-    return list(ReferenceModel.select().where(
-        (ReferenceModel._kind == kind._id) & (ReferenceModel._scope == entity_id)
-    ))
+    return list(
+        ReferenceModel.select().where(
+            (ReferenceModel._kind == kind._id) & (ReferenceModel._scope == entity_id)
+        )
+    )
 
 
 def _targets(entity_id, kind_name, family=None):
@@ -83,6 +92,7 @@ def _visibility(entity):
 
 
 # ---------------------------------------------------------------- declarations
+
 
 def count_decl_class(ent_model):
     """Classes declared in this entity.
@@ -129,8 +139,7 @@ def count_decl_instance_method(ent_model):
     entity = _entity(ent_model)
     if entity is None:
         return 0
-    return sum("static" not in _visibility(m)
-               for m in _declares(entity._id, "method"))
+    return sum("static" not in _visibility(m) for m in _declares(entity._id, "method"))
 
 
 def count_decl_instance_variable(ent_model, visibility=None):
@@ -151,11 +160,8 @@ def count_decl_instance_variable(ent_model, visibility=None):
 # ------------------------------------------------------------------- coupling
 
 
-
-
-
 def count_class_derived(ent_model):
-    """"Number of immediate subclasses. [aka NOC]"
+    """ "Number of immediate subclasses. [aka NOC]"
 
     A class that *implements* an interface is one of its children -- Understand
     reports 7 for JSONString, and counting Extendby alone reported 0.
@@ -169,7 +175,7 @@ def count_class_derived(ent_model):
 
 
 def max_inheritance_tree(ent_model):
-    """"Maximum depth of class in inheritance tree. [aka DIT]"
+    """ "Maximum depth of class in inheritance tree. [aka DIT]"
 
     Object is the root at 0, so a class that declares no superclass is 1 and
     each further `extends` adds one. Only superclasses *in the project* count:
@@ -198,7 +204,6 @@ def max_inheritance_tree(ent_model):
         depth += 1
 
 
-
 def count_decl_file(ent_model):
     """Files this package is declared in -- Understand's "Number of files".
 
@@ -218,13 +223,15 @@ def count_decl_file(ent_model):
     definein = KindModel.get_or_none(_name="Java Definein")
     if definein is None:
         return 0
-    return len({
-        ref._file_id
-        for ref in ReferenceModel.select().where(
-            (ReferenceModel._kind == definein._id)
-            & (ReferenceModel._scope == entity._id)
-        )
-    })
+    return len(
+        {
+            ref._file_id
+            for ref in ReferenceModel.select().where(
+                (ReferenceModel._kind == definein._id)
+                & (ReferenceModel._scope == entity._id)
+            )
+        }
+    )
 
 
 def average_line_counts(ent_model) -> dict:
@@ -255,8 +262,6 @@ def average_line_counts(ent_model) -> dict:
     return {key: round(value / len(members)) for key, value in totals.items()}
 
 
-
-
 # --------------------------------------------------- corrections from the manual
 #
 # metrics.pdf (Understand 7.0.1217) defines these precisely. Each function below
@@ -268,8 +273,10 @@ def average_line_counts(ent_model) -> dict:
 #: superclass; the variants carry the JDK ones and the `extends Object` the
 #: extends_implicit pass writes for a class that declares no superclass.
 _SUPERTYPE_KINDS = (
-    "Java Extend Couple", "Java Extend Couple External",
-    "Java Extend Couple Implicit", "Java Extend Couple Implicit External",
+    "Java Extend Couple",
+    "Java Extend Couple External",
+    "Java Extend Couple Implicit",
+    "Java Extend Couple Implicit External",
     "Java Implement Couple",
 )
 
@@ -283,7 +290,7 @@ def _supertypes(entity_id, kinds=_SUPERTYPE_KINDS):
 
 
 def count_class_base(ent_model):
-    """"Number of immediate base classes. [aka IFANIN]"
+    """ "Number of immediate base classes. [aka IFANIN]"
 
     Immediate, not transitive: the previous version walked the whole ancestor
     chain. Every Java *class* has java.lang.Object as a base, but an interface
@@ -298,7 +305,7 @@ def count_class_base(ent_model):
 
 
 def count_class_coupled(ent_model, exclude_standard=False):
-    """"Class A is coupled to class B if class A uses a type, data, or member
+    """ "Class A is coupled to class B if class A uses a type, data, or member
     from class B. Base classes and nested classes are not counted. Any number
     of couplings to a given class counts as 1."
 
@@ -338,7 +345,7 @@ def _is_standard(entity):
 
 
 def count_decl_class_method(ent_model):
-    """"Number of class methods." A class method is a static one."""
+    """ "Number of class methods." A class method is a static one."""
     entity = _entity(ent_model)
     if entity is None:
         return 0
@@ -346,16 +353,18 @@ def count_decl_class_method(ent_model):
 
 
 def count_decl_class_variable(ent_model):
-    """"Number of class variables. [aka NV]" -- static fields."""
+    """ "Number of class variables. [aka NV]" -- static fields."""
     entity = _entity(ent_model)
     if entity is None:
         return 0
-    return sum("static" in _visibility(v) and "local" not in _visibility(v)
-               for v in _declares(entity._id, "variable"))
+    return sum(
+        "static" in _visibility(v) and "local" not in _visibility(v)
+        for v in _declares(entity._id, "variable")
+    )
 
 
 def count_semicolon(ent_model):
-    """"Number of semicolons" -- in code, not in comments or string literals.
+    """ "Number of semicolons" -- in code, not in comments or string literals.
 
     Counting every `;` in the text also counted the ones inside strings and
     Javadoc, which is why this scored 75% instead of matching.
@@ -426,8 +435,9 @@ def _fan_targets(entity_id, ref_kinds, owner_longname):
             # apart, and only the long name tells a field from a local.
             if "Parameter" in (_kind_name(target._kind_id) or ""):
                 out.add(target._id)
-            elif not (owner_longname
-                      and (target._longname or "").startswith(tuple(prefixes))):
+            elif not (
+                owner_longname and (target._longname or "").startswith(tuple(prefixes))
+            ):
                 out.add(target._id)
     return out
 
@@ -455,13 +465,13 @@ def _field_targets(entity_id, ref_kinds, owner_longname):
             if "Parameter" in (_kind_name(target._kind_id) or ""):
                 continue
             if owner_longname and (target._longname or "").startswith(tuple(prefixes)):
-                continue        # a local
+                continue  # a local
             out.add(target._id)
     return out
 
 
 def count_output(ent_model):
-    """"Functions calls + Parameters set/modify + Global Variables set/modify.
+    """ "Functions calls + Parameters set/modify + Global Variables set/modify.
     A non-void return value adds one to the count." [aka FANOUT]
 
     Two things in that sentence are not what they look like, and reproducing
@@ -484,14 +494,16 @@ def count_output(ent_model):
     fan = {t._id for t in _targets(entity._id, "Java Call")}
     fan |= {t._id for t in _targets(entity._id, "Java Call Nondynamic")}
     fan.discard(entity._id)  # "Recursive function calls ... are not included"
-    fan |= _field_targets(entity._id, _kinds_like("Java Set", "Java Modify"),
-                          entity._longname)
+    fan |= _field_targets(
+        entity._id, _kinds_like("Java Set", "Java Modify"), entity._longname
+    )
     kind = _kind_name(entity._kind_id) or ""
     declared = (entity._type or "").strip()
     # A lambda earns the same 1 a non-void return does, and declares no type to
     # say so: all 35 of JSON's are exactly their callees plus one.
-    returns_something = ("Constructor" in kind or "Lambda" in kind
-                         or (declared and declared != "void"))
+    returns_something = (
+        "Constructor" in kind or "Lambda" in kind or (declared and declared != "void")
+    )
     if returns_something and kind_family(entity._kind_id) == "method":
         fan.add(("return", entity._id))
     return len(fan)
@@ -520,7 +532,7 @@ def _use_kind_names():
 
 
 def count_input(ent_model):
-    """"Functions calledby + Parameters read + Global Variables read." [aka FANIN]
+    """ "Functions calledby + Parameters read + Global Variables read." [aka FANIN]
 
     Understand's own wording: "Recursive function calls and local variables
     that are not class static variables are not included." Reproducing it over
@@ -552,9 +564,14 @@ _NOT_AGGREGATED = {
     # files gives 0, because a file declares nothing -- the class is defined
     # in the package's scope, not the file's.
     "CountDeclClass",
-    "CountDeclFile", "CountClassBase", "CountClassDerived",
-    "CountClassCoupled", "CountClassCoupledModified", "MaxInheritanceTree",
-    "PercentLackOfCohesion", "PercentLackOfCohesionModified",
+    "CountDeclFile",
+    "CountClassBase",
+    "CountClassDerived",
+    "CountClassCoupled",
+    "CountClassCoupledModified",
+    "MaxInheritanceTree",
+    "PercentLackOfCohesion",
+    "PercentLackOfCohesionModified",
     "RatioCommentToCode",
 }
 
@@ -685,8 +702,8 @@ def nested_methods(ent_model):
             return []
         methods = {}
         for ref in ReferenceModel.select().where(
-                (ReferenceModel._kind == define._id)
-                & (ReferenceModel._file == entity._id)):
+            (ReferenceModel._kind == define._id) & (ReferenceModel._file == entity._id)
+        ):
             target = EntityModel.get_or_none(_id=ref._ent_id)
             if target is not None and kind_family(target._kind_id) == "method":
                 methods[target._id] = target
@@ -734,20 +751,21 @@ def aggregate(name, values):
 METHOD_SUMMARY = {
     f"{agg}{base}": base
     for agg in ("Avg", "Max", "Sum")
-    for base in ("Cyclomatic", "CyclomaticModified", "CyclomaticStrict",
-                 "Essential")
+    for base in ("Cyclomatic", "CyclomaticModified", "CyclomaticStrict", "Essential")
 }
-METHOD_SUMMARY.update({
-    "AvgCountLine": "CountLine",
-    "AvgCountLineBlank": "CountLineBlank",
-    "AvgCountLineCode": "CountLineCode",
-    "AvgCountLineComment": "CountLineComment",
-    "MaxNesting": "MaxNesting",
-})
+METHOD_SUMMARY.update(
+    {
+        "AvgCountLine": "CountLine",
+        "AvgCountLineBlank": "CountLineBlank",
+        "AvgCountLineCode": "CountLineCode",
+        "AvgCountLineComment": "CountLineComment",
+        "MaxNesting": "MaxNesting",
+    }
+)
 
 
 def percent_lack_of_cohesion(ent_model, modified=False):
-    """"Percentage of methods that do not use each instance variable." [LCOM]
+    """ "Percentage of methods that do not use each instance variable." [LCOM]
 
     Computed from the reference graph rather than by reparsing. The listener
     this replaces collected a class's fields by walking
@@ -773,8 +791,11 @@ def percent_lack_of_cohesion(ent_model, modified=False):
     # nothing between its methods by construction, and Understand scores it 0
     # rather than a total lack of cohesion -- AnyBaseToAnyBase,
     # DecimalToHexaDecimal and RomanToInteger came out 67, 50 and 75.
-    fields = [v for v in _declares(entity._id, "variable")
-              if not {"local", "parameter", "static"} & _visibility(v)]
+    fields = [
+        v
+        for v in _declares(entity._id, "variable")
+        if not {"local", "parameter", "static"} & _visibility(v)
+    ]
     if not methods or not fields:
         # Undefined for a class with no methods or no fields; Understand
         # reports 0 there, not total lack of cohesion.
@@ -798,10 +819,15 @@ def percent_lack_of_cohesion(ent_model, modified=False):
         # Understand's own numbers need the full closure, not one hop --
         # JSONArray is 6, and direct use alone says 81. Measured against
         # Understand: 86% direct, 93% one hop, 99% at the fixed point.
-        callers = {m._id: {c._id
-                           for kind in ("Java Callby", "Java Callby Nondynamic")
-                           for c in _targets(m._id, kind)} & method_ids
-                   for m in methods}
+        callers = {
+            m._id: {
+                c._id
+                for kind in ("Java Callby", "Java Callby Nondynamic")
+                for c in _targets(m._id, kind)
+            }
+            & method_ids
+            for m in methods
+        }
         for field_id, reached in users.items():
             pending = list(reached)
             while pending:

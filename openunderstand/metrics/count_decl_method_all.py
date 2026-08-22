@@ -1,6 +1,11 @@
-from openunderstand.oudb.models import (EntityModel, KindModel, ReferenceModel,
-                                        _kind_name, kind_family, kind_id)
-
+from openunderstand.oudb.models import (
+    EntityModel,
+    KindModel,
+    ReferenceModel,
+    _kind_name,
+    kind_family,
+    kind_id,
+)
 
 #: java.lang.Object's declared methods, plus Object().
 _OBJECT_METHODS = 13
@@ -27,7 +32,8 @@ def _superclasses(entity_id):
     # the walk went class -> Object -> all 26 classes and summed their methods.
     # CountDeclMethodAll returned the same 193 for every type on JSON.
     extend_kinds = [
-        k._id for k in KindModel.select().where(
+        k._id
+        for k in KindModel.select().where(
             (KindModel.is_ent_kind == False)  # noqa: E712
             & (KindModel._name.contains("Extend"))
             & ~(KindModel._name.contains("Extendby"))
@@ -80,8 +86,9 @@ def count_decl_method_all(ent_model=None) -> int:
             # all the way to java.lang.Object. org.json.JSONException is its
             # own 3 plus 5, 5, 27 and 13 -- Understand's 53, where stopping at
             # the boundary and adding a flat 13 for Object gave 16.
-            inherited += (jdk_index.member_count(longname)
-                          + jdk_index.inherited_members(longname))
+            inherited += jdk_index.member_count(longname) + jdk_index.inherited_members(
+                longname
+            )
             continue
         methods |= _defined_methods(current)
         pending.extend(_superclasses(current))
@@ -94,7 +101,8 @@ def count_decl_method_all(ent_model=None) -> int:
     # its own single method -- where adding Object's 13 gave 14, and JSON has
     # seven interfaces and annotations that were all wrong by exactly that.
     if {"interface", "annotation"} & set(
-            (_kind_name(entity._kind_id) or "").lower().split()):
+        (_kind_name(entity._kind_id) or "").lower().split()
+    ):
         return len(methods)
     if inherited:
         # java.lang.Object is the end of that chain, so it is already counted.

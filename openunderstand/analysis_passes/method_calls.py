@@ -14,12 +14,13 @@ arrived at from the other direction.
 """
 
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 import re
 
 import openunderstand.analysis_passes.class_properties as class_properties
 from openunderstand.analysis_passes import declared_types
-
 
 #: `((Number)object)` and `(Number)object` -- a parenthesised cast, whose
 #: type is what a call on it lands on.
@@ -60,11 +61,11 @@ class MethodCallListener(JavaParserLabeledListener):
         # collect_own: a class body contains its nested classes, and the
         # plain walk folded their fields in with its own -- `this.items`
         # resolved to whichever `items` was declared last in the file.
-        self.field_types = (declared_types.collect_own(body) if body is not None
-                            else {})
+        self.field_types = declared_types.collect_own(body) if body is not None else {}
         self.enclosing_type = ".".join(
             class_properties.ClassPropertiesListener.findParents(ctx)
-            + [ctx.IDENTIFIER().getText()])
+            + [ctx.IDENTIFIER().getText()]
+        )
 
     def exitClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         if self._scopes:
@@ -73,7 +74,9 @@ class MethodCallListener(JavaParserLabeledListener):
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         self.local_types = declared_types.collect(ctx)
 
-    def enterConstructorDeclaration(self, ctx: JavaParserLabeled.ConstructorDeclarationContext):
+    def enterConstructorDeclaration(
+        self, ctx: JavaParserLabeled.ConstructorDeclarationContext
+    ):
         self.local_types = declared_types.collect(ctx)
 
     def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
@@ -87,7 +90,7 @@ class MethodCallListener(JavaParserLabeledListener):
             return
         if on_demand:
             self.wildcards.append(longname)
-            return          # a package, not a type
+            return  # a package, not a type
         self.imports[longname.split(".")[-1]] = longname
 
     def declared_type(self, name):
@@ -126,10 +129,13 @@ class MethodCallListener(JavaParserLabeledListener):
             # `unescape(x.nextTo(';')).trim()` -- the inner call has no
             # receiver, so it is a method of the enclosing class. 595 of
             # JSON's calls chain off one of these.
-            return (symbol_table.return_type(self.enclosing_type,
-                                             identifier.getText(),
-                                             scope_longname)
-                    if self.enclosing_type else None)
+            return (
+                symbol_table.return_type(
+                    self.enclosing_type, identifier.getText(), scope_longname
+                )
+                if self.enclosing_type
+                else None
+            )
         inner = ctx.expression()
         if inner is None or isinstance(inner, list):
             return None
@@ -139,8 +145,9 @@ class MethodCallListener(JavaParserLabeledListener):
         member = identifier.getText()
         # The JDK index covers java./javax. only; the symbol table answers for
         # the project's own methods, which is 1,598 of JSON's calls.
-        return (jdk_index.return_type(owner, member)
-                or symbol_table.return_type(owner, member, scope_longname))
+        return jdk_index.return_type(owner, member) or symbol_table.return_type(
+            owner, member, scope_longname
+        )
 
     def enterMethodCall1(self, ctx: JavaParserLabeled.MethodCall1Context):
         """`this(...)` calls another constructor of the same class."""
@@ -162,24 +169,32 @@ class MethodCallListener(JavaParserLabeledListener):
 
         if keyword is None or self.enclosing_type is None:
             return
-        owner = (self.enclosing_type if own
-                 else symbol_table.superclass_of(self.enclosing_type))
+        owner = (
+            self.enclosing_type
+            if own
+            else symbol_table.superclass_of(self.enclosing_type)
+        )
         if not owner:
             return
         listed = ctx.expressionList()
-        self.calls.append({
-            "name": owner.rsplit(".", 1)[-1],
-            "receiver": None,
-            # The write layer's static-import branch: it joins owner and name
-            # and picks the overload, which is exactly what is wanted here.
-            "owner_longname": owner,
-            "arguments": tuple(self.argument_type(a)
-                               for a in (listed.expression() if listed else [])),
-            "scope_longname": ".".join(
-                class_properties.ClassPropertiesListener.findParents(ctx)),
-            "line": keyword.symbol.line,
-            "col": keyword.symbol.column,
-        })
+        self.calls.append(
+            {
+                "name": owner.rsplit(".", 1)[-1],
+                "receiver": None,
+                # The write layer's static-import branch: it joins owner and name
+                # and picks the overload, which is exactly what is wanted here.
+                "owner_longname": owner,
+                "arguments": tuple(
+                    self.argument_type(a)
+                    for a in (listed.expression() if listed else [])
+                ),
+                "scope_longname": ".".join(
+                    class_properties.ClassPropertiesListener.findParents(ctx)
+                ),
+                "line": keyword.symbol.line,
+                "col": keyword.symbol.column,
+            }
+        )
 
     def argument_type(self, ctx):
         """Type of one argument expression -- shared with the create pass."""
@@ -207,15 +222,18 @@ class MethodCallListener(JavaParserLabeledListener):
         """
         from openunderstand.ounderstand import symbol_table
 
-        for child in (getattr(ctx, "children", None) or ()):
+        for child in getattr(ctx, "children", None) or ():
             if type(child).__name__.startswith("Creator"):
                 name = getattr(child, "createdName", None)
                 name = name() if callable(name) else None
                 identifiers = name.IDENTIFIER() if name is not None else None
                 if identifiers:
                     return symbol_table.resolve_type_name(
-                        identifiers[-1].getText(), self.imports,
-                        self.wildcards, scope_longname)
+                        identifiers[-1].getText(),
+                        self.imports,
+                        self.wildcards,
+                        scope_longname,
+                    )
         return None
 
     def owner_longname(self, receiver, scope_longname, ctx=None):
@@ -244,8 +262,11 @@ class MethodCallListener(JavaParserLabeledListener):
             # the cast names, whatever the expression under it was. 584 of
             # JSON's calls, and every one had an unparseable receiver head.
             return symbol_table.resolve_type_name(
-                cast.group(1).split(".")[-1], self.imports, self.wildcards,
-                scope_longname)
+                cast.group(1).split(".")[-1],
+                self.imports,
+                self.wildcards,
+                scope_longname,
+            )
         if receiver.endswith(".class"):
             return "java.lang.Class"
         if receiver.startswith('"') and receiver.endswith('"'):
@@ -282,8 +303,8 @@ class MethodCallListener(JavaParserLabeledListener):
             declared = self.field_types.get(field)
             if declared:
                 return symbol_table.resolve_type_name(
-                    declared.split("[")[0], self.imports, self.wildcards,
-                    scope_longname)
+                    declared.split("[")[0], self.imports, self.wildcards, scope_longname
+                )
             # Not declared in this class: an inherited field, which only the
             # project-wide index can place.
             return symbol_table.member_type(self.enclosing_type, field)
@@ -294,7 +315,11 @@ class MethodCallListener(JavaParserLabeledListener):
         owner = symbol_table.resolve_type_name(
             # No declared type means the receiver is not a variable in scope,
             # so read it as the type itself: `Math.abs(x)`, `Arrays.sort(a)`.
-            type_name or head, self.imports, self.wildcards, scope_longname)
+            type_name or head,
+            self.imports,
+            self.wildcards,
+            scope_longname,
+        )
         if owner is None or not field:
             return owner
         # `System.out.println()` lands on the declared type of the *field*,
@@ -329,29 +354,35 @@ class MethodCallListener(JavaParserLabeledListener):
                 # getText() has already thrown the structure away.
                 receiver_ctx = expression
         scope_longname = ".".join(
-            class_properties.ClassPropertiesListener.findParents(ctx))
+            class_properties.ClassPropertiesListener.findParents(ctx)
+        )
         # The argument types, which is what tells one overload from another.
         # Arity alone separates 68 of JSON's 100 overloaded names and none of
         # the ones that matter: org.json.JSONArray.put is 17 overloads and
         # org.json.JSONObject.put 8 taking two arguments each.
         listed = ctx.expressionList()
-        arguments = tuple(self.argument_type(a)
-                          for a in (listed.expression() if listed else []))
-        self.calls.append({
-            "name": identifier.getText(),
-            "receiver": receiver,
-            "arguments": arguments,
-            # Declared type of the receiver, when the source states one. The
-            # write layer needs it to place the call: without it a name is
-            # resolved project-wide and `entry.getValue()` on a Map.Entry
-            # became a call to org.json.CDL.getValue, the only getValue the
-            # project declares.
-            # A bare call may be a statically imported member rather than one
-            # of the enclosing class's own.
-            "owner_longname": (self._owner(receiver, scope_longname, receiver_ctx)
-                               if receiver
-                               else self.static_imports.get(identifier.getText())),
-            "scope_longname": scope_longname,
-            "line": identifier.symbol.line,
-            "col": identifier.symbol.column,
-        })
+        arguments = tuple(
+            self.argument_type(a) for a in (listed.expression() if listed else [])
+        )
+        self.calls.append(
+            {
+                "name": identifier.getText(),
+                "receiver": receiver,
+                "arguments": arguments,
+                # Declared type of the receiver, when the source states one. The
+                # write layer needs it to place the call: without it a name is
+                # resolved project-wide and `entry.getValue()` on a Map.Entry
+                # became a call to org.json.CDL.getValue, the only getValue the
+                # project declares.
+                # A bare call may be a statically imported member rather than one
+                # of the enclosing class's own.
+                "owner_longname": (
+                    self._owner(receiver, scope_longname, receiver_ctx)
+                    if receiver
+                    else self.static_imports.get(identifier.getText())
+                ),
+                "scope_longname": scope_longname,
+                "line": identifier.symbol.line,
+                "col": identifier.symbol.column,
+            }
+        )

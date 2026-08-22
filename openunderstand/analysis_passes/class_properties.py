@@ -9,7 +9,9 @@ __version__ = "0.1.1"
 
 
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 from antlr4 import *
 from functools import lru_cache
 
@@ -34,8 +36,10 @@ def _anonymous_names(root):
 
     def walk(node):
         nonlocal count
-        if (isinstance(node, JavaParserLabeled.ClassCreatorRestContext)
-                and node.classBody() is not None):
+        if (
+            isinstance(node, JavaParserLabeled.ClassCreatorRestContext)
+            and node.classBody() is not None
+        ):
             count += 1
             names[id(node)] = "(Anon_%d)" % count
         for i in range(node.getChildCount()):
@@ -118,15 +122,17 @@ class ClassPropertiesListener(JavaParserLabeledListener):
     # name. While it was listed here it fell through to the package branch
     # below and appended the entire class body as a name component, producing
     # longnames like "org.json.classJSONML{privatestaticObjectparse(...".
-    _SCOPE_RULES = frozenset({
-        JavaParserLabeled.RULE_classDeclaration,
-        JavaParserLabeled.RULE_methodDeclaration,
-        JavaParserLabeled.RULE_enumDeclaration,
-        JavaParserLabeled.RULE_interfaceDeclaration,
-        JavaParserLabeled.RULE_constructorDeclaration,
-        JavaParserLabeled.RULE_annotationTypeDeclaration,
-        JavaParserLabeled.RULE_genericInterfaceMethodDeclaration,
-    })
+    _SCOPE_RULES = frozenset(
+        {
+            JavaParserLabeled.RULE_classDeclaration,
+            JavaParserLabeled.RULE_methodDeclaration,
+            JavaParserLabeled.RULE_enumDeclaration,
+            JavaParserLabeled.RULE_interfaceDeclaration,
+            JavaParserLabeled.RULE_constructorDeclaration,
+            JavaParserLabeled.RULE_annotationTypeDeclaration,
+            JavaParserLabeled.RULE_genericInterfaceMethodDeclaration,
+        }
+    )
 
     @staticmethod
     def _package_components(compilation_unit):

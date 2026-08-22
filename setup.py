@@ -43,7 +43,9 @@ EXT_NAME = "openunderstand.gen.java8speedy.sa_javalabeled_cpp_parser"
 
 def _load_build_module():
     """Import ``java8speedy/build.py`` by path -- it is not an installed module."""
-    spec = importlib.util.spec_from_file_location("_ou_speedy_build", SPEEDY / "build.py")
+    spec = importlib.util.spec_from_file_location(
+        "_ou_speedy_build", SPEEDY / "build.py"
+    )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -102,15 +104,17 @@ class BuildAccelerator(build_ext):
         out = pathlib.Path(self.get_ext_fullpath(ext.name))
         out.parent.mkdir(parents=True, exist_ok=True)
 
-        cache = pathlib.Path(os.environ.get("OPENUNDERSTAND_BUILD_CACHE",
-                                            SPEEDY / ".build-cache"))
+        cache = pathlib.Path(
+            os.environ.get("OPENUNDERSTAND_BUILD_CACHE", SPEEDY / ".build-cache")
+        )
         work = cache / "work"
         if work.exists():
             shutil.rmtree(work, ignore_errors=True)
         work.mkdir(parents=True, exist_ok=True)
 
-        jar = build.fetch(build.ANTLR_JAR_URL,
-                          cache / f"antlr-{build.ANTLR_VERSION}-complete.jar")
+        jar = build.fetch(
+            build.ANTLR_JAR_URL, cache / f"antlr-{build.ANTLR_VERSION}-complete.jar"
+        )
         inc, lib = build.build_cpp_runtime(cache, os.cpu_count() or 4)
         cpp = build.generate(work, jar)
         build.compile_extension(cpp, inc, lib, out)
@@ -122,7 +126,8 @@ class BuildAccelerator(build_ext):
 # setuptools declines to build the extension at all.
 ext_modules = (
     [Extension(EXT_NAME, sources=[str(SPEEDY / "build.py")], optional=False)]
-    if _wanted() else []
+    if _wanted()
+    else []
 )
 
 setup(ext_modules=ext_modules, cmdclass={"build_ext": BuildAccelerator})

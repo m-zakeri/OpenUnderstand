@@ -1,20 +1,22 @@
-"""
-
-
-"""
+""" """
 
 import os
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 import openunderstand.analysis_passes.class_properties as class_properties
 from openunderstand.utils import kind_names as K
 
-
 # Rules that carry the modifier list for a declaration nested inside them.
 # A member's modifiers hang off classBodyDeclaration/interfaceBodyDeclaration,
 # two levels above the declaration itself, so they have to be walked to.
-_MODIFIER_ACCESSORS = ("modifier", "classOrInterfaceModifier", "variableModifier",
-                       "interfaceMethodModifier")
+_MODIFIER_ACCESSORS = (
+    "modifier",
+    "classOrInterfaceModifier",
+    "variableModifier",
+    "interfaceMethodModifier",
+)
 
 
 def _modifiers_at(ctx):
@@ -67,10 +69,15 @@ def _enclosing_modifiers(ctx, depth=3):
 # Context class names (labelled alternatives get a numeric suffix, hence the
 # prefix match) that wrap a declaration together with its modifier list.
 _SPAN_WRAPPERS = (
-    "TypeDeclarationContext", "ClassBodyDeclaration", "MemberDeclaration",
-    "InterfaceBodyDeclarationContext", "InterfaceMemberDeclaration",
-    "LocalTypeDeclarationContext", "GenericMethodDeclarationContext",
-    "GenericConstructorDeclarationContext", "GenericInterfaceMethodDeclarationContext",
+    "TypeDeclarationContext",
+    "ClassBodyDeclaration",
+    "MemberDeclaration",
+    "InterfaceBodyDeclarationContext",
+    "InterfaceMemberDeclaration",
+    "LocalTypeDeclarationContext",
+    "GenericMethodDeclarationContext",
+    "GenericConstructorDeclarationContext",
+    "GenericInterfaceMethodDeclarationContext",
 )
 
 
@@ -122,8 +129,9 @@ def source_text(ctx):
     if stream is None:
         return ctx.getText()
     try:
-        return stream.getText(_doc_comment_start(stream, start.start),
-                              _line_end(stream, stop.stop))
+        return stream.getText(
+            _doc_comment_start(stream, start.start), _line_end(stream, stop.stop)
+        )
     except Exception:
         return ctx.getText()
 
@@ -169,7 +177,7 @@ def _doc_comment_start(stream, begin):
     i = begin - 1
     while i >= 0 and text[i] in " \t\r\n":
         i -= 1
-    if i < 1 or text[i - 1:i + 1] != "*/":
+    if i < 1 or text[i - 1 : i + 1] != "*/":
         return begin
 
     opening = text.rfind("/*", 0, i)
@@ -223,8 +231,15 @@ class DefineListener(JavaParserLabeledListener):
         )
 
     def add_define_info(
-        self, ent, ent_parents, ent_name=None, type=None, contents=None,
-        decl=None, modifiers=(), span=None,
+        self,
+        ent,
+        ent_parents,
+        ent_name=None,
+        type=None,
+        contents=None,
+        decl=None,
+        modifiers=(),
+        span=None,
     ):
         if ent_name is None:
             ent_name = ent.getText()
@@ -290,9 +305,7 @@ class DefineListener(JavaParserLabeledListener):
             return K.LOCAL, _modifiers_at(declaration)
         return K.FIELD, _enclosing_modifiers(declaration or ctx)
 
-    def enterClassCreatorRest(
-        self, ctx: JavaParserLabeled.ClassCreatorRestContext
-    ):
+    def enterClassCreatorRest(self, ctx: JavaParserLabeled.ClassCreatorRestContext):
         """`new Iterable<Integer>() { ... }` declares a class of its own.
 
         Nothing declared one before, so the anonymous class's members hung off
@@ -311,7 +324,7 @@ class DefineListener(JavaParserLabeledListener):
         """
         name = class_properties.anonymous_name(ctx)
         if name is None:
-            return          # `new Foo(...)` with no body creates nothing
+            return  # `new Foo(...)` with no body creates nothing
         body = ctx.classBody()
         self.add_define_info(
             ent=body.start,
@@ -419,8 +432,9 @@ class DefineListener(JavaParserLabeledListener):
         if ent is None:
             return
         element = ctx.parentCtx
-        while element is not None and not type(
-                element).__name__.startswith("AnnotationTypeElementRest"):
+        while element is not None and not type(element).__name__.startswith(
+            "AnnotationTypeElementRest"
+        ):
             element = element.parentCtx
         declared = element.typeType() if element is not None else None
         self.add_define_info(
@@ -477,8 +491,13 @@ class DefineListener(JavaParserLabeledListener):
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
         self.add_define_info(
-            ent, ent_parents, type="Enum", contents=source_text(ctx),
-            decl=K.ENUM, modifiers=self._type_modifiers(ctx), span=_body_span(ctx),
+            ent,
+            ent_parents,
+            type="Enum",
+            contents=source_text(ctx),
+            decl=K.ENUM,
+            modifiers=self._type_modifiers(ctx),
+            span=_body_span(ctx),
         )
         # values()/valueOf() are compiler-generated statics on every enum.
         for synthetic in ("values", "valueOf"):
@@ -489,7 +508,7 @@ class DefineListener(JavaParserLabeledListener):
                 type="Enum",
                 contents=source_text(ctx),
                 decl=K.METHOD,
-            span=_body_span(ctx),
+                span=_body_span(ctx),
                 modifiers=["public", "static"],
             )
 

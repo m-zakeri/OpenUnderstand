@@ -1,5 +1,5 @@
 """This module is the main part for creating all entities and references in database. our task was the javaModify and
-javaCreate and their reverse references. """
+javaCreate and their reverse references."""
 
 import logging
 import os
@@ -7,8 +7,14 @@ from fnmatch import fnmatch
 from antlr4 import *
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
-from openunderstand.oudb.models import (KindModel, EntityModel, ReferenceModel,
-                                        col_1based, resolve_entity_ref, kind_family)
+from openunderstand.oudb.models import (
+    KindModel,
+    EntityModel,
+    ReferenceModel,
+    col_1based,
+    resolve_entity_ref,
+    kind_family,
+)
 from openunderstand.analysis_passes.class_properties_simple import (
     ClassPropertiesListener,
     InterfacePropertiesListener,
@@ -51,6 +57,7 @@ def _use_cpp_engine():
         requested = requested.strip().lower()
         if requested.startswith("auto"):
             from openunderstand.utils import antler_parser
+
             _ENGINE = antler_parser.is_available()
         else:
             _ENGINE = requested.startswith("c")
@@ -58,8 +65,7 @@ def _use_cpp_engine():
 
 
 #: A primitive names no entity, so it can be neither created nor referenced.
-PRIMITIVES = frozenset(
-    "int long short byte char float double boolean void".split())
+PRIMITIVES = frozenset("int long short byte char float double boolean void".split())
 
 
 def resolved_longname(simple_name, fallback, scope_longname=""):
@@ -73,7 +79,6 @@ def resolved_longname(simple_name, fallback, scope_longname=""):
     """
     resolved = symbol_table.resolve(simple_name, scope_longname)
     return resolved or fallback
-
 
 
 def callee_of(longname, name, arguments, file_ent):
@@ -97,13 +102,19 @@ def callee_of(longname, name, arguments, file_ent):
         ent = EntityModel.get_or_none(
             (EntityModel._longname == longname)
             & (EntityModel._line == site[0])
-            & (EntityModel._column == site[1]))
+            & (EntityModel._column == site[1])
+        )
         if ent is not None:
             return ent
         return EntityModel.get_or_create(
-            _kind=kind_id("Java Unknown Method Member"), _name=name,
-            _parent=file_ent, _longname=longname, _contents="",
-            _line=site[0], _column=site[1])[0]
+            _kind=kind_id("Java Unknown Method Member"),
+            _name=name,
+            _parent=file_ent,
+            _longname=longname,
+            _contents="",
+            _line=site[0],
+            _column=site[1],
+        )[0]
     rows = list(EntityModel.select().where(EntityModel._longname == longname))
     for row in rows:
         if kind_family(row._kind_id) == "method":
@@ -111,9 +122,12 @@ def callee_of(longname, name, arguments, file_ent):
     if rows:
         return rows[0]
     return EntityModel.get_or_create(
-        _kind=kind_id("Java Unknown Method Member"), _name=name,
-        _parent=file_ent, _longname=longname, _contents="")[0]
-
+        _kind=kind_id("Java Unknown Method Member"),
+        _name=name,
+        _parent=file_ent,
+        _longname=longname,
+        _contents="",
+    )[0]
 
 
 def synthetic_scope(longname):
@@ -126,6 +140,7 @@ def synthetic_scope(longname):
     method reported their method's 13 semicolons where Understand reports 0.
     """
     return (longname or "").rsplit(".", 1)[-1].startswith("(")
+
 
 def scope_of(longname, line=None):
     """The entity a reference at `line` is scoped to.
@@ -155,6 +170,7 @@ def scope_of(longname, line=None):
         return named[0]
     enclosing = [r for r in named if r._line is not None and r._line <= line]
     return max(enclosing, key=lambda r: r._line) if enclosing else named[0]
+
 
 class Project:
     def __init__(self):
@@ -207,7 +223,10 @@ class Project:
         # kind id: 1
         file = open(path, mode="r")
         file_ent = EntityModel.get_or_create(
-            _kind=kind_id("Java File"), _name=name, _longname=path, _contents=file.read()
+            _kind=kind_id("Java File"),
+            _name=name,
+            _longname=path,
+            _contents=file.read(),
         )[0]
         file.close()
         print("processing file:", file_ent)
@@ -331,7 +350,8 @@ class Project:
                 # field of its class. The pass could only glue the package on
                 # the front, which named every `c` in the project org.json.c.
                 _longname=resolved_longname(
-                    simple_name, resolve_scope + "." + simple_name, resolve_scope),
+                    simple_name, resolve_scope + "." + simple_name, resolve_scope
+                ),
                 _value=type_tuple[3],
                 _type=type_tuple[9],
                 _contents="",
@@ -420,7 +440,8 @@ class Project:
                 _parent=None,
                 _name=name,
                 _longname=resolved_longname(
-                    name, scope_longname + "." + name, scope_longname),
+                    name, scope_longname + "." + name, scope_longname
+                ),
                 _contents="",
             )
 
@@ -473,7 +494,8 @@ class Project:
                 _parent=None,
                 _name=use["name"],
                 _longname=resolved_longname(
-                    use["name"], scope_longname + "." + use["name"], scope_longname),
+                    use["name"], scope_longname + "." + use["name"], scope_longname
+                ),
                 _value=None,
                 _type=None,
                 _contents=stream,
@@ -575,8 +597,10 @@ class Project:
             # inverse: 74 Definein against 58 Define on calculator_app, the
             # difference being every class recorded as defined *in* its
             # package. One direction only, as for a static import.
-            package_scoped = (kind_family(scope._kind_id) == "package"
-                              or kind_family(ent._kind_id) == "package")
+            package_scoped = (
+                kind_family(scope._kind_id) == "package"
+                or kind_family(ent._kind_id) == "package"
+            )
             if not package_scoped:
                 define_ref = ReferenceModel.get_or_create(
                     _kind=kind_id("Java Define"),
@@ -653,17 +677,18 @@ class Project:
                     # The class that declares the method, inside the project or
                     # in the JDK: Understand reports `sb.append(x)` against
                     # java.lang.AbstractStringBuilder, not StringBuilder.
-                    owner = (symbol_table.declaring_type_anywhere(owner, name)
-                             or owner)
-                    ent = callee_of(f"{owner}.{name}", name,
-                                    ref_dict.get("arguments"), file_ent)
+                    owner = symbol_table.declaring_type_anywhere(owner, name) or owner
+                    ent = callee_of(
+                        f"{owner}.{name}", name, ref_dict.get("arguments"), file_ent
+                    )
             elif owner:
                 # No receiver, but the name was statically imported, so the
                 # call lands on the type that exported it rather than on the
                 # enclosing class: `import static Sorts.SortUtils.less` makes a
                 # bare `less(a, b)` a call to Sorts.SortUtils.less.
-                ent = callee_of(f"{owner}.{name}", name,
-                                ref_dict.get("arguments"), file_ent)
+                ent = callee_of(
+                    f"{owner}.{name}", name, ref_dict.get("arguments"), file_ent
+                )
             else:
                 # No receiver: a call on the enclosing class.
                 ent = None
@@ -694,8 +719,10 @@ class Project:
             if ent._id == scope._id:
                 continue
 
-            for kind, (a, b) in (("Java Call", (ent, scope)),
-                                 ("Java Callby", (scope, ent))):
+            for kind, (a, b) in (
+                ("Java Call", (ent, scope)),
+                ("Java Callby", (scope, ent)),
+            ):
                 ReferenceModel.get_or_create(
                     _kind=kind_id(kind),
                     _file=file_ent,
@@ -760,14 +787,19 @@ class Project:
                 # scope first found `Others.Graph.Vertex.Vertex` -- the
                 # constructor -- for the `Vertex` of `Comparable<Vertex>`.
                 stated = symbol_table.resolve_type_name(
-                    name, scope_longname=scope_longname)
+                    name, scope_longname=scope_longname
+                )
             if ref_dict.get("ent_kind"):
                 # The pass already knows this names something outside the
                 # analysed source, and the kind is what makes its bare long
                 # name safe to store.
                 ent = EntityModel.get_or_create(
-                    _kind=kind_id(ref_dict["ent_kind"]), _name=name,
-                    _parent=file_ent, _longname=stated or name, _contents="")[0]
+                    _kind=kind_id(ref_dict["ent_kind"]),
+                    _name=name,
+                    _parent=file_ent,
+                    _longname=stated or name,
+                    _contents="",
+                )[0]
                 self._write_use_variant(ref_dict, ent, scope, file_ent)
                 continue
             ent = EntityModel.get_or_none(
@@ -807,9 +839,10 @@ class Project:
             inverse = KindModel.get_or_none(_name=forward)
             if inverse is None or inverse._inv_id is None:
                 continue
-            for kind, (a, b) in ((forward, (ent, scope)),
-                                 (KindModel.get_by_id(inverse._inv_id)._name,
-                                  (scope, ent))):
+            for kind, (a, b) in (
+                (forward, (ent, scope)),
+                (KindModel.get_by_id(inverse._inv_id)._name, (scope, ent)),
+            ):
                 ReferenceModel.get_or_create(
                     _kind=kind_id(kind),
                     _file=file_ent,
@@ -826,9 +859,10 @@ class Project:
         row = KindModel.get_or_none(_name=forward)
         if row is None or row._inv_id is None:
             return
-        for kind, (a, b) in ((forward, (ent, scope)),
-                             (KindModel.get_by_id(row._inv_id)._name,
-                              (scope, ent))):
+        for kind, (a, b) in (
+            (forward, (ent, scope)),
+            (KindModel.get_by_id(row._inv_id)._name, (scope, ent)),
+        ):
             ReferenceModel.get_or_create(
                 _kind=kind_id(kind),
                 _file=file_ent,
@@ -976,7 +1010,8 @@ class Project:
                 _parent=None,
                 _name=name,
                 _longname=resolved_longname(
-                    name, resolve_scope + "." + name, resolve_scope),
+                    name, resolve_scope + "." + name, resolve_scope
+                ),
                 _contents="",
             )[0]
             scope = EntityModel.get_or_create(
@@ -987,8 +1022,11 @@ class Project:
                 _contents="",
             )[0]
             forward = ref_dict.get("kind", "Java Modify")
-            inverse = ("Java Modifyby Deref Partial"
-                       if forward.endswith("Deref Partial") else "Java Modifyby")
+            inverse = (
+                "Java Modifyby Deref Partial"
+                if forward.endswith("Deref Partial")
+                else "Java Modifyby"
+            )
             _, _ = ReferenceModel.get_or_create(
                 _kind=kind_id(forward),
                 _file=ref_dict["file"],
@@ -1376,8 +1414,11 @@ class Project:
                         # source, and every metric that reparses contents
                         # returned 0. Empty for a synthetic scope, whose text
                         # is not this method's.
-                        _contents=("" if synthetic_scope(ref_dict["scopelongname"])
-                                   else ref_dict["scopecontent"]),
+                        _contents=(
+                            ""
+                            if synthetic_scope(ref_dict["scopelongname"])
+                            else ref_dict["scopecontent"]
+                        ),
                     )[0]
 
                 # The pass resolves the created type against the file's
@@ -1438,8 +1479,11 @@ class Project:
                 # JSON's calls to java.util.ArrayList.ArrayList.
                 created = ent._longname or ""
                 simple = created.rsplit(".", 1)[-1]
-                declared = (symbol_table.INDEX.declares(created, simple)
-                            if symbol_table.is_project_type(created) else True)
+                declared = (
+                    symbol_table.INDEX.declares(created, simple)
+                    if symbol_table.is_project_type(created)
+                    else True
+                )
                 if not ref_dict.get("is_array") and "." in created and declared:
                     # A constructor is method family, not type family. Built
                     # through getClassEntity() it was a *class* placeholder,
@@ -1459,9 +1503,11 @@ class Project:
                     kind = kind_id(
                         "Java Method Constructor Member Public"
                         if symbol_table.is_project_type(created)
-                        else "Java Unresolved External Method Public Member")
+                        else "Java Unresolved External Method Public Member"
+                    )
                     site = symbol_table.overload_site(
-                        f"{created}.{simple}", ref_dict.get("arguments"))
+                        f"{created}.{simple}", ref_dict.get("arguments")
+                    )
                     constructor, _ = EntityModel.get_or_create(
                         _kind=kind,
                         _name=simple,
@@ -1470,8 +1516,10 @@ class Project:
                         _contents="",
                         **({"_line": site[0], "_column": site[1]} if site else {}),
                     )
-                    for kind, (a, b) in (("Java Call", (constructor, scope)),
-                                         ("Java Callby", (scope, constructor))):
+                    for kind, (a, b) in (
+                        ("Java Call", (constructor, scope)),
+                        ("Java Callby", (scope, constructor)),
+                    ):
                         ReferenceModel.get_or_create(
                             _kind=kind_id(kind),
                             _file=file_ent,
@@ -1489,8 +1537,11 @@ class Project:
         # names it, so parenting it to whichever file got there first made the
         # parent chain of every type in the package point at the wrong file.
         ent, _ = EntityModel.get_or_create(
-            _kind=kind_id("Java Package"), _name=name, _parent=None,
-            _longname=longname, _contents="",
+            _kind=kind_id("Java Package"),
+            _name=name,
+            _parent=None,
+            _longname=longname,
+            _contents="",
         )
         return ent
 
@@ -1657,7 +1708,9 @@ class Project:
                                     ent = EntityModel.get_or_create(
                                         _kind=kind,
                                         _name=y["scope_name"],
-                                        _parent=resolve_entity_ref(y["scope_parent"], fe),
+                                        _parent=resolve_entity_ref(
+                                            y["scope_parent"], fe
+                                        ),
                                         _longname=y["scope_longname"],
                                         _contents=y["scope_contents"],
                                         _type=y["Methodkind"],
@@ -1986,8 +2039,11 @@ class Project:
                     _name=ref_dict["scopename"],
                     _parent=resolve_entity_ref(ref_dict["scope_parent"], file_ent),
                     _longname=ref_dict["scopelongname"],
-                    _contents=("" if synthetic_scope(ref_dict["scopelongname"])
-                               else ref_dict["scopecontent"]),
+                    _contents=(
+                        ""
+                        if synthetic_scope(ref_dict["scopelongname"])
+                        else ref_dict["scopecontent"]
+                    ),
                 )[0]
 
             if not Throw:
@@ -2023,73 +2079,96 @@ class Project:
             )
 
     def add_couple_and_couple_by_refs(self, classes, couples):
-        keykind = ''
+        keykind = ""
         for c in couples:
-            file_ent = self.getFileEntity(c['File'])
-            scope = EntityModel.get_or_create(_kind=self.findKindWithKeywords(c["scope_kind"], c["scope_modifiers"]),
-                                              _name=c["scope_name"],
-                                              _parent=resolve_entity_ref(c["scope_parent"], file_ent),
-                                              _longname=c["scope_longname"],
-                                              _contents=c["scope_contents"])
-            if 'type_ent_longname' in c:
-                keylist = c['type_ent_longname']
-                if (len(keylist) != 0):
+            file_ent = self.getFileEntity(c["File"])
+            scope = EntityModel.get_or_create(
+                _kind=self.findKindWithKeywords(c["scope_kind"], c["scope_modifiers"]),
+                _name=c["scope_name"],
+                _parent=resolve_entity_ref(c["scope_parent"], file_ent),
+                _longname=c["scope_longname"],
+                _contents=c["scope_contents"],
+            )
+            if "type_ent_longname" in c:
+                keylist = c["type_ent_longname"]
+                if len(keylist) != 0:
                     for key in keylist:
                         if key in classes:
                             c1 = classes[key]
-                            file_ent2 = self.getFileEntity(c1['File'])
-                            keykind = self.findKindWithKeywords(c1["scope_kind"], c1["scope_modifiers"])
+                            file_ent2 = self.getFileEntity(c1["File"])
+                            keykind = self.findKindWithKeywords(
+                                c1["scope_kind"], c1["scope_modifiers"]
+                            )
                             ent = EntityModel.get_or_create(
-                                _kind=self.findKindWithKeywords(c1["scope_kind"], c1["scope_modifiers"]),
+                                _kind=self.findKindWithKeywords(
+                                    c1["scope_kind"], c1["scope_modifiers"]
+                                ),
                                 _name=c1["scope_name"],
-                                _parent=resolve_entity_ref(c1["scope_parent"], file_ent2),
+                                _parent=resolve_entity_ref(
+                                    c1["scope_parent"], file_ent2
+                                ),
                                 _longname=c1["scope_longname"],
-                                _contents=c1["scope_contents"])
-                            CoupleBy_ref = ReferenceModel.get_or_create(_kind=kind_id("Java Coupleby"), _file=file_ent2, _line=c["line"],
-                                                                        _column=col_1based(c["col"]), _ent=scope[0], _scope=ent[0])
+                                _contents=c1["scope_contents"],
+                            )
+                            CoupleBy_ref = ReferenceModel.get_or_create(
+                                _kind=kind_id("Java Coupleby"),
+                                _file=file_ent2,
+                                _line=c["line"],
+                                _column=col_1based(c["col"]),
+                                _ent=scope[0],
+                                _scope=ent[0],
+                            )
 
                         else:
-                            kw = key.split('.')
+                            kw = key.split(".")
                             # 84 = Java Unknown Class Type Member. This was the
                             # string "Unknown Class", written into an integer
                             # foreign-key column.
                             keykind = kind_id("Java Unknown Class Type Member")
-                            ent = EntityModel.get_or_create(_kind=keykind, _name=kw[-1],
-                                                            _parent=file_ent,
-                                                            _longname=key,
-                                                            )
-                        Couple_ref = ReferenceModel.get_or_create(_kind=kind_id("Java Couple"), _file=file_ent, _line=c["line"],
-                                                                  _column=col_1based(c["col"]), _ent=ent[0], _scope=scope[0])
+                            ent = EntityModel.get_or_create(
+                                _kind=keykind,
+                                _name=kw[-1],
+                                _parent=file_ent,
+                                _longname=key,
+                            )
+                        Couple_ref = ReferenceModel.get_or_create(
+                            _kind=kind_id("Java Couple"),
+                            _file=file_ent,
+                            _line=c["line"],
+                            _column=col_1based(c["col"]),
+                            _ent=ent[0],
+                            _scope=scope[0],
+                        )
 
     # for c in couples:
-        #     ent = self.getImplementEntity(
-        #         c["type_ent_longname"], file_address, file_ent
-        #     )
-        #     scope = EntityModel.get_or_create(
-        #         _kind=self.findKindWithKeywords(c["scope_kind"], c["scope_modifiers"]),
-        #         _name=c["scope_name"],
-        #         _parent=(
-        #             c["scope_parent"] if c["scope_parent"] is not None else file_ent
-        #         ),
-        #         _longname=c["scope_longname"],
-        #         _contents=c["scope_contents"],
-        #     )[0]
-        #     Couple_ref = ReferenceModel.get_or_create(
-        #         _kind=kind_id("Java Couple"),
-        #         _file=file_ent,
-        #         _line=c["line"],
-        #         _column=col_1based(c["col"]),
-        #         _ent=ent,
-        #         _scope=scope,
-        #     )
-        #     CoupleBy_ref = ReferenceModel.get_or_create(
-        #         _kind=kind_id("Java Coupleby"),
-        #         _file=file_ent,
-        #         _line=c["line"],
-        #         _column=col_1based(c["col"]),
-        #         _ent=scope,
-        #         _scope=ent,
-        #     )
+    #     ent = self.getImplementEntity(
+    #         c["type_ent_longname"], file_address, file_ent
+    #     )
+    #     scope = EntityModel.get_or_create(
+    #         _kind=self.findKindWithKeywords(c["scope_kind"], c["scope_modifiers"]),
+    #         _name=c["scope_name"],
+    #         _parent=(
+    #             c["scope_parent"] if c["scope_parent"] is not None else file_ent
+    #         ),
+    #         _longname=c["scope_longname"],
+    #         _contents=c["scope_contents"],
+    #     )[0]
+    #     Couple_ref = ReferenceModel.get_or_create(
+    #         _kind=kind_id("Java Couple"),
+    #         _file=file_ent,
+    #         _line=c["line"],
+    #         _column=col_1based(c["col"]),
+    #         _ent=ent,
+    #         _scope=scope,
+    #     )
+    #     CoupleBy_ref = ReferenceModel.get_or_create(
+    #         _kind=kind_id("Java Coupleby"),
+    #         _file=file_ent,
+    #         _line=c["line"],
+    #         _column=col_1based(c["col"]),
+    #         _ent=scope,
+    #         _scope=ent,
+    #     )
 
     def addTypeRelationRefs(self, relations, file_ent):
         """Positioned type relations: `implements`, and type-parameter bounds.
@@ -2112,15 +2191,17 @@ class Project:
                     _contents="",
                 )[0]
             ent = EntityModel.get_or_none(
-                EntityModel._longname == relation["ent_longname"])
+                EntityModel._longname == relation["ent_longname"]
+            )
             if ent is None:
                 # A pass that knows what it is creating says so. A lambda is
                 # declared by the reference itself and by nothing else, so
                 # leaving it Unknown would make it a placeholder that
                 # merge_placeholder_entities() is free to fold away.
                 ent = EntityModel.get_or_create(
-                    _kind=kind_id(relation.get(
-                        "ent_kind", "Java Unknown Class Type Member")),
+                    _kind=kind_id(
+                        relation.get("ent_kind", "Java Unknown Class Type Member")
+                    ),
                     _name=relation["name"],
                     _parent=None,
                     _longname=relation["ent_longname"],
@@ -2134,13 +2215,15 @@ class Project:
             # Some relations are one-directional in Understand's own output: it
             # reports Importby for a static import and no Java Import at all.
             if not relation.get("inverse_only") and forward._inv_id is not None:
-                pairs.append(
-                    (KindModel.get_by_id(forward._inv_id)._name, (scope, ent)))
+                pairs.append((KindModel.get_by_id(forward._inv_id)._name, (scope, ent)))
             # Understand positions an *implicit* relation on the line and at
             # no column at all, the way it does an unpositioned Couple, so
             # those arrive already in its terms rather than ANTLR's.
-            column = (relation["col"] if relation.get("column_is_absolute")
-                      else col_1based(relation["col"]))
+            column = (
+                relation["col"]
+                if relation.get("column_is_absolute")
+                else col_1based(relation["col"])
+            )
             for kind, (a, b) in pairs:
                 ReferenceModel.get_or_create(
                     _kind=kind_id(kind),
@@ -2179,7 +2262,9 @@ class Project:
                                         c1["scope_kind"], c1["scope_modifiers"]
                                     ),
                                     _name=c1["scope_name"],
-                                    _parent=resolve_entity_ref(c1["scope_parent"], file_ent2),
+                                    _parent=resolve_entity_ref(
+                                        c1["scope_parent"], file_ent2
+                                    ),
                                     _longname=c1["scope_longname"],
                                     _contents=c1["scope_contents"],
                                 )
@@ -2236,4 +2321,3 @@ class Project:
 
             except Exception as e:
                 print(e)
-

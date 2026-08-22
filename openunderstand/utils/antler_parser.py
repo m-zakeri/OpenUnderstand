@@ -41,11 +41,15 @@ def is_available() -> bool:
 def unavailable_reason() -> str:
     if _accelerator is not None:
         return ""
-    return ("C++ accelerator not built; run "
-            "`python openunderstand/gen/java8speedy/build.py`")
+    return (
+        "C++ accelerator not built; run "
+        "`python openunderstand/gen/java8speedy/build.py`"
+    )
 
 
-def _py_parse(stream: InputStream, entry_rule_name: str = "compilationUnit") -> ParseTree:
+def _py_parse(
+    stream: InputStream, entry_rule_name: str = "compilationUnit"
+) -> ParseTree:
     parser = JavaParserLabeled(CommonTokenStream(JavaLexer(stream)))
     return getattr(parser, entry_rule_name)()
 
@@ -68,8 +72,11 @@ def _cpp_parse(
     )
 
 
-def parse(stream: InputStream, entry_rule_name: str = "compilationUnit",
-          prefer_cpp: bool = True) -> ParseTree:
+def parse(
+    stream: InputStream,
+    entry_rule_name: str = "compilationUnit",
+    prefer_cpp: bool = True,
+) -> ParseTree:
     """Parse, using the accelerator when it is available and wanted.
 
     Falls back to pure Python if the extension is missing, warning once so the

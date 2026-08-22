@@ -17,14 +17,14 @@ Understand emits no Typed for a primitive or for `void`; those were
 """
 
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 import openunderstand.analysis_passes.class_properties as class_properties
 from openunderstand.analysis_passes.cast_castby import _declaring_generic
 
-
 #: A declaration of one of these is not a reference to anything.
-PRIMITIVES = frozenset(
-    "byte short int long float double boolean char void var".split())
+PRIMITIVES = frozenset("byte short int long float double boolean char void var".split())
 
 
 class TypedAndTypedByListener(JavaParserLabeledListener):
@@ -66,7 +66,8 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
         # beats guessing -- a package-glued guess is what produced
         # org.json.String.
         return symbol_table.resolve_type_name(
-            name, self.imports, self.wildcards, scope_longname)
+            name, self.imports, self.wildcards, scope_longname
+        )
 
     def record(self, ctx, declared_name, type_ctx):
         """Record `declared_name is of type_ctx`, positioned on the type."""
@@ -94,14 +95,16 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
         if type_longname is None:
             return
         token = type_ctx.start
-        self.typedBy.append({
-            "name": declared_name,
-            "scope_longname": f"{enclosing}.{declared_name}",
-            "type_name": type_name,
-            "type_longname": type_longname,
-            "line": token.line,
-            "col": token.column,
-        })
+        self.typedBy.append(
+            {
+                "name": declared_name,
+                "scope_longname": f"{enclosing}.{declared_name}",
+                "type_name": type_name,
+                "type_longname": type_longname,
+                "line": token.line,
+                "col": token.column,
+            }
+        )
 
     @staticmethod
     def _declared_names(declarators):
@@ -114,14 +117,16 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
 
     def enterFieldDeclaration(self, ctx: JavaParserLabeled.FieldDeclarationContext):
         for name in self._declared_names(
-                ctx.variableDeclarators().variableDeclarator()):
+            ctx.variableDeclarators().variableDeclarator()
+        ):
             self.record(ctx, name, ctx.typeType())
 
     def enterLocalVariableDeclaration(
         self, ctx: JavaParserLabeled.LocalVariableDeclarationContext
     ):
         for name in self._declared_names(
-                ctx.variableDeclarators().variableDeclarator()):
+            ctx.variableDeclarators().variableDeclarator()
+        ):
             self.record(ctx, name, ctx.typeType())
 
     def enterFormalParameter(self, ctx: JavaParserLabeled.FormalParameterContext):
@@ -129,9 +134,7 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
         if identifier is not None:
             self.record(ctx, identifier.getText().split("[")[0], ctx.typeType())
 
-    def enterEnhancedForControl(
-        self, ctx: JavaParserLabeled.EnhancedForControlContext
-    ):
+    def enterEnhancedForControl(self, ctx: JavaParserLabeled.EnhancedForControlContext):
         """`for (Object item : table)` types item, exactly as a local does."""
         identifier = ctx.variableDeclaratorId()
         if identifier is not None:
