@@ -1,5 +1,31 @@
 # Changelog
 
+## Unreleased
+
+### Queries are much faster, and every value is unchanged
+
+Measured on the JSON benchmark over 1,407 methods and 43,272 references, with
+`docs/metric-parity.md` byte-identical before and after. A full metric-parity
+scoring run went 29.0s to 5.8s.
+
+| operation | before | after |
+| --- | ---: | ---: |
+| `ent.kindname()` | 0.292s | 0.003s |
+| `ent.refs()` | 0.944s | 0.481s |
+| three metrics over every method | 45.4s | 11.6s cold, 2.2s warm |
+
+* `ent.kindname()` went through `ent.kind()`, which cost a SELECT and a `Kind`
+  construction per call. It uses the memoised name lookup now.
+* `graph_metrics._targets()` issued one `EntityModel` query per reference. The
+  rows are fetched together and remembered per database, and the id behind each
+  reference-kind name is memoised.
+* Metrics that reparse an entity's source used the pure-Python ANTLR parser
+  even where the C++ accelerator was built. `Cyclomatic` was 18.6ms an entity
+  and is 1.6ms.
+* New `MetricModel` table: a computed metric value is remembered, so a second
+  query reads it instead of recomputing. Filled on demand rather than during
+  analysis, which leaves build time unchanged.
+
 ## 0.4.0
 
 ### Every metric is at or above 0.90 against Understand

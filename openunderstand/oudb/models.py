@@ -249,6 +249,43 @@ def is_placeholder_kind(kind) -> bool:
     return bool(tokens & {"unknown", "unresolved"})
 
 
+#: long name -> the rows carrying it, for the process that is writing.
+#: `EntityModel.get_or_create` resolves identity by long name and used to ask
+#: the database every time: 11,153 SELECTs and 21% of a build of the JSON
+#: benchmark. One process writes a database, so it can answer itself. This is
+#: the same trade `ReferenceModel.get_or_create` already makes.
+_ENTITY_ROWS = None
+_ENTITY_ROWS_DB = None
+
+
+def forget_entity_rows():
+    """Drop the long-name index. Anything that deletes a row must call this."""
+    global _ENTITY_ROWS, _ENTITY_ROWS_DB
+    _ENTITY_ROWS = None
+    _ENTITY_ROWS_DB = None
+
+
+def _entity_rows(cls, longname):
+    """Every row carrying `longname`, from the index, seeding it if needed.
+
+    Seeded from the database on first use, which costs one query and keeps a
+    run over an *existing* database correct.
+    """
+    global _ENTITY_ROWS, _ENTITY_ROWS_DB
+    database = cls._meta.database
+    if _ENTITY_ROWS is None or _ENTITY_ROWS_DB is not database:
+        index = {}
+        for row in cls.select():
+            index.setdefault(row._longname, []).append(row)
+        _ENTITY_ROWS, _ENTITY_ROWS_DB = index, database
+    return _ENTITY_ROWS.get(longname, ())
+
+
+def _remember_entity(cls, row):
+    if _ENTITY_ROWS is not None and _ENTITY_ROWS_DB is cls._meta.database:
+        _ENTITY_ROWS.setdefault(row._longname, []).append(row)
+
+
 class EntityModel(Model):
     _id = AutoField()
     _kind = ForeignKeyField(KindModel, backref="entities")
@@ -307,7 +344,7 @@ class EntityModel(Model):
         incoming_site = (fields.get("_line"), fields.get("_column"))
 
         match = None
-        for row in cls.select().where(cls._longname == longname):
+        for row in _entity_rows(cls, longname):
             row_placeholder = is_placeholder_kind(row._kind_id)
             if not (
                 incoming_placeholder
@@ -357,7 +394,9 @@ class EntityModel(Model):
                 match.save()
             return match, False
 
-        return super().create(**fields), True
+        created = super().create(**fields)
+        _remember_entity(cls, created)
+        return created, True
 
     def __str__(self):
         return str(self._name)
@@ -555,6 +594,7 @@ def purge_file(file_entity_id):
             EntityModel._parent == entity_id
         ).execute()
         entity.delete_instance()
+        forget_entity_rows()
         entities_removed += 1
     return entities_removed, refs_removed
 
@@ -653,6 +693,7 @@ def merge_placeholder_entities():
             EntityModel._parent == ghost._id
         ).execute()
         ghost.delete_instance()
+        forget_entity_rows()
         merged += 1
     return merged
 
@@ -701,6 +742,7 @@ def drop_orphan_placeholders():
         EntityModel._parent << doomed
     ).execute()
     EntityModel.delete().where(EntityModel._id << doomed).execute()
+    forget_entity_rows()
     return len(doomed)
 
 

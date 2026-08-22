@@ -655,6 +655,7 @@ def update_files(paths, source_root: str = ""):
             removed_refs += refs
             if not os.path.exists(path):
                 file_ent.delete_instance()
+                forget_entity_rows()
 
     # The index feeds cross-file name resolution, so it has to see the new
     # source before the passes run.
@@ -714,6 +715,7 @@ def create_db(
     db.bind([KindModel, EntityModel, ReferenceModel, ProjectModel, MetricModel])
     db.create_tables([KindModel, EntityModel, ReferenceModel, ProjectModel,
                       MetricModel])
+    forget_entity_rows()
 
     # Build without the reference table's four foreign-key indexes. Each insert
     # would otherwise update four B-trees as well as the table -- about two
@@ -820,6 +822,7 @@ def open(dbname):  # real signature unknown; restored from __doc__
     # The query layer remembers entity rows and kind ids between calls, which
     # is only sound while the database it read them from is the one bound.
     graph_metrics.clear_entity_cache()
+    forget_entity_rows()
     # Older databases predate the metric store; creating it is a no-op when it
     # is already there and makes one written by an earlier release usable.
     try:
