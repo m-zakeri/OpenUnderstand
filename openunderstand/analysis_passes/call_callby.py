@@ -49,10 +49,6 @@ class CallAndCallBy(JavaParserLabeledListener):
         try:
             bodies = ctx.classBody().classBodyDeclaration()
             if bodies is not None:
-                # Gathered here rather than from listener callbacks: this pass
-                # walks each method's body itself, from enterClassDeclaration,
-                # so the walker has not yet reached the declarations inside
-                # them and callback-collected types would still be empty.
                 field_types = declared_types.collect(ctx.classBody())
                 for body in bodies:
                     member = getattr(body, "memberDeclaration", None)
@@ -271,8 +267,6 @@ class CallAndCallBy(JavaParserLabeledListener):
             if self.in_local_variable_declaration and self.is_var_non_primitive_type:
                 variable_identifier = str(ctx.IDENTIFIER())
                 current_scope_spec = self.scope_stack[len(self.scope_stack) - 1]
-                # current_scope_spec['tp'] is guaranteed to be 'method'
-                # because we are in local variable declaration
                 if type(current_scope_spec) is list:
                     current_scope_spec = current_scope_spec[0]
                 try:
@@ -301,9 +295,6 @@ class CallAndCallBy(JavaParserLabeledListener):
 
     # normal invoking of a method (Call/CallBy) or with 'this'
     def enterMethodCall0(self, ctx: JavaParserLabeled.MethodCall0Context):
-        # assuming that we have already filled our token_stream
-        # using token_stream.fill() -> update : no need
-        # token type 111 -> IDENTIFIER
         try:
             token = ctx.getTokens(111)[0].getPayload()
             arg_list = ctx.expressionList()
@@ -313,7 +304,6 @@ class CallAndCallBy(JavaParserLabeledListener):
                 arg_count = arg_list.count(",")
             else:
                 arg_list = ""
-            # extracting the callee
             callee = ""
             if type(ctx.parentCtx) is JavaParserLabeled.Expression1Context:
                 callee = ctx.parentCtx.getText()
@@ -346,11 +336,6 @@ class CallAndCallBy(JavaParserLabeledListener):
                     )
                     if callee_spec is None:
                         callee_spec = {"tp": self.get_fullname(callee), "name": None}
-                        # find method fullname
-                        # and fill self.call_dict
-                        # based of method names
-                        # It's definitely a static method from the class
-                        # We now just see if it's from a parent, self or a surrounding class
                         method_fullname = self.which_method(
                             callee_spec["tp"],
                             str(ctx.IDENTIFIER()),
@@ -360,15 +345,10 @@ class CallAndCallBy(JavaParserLabeledListener):
                         method_full_spec = self.get_method_full_spec(
                             method_fullname[0]["name"], arg_list, arg_count
                         )
-                        # After the above instruction,
-                        # method_full_spec == method_fullname[0] should be True
                         key = (method_full_spec["name"], method_full_spec["params"])
                         is_inherited_method = (
                             True if method_fullname[1] == "parent" else False
                         )
-                        # the following 'scope' key in the appended element
-                        # can be of type class or method
-                        # therefore, it might contain a 'params' field
                         if is_inherited_method:
                             self.fill_non_dynamic_call_dict(
                                 key, token.line, token.column, callee_spec["tp"]
@@ -376,12 +356,10 @@ class CallAndCallBy(JavaParserLabeledListener):
                         else:
                             self.fill_call_dict(key, token.line, token.column)
                     else:
-                        # if caller is field
                         self.handle_field_or_variable_callee(
                             ctx, callee_spec[0], arg_list, arg_count, token
                         )
                 else:
-                    # if caller is variable
                     self.handle_field_or_variable_callee(
                         ctx, callee_spec, arg_list, arg_count, token
                     )
@@ -392,10 +370,6 @@ class CallAndCallBy(JavaParserLabeledListener):
                 )
                 self.handle_this_or_super_or_empty_callee(method_fullname, token, False)
             elif callee == "super":
-                # There is no middle variable or field
-                # in this case by is_inherited_method we mean the super class
-                # itself has inherited the called method from another parent class itself
-                # but it won't be necessary cause we don't care about it anymore
                 method_fullname = self.which_method(
                     self.class_parents[self.current_class_name],
                     str(ctx.IDENTIFIER()),

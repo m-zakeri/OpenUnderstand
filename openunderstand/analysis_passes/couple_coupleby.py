@@ -17,9 +17,6 @@ import re
 
 from openunderstand.analysis_passes import class_properties
 
-#: A dotted path of identifiers and nothing else -- `java.util.Objects`. Any
-#: other receiver text is an expression, and reading it as a type name is what
-#: put local variables and string literals in the couple set.
 _QUALIFIED_NAME = re.compile(r"[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*")
 
 
@@ -71,9 +68,6 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         return self.classes
 
     def extract_original_text(self, ctx):
-        # getInputStream() rather than getTokenSource().inputStream: both return
-        # the same stream under the Python parser, but the C++ accelerator
-        # leaves the token-source slot empty, so the indirect route is None.
         input_stream = ctx.start.getInputStream()
         start, stop = ctx.start.start, ctx.stop.stop
         return input_stream.getText(start, stop)
@@ -100,10 +94,6 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         reported none.
         """
         self.push_scope(ctx, "Enum")
-        # Every enum has an implicit `public static E valueOf(String)`, and
-        # Understand couples the enum to java.lang.String for it: all four of
-        # JSON's enums carry it, including `enum MyEnum { VAL1, VAL2, VAL3; }`,
-        # which names no type at all.
         self.add("java.lang.String")
 
     def enterClassCreatorRest(self, ctx: JavaParserLabeled.ClassCreatorRestContext):
@@ -135,11 +125,6 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         Understand reports couples for produced none.
         """
         scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        # findParents() stops at the enclosing scopes, so the type's own
-        # name has to be appended -- otherwise a class's longname is its
-        # package ("org.json" for class CDL) and matches nothing.
-        # An anonymous class has no IDENTIFIER and is named by its caller, and
-        # its declaration is the body rather than the whole creator.
         name = name if name is not None else ctx.IDENTIFIER().__str__()
         body = body if body is not None else ctx
         scope_longname = ".".join(scope_parents + [name])
@@ -157,11 +142,6 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
             "col": col,
         }
 
-        # A nested class exits before the class that encloses it, so with a
-        # single shared couple list `class JSONObject { ... static class
-        # Null {} ... }` handed everything JSONObject had collected so far
-        # to Null, and JSONObject kept only what came after. Each type
-        # gets its own frame.
         from openunderstand.ounderstand import symbol_table
 
         ancestors = symbol_table.ancestors(scope_longname) | {"java.lang.Object"}
@@ -169,9 +149,6 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         self.couplebyrefrences = self.stack[-1][1]
         self.ancestors = ancestors
 
-        # `@Target(...) public @interface JSONPropertyName` puts the annotation
-        # in the *typeDeclaration*'s modifier list, so enterAnnotation fires
-        # before this frame exists. Those are held aside and land here.
         pending, self.pending_annotations = self.pending_annotations, []
         for keyname in pending:
             self.add(keyname)
@@ -184,9 +161,6 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
     def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
         imported_class_longname = ctx.qualifiedName().getText()
         if ctx.getText().rstrip(";").endswith(".*"):
-            # `import java.util.*` names a package, not a type. Taking the last
-            # segment registered 'util' -> 'java.util' as though util were a
-            # class; the package is what an unqualified name falls back to.
             self.wildcard_imports.append(imported_class_longname)
             return
         imported_class_name = imported_class_longname.split(".")[-1]
@@ -242,22 +216,8 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         if type(ctx.parentCtx).__name__ != "TypeTypeContext":
             return
         if type(ctx.parentCtx.parentCtx).__name__.startswith("TypeArgument"):
-            # A type argument counts only where it is *written in an
-            # expression* -- `new HashMap<String, XMLXsiTypeConverter<?>>()` --
-            # and not where it decorates a declared type. Understand's own
-            # split says so: it writes `Java Use GenericArgument` for the first
-            # and only `Java Typed GenericArgument` for the second, and the
-            # couple set follows the Use. `Map<String, List<Integer>>
-            # integerMap` couples CustomClassH to java.util.Map alone and
-            # `List<CustomClassC>` couples CustomClassE to java.util.List
-            # alone, while XMLParserConfiguration, which constructs the map,
-            # couples to org.json.XMLXsiTypeConverter it names nowhere else.
             if not self._inside_creator(ctx):
                 return
-        # `class X extends Y` (parent ClassDeclaration) and `implements Z`
-        # (parent typeList): inheritance is carried by Java Extend Couple, and
-        # Understand emits no Java Couple for a supertype -- JSONException
-        # extends RuntimeException produces none.
         grandparent = type(ctx.parentCtx.parentCtx).__name__
         if grandparent == "ClassDeclarationContext":
             return
@@ -266,14 +226,10 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
             and type(ctx.parentCtx.parentCtx.parentCtx).__name__
             == "ClassDeclarationContext"
         ):
-            # `implements Z` is its own relation, not a plain Couple.
             self.record_relation("Java Implement Couple", ctx, self.classlongname)
             return
         bound = self.constrained_parameter(ctx)
         if bound is not None:
-            # `<T extends Comparable<T>>` -- scoped to the type parameter
-            # itself, which is how Understand names it: Searches.BinarySearch
-            # .find.T -> java.lang.Comparable.
             self.record_relation("Java Use Constrains Couple", ctx, bound)
             return
 
@@ -295,11 +251,6 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         while node is not None:
             name = type(node).__name__
             if name.startswith("CreatedName"):
-                # Not for `new XMLXsiTypeConverter<Boolean>() { ... }`: the
-                # whole created type, arguments included, belongs to the
-                # anonymous class as its supertype and couples the class
-                # holding it to nothing -- the same rule enterCreatedName0
-                # applies to the name itself.
                 rest = getattr(node.parentCtx, "classCreatorRest", None)
                 rest = rest() if callable(rest) else None
                 return rest is None or rest.classBody() is None
@@ -319,11 +270,6 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
                 parents = class_properties.ClassPropertiesListener.findParents(node)
                 owner = self.generic_owner(node)
                 if owner:
-                    # `<T extends Comparable<T>> int find(...)`: the type
-                    # parameter list is a *sibling* of the method declaration
-                    # inside genericMethodDeclaration, so findParents() stops at
-                    # the class and the scope came out Searches.BinarySearch.T
-                    # where Understand says Searches.BinarySearch.find.T.
                     parents = parents + [owner]
                 return ".".join(parents + [identifier.getText()])
             if type(node).__name__.startswith(("ClassBody", "Block")):
@@ -497,10 +443,6 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         from openunderstand.ounderstand import symbol_table
 
         if not owner:
-            # A fully qualified static call -- `java.util.Objects.hash(...)`.
-            # The receiver is a type path rather than a value, so the binder
-            # has nothing to bind; accepted only when the name is one the JDK
-            # index or the project actually declares.
             text = receiver_ctx.getText()
             if _QUALIFIED_NAME.fullmatch(text) and (
                 jdk_index.known(text) or symbol_table.is_project_type(text)
@@ -510,15 +452,6 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
             return
 
         member = identifier.getText()
-        # The declaring type only. What the call *returns* is not a coupling:
-        # Understand reports no org.json.Cookie -> java.util.Set for
-        # `jo.keySet()` and no JSONObjectLocaleTest -> java.lang.String for
-        # `jsonen.getString("i")`. Adding return types put 17 pairs on classes
-        # that have none.
-        # No fallback to the receiver's own type. `jsonArray.write(w,0,0)`
-        # returns a java.io.Writer and `.toString()` on it is
-        # java.lang.Object's, which is not a coupling -- falling back put
-        # java.io.Writer on three classes Understand does not couple to it.
         self.add(symbol_table.declaring_type_anywhere(owner, member))
 
     def enterCreatedName0(self, ctx: JavaParserLabeled.CreatedName0Context):
@@ -543,11 +476,6 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         """Record one coupled type, applying the exclusions Understand applies."""
         if not keyname or not self.stack:
             return
-        # Understand never couples a class to itself, nor to an ancestor: it
-        # reports no JSONException -> java.lang.Throwable even though the
-        # constructors take one, and no JSONMLParserConfiguration ->
-        # ParserConfiguration. The whole chain is excluded, not just the
-        # universal ancestor -- that left six of these on JSON.
         if keyname == self.classlongname or keyname in self.ancestors:
             return
         if keyname not in self.couplebyrefrences:
@@ -587,19 +515,10 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
 
     def lookup(self, name):
         """Resolve a type name the way javac would, in declaration order."""
-        # Imported here, not at module scope: openunderstand.ounderstand's
-        # __init__ reaches oudb.api -> parsing_process -> the module that
-        # imports this pass, so a top-level import is circular.
         from openunderstand.ounderstand import symbol_table
 
         if not name or name in self.type_parameters:
             return None
-        # One ladder, not a near-copy of it. This one ended in an
-        # unconditional `java.lang.` + name, which named java.lang.Map,
-        # java.lang.List and java.lang.Set for types that live in java.util --
-        # a wrong coupling and a missed right one each time, 4 classes apiece
-        # on JSON. resolve_type_name asks the JDK index instead, and refuses
-        # when nothing settles it.
         return symbol_table.resolve_type_name(
             name, self.Imports, self.wildcard_imports, self.classlongname
         )

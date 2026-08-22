@@ -88,11 +88,6 @@ class ListenersAndParsers:
         try:
             listener = VariableListener()
             p.Walk(listener, tree)
-            # One generator for the whole file. This used to be constructed
-            # inside each loop, i.e. once per variable -- and every
-            # construction re-walks the tree for package entities and
-            # re-creates the file entity. On the JSON fixture that was 825
-            # constructions for 22 files and 14% of total build time.
             generator = self.entity_gen(file_address=file_address, parse_tree=tree)
             for item in listener.var:
                 generator.get_or_create_variable_entity(res_dict=item)
@@ -283,42 +278,6 @@ class ListenersAndParsers:
                 + traceback.format_exc()
             )
 
-    # @timer_decorator()
-    # def define_listener(self, tree, file_ent, file_address, p):
-    #     try:
-    #         listener = DefineListener()
-    #         p.Walk(listener, tree)
-    #         package_name = listener.package["package_name"]
-    #         p.add_entity_package(listener.package, file_address)
-    #         p.add_defined_entities(
-    #             listener.classes, "class", package_name, file_address
-    #         )
-    #         p.add_defined_entities(
-    #             listener.interfaces, "interface", package_name, file_address
-    #         )
-    #         p.add_defined_entities(
-    #             listener.fields, "variable", package_name, file_address
-    #         )
-    #         p.add_defined_entities(
-    #             listener.methods, "method", package_name, file_address
-    #         )
-    #         p.add_defined_entities(
-    #             listener.local_variables,
-    #             "local variable",
-    #             package_name,
-    #             file_address,
-    #         )
-    #         p.add_defined_entities(
-    #             listener.formal_parameters, "parameter", package_name, file_address
-    #         )
-    #         self.logger.info("define success ")
-    #     except Exception as e:
-    #         self.logger.error(
-    #             "An Error occurred for reference implement in file define:"
-    #             + file_address
-    #             + "\n"
-    #             + str(e)
-    #         )
 
     @timer_decorator()
     def declare_listener(self, tree, file_ent, file_address, p):

@@ -23,7 +23,6 @@ from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
 )
 import openunderstand.analysis_passes.class_properties as class_properties
 
-#: A cast to one of these names no entity, so it is not a reference.
 PRIMITIVES = {
     "int",
     "long",
@@ -54,10 +53,6 @@ def _declaring_generic(ctx, name):
         identifier = getattr(node, "IDENTIFIER", None)
         owner = identifier() if callable(identifier) else None
         if owner is not None and not isinstance(owner, list):
-            # A generic method is wrapped: genericMethodDeclaration holds the
-            # <T> and methodDeclaration inside it holds the name, and the
-            # inner node has no typeParameters attribute at all -- so the
-            # wrapper has to be asked whenever the declaration itself is silent.
             declared = type_parameters(node) or type_parameters(node.parentCtx)
             if declared is not None:
                 for parameter in declared.typeParameter():

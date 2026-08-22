@@ -8,9 +8,6 @@ This module find all OpenUnderstand call and callby references in a Java project
 
 """
 
-# from OpenUnderstand.openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-# from OpenUnderstand.openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-# import OpenUnderstand.openunderstand.analysis_passes.class_properties as class_properties
 from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
     JavaParserLabeledListener,
 )
@@ -40,12 +37,6 @@ class CallNonDynamicAndCallNonDynamicBy(JavaParserLabeledListener):
                             method = method()
                             body_ctx = method.methodBody()
                             block = body_ctx.block() if body_ctx else None
-                            # An abstract or interface method has no body.
-                            # dfs() then walked None and raised, and the glue
-                            # logs rather than raises -- so the whole pass died
-                            # for that file and produced no Call Nondynamic at
-                            # all: 18 files on ganttproject, 12 on jhotdraw,
-                            # both full of abstract classes.
                             if block is not None:
                                 self.dfs(block, method, ctx, extendedBy)
 
@@ -70,15 +61,10 @@ class CallNonDynamicAndCallNonDynamicBy(JavaParserLabeledListener):
         parents = class_properties.ClassPropertiesListener.findParents(method)
         name = method.IDENTIFIER().getText()
         return {
-            # A method kind, so entity identity -- (long name, kind family) --
-            # binds this to the method define_listener already declared rather
-            # than creating a second entity beside it.
             "scope_kind": "Method",
             "scope_name": name,
             "scope_longname": ".".join(parents + [name]),
             "scope_parent": parents[-1] if parents else None,
-            # Empty rather than getText(): that is source with the whitespace
-            # removed, and the declaring pass has already stored the real thing.
             "scope_contents": "",
             "scope_modifiers": class_properties.ClassPropertiesListener.findClassOrInterfaceModifiers(
                 method

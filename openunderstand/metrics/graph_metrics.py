@@ -106,15 +106,6 @@ def count_decl_class(ent_model):
         return 0
     if "package" not in _visibility(entity):
         return len(_declares(entity._id, "type"))
-    # A package's classes are the ones it *contains*. Preferring Define when it
-    # happened to be non-empty answered 1 for DataStructures.Bags where Contain
-    # gives Understand's 3: a file defines a class into the package, so Define
-    # only ever sees the one file this entity was created from.
-    #
-    # container_classes() is that walk, and it follows Define through *every*
-    # family rather than only through types. The difference is the anonymous
-    # class: it is declared by a method, so a type-only walk stops one step
-    # short of it and org.json answered 28 against Understand's 30.
     return len(container_classes(ent_model) or [])
 
 
@@ -262,16 +253,6 @@ def average_line_counts(ent_model) -> dict:
     return {key: round(value / len(members)) for key, value in totals.items()}
 
 
-# --------------------------------------------------- corrections from the manual
-#
-# metrics.pdf (Understand 7.0.1217) defines these precisely. Each function below
-# quotes the sentence it implements, because several earlier versions here were
-# fitted to sample values rather than written from the definition -- and were
-# wrong in ways sampling could not reveal.
-
-#: Every way a type names an immediate supertype. The bare kind is a project
-#: superclass; the variants carry the JDK ones and the `extends Object` the
-#: extends_implicit pass writes for a class that declares no superclass.
 _SUPERTYPE_KINDS = (
     "Java Extend Couple",
     "Java Extend Couple External",
@@ -321,11 +302,6 @@ def count_class_coupled(ent_model, exclude_standard=False):
     entity = _entity(ent_model)
     if entity is None:
         return 0
-    # Every way a supertype is named, not just the two plain kinds: a JDK
-    # superclass arrives as `Extend Couple External` and an implicit
-    # java.lang.Object as `Extend Couple Implicit External`. Excluding only
-    # the plain kinds left java.lang.RuntimeException counted as a coupling of
-    # JSONException, which is Understand's 1 against our 2.
     bases = set(_supertypes(entity._id))
 
     coupled = set()
@@ -410,10 +386,6 @@ def _fan_targets(entity_id, ref_kinds, owner_longname):
     Member` placeholders no pass ever upgraded, where kind says nothing.
     """
     prefixes = [(owner_longname or "") + "."]
-    # A lambda body and an anonymous class body are scopes inside a
-    # declaration, and that declaration's locals are still locals: the `jo` a
-    # lambda reads is `...testOptBigDecimalVariousTypes.jo`, which does not
-    # start with the lambda's own long name and was counted as a global.
     parts = (owner_longname or "").split(".")
     for index in range(len(parts) - 1, 0, -1):
         if parts[index].startswith("("):
@@ -422,17 +394,9 @@ def _fan_targets(entity_id, ref_kinds, owner_longname):
     for kind in ref_kinds:
         for target in _targets(entity_id, kind):
             if kind_family(target._kind_id) != "variable":
-                # An annotation element is a method in Java and reads like a
-                # global here: `@Test(expected=X.class)` is the whole of
-                # CDLTest.exceptionOnNullString's CountInput of 1, and 65 of
-                # JSON's methods carry one. Anything `external` is outside the
-                # analysed source, so it can never be a local of the asker.
                 if "external" in (_kind_name(target._kind_id) or "").lower().split():
                     out.add(target._id)
                 continue
-            # A parameter and a local are both the "variable" family -- Java
-            # Parameter maps to it too -- so only the kind name tells them
-            # apart, and only the long name tells a field from a local.
             if "Parameter" in (_kind_name(target._kind_id) or ""):
                 out.add(target._id)
             elif not (
@@ -446,10 +410,6 @@ def _field_targets(entity_id, ref_kinds, owner_longname):
     """Distinct variables an entity touches that are neither its own locals
     nor its own parameters -- that is, fields."""
     prefixes = [(owner_longname or "") + "."]
-    # A lambda body and an anonymous class body are scopes inside a
-    # declaration, and that declaration's locals are still locals: the `jo` a
-    # lambda reads is `...testOptBigDecimalVariousTypes.jo`, which does not
-    # start with the lambda's own long name and was counted as a global.
     parts = (owner_longname or "").split(".")
     for index in range(len(parts) - 1, 0, -1):
         if parts[index].startswith("("):
@@ -457,9 +417,6 @@ def _field_targets(entity_id, ref_kinds, owner_longname):
     out = set()
     for kind in ref_kinds:
         for target in _targets(entity_id, kind):
-            # Only variables are set. An annotation element is read, never
-            # written, so the `external` allowance _fan_targets makes has no
-            # counterpart here.
             if kind_family(target._kind_id) != "variable":
                 continue
             if "Parameter" in (_kind_name(target._kind_id) or ""):
@@ -546,23 +503,15 @@ def count_input(ent_model):
     entity = _entity(ent_model)
     if entity is None:
         return 0
-    fan = {t._id for t in _targets(entity._id, "Java Callby")}
-    fan |= {t._id for t in _targets(entity._id, "Java Callby Nondynamic")}
+    fan = {t._id for k in ("Java Callby", "Java Callby Nondynamic")
+           for t in _targets(entity._id, k)
+           if kind_family(t._kind_id) == "method"}
     fan.discard(entity._id)  # a recursive call is not an input
     fan |= _fan_targets(entity._id, _use_kind_names(), entity._longname)
     return len(fan)
 
 
-# ------------------------------------------------------------- container roll-up
-
-#: Metrics a container aggregates rather than computing from its own text.
-#: Verified against Understand on `com.calculator.app.method`: its CountLine 94,
-#: CountLineCode 76, CountStmt 58 and SumCyclomatic 13 are exactly the sums over
-#: the package's four files.
 _NOT_AGGREGATED = {
-    # A package's own definition answers this; summing it over the package's
-    # files gives 0, because a file declares nothing -- the class is defined
-    # in the package's scope, not the file's.
     "CountDeclClass",
     "CountDeclFile",
     "CountClassBase",
@@ -601,12 +550,6 @@ def container_members(ent_model):
     contain = KindModel.get_or_none(_name="Java Contain")
     if contain is None:
         return []
-    # The file each of the package's classes was found in. Read from Contain,
-    # not Define: a package contains its classes and defines nothing, which is
-    # how Understand records it and now how this project does. Verified against
-    # Understand on com.calculator.app.method -- its CountLine 94,
-    # CountLineCode 76, CountStmt 58 and SumCyclomatic 13 are exactly the sums
-    # over the package's four files.
     file_ids = {
         ref._file_id
         for ref in ReferenceModel.select().where(
@@ -710,11 +653,6 @@ def nested_methods(ent_model):
         return list(methods.values())
     if family != "type":
         return []
-    # A class's own methods, and not a nested class's: Understand's JSONPointer
-    # is SumCyclomatic 27 over nine methods, and 32 over the thirteen that
-    # descending into `Builder` finds. Measured over JSON's classes against
-    # Understand's own per-method numbers, direct is 103 of 106 and descending
-    # 99.
     return _declares(entity._id, "method")
 
 
@@ -738,16 +676,6 @@ def aggregate(name, values):
     return sum(numbers)
 
 
-#: Every `Avg*`/`Max*`/`Sum*` name whose value is that aggregate of a
-#: *per-method* metric, mapped to the metric it aggregates. Each of these had
-#: its own student listener walking the tree its own way and scoring 0.014 to
-#: 0.45; asking the per-method metric -- already right to ~97% -- once per
-#: method and combining the answers is the same definition, said once.
-#:
-#: `MaxNesting` is its own base: a class's is the largest of its methods'.
-#: `MaxInheritanceTree`, `MaxEssentialKnots` and `MinEssentialKnots` are absent
-#: deliberately -- the first is not an aggregate at all, and Understand defines
-#: the other two on methods only.
 METHOD_SUMMARY = {
     f"{agg}{base}": base
     for agg in ("Avg", "Max", "Sum")
@@ -781,16 +709,8 @@ def percent_lack_of_cohesion(ent_model, modified=False):
     if entity is None:
         return 0
     if "enum" in _visibility(entity):
-        # Understand answers neither name for an enum. Exactly the four enums
-        # on JSON are the four classes it leaves blank, and it is not about
-        # having no fields: 55 classes with no instance variable at all get a
-        # value. Answering anyway cost four pairs of precision on each.
         return None
     methods = _declares(entity._id, "method")
-    # Cohesion is about *instance* state. A static utility class shares
-    # nothing between its methods by construction, and Understand scores it 0
-    # rather than a total lack of cohesion -- AnyBaseToAnyBase,
-    # DecimalToHexaDecimal and RomanToInteger came out 67, 50 and 75.
     fields = [
         v
         for v in _declares(entity._id, "variable")
@@ -812,13 +732,6 @@ def percent_lack_of_cohesion(ent_model, modified=False):
                     users[target._id].add(method._id)
 
     if modified:
-        # "Does not penalize the use of accessor methods within a class to
-        # set/read variables": a method that reaches a field only by calling
-        # another method of the same class counts as using it, so the credit
-        # propagates back along intra-class calls until it stops spreading.
-        # Understand's own numbers need the full closure, not one hop --
-        # JSONArray is 6, and direct use alone says 81. Measured against
-        # Understand: 86% direct, 93% one hop, 99% at the fixed point.
         callers = {
             m._id: {
                 c._id

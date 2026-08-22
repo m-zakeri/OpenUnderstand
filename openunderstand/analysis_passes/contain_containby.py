@@ -34,11 +34,6 @@ class ContainAndContainBy(JavaParserLabeledListener):
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         self._record(ctx, "Class")
 
-    # A package contains every type it declares, not only its classes.
-    # Understand writes Contain for `interface JSONString` at the same
-    # position it writes Define, and this pass handled `class` alone -- so
-    # org.json's four interfaces and annotations had no container, and
-    # CountDeclClass reported 24 against Understand's 30.
     def enterInterfaceDeclaration(
         self, ctx: JavaParserLabeled.InterfaceDeclarationContext
     ):
@@ -54,9 +49,6 @@ class ContainAndContainBy(JavaParserLabeledListener):
 
     def _record(self, ctx, kind):
         name = ctx.IDENTIFIER().getText()
-        # The reference sits on the class's name, not on the `class` keyword:
-        # ctx.start put every one of these exactly len("class ") = 6 columns
-        # to the left of where Understand reports it.
         line = ctx.IDENTIFIER().symbol.line
         col = ctx.IDENTIFIER().symbol.column
         scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
@@ -66,18 +58,8 @@ class ContainAndContainBy(JavaParserLabeledListener):
         else:
             scope_longname = ".".join(scope_parents)
 
-        # findParents() already yields the package components followed by any
-        # enclosing types, but stops short of this class. So the fully
-        # qualified name is those parents plus this class's own name --
-        # prefixing packageLongName here produced "org.json.org.json", and
-        # omitting `name` left the class's longname pointing at its package.
         scope_longname = ".".join(scope_parents + [name])
         if not self.packageInfo:
-            # No `package` declaration, so the class is in the default package
-            # and there is no package entity to contain it. This indexed [0]
-            # unconditionally and raised IndexError, which the glue logged and
-            # swallowed -- taking the whole pass down for all 7 default-package
-            # files on TheAlgorithms, Kruskal and BSTIterative among them.
             return
         packageName = self.packageInfo[0]["name"]
         packageLongName = self.packageInfo[0]["longname"]

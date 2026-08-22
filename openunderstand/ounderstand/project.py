@@ -49,11 +49,6 @@ def _use_cpp_engine():
             requested = utilities.setup_config()["Config"]["engine_core"]
         except Exception:
             requested = "Python"
-        # The CLI default is "auto", config.ini has said "Python3", and the
-        # README says "C++ or Python". Accept anything that starts with a "c";
-        # "auto" asks for the accelerator only when it is actually present, so
-        # the common install does not log a fallback warning it can do nothing
-        # about.
         requested = requested.strip().lower()
         if requested.startswith("auto"):
             from openunderstand.utils import antler_parser
@@ -130,6 +125,13 @@ def callee_of(longname, name, arguments, file_ent):
     )[0]
 
 
+#: Use variants whose target is a type by construction, whatever it resolves to.
+_TYPE_USE_KINDS = frozenset({
+    "Java Use Annotation", "Java Use Cast", "Java Use GenericArgument",
+    "Java Typed", "Java Typed GenericArgument", "Java Use Constrains Couple",
+})
+
+
 def synthetic_scope(longname):
     """Whether a long name ends in a scope the source never named.
 
@@ -175,12 +177,6 @@ def scope_of(longname, line=None):
 class Project:
     def __init__(self):
         self.tree = None
-        # getClassProperties() answers by walking the whole parse tree, and the
-        # create pass alone asked it 168 times for one file at ~80ms a call --
-        # 13.5s of JSONObject.java's 44s. The answer depends only on the long
-        # name and the tree, and the tree is fixed for the file being processed,
-        # so ask once. Cleared in Parse(), which is the only place a Project
-        # changes tree.
         self._class_properties = {}
         self._interface_properties = {}
 
@@ -248,13 +244,6 @@ class Project:
                     file_ent, ref_dict["ent"], ref_dict["ent_longname"]
                 )
 
-            # Declare: kind id 192
-            #
-            # Only between packages. For `package org.json;` Understand reports
-            # one Declare -- org -> org.json -- and no Declare at all for the
-            # root component, whose only reference is the Declarein naming the
-            # file. Emitting one there put a row at 1:9 that Understand never
-            # has, one per file.
             if ref_dict["scope"] is not None:
                 declare_ref = ReferenceModel.get_or_create(
                     _kind=kind_id("Java Declare"),
@@ -277,10 +266,6 @@ class Project:
 
     def addTypeRefs(self, d_type, file_ent, stream: str = ""):
         for type_tuple in d_type["typedBy"]:
-            # The pass resolves both ends now: gluing the package onto a simple
-            # name here named a local of CDL.getValue `org.json.x` and
-            # java.lang.String `org.json.String`, so 24 of 1062 references
-            # matched Understand on JSON.
             ent, h_c1 = EntityModel.get_or_create(
                 # was the reference kind Java Typed, written into an entity row; the referenced type
                 _kind=kind_id("Java Unknown Class Type Member"),
@@ -327,28 +312,14 @@ class Project:
 
         for type_tuple in d:
             par = EntityModel.get(_name=type_tuple[7])
-            # The scope is the enclosing method, which is not the entity's long
-            # name minus its last segment: `this.usePrevious = false` inside
-            # JSONTokener.next sets org.json.JSONTokener.usePrevious -- a field
-            # of the class -- from scope org.json.JSONTokener.next. Trimming
-            # the entity gave org.json.JSONTokener for the scope.
             scope_longname = type_tuple[11]
-            # `this.map = ...` arrives with the short name already qualified
-            # ("JSONObject.map"). Resolving that verbatim never matches, and the
-            # fallback glued it onto the scope:
-            # org.json.JSONObject.JSONObject.JSONObject.map.
             simple_name = str(type_tuple[0]).rsplit(".", 1)[-1]
-            # Where to start looking for that name. Same as the scope except
-            # for a `this.` target, which must skip the method's own locals.
             resolve_scope = type_tuple[12]
             ent, h_c1 = EntityModel.get_or_create(
                 # was the reference kind Java Set, written into an entity row; the variable being set
                 _kind=kind_id("Java Unknown Variable Member"),
                 _parent=par._id,
                 _name=simple_name,
-                # Innermost scope outwards: a local in this method wins, then a
-                # field of its class. The pass could only glue the package on
-                # the front, which named every `c` in the project org.json.c.
                 _longname=resolved_longname(
                     simple_name, resolve_scope + "." + simple_name, resolve_scope
                 ),
@@ -824,11 +795,23 @@ class Project:
                 # An annotation the project does not declare is java.lang's:
                 # `@Override` is java.lang.Override, not a bare "Override"
                 # that merge_placeholder_entities() folds somewhere arbitrary.
-                longname = name
-                if name in symbol_table.JAVA_LANG_TYPES:
+                longname = stated or name
+                if not stated and name in symbol_table.JAVA_LANG_TYPES:
                     longname = f"java.lang.{name}"
+                # Not everything read is a type. `java.lang.Double.NaN` is a
+                # static field and was created as an Unknown *Class Type*, so
+                # the fan metrics skipped it -- they count variables, and
+                # Understand counts NaN as the global read it is. A cast, an
+                # annotation and a type argument do name types; for a plain
+                # read, the index decides.
+                names_a_type = (
+                    ref_dict["kind"] in _TYPE_USE_KINDS
+                    or jdk_index.known(longname)
+                    or symbol_table.is_project_type(longname)
+                    or (not stated and name in symbol_table.JAVA_LANG_TYPES))
                 ent, _ = EntityModel.get_or_create(
-                    _kind=kind_id("Java Unknown Class Type Member"),
+                    _kind=kind_id("Java Unknown Class Type Member" if names_a_type
+                                  else "Java Unknown Variable Member"),
                     _name=name,
                     _parent=file_ent,
                     _longname=longname,

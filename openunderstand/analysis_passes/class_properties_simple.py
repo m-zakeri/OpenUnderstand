@@ -53,9 +53,6 @@ class ClassPropertiesListener(JavaParserLabeledListener):
         return parents[::-1]
 
     def extractOriginalText(self, ctx: JavaParserLabeled.ClassDeclarationContext):
-        # getInputStream() rather than getTokenSource().inputStream: both return
-        # the same stream under the Python parser, but the C++ accelerator
-        # leaves the token-source slot empty, so the indirect route is None.
         input_stream = ctx.start.getInputStream()
         start, stop = ctx.start.start, ctx.stop.stop
         return input_stream.getText(start, stop)

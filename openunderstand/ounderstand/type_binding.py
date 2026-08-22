@@ -30,10 +30,6 @@ references it records.
 
 from openunderstand.analysis_passes import class_properties
 
-#: A literal's type where it is *passed* rather than called on. `type_of`
-#: answers only for the two literals that can be a receiver and returns None
-#: for the rest, because a number cannot be called on -- but telling
-#: `put(String, int)` from `put(String, Object)` is exactly that question.
 _ARGUMENT_LITERALS = {
     "Literal0Context": "int",
     "Literal1Context": "double",

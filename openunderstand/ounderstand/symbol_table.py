@@ -31,69 +31,14 @@ class _DeclarationIndex:
 
     def __init__(self):
         self.by_simple_name: dict[str, set[str]] = {}
-        # All the long names declaring a type under this simple name, not just
-        # the first one indexed. Keeping only the first meant every `Node` in
-        # TheAlgorithms resolved to DataStructures.Stacks.Node whichever
-        # package actually declared it -- 92 of Couple's 159 false positives
-        # there, and the same error reached DotRef through resolve_type().
         self.types: dict[str, set[str]] = {}
-        #: Class long name -> the simple names it extends *and* implements.
-        #: Interfaces matter as much as superclasses: Understand reports
-        #: BinarySearch.find as overriding SearchAlgorithm.find, and recording
-        #: only `extends` found 5 of TheAlgorithms' 47 Overrides.
         self.supertypes: dict[str, list[str]] = {}
-        #: Method long name -> every declaration under it, each as
-        #: (parameter type names, is_abstract, is_generic).
-        #:
-        #: `Java Overrides` needs the *supertype's* declaration, which lives in
-        #: another file, to tell an override from a same-named overload:
-        #: MaxHeap.getElement(int) does not override Heap.getElement().
-        #:
-        #: A list, not one entry: overloads share a long name. SortAlgorithm
-        #: declares both `sort(T[])` and `sort(List<T>)`, and keeping one
-        #: dropped the abstract generic overload that Understand refuses to
-        #: report -- which is 15 wrong rows, one per class implementing it.
         self.methods: dict[str, list[tuple[tuple[str, ...], bool, bool]]] = {}
-        #: Method long name -> its declared return type, as written. A
-        #: chained call `x.next().trim()` lands on whatever `next` returns,
-        #: and one file cannot say: 1,598 of JSON's 9,507 calls are this
-        #: shape, and the JDK index answers only for java./javax. owners.
-        #: Overloads that disagree are dropped -- a name with two return types
-        #: cannot place a call, and guessing is what took Java Call precision
-        #: to 19%.
         self.return_types: dict[str, str] = {}
-        #: (declaring type long name, field) -> the field's declared type, as
-        #: written. `process_file` sees one file, so a chain like
-        #: `node.next.previous` dies at the second hop without this: the type
-        #: of `next` is declared in whatever file declares Node.
         self.field_types: dict[tuple[str, str], str] = {}
-        #: File path -> ({simple name: long name}, [wildcard packages]).
-        #:
-        #: Sixteen passes each collected imports for themselves, and each was a
-        #: separate chance to get it wrong: four of them silently discarded
-        #: `import x.y.*`, which is how `Scanner`, `HashMap` and every
-        #: org.evosuite annotation went unresolved. Indexed once here, during
-        #: the walk that already reads every file.
         self.file_imports: dict[str, tuple[dict, list]] = {}
-        #: Long names of the project's interfaces and annotation types. An
-        #: anonymous `new JSONString() { ... }` *implements* one and *extends*
-        #: a class, which is the difference between Understand's two bases for
-        #: it and its one.
         self.interfaces: set[str] = set()
-        #: Method or constructor long name ->
-        #: [(parameter types as written, line, column, declaring file)], one
-        #: entry per overload. Overloads share a long name and are separate
-        #: rows only because their declaration positions differ, so a caller
-        #: that knows the call's argument types can address the right one. The
-        #: types stay as written and are resolved on demand, because the
-        #: imports that place them belong to the declaring file and the index
-        #: is not complete while it is being built. Columns are 1-based, the
-        #: way an entity row stores them.
         self.overloads: dict[str, list] = {}
-        #: Class long name -> (superclass as written, declaring file). Absent
-        #: means the class extends nothing, which is java.lang.Object.
-        #: `supertypes` cannot answer: it mixes the superclass with every
-        #: interface and drops it when it is Object.
         self.superclasses: dict[str, tuple] = {}
         self.files = 0
 
@@ -135,11 +80,6 @@ class _DeclarationIndex:
             if len(local) == 1:
                 return local[0]
         if local_only:
-            # Java makes a type in another package visible only through an
-            # import. Letting a globally unique project class win regardless
-            # bound `new HashMap<>()` in Conversions to the project's own
-            # DataStructures.HashMap.Hashing.HashMap rather than to
-            # java.util.HashMap, which the file wildcard-imports.
             return None
         if len(candidates) == 1:
             return next(iter(candidates))
@@ -236,12 +176,8 @@ class _DeclarationIndex:
         return sum(len(v) for v in self.by_simple_name.values())
 
 
-#: Populated by build(); read by the passes through resolve().
 INDEX = _DeclarationIndex()
 
-#: Names java.lang declares, which every file imports implicitly. Derived from
-#: the generated JDK index rather than listed by hand -- the hand-written set
-#: had 61 names and missed whatever no benchmark had yet used.
 JAVA_LANG_TYPES = frozenset(
     name
     for name, longnames in jdk_index._load()["by_simple"].items()
@@ -584,45 +520,21 @@ def resolve_type_name(name, imports=None, wildcards=None, scope_longname=""):
     if imports and name in imports:
         return imports[name]
     if "." in name:
-        # `JSONPointer.Builder` is a nested type named through its outer one,
-        # not a qualified name: returning it verbatim left the couple set with
-        # a bare `JSONPointer.Builder` beside the real
-        # org.json.JSONPointer.Builder.
         head, _, rest = name.partition(".")
         outer = resolve_type(head, scope_longname)
         if outer:
             return outer + "." + rest
         return name
-    # A type in the asking scope or its own package, which outranks any
-    # on-demand import. A project type in *another* package is not visible
-    # without an explicit import, so it is left until after the wildcards.
     in_scope = resolve_type(name, scope_longname, local_only=True)
     if in_scope:
         return in_scope
     if name in JAVA_LANG_TYPES:
         return "java.lang." + name
     if wildcards and len(wildcards) == 1 and name[:1].isupper():
-        # Only a name that could *be* a type. A lone `import java.util.*` was
-        # turning any unresolved lowercase identifier into a type long name --
-        # the variable `graph` became java.util.graph and carried 12 wrong
-        # Callby rows with it, the same shape as the type parameter that
-        # became java.util.E.
         return wildcards[0] + "." + name
-    # More than one `import x.y.*` and the lone-wildcard rule above cannot
-    # choose. Hanoi.java wildcard-imports java.awt, java.awt.event, java.util
-    # and javax.swing, so every type it constructs fell back to a bare name --
-    # 143 of TheAlgorithms' Java Create rows. The package is only accepted when
-    # the file actually imports it, so this decides between candidates the file
-    # already asked for rather than inventing one.
-    # The JDK index settles a name the file wildcard-imports, and settles it
-    # against every package offered rather than one at a time.
     from_jdk = jdk_index.resolve_simple(name, tuple(wildcards or ()))
     if from_jdk:
         return from_jdk
-    # Last: a uniquely named project type in some other package. Understand
-    # resolves plenty of these -- a file that uses one usually imports it, and
-    # that was handled at the top -- but preferring it over an on-demand import
-    # is what shadowed java.util.HashMap.
     return resolve_type(name, scope_longname)
 
 

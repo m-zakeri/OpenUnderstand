@@ -83,6 +83,32 @@ def _lambda_names(root):
     return names
 
 
+@lru_cache(maxsize=2)
+def _catch_names(root):
+    """{id(catchClause): "(catch_N)"} for every catch clause in a tree.
+
+    Numbered over the *file* in source order, which is Understand's naming:
+    JSONTokener.java runs `more.(catch_1)` through `skipTo.(catch_7)`. Each
+    clause is a scope, so two `catch (X e)` in one method are two `e` entities
+    -- `more.(catch_1).e` and `more.(catch_2).e` -- where a single `more.e`
+    counted one, and CountInput was short by one on every method with two.
+    """
+    names, count = {}, 0
+
+    def walk(node):
+        nonlocal count
+        if isinstance(node, JavaParserLabeled.CatchClauseContext):
+            count += 1
+            names[id(node)] = "(catch_%d)" % count
+        for i in range(node.getChildCount()):
+            child = node.getChild(i)
+            if isinstance(child, ParserRuleContext):
+                walk(child)
+
+    walk(root)
+    return names
+
+
 def lambda_name(ctx):
     """`(lambda_expr_N)` for a lambda expression."""
     root = ctx
@@ -114,14 +140,6 @@ class ClassPropertiesListener(JavaParserLabeledListener):
             list(reversed(self.class_longname))
         )
 
-    # Rules that name an enclosing scope. Each one carries an IDENTIFIER.
-    #
-    # RULE_typeDeclaration is deliberately absent: it is only a wrapper around
-    # classDeclaration / interfaceDeclaration / enumDeclaration, it has no
-    # IDENTIFIER of its own, and the rule it wraps already contributes the
-    # name. While it was listed here it fell through to the package branch
-    # below and appended the entire class body as a name component, producing
-    # longnames like "org.json.classJSONML{privatestaticObjectparse(...".
     _SCOPE_RULES = frozenset(
         {
             JavaParserLabeled.RULE_classDeclaration,
@@ -177,6 +195,7 @@ class ClassPropertiesListener(JavaParserLabeledListener):
 
         anonymous = _anonymous_names(root) if root is not None else {}
         lambdas = _lambda_names(root) if root is not None else {}
+        catches = _catch_names(root) if root is not None else {}
         parents = []
         for current in chain:
             rule = current.getRuleIndex()
@@ -185,23 +204,17 @@ class ClassPropertiesListener(JavaParserLabeledListener):
                 if identifier is not None:
                     parents.append(identifier.getText())
             elif rule == JavaParserLabeled.RULE_classCreatorRest:
-                # An anonymous class body is a scope like any other, and
-                # skipping it hung its members off the enclosing method:
-                # `org.json.XML.codePointIterator.iterator` where Understand
-                # says `...codePointIterator.(Anon_1).iterator`. The class then
-                # declared nothing, so every class-level metric answered for it
-                # was 0 -- CountDeclMethod 0 against 1, MaxCyclomatic 0
-                # against 1.
                 name = anonymous.get(id(current))
                 if name is not None:
                     parents.append(name)
             elif rule == JavaParserLabeled.RULE_lambdaExpression:
-                # A lambda body is its own scope, and Understand gives it its
-                # own entity. Leaving it out put every call inside one on the
-                # enclosing method: JSONObjectTest.testOptBigDecimalVariousTypes
-                # counted 13 callees against Understand's 2, because its three
-                # lambdas own the rest.
                 name = lambdas.get(id(current))
+                if name is not None:
+                    parents.append(name)
+            elif rule == JavaParserLabeled.RULE_catchClause:
+                # A catch clause is a scope of its own, so its parameter is not
+                # the method's: two `catch (X e)` in one method are two `e`.
+                name = catches.get(id(current))
                 if name is not None:
                     parents.append(name)
         parents.reverse()

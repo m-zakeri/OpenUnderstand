@@ -94,7 +94,7 @@ what is left is genuine disagreement about values.
 | `PercentLackOfCohesion` | 0.912 | 0.912 | 0.91 | 0.91 | 93 | 102 | 102 |
 | `PercentLackOfCohesionModified` | 0.912 | 0.912 | 0.91 | 0.91 | 93 | 102 | 102 |
 | `CountClassCoupled` | 0.906 | 0.906 | 0.91 | 0.91 | 96 | 106 | 106 |
-| `CountInput` | 0.882 | 0.886 | 0.88 | 0.89 | 921 | 1048 | 1040 |
+| `CountInput` | 0.885 | 0.888 | 0.88 | 0.89 | 924 | 1048 | 1040 |
 
 ## No Understand value on this fixture
 
