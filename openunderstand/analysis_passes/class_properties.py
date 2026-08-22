@@ -84,14 +84,18 @@ def _lambda_names(root):
 
 
 @lru_cache(maxsize=2)
-def _catch_names(root):
+def catch_names(root):
     """{id(catchClause): "(catch_N)"} for every catch clause in a tree.
 
     Numbered over the *file* in source order, which is Understand's naming:
-    JSONTokener.java runs `more.(catch_1)` through `skipTo.(catch_7)`. Each
-    clause is a scope, so two `catch (X e)` in one method are two `e` entities
-    -- `more.(catch_1).e` and `more.(catch_2).e` -- where a single `more.e`
-    counted one, and CountInput was short by one on every method with two.
+    JSONTokener.java runs `more.(catch_1)` through `skipTo.(catch_7)`.
+
+    Deliberately **not** consulted by findParents(). Understand puts only the
+    catch *parameter* in this scope -- `more.(catch_1).e` -- and leaves every
+    statement inside the block scoped to the method. Feeding it to findParents
+    scoped the whole block to the clause and cost CountOutput 0.127 and
+    CountInput 0.115 in one build. Only the pass that declares the parameter
+    should use it.
     """
     names, count = {}, 0
 
@@ -195,7 +199,6 @@ class ClassPropertiesListener(JavaParserLabeledListener):
 
         anonymous = _anonymous_names(root) if root is not None else {}
         lambdas = _lambda_names(root) if root is not None else {}
-        catches = _catch_names(root) if root is not None else {}
         parents = []
         for current in chain:
             rule = current.getRuleIndex()
@@ -209,12 +212,6 @@ class ClassPropertiesListener(JavaParserLabeledListener):
                     parents.append(name)
             elif rule == JavaParserLabeled.RULE_lambdaExpression:
                 name = lambdas.get(id(current))
-                if name is not None:
-                    parents.append(name)
-            elif rule == JavaParserLabeled.RULE_catchClause:
-                # A catch clause is a scope of its own, so its parameter is not
-                # the method's: two `catch (X e)` in one method are two `e`.
-                name = catches.get(id(current))
                 if name is not None:
                     parents.append(name)
         parents.reverse()

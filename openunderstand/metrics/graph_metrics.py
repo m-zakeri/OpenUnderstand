@@ -368,6 +368,29 @@ def count_semicolon(ent_model):
     return total
 
 
+def _placeholder_member(target):
+    """A placeholder that is really a *member* of a known type, not a type.
+
+    `java.lang.Boolean.TRUE` and `java.lang.Double.NaN` are static fields read
+    as globals, and Understand counts them. Whichever pass reaches one first
+    decides its kind and several create class-type placeholders, so the kind
+    cannot be trusted -- but the *name* can: an Unknown row whose owner is a
+    type the JDK index or the project declares, and which is not itself a known
+    type, names a member of it.
+    """
+    from openunderstand.oudb import jdk_index
+    from openunderstand.oudb.models import is_placeholder_kind
+    from openunderstand.ounderstand import symbol_table
+
+    longname = target._longname or ""
+    if "." not in longname or not is_placeholder_kind(target._kind_id):
+        return False
+    if jdk_index.known(longname) or symbol_table.is_project_type(longname):
+        return False                        # a type in its own right
+    owner = longname.rsplit(".", 1)[0]
+    return bool(jdk_index.known(owner) or symbol_table.is_project_type(owner))
+
+
 def _fan_targets(entity_id, ref_kinds, owner_longname):
     """Distinct parameters, and variables declared outside the asking entity.
 
@@ -394,7 +417,8 @@ def _fan_targets(entity_id, ref_kinds, owner_longname):
     for kind in ref_kinds:
         for target in _targets(entity_id, kind):
             if kind_family(target._kind_id) != "variable":
-                if "external" in (_kind_name(target._kind_id) or "").lower().split():
+                if ("external" in (_kind_name(target._kind_id) or "").lower().split()
+                        or _placeholder_member(target)):
                     out.add(target._id)
                 continue
             if "Parameter" in (_kind_name(target._kind_id) or ""):

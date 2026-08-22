@@ -21,8 +21,8 @@ comparison keyed on the name says nothing.
 
 | | macro | micro |
 | --- | ---: | ---: |
-| F1 | **0.969** | **0.968** |
-| F1 over pairs Understand answers | **0.970** | **0.970** |
+| F1 | **0.970** | **0.970** |
+| F1 over pairs Understand answers | **0.971** | **0.972** |
 
 The two rows used to be far apart, because `Ent.metric()` answered 0
 for every entity while Understand answers only for the kinds a metric
@@ -89,12 +89,12 @@ what is left is genuine disagreement about values.
 | `SumCyclomaticModified` | 0.945 | 0.945 | 0.94 | 0.94 | 1094 | 1158 | 1158 |
 | `Knots` | 0.941 | 0.944 | 0.94 | 0.94 | 982 | 1048 | 1040 |
 | `CountDeclMethodAll` | 0.943 | 0.943 | 0.94 | 0.94 | 100 | 106 | 106 |
+| `CountInput` | 0.935 | 0.938 | 0.93 | 0.94 | 976 | 1048 | 1040 |
 | `CountStmtExe` | 0.927 | 0.930 | 0.92 | 0.93 | 1070 | 1158 | 1150 |
 | `CountOutput` | 0.916 | 0.919 | 0.91 | 0.92 | 956 | 1048 | 1040 |
 | `PercentLackOfCohesion` | 0.912 | 0.912 | 0.91 | 0.91 | 93 | 102 | 102 |
 | `PercentLackOfCohesionModified` | 0.912 | 0.912 | 0.91 | 0.91 | 93 | 102 | 102 |
 | `CountClassCoupled` | 0.906 | 0.906 | 0.91 | 0.91 | 96 | 106 | 106 |
-| `CountInput` | 0.885 | 0.888 | 0.88 | 0.89 | 924 | 1048 | 1040 |
 
 ## No Understand value on this fixture
 
