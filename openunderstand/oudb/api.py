@@ -711,8 +711,9 @@ def create_db(
             "synchronous": 0,
         },
     )
-    db.bind([KindModel, EntityModel, ReferenceModel, ProjectModel])
-    db.create_tables([KindModel, EntityModel, ReferenceModel, ProjectModel])
+    db.bind([KindModel, EntityModel, ReferenceModel, ProjectModel, MetricModel])
+    db.create_tables([KindModel, EntityModel, ReferenceModel, ProjectModel,
+                      MetricModel])
 
     # Build without the reference table's four foreign-key indexes. Each insert
     # would otherwise update four B-trees as well as the table -- about two
@@ -730,6 +731,56 @@ def create_db(
         db_path=path_of_db_file,
     )
     return open(path_of_db_file)
+
+
+def _stored_metrics(ent, names):
+    """(values already known, names still to compute) for one entity.
+
+    A miss is remembered as an explicit null, because "this metric is not
+    defined on this kind" is an answer worth not recomputing.
+    """
+    if not names or getattr(ent, "_id", None) is None:
+        return {}, names
+    try:
+        rows = list(MetricModel.select().where(
+            (MetricModel._ent_id == ent._id) & (MetricModel._name.in_(names))))
+    except Exception:
+        return {}, names
+    found, values = set(), {}
+    for row in rows:
+        found.add(row._name)
+        if row._value is not None:
+            values[row._name] = _metric_from_text(row._value)
+    return values, [n for n in names if n not in found]
+
+
+def _metric_from_text(text):
+    """A stored value back to the type the caller expects."""
+    try:
+        return int(text)
+    except ValueError:
+        pass
+    # RatioCommentToCode is reported as a two-decimal *string*, and a float
+    # here would compare unequal to Understand's "0.53".
+    return text
+
+
+def _remember_metrics(ent, names, values):
+    """Write what was just computed, so the next caller reads it.
+
+    Best effort: a database opened read-only still answers, it just does not
+    remember. Floats are stored as text for the same reason they are returned
+    as text.
+    """
+    if not names or getattr(ent, "_id", None) is None:
+        return
+    rows = [{"_ent_id": ent._id, "_name": name,
+             "_value": None if values.get(name) is None else str(values[name])}
+            for name in names]
+    try:
+        MetricModel.insert_many(rows).on_conflict_ignore().execute()
+    except Exception:
+        pass
 
 
 #: Every column of a reference row, in a fixed order, for cheap identity.
@@ -765,10 +816,16 @@ def open(dbname):  # real signature unknown; restored from __doc__
         },
     )
 
-    db.bind([KindModel, EntityModel, ReferenceModel, ProjectModel])
+    db.bind([KindModel, EntityModel, ReferenceModel, ProjectModel, MetricModel])
     # The query layer remembers entity rows and kind ids between calls, which
     # is only sound while the database it read them from is the one bound.
     graph_metrics.clear_entity_cache()
+    # Older databases predate the metric store; creating it is a no-op when it
+    # is already there and makes one written by an earlier release usable.
+    try:
+        db.create_tables([MetricModel])
+    except Exception:
+        pass
 
     # db_path is whatever absolute path the database was built at, so an exact
     # match fails as soon as the file is copied or opened by a different route,
@@ -1303,6 +1360,15 @@ class Ent:
         Metric list must be a tuple or list containing the names of metrics
         as strings. If the metric is not available, it's value will be None.
         """
+        metric_list = list(metric_list or [])
+        # Answered from the store first. A metric here costs milliseconds where
+        # Understand's costs microseconds, because it is recomputed from SQL on
+        # every call; remembering the answer is what closes that for the second
+        # caller, and the store outlives the process.
+        stored, metric_list = _stored_metrics(self, metric_list)
+        if not metric_list:
+            return stored
+
         metrics = {}
         known = set(self.metrics())
         # Computed once: it reparses, and the complexity family asks ten times.
@@ -1589,6 +1655,8 @@ class Ent:
                         )
                     }
                 )
+        _remember_metrics(self, metric_list, metrics)
+        metrics.update(stored)
         return metrics
 
     def metrics(self):  # real signature unknown; restored from __doc__
