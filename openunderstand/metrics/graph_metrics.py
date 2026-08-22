@@ -100,18 +100,12 @@ def count_decl_class(ent_model):
     # happened to be non-empty answered 1 for DataStructures.Bags where Contain
     # gives Understand's 3: a file defines a class into the package, so Define
     # only ever sees the one file this entity was created from.
-    # Contain reaches the package's top-level classes; a class nested inside
-    # one of them is declared by *it*, and Understand counts those too --
-    # DataStructures.Bags holds Bag and Bag.ListIterator, and stopping at the
-    # top level reported 1 of 3.
-    seen, pending = set(), _targets(entity._id, "Java Contain", "type")
-    while pending:
-        current = pending.pop()
-        if current._id in seen:
-            continue
-        seen.add(current._id)
-        pending += _declares(current._id, "type")
-    return len(seen)
+    #
+    # container_classes() is that walk, and it follows Define through *every*
+    # family rather than only through types. The difference is the anonymous
+    # class: it is declared by a method, so a type-only walk stops one step
+    # short of it and org.json answered 28 against Understand's 30.
+    return len(container_classes(ent_model) or [])
 
 
 def count_decl_method(ent_model):
@@ -739,6 +733,12 @@ def percent_lack_of_cohesion(ent_model, modified=False):
     entity = _entity(ent_model)
     if entity is None:
         return 0
+    if "enum" in _visibility(entity):
+        # Understand answers neither name for an enum. Exactly the four enums
+        # on JSON are the four classes it leaves blank, and it is not about
+        # having no fields: 55 classes with no instance variable at all get a
+        # value. Answering anyway cost four pairs of precision on each.
+        return None
     methods = _declares(entity._id, "method")
     # Cohesion is about *instance* state. A static utility class shares
     # nothing between its methods by construction, and Understand scores it 0

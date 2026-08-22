@@ -44,9 +44,13 @@ def _load() -> dict:
             if line.startswith("#"):
                 continue
             parts = line.rstrip("\n").split("\t")
-            if len(parts) != 5:
+            # Five columns is the older format, which carries no member count
+            # and no superclass; it still loads, answering 0 and "" for those.
+            if len(parts) == 5:
+                parts = parts + ["0", ""]
+            if len(parts) != 7:
                 continue
-            longname, final, supers, fields, methods = parts
+            longname, flags, supers, fields, methods, members, superclass = parts
             arities, returns = {}, {}
             for item in methods.split(","):
                 if "/" not in item:
@@ -59,12 +63,22 @@ def _load() -> dict:
                 if declared:
                     returns[name] = declared
             types[longname] = {
-                "final": final == "F",
+                "final": "F" in flags,
+                "interface": "I" in flags,
                 "supers": supers.split(",") if supers else [],
                 "fields": dict(
                     pair.split("=", 1) for pair in fields.split(",") if "=" in pair),
                 "methods": arities,
                 "returns": returns,
+                # Declared members at this type -- constructors included, every
+                # overload counted, at any visibility. This is what RFC sums
+                # over the superclass chain: java.lang.Throwable is 27 and
+                # org.json.JSONException's 53 is its own 3 plus 5, 5, 27, 13.
+                "members": int(members or 0),
+                # The superclass alone. Empty means java.lang.Object, which
+                # javap never prints, or nothing at all for Object and for an
+                # interface.
+                "superclass": superclass,
             }
             by_simple.setdefault(longname.rsplit(".", 1)[-1], []).append(longname)
     return {"types": types, "by_simple": by_simple}
@@ -103,6 +117,11 @@ def is_final(longname: str) -> bool:
     return bool(entry and entry["final"])
 
 
+def is_interface(longname: str) -> bool:
+    """Whether a JDK type is an interface. False for anything not indexed."""
+    return _load()["types"].get(longname, {}).get("interface", False)
+
+
 def field_type(owner: str, field: str) -> str | None:
     """Declared type of a JDK type's public field -- `System.out` is a PrintStream."""
     entry = _load()["types"].get(owner)
@@ -118,6 +137,12 @@ def members(longname: str) -> dict:
 def declares(longname: str, member: str, arity: int) -> bool:
     """Whether a JDK type declares `member` taking `arity` parameters."""
     return members(longname).get(member) == arity
+
+
+def supertypes(longname: str) -> list:
+    """The types `longname` extends or implements directly. [] if not indexed."""
+    entry = _load()["types"].get(longname)
+    return entry["supers"] if entry else []
 
 
 def declaring_type(longname: str, member: str) -> str | None:
@@ -146,6 +171,54 @@ def declaring_type(longname: str, member: str) -> str | None:
             return current
         pending.extend(entry["supers"])
     return None
+
+
+def inherited_members(longname: str) -> int:
+    """Declared members summed over `longname`'s superclass chain, Object last.
+
+    Understand's CountDeclMethodAll is RFC: a type's own methods plus every
+    member declared anywhere above it, constructors and private ones included.
+    `org.json.junit.data.MyNumber` is its own 8 plus java.lang.Number's 7 plus
+    java.lang.Object's 13, which is Understand's 28 exactly.
+
+    Counts nothing for the type itself, and nothing for an interface, which
+    inherits no implementation.
+    """
+    types = _load()["types"]
+    entry = types.get(longname)
+    if entry is None or entry["interface"]:
+        return 0
+    total, seen = 0, {longname}
+    current = entry["superclass"] or ("java.lang.Object"
+                                      if longname != "java.lang.Object" else "")
+    while current and current not in seen:
+        seen.add(current)
+        parent = types.get(current)
+        if parent is None:
+            break
+        total += parent["members"]
+        current = parent["superclass"] or ("java.lang.Object"
+                                           if current != "java.lang.Object" else "")
+    return total
+
+
+def member_count(longname: str) -> int:
+    """Members declared at `longname` itself, or 0 when it is not indexed."""
+    entry = _load()["types"].get(longname)
+    return entry["members"] if entry else 0
+
+
+def declares_on_object(member: str) -> bool:
+    """Whether java.lang.Object declares `member`, which every type inherits.
+
+    A last resort, never a step in a hierarchy walk: the generated `supers`
+    column does not name Object (javap prints a superclass only when it is not
+    Object), so answering it early stops a project type's walk before it
+    reaches java.lang.Enum. `w.toString()` on a java.io.Writer is
+    java.lang.Object.toString and `MyEnum.VAL1.equals(x)` is
+    java.lang.Enum.equals, and only ordering tells the two apart.
+    """
+    return member in members("java.lang.Object")
 
 
 def return_type(longname: str, member: str) -> str | None:

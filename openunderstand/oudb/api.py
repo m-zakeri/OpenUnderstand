@@ -1309,19 +1309,20 @@ class Ent:
             elif item == "MinEssentialKnots":
                 metrics.update({"MinEssentialKnots": knots.essential_knots(self)})
             elif item == "PercentLackOfCohesion":
-                metrics.update(
-                    {"PercentLackOfCohesion":
-                        graph_metrics.percent_lack_of_cohesion(self)}
-                )
+                # None means "not defined for this kind", which is an absent
+                # key rather than a zero: Understand reports nothing for an
+                # enum and a 0 would be scored as a wrong answer.
+                value = graph_metrics.percent_lack_of_cohesion(self)
+                if value is not None:
+                    metrics.update({"PercentLackOfCohesion": value})
             elif item == "PercentLackOfCohesionModified":
                 # The listener in metrics/percent_lack_of_cohesion_modified.py is
                 # the reparsing version that found no uses at all; this is the
                 # same reference-graph answer PercentLackOfCohesion already
                 # gives, with the accessor allowance the name promises.
-                metrics.update(
-                    {"PercentLackOfCohesionModified":
-                        graph_metrics.percent_lack_of_cohesion(self, modified=True)}
-                )
+                value = graph_metrics.percent_lack_of_cohesion(self, modified=True)
+                if value is not None:
+                    metrics.update({"PercentLackOfCohesionModified": value})
             elif item == "RatioCommentToCode":
                 # Understand reports this to two decimal places as a string.
                 # Returning a full-precision float meant a value that was

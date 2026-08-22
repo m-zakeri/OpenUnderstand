@@ -107,7 +107,15 @@ def parse_entity_source(source):
         def syntaxError(self, *_args):
             self.failed = True
 
-    for candidate in (source, f"class {_WRAPPER} {{\n{source}\n}}"):
+    # The middle candidate is for an anonymous class, whose own source is a
+    # bare class *body*. Without it the last candidate wins -- `class W { { ...
+    # } }` parses, as an instance initializer -- and every member inside reads
+    # as a statement rather than a declaration: CountLineCodeDecl 0 against 1,
+    # CountStmtDecl 6 against 7, MaxCyclomatic 2 against 1. It adds no line, so
+    # the tree's line numbers still index the entity's own source.
+    for candidate in (source,
+                      f"class {_WRAPPER} {source}",
+                      f"class {_WRAPPER} {{\n{source}\n}}"):
         lexer = JavaLexer(InputStream(candidate))
         parser = JavaParserLabeled(CommonTokenStream(lexer))
         detector = _Failed()

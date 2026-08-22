@@ -285,9 +285,15 @@ class MethodCallListener(JavaParserLabeledListener):
                 receiver_ctx = expression
         scope_longname = ".".join(
             class_properties.ClassPropertiesListener.findParents(ctx))
+        # How many arguments the call passes, which is what tells one overload
+        # from another where their arities differ: 68 of JSON's 100 overloaded
+        # names are separated by it alone.
+        listed = ctx.expressionList()
+        arguments = len(listed.expression()) if listed is not None else 0
         self.calls.append({
             "name": identifier.getText(),
             "receiver": receiver,
+            "arguments": arguments,
             # Declared type of the receiver, when the source states one. The
             # write layer needs it to place the call: without it a name is
             # resolved project-wide and `entry.getValue()` on a Map.Entry

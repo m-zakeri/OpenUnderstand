@@ -20,6 +20,7 @@ from openunderstand.oudb.models import KindModel
 # Declaration categories the define pass distinguishes.
 PACKAGE = "package"
 CLASS = "class"
+ANONYMOUS_CLASS = "anonymous_class"
 INTERFACE = "interface"
 ANNOTATION = "annotation"
 ENUM = "enum"
@@ -40,6 +41,7 @@ _VISIBILITY = ("public", "protected", "private")
 # token, which models.is_placeholder_kind() recognises.
 _UNKNOWN = {
     CLASS: "Java Unknown Class Type Member",
+    ANONYMOUS_CLASS: "Java Unknown Class Type Member",
     INTERFACE: "Java Unknown Class Type Member",
     ANNOTATION: "Java Unknown Annotation Interface Type Member",
     ENUM: "Java Unknown Class Type Member",
@@ -104,6 +106,11 @@ def candidates(decl, modifiers=(), name=""):
 
     if decl == LAMBDA:
         return ["Java Method Lambda"]
+
+    if decl == ANONYMOUS_CLASS:
+        # `new Iterable<Integer>() { ... }`. It has no modifiers and no
+        # name of its own, so there is nothing to fall back through.
+        return ["Java Class Type Anonymous Member"]
 
     if decl == CONSTRUCTOR:
         # Note the token order: visibility comes last for constructors.

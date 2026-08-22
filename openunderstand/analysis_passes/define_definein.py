@@ -228,8 +228,11 @@ class DefineListener(JavaParserLabeledListener):
     ):
         if ent_name is None:
             ent_name = ent.getText()
-        line = ent.symbol.line
-        column = ent.symbol.column
+        # `ent` is an IDENTIFIER node for a named declaration and a bare Token
+        # for an anonymous class, which has no identifier to hang a name on.
+        symbol = getattr(ent, "symbol", ent)
+        line = symbol.line
+        column = symbol.column
         # findParents() already includes the package components, so prefixing
         # self.package here produced it twice ("org.json" + "." + "org.json").
         scope_longname = ".".join(ent_parents)
@@ -286,6 +289,39 @@ class DefineListener(JavaParserLabeledListener):
         if isinstance(declaration, JavaParserLabeled.LocalVariableDeclarationContext):
             return K.LOCAL, _modifiers_at(declaration)
         return K.FIELD, _enclosing_modifiers(declaration or ctx)
+
+    def enterClassCreatorRest(
+        self, ctx: JavaParserLabeled.ClassCreatorRestContext
+    ):
+        """`new Iterable<Integer>() { ... }` declares a class of its own.
+
+        Nothing declared one before, so the anonymous class's members hung off
+        the enclosing method and the class itself was simply absent -- which is
+        the whole of CountDeclClass's gap: org.json reported 28 against
+        Understand's 30, the two missing being the pair in
+        `XML.codePointIterator`.
+
+        Understand names it `(Anon_N)`, numbered over the *file* in source
+        order, and positions it on the body's opening brace -- Define, Definein
+        and Begin all sit at 79:40 for the first one, which is the `{`.
+
+        The name comes from class_properties, which is also what puts the
+        segment into every scope chain running through the body: one numbering,
+        so an entity and its declaring scope cannot disagree about it.
+        """
+        name = class_properties.anonymous_name(ctx)
+        if name is None:
+            return          # `new Foo(...)` with no body creates nothing
+        body = ctx.classBody()
+        self.add_define_info(
+            ent=body.start,
+            ent_parents=class_properties.ClassPropertiesListener.findParents(ctx),
+            ent_name=name,
+            type="Class",
+            contents=source_text(body),
+            decl=K.ANONYMOUS_CLASS,
+            span=_body_span(body),
+        )
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         ent = ctx.IDENTIFIER()

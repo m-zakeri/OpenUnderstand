@@ -62,13 +62,27 @@ def count_decl_method_all(ent_model=None) -> int:
     if entity is None or kind_family(entity._kind_id) != "type":
         return 0
 
+    from openunderstand.oudb import jdk_index
+
     methods = set()
+    inherited = 0
     pending, seen = [entity._id], set()
     while pending:
         current = pending.pop()
         if current in seen:
             continue
         seen.add(current)
+        row = EntityModel.get_or_none(_id=current)
+        longname = (row._longname or "") if row is not None else ""
+        if jdk_index.known(longname):
+            # The chain leaves the project. Understand keeps counting: every
+            # member declared above, constructors and private ones included,
+            # all the way to java.lang.Object. org.json.JSONException is its
+            # own 3 plus 5, 5, 27 and 13 -- Understand's 53, where stopping at
+            # the boundary and adding a flat 13 for Object gave 16.
+            inherited += (jdk_index.member_count(longname)
+                          + jdk_index.inherited_members(longname))
+            continue
         methods |= _defined_methods(current)
         pending.extend(_superclasses(current))
     # Every *class* inherits java.lang.Object: 12 methods plus its
@@ -82,4 +96,7 @@ def count_decl_method_all(ent_model=None) -> int:
     if {"interface", "annotation"} & set(
             (_kind_name(entity._kind_id) or "").lower().split()):
         return len(methods)
+    if inherited:
+        # java.lang.Object is the end of that chain, so it is already counted.
+        return len(methods) + inherited
     return len(methods) + _OBJECT_METHODS

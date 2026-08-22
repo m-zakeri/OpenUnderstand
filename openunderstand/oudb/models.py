@@ -593,6 +593,13 @@ def merge_placeholder_entities():
 
     merged = 0
     for ghost in placeholders:
+        if "external" in _kind_name(ghost._kind_id).lower().split():
+            # `Java Unresolved External Method ...` means "outside the analysed
+            # source", which is a decision, not a failure to qualify a name.
+            # These carry a bare simple name on purpose -- it is what
+            # Understand calls them -- and folding one would put every
+            # `parse(...)` from com.jayway.jsonpath onto org.json.XML.parse.
+            continue
         if (ghost._longname or "").startswith(EXTERNAL_ROOTS):
             # A JDK long name is fully qualified by construction -- it is not a
             # local name a pass failed to qualify, so there is nothing here to

@@ -75,6 +75,75 @@ def resolved_longname(simple_name, fallback, scope_longname=""):
     return resolved or fallback
 
 
+
+def callee_of(longname, name, arguments, file_ent):
+    """The method entity a call names, picking the overload by argument count.
+
+    Overloads share a long name and are separate rows only because their
+    declaration positions differ, so resolving by long name returned whichever
+    was created first and a method calling three `put` overloads counted one
+    callee. `symbol_table.overload_site()` answers with a position when exactly
+    one declaration takes this many arguments; it refuses for
+    `org.json.JSONObject.put`, whose eight overloads all take two, because
+    telling those apart needs argument *types*.
+
+    The position is taken from the project-wide index rather than the database,
+    so it does not matter whether the file declaring the target has been parsed
+    yet: a row created here at the right position is the row the define pass
+    later fills in.
+    """
+    site = symbol_table.overload_site(longname, arguments)
+    if site is not None:
+        ent = EntityModel.get_or_none(
+            (EntityModel._longname == longname)
+            & (EntityModel._line == site[0])
+            & (EntityModel._column == site[1]))
+        if ent is not None:
+            return ent
+        return EntityModel.get_or_create(
+            _kind=kind_id("Java Unknown Method Member"), _name=name,
+            _parent=file_ent, _longname=longname, _contents="",
+            _line=site[0], _column=site[1])[0]
+    rows = list(EntityModel.select().where(EntityModel._longname == longname))
+    for row in rows:
+        if kind_family(row._kind_id) == "method":
+            return row
+    if rows:
+        return rows[0]
+    return EntityModel.get_or_create(
+        _kind=kind_id("Java Unknown Method Member"), _name=name,
+        _parent=file_ent, _longname=longname, _contents="")[0]
+
+
+def scope_of(longname, line=None):
+    """The entity a reference at `line` is scoped to.
+
+    Two things share a long name here and both were resolved wrongly by asking
+    for the long name alone.
+
+    A **field and a method**: `PersonRecord.name` is the field and its
+    accessor, `XMLParserConfiguration.shouldTrimWhiteSpace` likewise. Entity
+    identity is (long name, kind family) so both rows exist, and the accessor's
+    `return name;` was filed against the *field* -- one user instead of two,
+    and PercentLackOfCohesion 75 against Understand's 50. A variable is never
+    the scope of a read, a write or a call.
+
+    **Overloads**: `StringBuilderWriter.write` is four methods and one long
+    name, so every `builder.append(...)` in all four landed on whichever row
+    was created first. `builder` then had 3 users of 12 methods where
+    Understand counts 7, which is its 42 against our 75. Overloads cannot
+    overlap in source, so the enclosing one is the candidate whose declaration
+    starts last at or before the reference.
+    """
+    rows = list(EntityModel.select().where(EntityModel._longname == longname))
+    if not rows:
+        return None
+    named = [r for r in rows if kind_family(r._kind_id) != "variable"] or rows
+    if len(named) == 1 or line is None:
+        return named[0]
+    enclosing = [r for r in named if r._line is not None and r._line <= line]
+    return max(enclosing, key=lambda r: r._line) if enclosing else named[0]
+
 class Project:
     def __init__(self):
         self.tree = None
@@ -541,9 +610,7 @@ class Project:
         all.
         """
         for ref_dict in ref_dicts:
-            scope = EntityModel.get_or_none(
-                EntityModel._longname == ref_dict["scope_longname"]
-            )
+            scope = scope_of(ref_dict["scope_longname"], ref_dict.get("line"))
             if scope is None:
                 continue
 
@@ -559,51 +626,40 @@ class Project:
                 # CountInput at 5 against Understand's 2.
                 if not owner:
                     # A chained call, or a type this project neither declares
-                    # nor imports. The call happened, but naming its target
-                    # would be a guess, and a wrong target is worse than none.
-                    continue
-                # Understand attributes the call to the class that *declares*
-                # the method, not to the receiver's static type: XMLTokener
-                # extends JSONTokener, so x.next() on an XMLTokener is a call
-                # to org.json.JSONTokener.next. Falls back to the static type
-                # when nothing in the chain declares it, which is every method
-                # inherited from the JDK.
-                # The class that declares the method, inside the project or
-                # in the JDK: Understand reports `sb.append(x)` against
-                # java.lang.AbstractStringBuilder, not StringBuilder.
-                owner = (symbol_table.declaring_type(owner, name)
-                         or jdk_index.declaring_type(owner, name)
-                         or owner)
-                longname = f"{owner}.{name}"
-                ent = EntityModel.get_or_none(EntityModel._longname == longname)
-                if ent is None:
-                    ent, _ = EntityModel.get_or_create(
-                        _kind=kind_id("Java Unknown Method Member"),
-                        _name=name,
-                        _parent=file_ent,
-                        _longname=longname,
-                        _contents="",
-                    )
+                    # nor imports -- `Configuration.defaultConfiguration()`
+                    # behind `import com.jayway.jsonpath.*`. Naming a *project*
+                    # target would be a guess; naming it unresolved is what
+                    # Understand does, and is the only honest answer.
+                    ent = self._unresolved_external_method(name, file_ent)
+                else:
+                    # Understand attributes the call to the class that
+                    # *declares* the method, not to the receiver's static type:
+                    # XMLTokener extends JSONTokener, so x.next() on an
+                    # XMLTokener is a call to org.json.JSONTokener.next. Falls
+                    # back to the static type when nothing in the chain
+                    # declares it.
+                    # The class that declares the method, inside the project or
+                    # in the JDK: Understand reports `sb.append(x)` against
+                    # java.lang.AbstractStringBuilder, not StringBuilder.
+                    owner = (symbol_table.declaring_type_anywhere(owner, name)
+                             or owner)
+                    ent = callee_of(f"{owner}.{name}", name,
+                                    ref_dict.get("arguments"), file_ent)
             elif owner:
                 # No receiver, but the name was statically imported, so the
                 # call lands on the type that exported it rather than on the
                 # enclosing class: `import static Sorts.SortUtils.less` makes a
                 # bare `less(a, b)` a call to Sorts.SortUtils.less.
-                longname = f"{owner}.{name}"
-                ent = EntityModel.get_or_none(EntityModel._longname == longname)
-                if ent is None:
-                    ent, _ = EntityModel.get_or_create(
-                        _kind=kind_id("Java Unknown Method Member"),
-                        _name=name,
-                        _parent=file_ent,
-                        _longname=longname,
-                        _contents="",
-                    )
+                ent = callee_of(f"{owner}.{name}", name,
+                                ref_dict.get("arguments"), file_ent)
             else:
                 # No receiver: a call on the enclosing class.
-                ent = EntityModel.get_or_none(
-                    EntityModel._longname == f"{ref_dict['scope_longname']}.{name}"
-                )
+                ent = None
+                own = f"{ref_dict['scope_longname']}.{name}"
+                if symbol_table.overload_site(own, ref_dict.get("arguments")):
+                    ent = callee_of(own, name, ref_dict.get("arguments"), file_ent)
+                if ent is None:
+                    ent = EntityModel.get_or_none(EntityModel._longname == own)
                 if ent is None:
                     # The declaration may be in another file, which this pass
                     # cannot see. The project-wide index built before the
@@ -613,12 +669,16 @@ class Project:
                     if resolved:
                         ent = EntityModel.get_or_none(EntityModel._longname == resolved)
                 if ent is None:
-                    # A bare simple name is exactly what
-                    # merge_placeholder_entities() folds into whichever single
-                    # project entity shares it, which is how `print(...)` became
-                    # a call to Sorts.SortUtils.print from 21 unrelated places.
-                    # An unresolved call is better left unwritten.
-                    continue
+                    # Nothing in the project declares it, so it came in through
+                    # a wildcard static import of a jar that is not part of the
+                    # analysed source -- `import static org.junit.Assert.*`
+                    # makes a bare `assertTrue(...)` one of 269 such calls on
+                    # JSON. Understand records the target as an unresolved
+                    # entity under its bare simple name; so does this now, with
+                    # a kind merge_placeholder_entities() refuses to fold. The
+                    # old behaviour was to write nothing, which is what left
+                    # 299 methods short of a callee and CountOutput at 0.65.
+                    ent = self._unresolved_external_method(name, file_ent)
             if ent._id == scope._id:
                 continue
 
@@ -633,6 +693,28 @@ class Project:
                     _scope=b,
                 )
 
+    @staticmethod
+    def _unresolved_external_method(name, file_ent):
+        """The entity for a call whose target is outside the analysed source.
+
+        The long name is the *bare* simple name, which is what Understand
+        writes and what every other pass is forbidden to write: the kind is
+        what makes it safe. `Java Unresolved External ...` carries the
+        `external` token that merge_placeholder_entities() skips, so `parse`
+        can never be folded into org.json.XML.parse -- the failure that took
+        Java Call precision to 19%. It still carries `unresolved`, so
+        drop_external_inverse_refs() declines to hang a Callby on it, exactly
+        as Understand does.
+        """
+        ent, _ = EntityModel.get_or_create(
+            _kind=kind_id("Java Unresolved External Method Public Member"),
+            _name=name,
+            _parent=file_ent,
+            _longname=name,
+            _contents="",
+        )
+        return ent
+
     def addUseVariantRefs(self, ref_dicts, file_ent):
         """Write the qualified Use/Typed variants collected by use_variants.py.
 
@@ -643,7 +725,7 @@ class Project:
         for ref_dict in ref_dicts:
             scope_longname = ref_dict["scope_longname"]
             stated = ref_dict.get("ent_longname")
-            scope = EntityModel.get_or_none(EntityModel._longname == scope_longname)
+            scope = scope_of(scope_longname, ref_dict.get("line"))
             if scope is None and stated == scope_longname:
                 # A type parameter is its own scope here -- `<T extends
                 # Comparable<T>>` reads T inside T's declaration. Nothing has
@@ -1238,9 +1320,7 @@ class Project:
                 # that then captured all 110 of the class's Define references,
                 # leaving the real class entity with none and its
                 # CountDeclMethodPublic at 0 against Understand's 85.
-                scope = EntityModel.get_or_none(
-                    EntityModel._longname == ref_dict["scopelongname"]
-                )
+                scope = scope_of(ref_dict["scopelongname"], ref_dict.get("line"))
                 if scope is None:
                     scope = EntityModel.get_or_create(
                         _kind=self.findKindWithKeywords(
@@ -1304,11 +1384,46 @@ class Project:
                 # Java Call, never Nondynamic. An array creation runs no
                 # constructor, and a type this pass could not place would give
                 # a bare simple name, so both are skipped.
+                #
+                # Only when a constructor exists to call. `new MyEnumClass()`
+                # runs the *implicit* default one, which is not an entity:
+                # Understand writes Create and no Call at all. That test can
+                # only be made for a class the project declares -- the index
+                # knows its members, and asking the index rather than the
+                # database keeps the answer independent of which files have
+                # been parsed so far. Outside the project the constructor is
+                # taken on trust, which is right: `new ArrayList<>()` is 47 of
+                # JSON's calls to java.util.ArrayList.ArrayList.
                 created = ent._longname or ""
-                if not ref_dict.get("is_array") and "." in created:
-                    constructor = self.getClassEntity(
-                        f"{created}.{created.rsplit('.', 1)[-1]}",
-                        file_address, file_ent)
+                simple = created.rsplit(".", 1)[-1]
+                declared = (symbol_table.INDEX.declares(created, simple)
+                            if symbol_table.is_project_type(created) else True)
+                if not ref_dict.get("is_array") and "." in created and declared:
+                    # A constructor is method family, not type family. Built
+                    # through getClassEntity() it was a *class* placeholder,
+                    # so it never merged with the real declaration and
+                    # merge_placeholder_entities() folded it onto the class it
+                    # is named after instead -- which is why `new
+                    # JSONTokener(x)` in one file counted as a call to the
+                    # class org.json.JSONTokener.
+                    # The real kind only for a class the project declares, so
+                    # the row merges with the declaration the define pass
+                    # writes. Outside the project it has to stay a placeholder:
+                    # a real `org.junit.rules.TemporaryFolder.TemporaryFolder`
+                    # became the only non-placeholder entity named
+                    # TemporaryFolder, and merge_placeholder_entities() then
+                    # folded the *class* into its own constructor -- two
+                    # couples pointing at a constructor.
+                    constructor, _ = EntityModel.get_or_create(
+                        _kind=kind_id(
+                            "Java Method Constructor Member Public"
+                            if symbol_table.is_project_type(created)
+                            else "Java Unresolved External Method Public Member"),
+                        _name=simple,
+                        _parent=file_ent,
+                        _longname=f"{created}.{simple}",
+                        _contents="",
+                    )
                     for kind, (a, b) in (("Java Call", (constructor, scope)),
                                          ("Java Callby", (scope, constructor))):
                         ReferenceModel.get_or_create(
@@ -1778,9 +1893,7 @@ class Project:
             scope_longname = ref_dict["scope_longname"]
             # Prefer the entity the define pass declared, so the reference
             # attaches to the real method rather than a second placeholder.
-            scope = EntityModel.get_or_none(
-                EntityModel._longname == scope_longname
-            )
+            scope = scope_of(scope_longname, ref_dict.get("line"))
             if scope is None:
                 scope = EntityModel.get_or_create(
                     _kind=kind_id("Java Unknown Method Member"),
@@ -1818,9 +1931,7 @@ class Project:
             # Method kind here created a second row for names that are really
             # classes -- an `org.json.CDL` in the method family alongside the
             # real one in the type family, which do not merge by design.
-            scope = EntityModel.get_or_none(
-                EntityModel._longname == ref_dict["scopelongname"]
-            )
+            scope = scope_of(ref_dict["scopelongname"], ref_dict.get("line"))
             if scope is None:
                 scope = EntityModel.get_or_create(
                     _kind=self.findKindWithKeywords(
@@ -1944,8 +2055,7 @@ class Project:
         Constrains Couple on TheAlgorithms with no producer at all.
         """
         for relation in relations:
-            scope = EntityModel.get_or_none(
-                EntityModel._longname == relation["scope_longname"])
+            scope = scope_of(relation["scope_longname"], relation.get("line"))
             if scope is None:
                 scope = EntityModel.get_or_create(
                     _kind=kind_id("Java Unknown Class Type Member"),
@@ -1979,12 +2089,17 @@ class Project:
             if not relation.get("inverse_only") and forward._inv_id is not None:
                 pairs.append(
                     (KindModel.get_by_id(forward._inv_id)._name, (scope, ent)))
+            # Understand positions an *implicit* relation on the line and at
+            # no column at all, the way it does an unpositioned Couple, so
+            # those arrive already in its terms rather than ANTLR's.
+            column = (relation["col"] if relation.get("column_is_absolute")
+                      else col_1based(relation["col"]))
             for kind, (a, b) in pairs:
                 ReferenceModel.get_or_create(
                     _kind=kind_id(kind),
                     _file=file_ent,
                     _line=relation["line"],
-                    _column=col_1based(relation["col"]),
+                    _column=column,
                     _ent=a,
                     _scope=b,
                 )

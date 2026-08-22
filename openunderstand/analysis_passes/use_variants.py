@@ -30,11 +30,13 @@ from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserL
 import openunderstand.analysis_passes.class_properties as class_properties
 
 
-#: Java's keyword literals are valid Python identifiers, so the isidentifier()
+#: Java keywords that are valid Python identifiers, so the isidentifier()
 #: guard each handler uses lets them through. `return true;` named an entity
-#: `false`/`true`/`null` and pointed 114 references at it on TheAlgorithms.
+#: `false`/`true`/`null` and pointed 114 references at it on TheAlgorithms;
+#: `return this;` named one called `this` and put 15 `Java Use Return` rows on
+#: it, where Understand writes no reference at all. Neither names an entity.
 #: Checked once here rather than in each handler, which is where the bug got in.
-LITERALS = frozenset(("true", "false", "null"))
+LITERALS = frozenset(("true", "false", "null", "this", "super"))
 
 
 class UseVariantListener(JavaParserLabeledListener):

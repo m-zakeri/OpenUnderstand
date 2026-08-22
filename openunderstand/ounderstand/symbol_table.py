@@ -75,6 +75,17 @@ class _DeclarationIndex:
         #: org.evosuite annotation went unresolved. Indexed once here, during
         #: the walk that already reads every file.
         self.file_imports: dict[str, tuple[dict, list]] = {}
+        #: Long names of the project's interfaces and annotation types. An
+        #: anonymous `new JSONString() { ... }` *implements* one and *extends*
+        #: a class, which is the difference between Understand's two bases for
+        #: it and its one.
+        self.interfaces: set[str] = set()
+        #: Method or constructor long name -> [(parameter count, line, column)],
+        #: one entry per overload. Overloads share a long name and are separate
+        #: rows only because their declaration positions differ, so a caller
+        #: that knows how many arguments a call passes can address the right
+        #: one. Columns are 1-based, the way an entity row stores them.
+        self.overloads: dict[str, list] = {}
         self.files = 0
 
     def add(self, simple_name: str, longname: str, is_type: bool = False):
@@ -348,6 +359,7 @@ def build(root: str) -> _DeclarationIndex:
             self.fields = {}
             self.imports = {}
             self.wildcards = []
+            self.overloads = {}
 
         def enterClassDeclaration(self, ctx):
             parents = class_properties.ClassPropertiesListener.findParents(ctx)
@@ -360,6 +372,22 @@ def build(root: str) -> _DeclarationIndex:
                            for t in ctx.typeList().typeType()]
             if supers:
                 self.pairs.append((longname, supers))
+
+        def enterEnumDeclaration(self, ctx):
+            """`enum MyEnum implements JSONString` -- plus the implicit parent.
+
+            Enums were skipped entirely, so `enum MyEnum implements JSONString`
+            coupled MyEnum to its own supertype, and `myEnum.name()` in a
+            *caller* found no declaring type at all: `name` is java.lang.Enum's,
+            which is every enum's superclass and was recorded for none of them.
+            """
+            parents = class_properties.ClassPropertiesListener.findParents(ctx)
+            longname = ".".join(parents + [ctx.IDENTIFIER().getText()])
+            supers = ["java.lang.Enum"]
+            if ctx.typeList() is not None:
+                supers += [t.getText().split("<")[0]
+                           for t in ctx.typeList().typeType()]
+            self.pairs.append((longname, supers))
 
         def enterInterfaceDeclaration(self, ctx):
             if ctx.EXTENDS() is None or ctx.typeList() is None:
@@ -379,6 +407,21 @@ def build(root: str) -> _DeclarationIndex:
             elif ctx.STATIC() is None:
                 self.imports[longname.split(".")[-1]] = longname
 
+        def enterEnumConstant(self, ctx):
+            """`VAL1` in `enum MyEnum { VAL1, VAL2 }` is a static field of MyEnum.
+
+            Nothing recorded them, so `MyEnum.VAL1.equals(x)` had no receiver
+            type and every member reached through an enum constant resolved to
+            nothing -- two of JSON's classes couple to java.lang.Enum for
+            exactly that call and we had neither.
+            """
+            identifier = ctx.IDENTIFIER()
+            if identifier is None:
+                return
+            owner = ".".join(
+                class_properties.ClassPropertiesListener.findParents(ctx))
+            self.fields[(owner, identifier.getText())] = owner
+
         def enterFieldDeclaration(self, ctx):
             type_ctx = ctx.typeType()
             declarators = ctx.variableDeclarators()
@@ -395,8 +438,24 @@ def build(root: str) -> _DeclarationIndex:
         def enterMethodDeclaration(self, ctx):
             self._signature(ctx)
 
+        def enterConstructorDeclaration(self, ctx):
+            # Constructors overload too -- org.json.JSONObject has six -- and
+            # _signature() skips them because they have no return type.
+            self._overload(ctx)
+
         def enterInterfaceMethodDeclaration(self, ctx):
             self._signature(ctx)
+
+        def _overload(self, ctx):
+            """Record one declaration's parameter count and its position."""
+            identifier = ctx.IDENTIFIER()
+            if identifier is None or isinstance(identifier, list):
+                return
+            parents = class_properties.ClassPropertiesListener.findParents(ctx)
+            longname = ".".join(parents + [identifier.getText()])
+            symbol = identifier.symbol
+            self.overloads.setdefault(longname, []).append(
+                (len(parameter_types(ctx)), symbol.line, symbol.column + 1))
 
         def _signature(self, ctx):
             identifier = ctx.IDENTIFIER()
@@ -420,6 +479,7 @@ def build(root: str) -> _DeclarationIndex:
             )
             self.methods.setdefault(longname, []).append(
                 (parameter_types(ctx), abstract, generic))
+            self._overload(ctx)
 
             declared = getattr(ctx, "typeTypeOrVoid", None)
             declared = declared() if callable(declared) else None
@@ -449,6 +509,7 @@ def build(root: str) -> _DeclarationIndex:
         index.files += 1
         index.supertypes.update(supertypes.pairs)
         index.methods.update(supertypes.methods)
+        index.overloads.update(supertypes.overloads)
         index.return_types.update(
             {k: v for k, v in supertypes.returns.items() if v})
         index.field_types.update(supertypes.fields)
@@ -460,9 +521,16 @@ def build(root: str) -> _DeclarationIndex:
                 is_type=declaration.get("decl") in ("class", "interface", "enum",
                                                     "annotation"),
             )
+            if declaration.get("decl") in ("interface", "annotation"):
+                index.interfaces.add(declaration["ent_longname"])
 
     INDEX = index
     return index
+
+
+def is_interface(longname: str) -> bool:
+    """Whether a long name is a project interface or annotation type."""
+    return longname in INDEX.interfaces
 
 
 def resolve(simple_name: str, scope_longname: str = "") -> str | None:
@@ -488,6 +556,14 @@ def resolve_type_name(name, imports=None, wildcards=None, scope_longname=""):
     if imports and name in imports:
         return imports[name]
     if "." in name:
+        # `JSONPointer.Builder` is a nested type named through its outer one,
+        # not a qualified name: returning it verbatim left the couple set with
+        # a bare `JSONPointer.Builder` beside the real
+        # org.json.JSONPointer.Builder.
+        head, _, rest = name.partition(".")
+        outer = resolve_type(head, scope_longname)
+        if outer:
+            return outer + "." + rest
         return name
     # A type in the asking scope or its own package, which outranks any
     # on-demand import. A project type in *another* package is not visible
@@ -576,6 +652,87 @@ def return_type(owner: str, member: str, scope_longname: str = "") -> str | None
 def declaring_type(type_longname: str, member: str) -> str | None:
     """Class in `type_longname`'s hierarchy that declares `member`, or None."""
     return INDEX.declaring_type(type_longname, member)
+
+
+def overload_site(longname: str, argument_count) -> tuple | None:
+    """(line, column) of the overload taking `argument_count` arguments.
+
+    None unless exactly one declaration matches, and None when the name is not
+    overloaded at all -- there is nothing to disambiguate then, and resolving
+    by long name alone is what every other pass does.
+
+    Understand counts distinct callee *entities*, and two overloads are two
+    entities. Resolving `JSONObject.put(...)` by long name returned whichever
+    row was created first, so a method calling three overloads counted one
+    callee: 80 of JSON's methods had a callee name set identical to
+    Understand's and a lower CountOutput for exactly that.
+    """
+    sites = INDEX.overloads.get(longname)
+    if not sites or len(sites) < 2 or argument_count is None:
+        return None
+    matching = [(line, column) for count, line, column in sites
+                if count == argument_count]
+    return matching[0] if len(matching) == 1 else None
+
+
+def declaring_type_anywhere(type_longname: str, member: str) -> str | None:
+    """The type declaring `member`, searching the project *and* then the JDK.
+
+    `INDEX.declaring_type` stops at the project boundary and `jdk_index` knows
+    only java./javax., so neither answers for `e.getMessage()` on an
+    org.json.JSONException: the declaration is java.lang.Throwable's, three
+    supertypes up and across that boundary. Understand couples 15 of JSON's
+    classes to java.lang.Throwable for exactly that, and we had none.
+
+    Kept separate from `declaring_type()`, which the Call pass uses: making
+    calls resolve across the boundary too would change what every
+    `Java Call` targets, and that is its own measurement.
+    """
+    if not type_longname or not member:
+        return None
+    found = INDEX.declaring_type(type_longname, member)
+    if found:
+        return found
+    seen, pending = set(), [type_longname]
+    while pending:
+        current = pending.pop(0)
+        if not current or current in seen:
+            continue
+        seen.add(current)
+        found = jdk_index.declaring_type(current, member)
+        if found:
+            return found
+        for parent in INDEX.supertypes.get(current, []):
+            resolved = resolve_type_name(parent, None, None, current)
+            if resolved:
+                pending.append(resolved)
+    # Only once the whole chain is exhausted. Object is every type's ancestor,
+    # so consulting it inside the walk would answer for `equals` before
+    # java.lang.Enum got the chance to.
+    return "java.lang.Object" if jdk_index.declares_on_object(member) else None
+
+
+def ancestors(longname: str) -> set:
+    """Every supertype of `longname`, transitively, across the JDK boundary.
+
+    Understand couples a class to neither itself nor an ancestor: it reports no
+    org.json.JSONException -> java.lang.Throwable even though the constructors
+    take one, and no JSONMLParserConfiguration -> org.json.ParserConfiguration.
+    Excluding only java.lang.Object left six of those on JSON.
+    """
+    found, pending = set(), [longname]
+    while pending:
+        current = pending.pop()
+        for parent in INDEX.supertypes.get(current, []):
+            resolved = resolve_type_name(parent, None, None, current)
+            if resolved and resolved not in found:
+                found.add(resolved)
+                pending.append(resolved)
+        for parent in jdk_index.supertypes(current):
+            if parent not in found:
+                found.add(parent)
+                pending.append(parent)
+    return found
 
 
 def is_project_type(longname: str) -> bool:

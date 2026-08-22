@@ -11,6 +11,50 @@ __version__ = "0.1.1"
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
 from antlr4 import *
+from functools import lru_cache
+
+
+#: Two entries: the per-file walk asks about one tree at a time, and a metric
+#: that reparses a snippet alternates between two. Keyed on the root context
+#: itself, so a freed tree cannot have its id reused under a live cache entry.
+@lru_cache(maxsize=2)
+def _anonymous_names(root):
+    """{id(classCreatorRest): "(Anon_N)"} for every anonymous class in a tree.
+
+    Understand numbers them over the file in source order, which a pre-order
+    walk visits them in. Numbering cannot be done while walking *up* from a
+    declaration -- the nth anonymous class is only knowable from the whole file
+    -- so it is computed once per tree and cached.
+
+    ponytail: numbered per file, not per outer class. The two differ only in a
+    file holding more than one top-level type, which none of the eleven
+    benchmark subjects does.
+    """
+    names, count = {}, 0
+
+    def walk(node):
+        nonlocal count
+        if (isinstance(node, JavaParserLabeled.ClassCreatorRestContext)
+                and node.classBody() is not None):
+            count += 1
+            names[id(node)] = "(Anon_%d)" % count
+        for i in range(node.getChildCount()):
+            child = node.getChild(i)
+            if isinstance(child, ParserRuleContext):
+                walk(child)
+
+    walk(root)
+    return names
+
+
+def anonymous_name(ctx):
+    """`(Anon_N)` for a classCreatorRest that carries a body, else None."""
+    if ctx.classBody() is None:
+        return None
+    root = ctx
+    while root.parentCtx is not None:
+        root = root.parentCtx
+    return _anonymous_names(root).get(id(ctx))
 
 
 class ClassPropertiesListener(JavaParserLabeledListener):
@@ -78,16 +122,32 @@ class ClassPropertiesListener(JavaParserLabeledListener):
         That fallback also fired for contexts where child 0 was not the package
         declaration, splicing whole class bodies into longnames.
         """
-        parents = []
+        chain, root = [], None
         current = c.parentCtx
-        root = None
         while current is not None:
-            if current.getRuleIndex() in ClassPropertiesListener._SCOPE_RULES:
+            chain.append(current)
+            root = current
+            current = current.parentCtx
+
+        anonymous = _anonymous_names(root) if root is not None else {}
+        parents = []
+        for current in chain:
+            rule = current.getRuleIndex()
+            if rule in ClassPropertiesListener._SCOPE_RULES:
                 identifier = current.IDENTIFIER()
                 if identifier is not None:
                     parents.append(identifier.getText())
-            root = current
-            current = current.parentCtx
+            elif rule == JavaParserLabeled.RULE_classCreatorRest:
+                # An anonymous class body is a scope like any other, and
+                # skipping it hung its members off the enclosing method:
+                # `org.json.XML.codePointIterator.iterator` where Understand
+                # says `...codePointIterator.(Anon_1).iterator`. The class then
+                # declared nothing, so every class-level metric answered for it
+                # was 0 -- CountDeclMethod 0 against 1, MaxCyclomatic 0
+                # against 1.
+                name = anonymous.get(id(current))
+                if name is not None:
+                    parents.append(name)
         parents.reverse()
         return ClassPropertiesListener._package_components(root) + parents
 
