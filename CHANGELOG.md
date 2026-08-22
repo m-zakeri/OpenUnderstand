@@ -2,6 +2,27 @@
 
 ## Unreleased
 
+### Analysis is 30% faster, and the fingerprint does not move
+
+A build of the JSON benchmark went 58s to 40.6s, and calculator_app's
+fingerprint is identical to its baseline throughout. Where the time went, timed
+directly rather than under cProfile: the write layer was 63% of a build, parse
+19%, tree walking 17%.
+
+* `EntityModel.get_or_create` resolved identity with a `SELECT ... WHERE
+  _longname = ?` on every call: 11,153 queries and 21% of a build. It answers
+  from a process-local index now, the same trade `ReferenceModel` already made.
+  Any path that deletes an entity drops the index.
+* Reference rows are buffered and inserted in batches instead of one statement
+  each, 18,932 of them per build. Nothing reads a reference during analysis --
+  every reader is in the query layer or in a project-wide pass, and both flush
+  first.
+* The tree walker no longer dispatches on tokens. No pass implements
+  `visitTerminal`, `visitErrorNode` or the `EveryRule` hooks, and 44% of a Java
+  parse tree's nodes are terminals, so nearly half of every walk was calling
+  no-ops -- 33 times per file. A listener that does implement one still gets
+  ANTLR's own walker.
+
 ### Queries are much faster, and every value is unchanged
 
 Measured on the JSON benchmark over 1,407 methods and 43,272 references, with
