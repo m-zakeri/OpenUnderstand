@@ -86,14 +86,7 @@ def start_parsing(
     from openunderstand.oudb.fill import fill
     from openunderstand.ounderstand.runner import runner
     from openunderstand.ounderstand import symbol_table
-    from openunderstand.oudb.models import (
-        drop_shadowed_use_refs,
-        drop_orphan_placeholders,
-        drop_external_inverse_refs,
-        drop_nonvariable_deref_refs,
-        merge_placeholder_entities,
-        relabel_nondynamic_calls,
-    )
+    from openunderstand.oudb.models import finalise_analysis
 
     if (
         repo_address is not None
@@ -131,14 +124,7 @@ def start_parsing(
     # Passes run in a fixed order, and several create placeholder entities
     # before the define pass has declared the real ones. Fold them together
     # once everything has been written.
-    merge_placeholder_entities()
-    relabel_nondynamic_calls()
-    # After merging, so the endpoints a Use shares with its more specific
-    # variant have already been folded onto the same entity rows.
-    drop_nonvariable_deref_refs()
-    drop_shadowed_use_refs()
-    drop_external_inverse_refs()
-    drop_orphan_placeholders()
+    finalise_analysis()
 
 
 if __name__ == "__main__":

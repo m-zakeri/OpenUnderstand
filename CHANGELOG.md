@@ -42,6 +42,13 @@ The same pass now decides once per callee rather than once per call and writes
 one UPDATE per kind instead of a row at a time, which takes a **full build from
 38.8s to 35.6s** with the fingerprint unchanged.
 
+`symbol_table.build()` then dominated what was left, reindexing all 85 files so
+that one could resolve a cross-file name. It caches each file's contribution
+against that file's mtime and size and replays the merge, so a rebuild with
+nothing changed is 0.00s and an edit reparses one file. **A second edit in the
+same process is 0.88s** against Understand's 3.09s; the first is 1.96s, since
+the index has to be built once before it can be reused.
+
 ### Analysis runs in parallel
 
 `runner()` collects in worker processes and writes in the parent, which is the

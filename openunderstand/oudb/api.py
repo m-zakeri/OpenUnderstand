@@ -614,8 +614,7 @@ def update_files(paths, source_root: str = ""):
     from openunderstand.oudb.models import (
         dependent_files,
         purge_file,
-        merge_placeholder_entities,
-        relabel_nondynamic_calls,
+        finalise_analysis,
     )
     from openunderstand.ounderstand.parsing_process import process_file
     from openunderstand.ounderstand import symbol_table
@@ -667,7 +666,10 @@ def update_files(paths, source_root: str = ""):
     for path in reanalysed:
         process_file(path)
 
-    merged = merge_placeholder_entities()
+    # The same six passes a full build runs, through the one function. Running
+    # only the first two left an updated database holding rows a rebuilt one
+    # does not -- plain Use references shadowed by a variant, and inverses hung
+    # on entities the project does not declare.
     # Only the files just re-analysed can hold a call whose label changed.
     touched = [
         ent._id
@@ -676,7 +678,7 @@ def update_files(paths, source_root: str = ""):
         )
         if ent is not None
     ]
-    relabelled = relabel_nondynamic_calls(file_ids=touched)
+    finalised = finalise_analysis(file_ids=touched)
     return {
         "requested": len(requested),
         "files": len(paths),
@@ -684,8 +686,9 @@ def update_files(paths, source_root: str = ""):
         "deleted": len(paths) - len(reanalysed),
         "entities_removed": removed_entities,
         "references_removed": removed_refs,
-        "placeholders_merged": merged,
-        "calls_relabelled": relabelled,
+        "placeholders_merged": finalised["merged_placeholders"],
+        "calls_relabelled": finalised["relabelled_calls"],
+        **finalised,
     }
 
 

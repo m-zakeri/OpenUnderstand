@@ -735,8 +735,17 @@ def purge_file(file_entity_id):
             unknown = _PLACEHOLDER_FOR.get(kind_family(entity._kind_id))
             if unknown:
                 entity._kind = kind_id(unknown)
-                entity._line = entity._column = None
                 entity._contents = ""
+                # The declaration position stays. It is not a fact about the
+                # old source, it is this row's *identity*: overloads share a
+                # long name and are separate rows only because their positions
+                # differ. Clearing it left `org.json.CDL.toJSONArray`'s eight
+                # rows indistinguishable, so re-analysis matched declarations
+                # to whichever placeholder came first and the eight positions
+                # came back shuffled -- which then moved every call that
+                # resolves to one of them. If the declaration really has gone,
+                # a stale position is what makes the next one at a *different*
+                # position correctly create its own row rather than claim this.
                 entity.save()
             continue
         EntityModel.update({EntityModel._parent: None}).where(
@@ -925,6 +934,25 @@ def drop_nonvariable_deref_refs():
     Returns the number of references deleted.
     """
     flush_reference_writes()
+    # One lookup per distinct target, not one per reference. The question is
+    # about the target's kind and thousands of dereferences share a few hundred
+    # targets: this was 1.15s of a 2.19s incremental update, and it is the same
+    # N+1 `relabel_nondynamic_calls` had.
+    verdicts = {}
+
+    def is_doomed(entity_id):
+        try:
+            return verdicts[entity_id]
+        except KeyError:
+            target = EntityModel.get_or_none(_id=entity_id)
+            answer = (
+                target is None
+                or is_placeholder_kind(target._kind_id)
+                or kind_family(target._kind_id) != "variable"
+            )
+            verdicts[entity_id] = answer
+            return answer
+
     # The target is _ent on the forward reference and _scope on its inverse.
     doomed = set()
     for name, side in (
@@ -939,12 +967,7 @@ def drop_nonvariable_deref_refs():
         if kind is None:
             continue
         for ref in ReferenceModel.select().where(ReferenceModel._kind == kind._id):
-            target = EntityModel.get_or_none(_id=getattr(ref, side))
-            if (
-                target is None
-                or is_placeholder_kind(target._kind_id)
-                or kind_family(target._kind_id) != "variable"
-            ):
+            if is_doomed(getattr(ref, side)):
                 doomed.add(ref._id)
     if not doomed:
         return 0
@@ -1155,6 +1178,35 @@ def relabel_nondynamic_calls(file_ids=None):
             ).execute()
             relabelled += len(hits)
     return relabelled
+
+
+def finalise_analysis(file_ids=None):
+    """The project-wide passes that must run after every file has been written.
+
+    Six passes in a fixed order, and the order is load-bearing: the merge runs
+    first so that an entity about to become real is not read as external, and
+    the inverse and shadow drops run after it for the same reason.
+
+    One function because there were three copies of this list -- in
+    `start_parsing()`, in `mcp_server.analyze()` and in
+    `scripts/compare/02_build_ou.py` -- kept in step by a comment saying
+    "all six, in this order, exactly as the others run them". A fourth caller,
+    `api.update_files()`, ran two of the six, so an updated database carried
+    114 rows a rebuilt one does not: plain `Java Use` shadowed by a variant,
+    and inverses hung on `java.lang.StringBuilder` and friends that Understand
+    never writes.
+
+    `file_ids` is passed through to `relabel_nondynamic_calls`, the only one of
+    the six an incremental update can scope. Returns the counts, keyed by pass.
+    """
+    return {
+        "merged_placeholders": merge_placeholder_entities(),
+        "relabelled_calls": relabel_nondynamic_calls(file_ids=file_ids),
+        "nonvariable_deref_dropped": drop_nonvariable_deref_refs(),
+        "shadowed_use_dropped": drop_shadowed_use_refs(),
+        "external_inverses_dropped": drop_external_inverse_refs(),
+        "orphan_placeholders_dropped": drop_orphan_placeholders(),
+    }
 
 
 class MetricModel(Model):
