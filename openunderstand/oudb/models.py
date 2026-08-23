@@ -313,7 +313,9 @@ def _update_entity_columns(row, fields):
     columns, values = [], []
     for name in fields:
         columns.append(_ENTITY_COLUMNS[name])
-        raw = getattr(row, _ENTITY_COLUMNS[name] if name in ("_kind", "_parent") else name)
+        raw = getattr(
+            row, _ENTITY_COLUMNS[name] if name in ("_kind", "_parent") else name
+        )
         # Through the field's own converter, not straight to the cursor. A
         # CharField coerces with str(), and `_contents` is handed a FileStream
         # by one pass -- binding that raw fails, which is how the shortcut was

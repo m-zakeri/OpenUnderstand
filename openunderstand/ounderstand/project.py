@@ -311,6 +311,23 @@ def _fan_out(entries, disabled, on_error):
     return hook
 
 
+def _enclosing_type(entity):
+    """The nearest class or interface at or above `entity`, or None.
+
+    Walks `_parent`, which the define pass has already set for everything
+    enclosing this declaration: it writes in source order, so the method
+    holding a lambda was completed before the lambda reaches here.
+    """
+    seen = set()
+    while entity is not None and entity._id not in seen:
+        seen.add(entity._id)
+        if kind_family(entity._kind_id) == "type":
+            return entity
+        parent_id = entity._parent_id
+        entity = EntityModel.get_or_none(_id=parent_id) if parent_id else None
+    return None
+
+
 def _walk_all(listeners, parse_tree, on_error):
     """Walk `parse_tree` once for every listener that can share a walk.
 
@@ -730,6 +747,23 @@ class Project:
                 scope = self.getScopeEntity(
                     file_ent, ref_dict["scope"], ref_dict["scope_longname"]
                 )
+            # The parent is not always the declaring scope. A package does not
+            # *enclose* a type, it contains it, and Understand says so with a
+            # `Java Contain` reference rather than with parentage:
+            # `org.json.CDL`'s parent there is CDL.java. 83 of JSON's types were
+            # parented to `org.json`. Kept separate from `scope`, which still
+            # decides what the Define reference below is written against --
+            # conflating the two silently added 85 Define rows.
+            parent = scope
+            if parent is not None and kind_family(parent._kind_id) == "package":
+                parent = file_ent
+            # A lambda is declared inside a method and parented to the *class*.
+            # Understand puts `...JSONObjectTest.issue713.(lambda_expr_1)` under
+            # JSONObjectTest, not under issue713 -- the long name still runs
+            # through the method, so this is parentage disagreeing with the
+            # scope chain on purpose, the same way the package rule above does.
+            if ref_dict["ent"].startswith("(lambda_expr_"):
+                parent = _enclosing_type(parent) or parent
 
             ent, _ = EntityModel.get_or_create(
                 _kind=kind_names.resolve(
@@ -739,7 +773,7 @@ class Project:
                 ),  # re-resolved below when an earlier pass already made the row
                 # The enclosing scope, not the package: Understand's parent of a
                 # method is its class, and of a local its method.
-                _parent=scope,
+                _parent=parent,
                 _name=ref_dict["ent"],
                 _longname=ref_dict["ent_longname"],
                 _value=None,
@@ -767,6 +801,17 @@ class Project:
                 dirty = True
             if declared_kind is not None and ent._kind_id != declared_kind:
                 ent._kind = declared_kind
+                dirty = True
+            # The parent, for the same reason and with the same force. A pass
+            # that merely *mentions* a name creates the row with the file it is
+            # reading as the parent, which is a guess about someone else's
+            # declaration: `org.json.JSONTokener.next` came out parented to
+            # CDL.java, because CDL.java calls it and is read first. Only the
+            # file that declares an entity knows what encloses it -- the class
+            # for a method, the file for a top-level type -- and that is this
+            # pass, here, holding the scope chain it walked.
+            if parent is not None and ent._parent_id != parent._id:
+                ent._parent = parent
                 dirty = True
             if dirty:
                 ent.save()
