@@ -1,13 +1,20 @@
 """Resolved type of every expression in a file, computed once.
 
-Five passes needed the same fact -- *what type is this expression* -- and each
-derived it its own way. `method_calls.owner_longname`, `field_uses._owner` and
-`declared_types.collect` were three separate answers to it, and the same defect
-lived in two of them at once: a nested class's scope assigned on entry and
-never restored, so `this.refTokens` in `JSONPointer.queryFrom` resolved to
+Several passes needed the same fact -- *what type is this expression* -- and
+each derived it its own way. `method_calls.owner_longname` and
+`field_uses._owner` were two separate answers to it, and the same defect lived
+in both at once: a nested class's scope assigned on entry and never restored,
+so `this.refTokens` in `JSONPointer.queryFrom` resolved to
 `JSONPointer.Builder.refTokens`, a field of the inner class that happens to
-share the name. `couple_coupleby` had a fourth answer that ended in an
+share the name. `couple_coupleby` had a third answer that ended in an
 unconditional `"java.lang." + name` and so reported `java.lang.Map`.
+
+`declared_types.collect` is **not** one of them and never was, though this
+file used to say so. It answers what a *declaration states* -- name to
+declared type, as a simple name -- which is the input every ladder consumes
+and which this module consumes too. Both passes above now ask this table
+first and fall back to their own ladder, so the remaining copies decide only
+what the table refuses.
 
 This is the one answer. It reads scopes off the parse tree by walking *up* from
 the asking node, which is what Java scoping actually is -- no listener state to

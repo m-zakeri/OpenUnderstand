@@ -50,6 +50,8 @@ class FieldUseListener(JavaParserLabeledListener):
         self.enclosing_type = ""
         #: Saved (enclosing_type, field_types) per open class declaration.
         self._scopes = []
+        #: The file's resolved-type table, built once on first use.
+        self._binder = None
 
     def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
         longname = ctx.qualifiedName().getText()
@@ -89,6 +91,38 @@ class FieldUseListener(JavaParserLabeledListener):
     ):
         self.local_types = declared_types.collect(ctx)
 
+    def binder(self, ctx):
+        """The type table for this file, built from the tree `ctx` sits in."""
+        if self._binder is None:
+            from openunderstand.ounderstand.type_binding import TypeBinder
+
+            root = ctx
+            while root.parentCtx is not None:
+                root = root.parentCtx
+            self._binder = TypeBinder(root, self.file_address)
+        return self._binder
+
+    def owner_of(self, receiver_ctx, scope_longname):
+        """Type whose member `receiver.x` names: the table, then the ladder.
+
+        `method_calls` has asked `TypeBinder` first since it took JSON's
+        unresolved receivers from 2,095 to 202; this pass asks the same
+        question and kept its own answer. The table walks the tree, so it
+        settles the shapes the text ladder below refuses outright -- a cast,
+        an array element, a chained call, a receiver of more than two
+        segments -- and it reads scopes by walking *up* from the asking node,
+        which is what Java scoping is.
+        """
+        if receiver_ctx is not None:
+            try:
+                resolved = self.binder(receiver_ctx).type_of(receiver_ctx)
+            except Exception:
+                resolved = None
+            if resolved:
+                return resolved
+        return self._owner(receiver_ctx.getText() if receiver_ctx is not None else "",
+                           scope_longname)
+
     def _owner(self, receiver, scope_longname):
         """Long name of the type whose member `receiver.x` names, or None."""
         from openunderstand.ounderstand import symbol_table
@@ -97,6 +131,9 @@ class FieldUseListener(JavaParserLabeledListener):
             return None
         if receiver == "this":
             return self.enclosing_type or None
+        written_in_full = symbol_table.qualified_owner(receiver)
+        if written_in_full:
+            return written_in_full  # `java.lang.Integer.MAX_VALUE`, `p.R.shared`
         head, _, field = receiver.partition(".")
         if not head.isidentifier() or (field and not field.isidentifier()):
             return None
@@ -122,7 +159,7 @@ class FieldUseListener(JavaParserLabeledListener):
         if not parents:
             return
         scope = ".".join(parents)
-        owner = self._owner(receiver.getText(), scope)
+        owner = self.owner_of(receiver, scope)
         if not owner or "." not in owner:
             # Never a bare simple name: merge_placeholder_entities() would fold
             # it into whichever project entity happens to share it.

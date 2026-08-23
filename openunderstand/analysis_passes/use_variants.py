@@ -236,7 +236,16 @@ class UseVariantListener(JavaParserLabeledListener):
         # because such an argument is never part of a declaration's type.
         bound = _type_parameter_scope(ctx)
         declared = None if bound else _declared_owner(ctx)
-        kind = "Java Typed GenericArgument" if declared else "Java Use GenericArgument"
+        # None means an expression, which is the whole of the distinction.
+        # `_ENCLOSING` -- a declaration needing no name of its own, which is
+        # what an `extends`/`implements` clause is -- used to be returned as
+        # None as well, and `class Q extends ArrayList<String>` came out `Use
+        # GenericArgument` where Understand writes `Typed`. The scope was
+        # right either way, which is why it read as a working case.
+        kind = (
+            "Java Use GenericArgument" if declared is None
+            else "Java Typed GenericArgument"
+        )
         declared = declared or bound
         for argument in ctx.typeArgument():
             # A wildcard is an entity in its own right: Understand names it "?"
@@ -344,12 +353,20 @@ def _annotated_name(ctx):
     return None
 
 
+#: A declaration whose arguments need no name appended to the scope: an
+#: `extends` or `implements` clause, whose scope is the class findParents()
+#: already names. Falsy on purpose -- it appends nothing -- but not None,
+#: which is reserved for "this is an expression".
+_ENCLOSING = ""
+
+
 def _declared_owner(ctx):
     """Name of the declaration whose *type* these arguments are part of.
 
     None when they belong to an expression instead -- `new HashMap<K,V>()` --
     which is what separates Understand's Typed GenericArgument from its Use
-    GenericArgument.
+    GenericArgument. `_ENCLOSING` for a declaration that needs no name of its
+    own; test the result against None rather than for truth.
     """
     node = ctx.parentCtx
     while node is not None:
@@ -358,12 +375,23 @@ def _declared_owner(ctx):
             ("Creator", "CreatedName", "Expression", "MethodCall", "Block")
         ):
             return None
-        if name.startswith(("TypeList", "ClassDeclaration", "InterfaceDeclaration")):
-            # `class Vertex implements Comparable<Vertex>` -- the arguments
-            # belong to the class, which findParents() already names. Walking
-            # past this reached the class again and appended it twice, so the
-            # scope came out as Others.Graph.Vertex.Vertex.
+        if name.startswith("TypeList"):
+            # `class JSONArray implements Iterable<Object>` -- Understand
+            # calls this one `Use GenericArgument`, scoped to the class: 13 of
+            # TheAlgorithms' 15 class-scoped arguments and 6 of JSON's 7. Only
+            # `extends` is Typed, which is the branch below. Measured after
+            # treating both alike cost 12 matched rows on TheAlgorithms and 2
+            # on JSON -- an `extends` fixture alone does not settle
+            # `implements`.
             return None
+        if name.startswith(("ClassDeclaration", "InterfaceDeclaration")):
+            # `class GenericBeanInt extends GenericBean<Integer>` -- reached
+            # without passing a typeList, so this is the extends clause of a
+            # class, and Understand writes `Typed GenericArgument`. The scope
+            # is the class, which findParents() already names: walking past
+            # here reached it again and appended it twice, giving
+            # Others.Graph.Vertex.Vertex.
+            return _ENCLOSING
         if name.startswith(("LocalVariableDeclaration", "FieldDeclaration")):
             return _first_declared_name(node)
         if name.startswith("FormalParameter") and not name.startswith(

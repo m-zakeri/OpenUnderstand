@@ -826,8 +826,17 @@ def merge_placeholder_entities():
         return 0
 
     by_simple = {}
+    file_kind = kind_id("Java File")
     for e in EntityModel.select():
         if is_placeholder_kind(e._kind_id):
+            continue
+        if e._kind_id == file_kind:
+            # A file's long name is a path, and every one of them ends in
+            # `.java` -- so the simple name this derives for it is `java`, and
+            # a project with exactly one file made that the single candidate
+            # for the unresolved `java` heading `java.lang.System.setProperty`.
+            # Four references in the hand-written fixture pointed at the file
+            # itself. A file is never what a name in source resolves to.
             continue
         by_simple.setdefault((e._longname or "").rsplit(".", 1)[-1], []).append(e)
 
@@ -1008,6 +1017,9 @@ def drop_external_inverse_refs():
     callee is `Java Unknown Method Member` or `Java Unknown Class Type Member`,
     it keeps 0 of 3,129.
 
+    A `Java Useby` on a package holding no type is the second population; see
+    the comment on the second statement below.
+
     Runs after merge_placeholder_entities(), which upgrades every placeholder
     it can resolve -- deciding before the merge would delete inverses for
     entities that are about to become real.
@@ -1042,6 +1054,92 @@ def drop_external_inverse_refs():
                                 OR k._name LIKE '%Unresolved%')
         """,
         inverse_names,
+    )
+    dropped = cursor.rowcount
+
+    # A package that declares no type is the second population, and it is not
+    # a placeholder: `org` is a real `Java Package` because
+    # `org.craftedsw.harddependencies` is, but nothing declares `package org;`
+    # and no type sits directly in it. Understand writes a `Java Use` at every
+    # such package -- 304 of them on testing_legacy_code, one per qualified
+    # name starting `org.` -- and hangs no `Java Useby` on any. On freemind's
+    # `freemind.modes`, a package full of classes, all 238 inverses are there.
+    #
+    # Restricted to Useby, and measured before it was: the rule stated over
+    # every inverse kind also deletes `Java Declarein`, which Understand does
+    # hang on an empty package. `package com.calculator.app;` declares `com`
+    # and `com.calculator` as well, and calculator_app lost 16 matched rows to
+    # that before the kind was pinned down.
+    cursor = ReferenceModel._meta.database.execute_sql(
+        """
+        DELETE FROM referencemodel
+         WHERE _kind_id = (SELECT _id FROM kindmodel WHERE _name = 'Java Useby')
+           AND _scope_id IN (
+                 SELECT e._id FROM entitymodel e
+                   JOIN kindmodel k ON k._id = e._kind_id
+                  WHERE k._name = 'Java Package'
+                    AND NOT EXISTS (SELECT 1 FROM entitymodel c
+                                      JOIN kindmodel ck ON ck._id = c._kind_id
+                                     WHERE ck._name <> 'Java Package'
+                                       AND c._longname = e._longname || '.' || c._name))
+        """
+    )
+    return dropped + cursor.rowcount
+
+
+def drop_unresolved_scoped_use_refs():
+    """Delete a Use whose target is a placeholder invented inside the reader.
+
+    `use_useby` records every bare identifier it walks past, and the write
+    layer gives an unresolvable one the only long name it can invent: the
+    reading scope plus the identifier. For a real local that is exactly right
+    -- `org.json.CDL.getValue.c` is where `c` lives. For the head of a
+    qualified name it is a fiction. `java.lang.System.setProperty(...)` made
+    `...setSystemProperties.java`, a `Java Unknown Variable Member` no
+    declaration pass ever created, and 192 rows of testing_legacy_code pointed
+    at six of them.
+
+    Understand puts an *unresolved* entity there instead, named by the bare
+    segment, and this project refuses bare simple names as targets because
+    `merge_placeholder_entities()` would fold them into whichever project
+    entity happens to share the name. Emitting nothing is the consistent
+    choice, and it is the same rule the call pass already follows: ask the
+    symbol table, and when it refuses, write no row.
+
+    The test is that the target is a placeholder *and* its long name sits
+    inside the reading scope's -- a placeholder the reader itself invented.
+    A placeholder that resolves elsewhere, `java.lang.Class` or an unresolved
+    field of another type, is a genuine reference to something outside the
+    project and is kept. Measured: 192 rows on testing_legacy_code, 87 on
+    JSON, 17 on TheAlgorithms, and not one of them a reference Understand
+    reports, so no matched row is lost on any of the three.
+
+    Runs after merge_placeholder_entities(), which upgrades every placeholder
+    it can resolve.
+
+    Returns the number of references deleted.
+    """
+    flush_reference_writes()
+    # A `Java Use` names its target in _ent and the reader in _scope; the
+    # inverse swaps them. substr() rather than LIKE: `_` is a single-character
+    # wildcard in LIKE and Java identifiers are full of them, so
+    # `TripService_Original` would match names it is not a prefix of.
+    cursor = ReferenceModel._meta.database.execute_sql(
+        """
+        DELETE FROM referencemodel WHERE _id IN (
+            SELECT r._id FROM referencemodel r
+              JOIN kindmodel k ON k._id = r._kind_id
+              JOIN entitymodel t ON t._id = CASE WHEN k._name = 'Java Use'
+                                                 THEN r._ent_id ELSE r._scope_id END
+              JOIN entitymodel s ON s._id = CASE WHEN k._name = 'Java Use'
+                                                 THEN r._scope_id ELSE r._ent_id END
+              JOIN kindmodel tk ON tk._id = t._kind_id
+             WHERE k._name IN ('Java Use', 'Java Useby')
+               AND (tk._name LIKE '%Unknown%' OR tk._name LIKE '%Unresolved%')
+               AND substr(t._longname, 1, length(s._longname) + 1)
+                   = s._longname || '.'
+        )
+        """
     )
     return cursor.rowcount
 
@@ -1165,7 +1263,12 @@ def relabel_nondynamic_calls(file_ids=None):
         # java.lang.String.length, so the call cannot dispatch virtually.
         # These are 303 of TheAlgorithms' missing Call Nondynamic rows for
         # String alone, and 180 of JSON's.
-        return jdk_index.is_final(owner)
+        #
+        # A static or final *method* on a class that is neither settles the
+        # rest: java.util.Collections is not final and
+        # `Collections.emptyList()` is still Nondynamic. The index records
+        # which names those are, per type.
+        return jdk_index.is_final(owner) or jdk_index.cannot_dispatch(owner, simple)
 
     relabelled = 0
     # The callee is _ent on a Call and _scope on its inverse.
@@ -1190,7 +1293,7 @@ def relabel_nondynamic_calls(file_ids=None):
 def finalise_analysis(file_ids=None):
     """The project-wide passes that must run after every file has been written.
 
-    Six passes in a fixed order, and the order is load-bearing: the merge runs
+    Seven passes in a fixed order, and the order is load-bearing: the merge runs
     first so that an entity about to become real is not read as external, and
     the inverse and shadow drops run after it for the same reason.
 
@@ -1212,6 +1315,7 @@ def finalise_analysis(file_ids=None):
         "nonvariable_deref_dropped": drop_nonvariable_deref_refs(),
         "shadowed_use_dropped": drop_shadowed_use_refs(),
         "external_inverses_dropped": drop_external_inverse_refs(),
+        "unresolved_use_dropped": drop_unresolved_scoped_use_refs(),
         "orphan_placeholders_dropped": drop_orphan_placeholders(),
     }
 

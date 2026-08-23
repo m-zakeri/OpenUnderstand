@@ -69,7 +69,7 @@ class ExtendCoupleAndExtendCoupleBy(JavaParserLabeledListener):
             )
             if longname is None:
                 continue
-            token = type_ctx.start
+            token = class_properties.type_anchor(type_ctx, type_ctx.start)
             self.relations.append(
                 {
                     "kind": "Java Implement Couple",
@@ -196,7 +196,8 @@ class ExtendCoupleAndExtendCoupleBy(JavaParserLabeledListener):
         in_project = (
             symbol_table.resolve_type(written.split("<")[0], scope_longname) is not None
         )
-        token = type_ctx.start
+        # `extends java.util.ArrayList<...>` reports on the `ArrayList`.
+        token = class_properties.type_anchor(type_ctx, type_ctx.start)
         self.relations.append(
             {
                 "kind": (

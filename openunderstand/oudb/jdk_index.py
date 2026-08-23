@@ -51,9 +51,15 @@ def _load() -> dict:
             if len(parts) != 7:
                 continue
             longname, flags, supers, fields, methods, members, superclass = parts
-            arities, returns = {}, {}
+            arities, returns, sealed = {}, {}, set()
             for item in methods.split(","):
                 if "/" not in item:
+                    # `!name` -- a method whose every overload is static or
+                    # final, so a call on it never dispatches. Written without
+                    # an arity precisely so that a loader predating it skips
+                    # the item here rather than failing to read the row.
+                    if item.startswith("!"):
+                        sealed.add(item[1:])
                     continue
                 name, tail = item.split("/", 1)
                 # `name/arity` or `name/arity>java.lang.Double` -- the return
@@ -71,6 +77,7 @@ def _load() -> dict:
                 ),
                 "methods": arities,
                 "returns": returns,
+                "sealed": sealed,
                 # Declared members at this type -- constructors included, every
                 # overload counted, at any visibility. This is what RFC sums
                 # over the superclass chain: java.lang.Throwable is 27 and
@@ -121,6 +128,22 @@ def is_final(longname: str) -> bool:
 def is_interface(longname: str) -> bool:
     """Whether a JDK type is an interface. False for anything not indexed."""
     return _load()["types"].get(longname, {}).get("interface", False)
+
+
+def cannot_dispatch(longname: str, member: str) -> bool:
+    """Whether a call on a JDK method is non-virtual: static or final.
+
+    `java.util.Collections.emptyList()` is Understand's `Java Call
+    Nondynamic`, `java.util.List.size()` its plain `Java Call`. A final class
+    already answered for java.lang.String and friends; this answers for a
+    static or final method on a class that is neither.
+
+    False for a name carrying both kinds of overload -- `Integer.toString` is
+    static and `Object.toString` is not -- because the index keys methods by
+    name and claiming one for the other would be a guess.
+    """
+    entry = _load()["types"].get(longname)
+    return bool(entry and member in entry.get("sealed", ()))
 
 
 def field_type(owner: str, field: str) -> str | None:

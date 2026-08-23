@@ -33,11 +33,13 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
         self.imports = {}
         self.wildcards = []
         self.typedBy = []
+        self.dotrefs = []
 
     @property
     def get_type(self):
         d = {}
         d["typedBy"] = self.typedBy
+        d["dotrefs"] = self.dotrefs
         return d
 
     def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
@@ -94,17 +96,121 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
             type_longname = self.resolve_type(type_name, enclosing)
         if type_longname is None:
             return
-        token = type_ctx.start
+        scope_longname = f"{enclosing}.{declared_name}"
+        # Understand anchors a reference at the segment carrying the entity's
+        # own name, so a `Java Typed` on `java.util.Map field` sits on `Map`
+        # and not on `java`. Measured on a hand-written fixture: the field's
+        # Typed is at column 20 of `  public java.util.Map<...> field`, which
+        # is `Map`, and this pass put it at 10. Reading the rule off the
+        # benchmark was not possible -- almost every fixture imports its types
+        # and writes them unqualified, so the two columns coincide; the
+        # EvoSuite scaffolding in testing_legacy_code, which qualifies
+        # everything, is the one place it shows.
+        token = class_properties.type_anchor(type_ctx, type_ctx.start)
         self.typedBy.append(
             {
                 "name": declared_name,
-                "scope_longname": f"{enclosing}.{declared_name}",
+                "scope_longname": scope_longname,
                 "type_name": type_name,
                 "type_longname": type_longname,
                 "line": token.line,
                 "col": token.column,
             }
         )
+
+    # ------------------------------------------------- the qualifying package
+
+    def enterClassOrInterfaceType(
+        self, ctx: JavaParserLabeled.ClassOrInterfaceTypeContext
+    ):
+        """`Java DotRef` on the package a type was written out in full with.
+
+        A qualified type name carries two references, one at each end:
+        `java.util.Map<...> field` is a DotRef to java.util at the `java` and
+        a Typed to java.util.Map at the `Map`. Understand writes the pair in
+        every type position -- a field, a local, a parameter, a return type,
+        a cast, a `new`, a `throws`, an `extends`, an `implements`, an
+        `instanceof` and every generic argument of each -- so this is walked
+        for itself rather than hung off the Typed pass, which sees only some
+        of them.
+
+        Only a name written out in full. `Outer.Inner` also has two
+        identifiers and its prefix is a type, not a package; refusing it is
+        cheaper than being wrong about which, and `resolve_type` returning the
+        written name unchanged is what tells the two apart.
+        """
+        # `java.lang.String.class` parses as a type too, and Understand reads
+        # it as an expression instead: three `Java Use` rows walking the name,
+        # no DotRef. primary5 is that shape and the only one to exclude.
+        node, hops = getattr(ctx, "parentCtx", None), 0
+        while node is not None and hops < 3:
+            if isinstance(node, JavaParserLabeled.Primary5Context):
+                return
+            node, hops = getattr(node, "parentCtx", None), hops + 1
+        self._qualified_dotref(list(ctx.IDENTIFIER()), ctx)
+
+    def enterCreatedName0(self, ctx: JavaParserLabeled.CreatedName0Context):
+        """`new java.util.ArrayList<...>()` -- a created name is not a typeType."""
+        self._qualified_dotref(list(ctx.IDENTIFIER()), ctx)
+
+    def enterQualifiedNameList(
+        self, ctx: JavaParserLabeled.QualifiedNameListContext
+    ):
+        """`throws java.io.IOException` -- a throws clause is not one either."""
+        for name in ctx.qualifiedName() or ():
+            self._qualified_dotref(list(name.IDENTIFIER()), name)
+
+    def _qualified_dotref(self, identifiers, ctx):
+        if len(identifiers) < 2:
+            return
+        parents = class_properties.ClassPropertiesListener.findParents(ctx)
+        if not parents:
+            return
+        enclosing = ".".join(parents)
+        written = ".".join(i.getText() for i in identifiers)
+        if self.resolve_type(written, enclosing) != written:
+            return
+        self.dotrefs.append(
+            {
+                "package_longname": written.rsplit(".", 1)[0],
+                "scope_longname": self._declaration_scope(ctx, enclosing),
+                "line": identifiers[0].symbol.line,
+                "col": identifiers[0].symbol.column,
+            }
+        )
+
+    @staticmethod
+    def _declaration_scope(ctx, enclosing):
+        """What Understand scopes a type reference to.
+
+        The declared entity when the type introduces one -- java.util is
+        DotRef'd from `p.Q.field`, not from `p.Q` -- and the enclosing method
+        otherwise. The walk stops at the first expression on the way up,
+        because a type inside an initialiser belongs to the method and not to
+        the variable being initialised: the `new java.util.ArrayList<...>()`
+        of `List<String> made = new ArrayList<>()` is scoped to `p.Q.go`
+        while the declaration's own `java.util.List` is scoped to
+        `p.Q.go.made`.
+        """
+        node = getattr(ctx, "parentCtx", None)
+        while node is not None:
+            name = type(node).__name__
+            if name.startswith(("Expression", "VariableInitializer", "Creator")):
+                return enclosing
+            if name in ("FieldDeclarationContext", "LocalVariableDeclarationContext"):
+                declarators = node.variableDeclarators()
+                first = (declarators.variableDeclarator() or [None])[0] if declarators else None
+                identifier = first.variableDeclaratorId() if first is not None else None
+                if identifier is not None:
+                    return f"{enclosing}.{identifier.getText().split('[')[0]}"
+                return enclosing
+            if name == "FormalParameterContext":
+                identifier = node.variableDeclaratorId()
+                if identifier is not None:
+                    return f"{enclosing}.{identifier.getText().split('[')[0]}"
+                return enclosing
+            node = getattr(node, "parentCtx", None)
+        return enclosing
 
     @staticmethod
     def _declared_names(declarators):

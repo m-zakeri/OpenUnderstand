@@ -666,7 +666,7 @@ def update_files(paths, source_root: str = ""):
     for path in reanalysed:
         process_file(path)
 
-    # The same six passes a full build runs, through the one function. Running
+    # The same project-wide passes a full build runs, through the one function. Running
     # only the first two left an updated database holding rows a rebuilt one
     # does not -- plain Use references shadowed by a variant, and inverses hung
     # on entities the project does not declare.

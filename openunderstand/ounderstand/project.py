@@ -122,6 +122,9 @@ def callee_of(longname, name, arguments, file_ent):
     )[0]
 
 
+#: The inverse half of each kind addDotRefRefs writes.
+_INVERSE_OF = {"Java DotRef": "Java DotRefby", "Java Use": "Java Useby"}
+
 #: Use variants whose target is a type by construction, whatever it resolves to.
 _TYPE_USE_KINDS = frozenset(
     {
@@ -517,6 +520,51 @@ class Project:
                 _scope=ent,
             )
 
+        # A type written out in full carries a second reference: the package
+        # it was qualified with, as a `Java DotRef` at the start of the name.
+        # `java.util.Map<...> field` is a DotRef to java.util at the `java`
+        # and a Typed to java.util.Map at the `Map`.
+        #
+        # Created with the placeholder kind rather than `Java Package` on
+        # purpose. Identity is (long name, kind family) and Unknown matches
+        # any family, so a package this project declares is reused as-is and
+        # keeps its inverse, while `java.util` stays a placeholder --
+        # drop_external_inverse_refs() then removes the `Java DotRefby` for
+        # it, which is the same treatment every other external target gets
+        # here. Understand does write that inverse, on an external package
+        # entity this project has no counterpart for.
+        for dotref in d_type.get("dotrefs", ()):
+            package = EntityModel.get_or_create(
+                _kind=kind_id("Java Unknown Class Type Member"),
+                _parent=None,
+                _name=dotref["package_longname"].rsplit(".", 1)[-1],
+                _longname=dotref["package_longname"],
+                _value=None,
+                _type=None,
+                _contents=stream,
+            )[0]
+            scope = EntityModel.get_or_create(
+                _kind=kind_id("Java Unknown Variable Member"),
+                _parent=None,
+                _name=dotref["scope_longname"].rsplit(".", 1)[-1],
+                _longname=dotref["scope_longname"],
+                _value=None,
+                _type=None,
+                _contents=stream,
+            )[0]
+            for kind, ent_, scope_ in (
+                ("Java DotRef", package, scope),
+                ("Java DotRefby", scope, package),
+            ):
+                ReferenceModel.get_or_create(
+                    _kind=kind_id(kind),
+                    _file=file_ent,
+                    _line=dotref["line"],
+                    _column=col_1based(dotref["col"]),
+                    _ent=ent_,
+                    _scope=scope_,
+                )
+
     def addSetRefs(self, d, file_ent, stream: str = ""):
 
         for type_tuple in d:
@@ -812,14 +860,26 @@ class Project:
                     _scope=scope,
                 )
 
-            # Definein: kind id 195
+            # Definein hangs on the *file*, not the package. A top-level type
+            # is declared in its file and contained by its package, and
+            # Understand says both: `Java Definein` pairs CDL.java with
+            # org.json.CDL, `Java Contain` pairs org.json with it. This wrote
+            # the package here, so every top-level type's Definein was
+            # unmatched -- 8 on calculator_app, 36 on testing_legacy_code and
+            # 85 on JSON, which is every type each of them declares.
+            #
+            # `parent` is already that file: the same rule decides an entity's
+            # parent, and the two were computed apart because a previous
+            # attempt at this changed `scope` instead and silently added 85
+            # `Java Define` rows. The forward half stays suppressed -- neither
+            # tool emits a Define for this pair.
             definein_ref = ReferenceModel.get_or_create(
                 _kind=kind_id("Java Definein"),
                 _file=file_ent,
                 _line=ref_dict["line"],
                 _column=col_1based(ref_dict["col"]),
                 _scope=ent,
-                _ent=scope,
+                _ent=parent if parent is not None else scope,
             )
 
             # Understand marks the extent of every braced declaration with a
@@ -1682,7 +1742,23 @@ class Project:
                     if symbol_table.is_project_type(created)
                     else True
                 )
-                if not ref_dict.get("is_array") and "." in created and declared:
+                # And only when the type is named by a simple name. A creator
+                # written out in full carries the DotRef/Create pair and no
+                # Call: `new java.util.ArrayList<String>()` gets Create and
+                # DotRef where `new ArrayList<String>()` gets Create and Call,
+                # and the same holds for a type the project declares -- `new
+                # p.Helper()` has no Call either, so this is not about where
+                # the type lives. Settled on a fixture pairing each creator
+                # with its qualified twin; the benchmark could not show it,
+                # because 32 of the 40 rows it costs are in one subject's
+                # generated scaffolding.
+                written = (ref_dict.get("refent") or "").split("<")[0]
+                if (
+                    not ref_dict.get("is_array")
+                    and "." in created
+                    and declared
+                    and "." not in written
+                ):
                     # A constructor is method family, not type family. Built
                     # through getClassEntity() it was a *class* placeholder,
                     # so it never merged with the real declaration and
@@ -2224,22 +2300,23 @@ class Project:
                 _parent=None,
                 _longname=ref_dict["refent_longname"],
             )[0]
-            ReferenceModel.get_or_create(
-                _kind=kind_id("Java DotRef"),
-                _file=file_ent,
-                _line=ref_dict["line"],
-                _column=col_1based(ref_dict["col"]),
-                _ent=ent,
-                _scope=scope,
-            )
-            ReferenceModel.get_or_create(
-                _kind=kind_id("Java DotRefby"),
-                _file=file_ent,
-                _line=ref_dict["line"],
-                _column=col_1based(ref_dict["col"]),
-                _ent=scope,
-                _scope=ent,
-            )
+            # The prefix of a qualified name is the same shape with a
+            # different kind: the package and type steps of
+            # `java.lang.System.out` are Uses, and only a package standing at
+            # the head of the chain is a DotRef.
+            kind = ref_dict.get("kind", "Java DotRef")
+            for name, ent_, scope_ in (
+                (kind, ent, scope),
+                (_INVERSE_OF[kind], scope, ent),
+            ):
+                ReferenceModel.get_or_create(
+                    _kind=kind_id(name),
+                    _file=file_ent,
+                    _line=ref_dict["line"],
+                    _column=col_1based(ref_dict["col"]),
+                    _ent=ent_,
+                    _scope=scope_,
+                )
 
     def addThrows_TrowsByRefs(self, ref_dicts, file_ent, file_address, id1, id2, Throw):
         for ref_dict in ref_dicts:

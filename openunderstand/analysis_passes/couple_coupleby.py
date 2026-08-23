@@ -307,7 +307,8 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         longname = self.resolve_type_longname(ctx)
         if not longname or not scope_longname:
             return
-        token = ctx.start
+        # `implements java.io.Serializable` reports on the `Serializable`.
+        token = class_properties.type_anchor(ctx, ctx.start)
         self.relations.append(
             {
                 "kind": kind,
