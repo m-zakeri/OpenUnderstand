@@ -2,6 +2,41 @@
 
 ## Unreleased
 
+### An entity's parent is filled in, not fixed by whichever file arrived first
+
+`EntityModel.get_or_create` completes a missing `_parent` the way it already
+completes `_type`, `_value` and `_contents`. **Agreement with Understand on
+`Ent.parent()` goes from 0.300 to 0.939** over the 4,567 matched entities of the
+JSON benchmark, and the entities where this project answered `None` while
+Understand names a parent drop from 2,978 to 6.
+
+Nothing else moves: 0 of 64 reference kinds change recall or precision, entity
+matching is unchanged, and every value in `docs/metric-parity.md` is identical.
+The committed fingerprints are re-cut, since this is an intentional change to
+what a build writes.
+
+### An updated database now matches a rebuilt one
+
+`api.update_files()` left the database holding rows a full build does not:
+re-analysing one file of the JSON benchmark took its reference count from 974
+to 1149 and kept it there. Over the whole database and repeated updates it is
+now **0 rows added and 0 lost**, on both entities and references.
+
+* **All four entry points run the same six project-wide passes**, through
+  `models.finalise_analysis()`. There were three copies of that list and a
+  fourth caller running two of the six, so an update kept 122 plain `Java Use`
+  rows shadowed by a variant and 54 inverses hung on entities the project does
+  not declare.
+* **`purge_file` no longer clears a demoted row's declaration position.**
+  Overloads share a long name and are separate rows only because their
+  positions differ, so clearing it made them indistinguishable: re-analysis
+  matched declarations to whichever placeholder came first, and every call
+  resolving to one of them moved.
+
+An update is 1.24s in a warm process against Understand's 3.09s, including all
+six passes. `drop_nonvariable_deref_refs` now decides once per target rather
+than once per reference, which took it from 1.15s to near nothing.
+
 ### A build of the JSON benchmark is 15.2s, from 35.6s
 
 Every change below leaves the database byte for byte identical -- both fixture

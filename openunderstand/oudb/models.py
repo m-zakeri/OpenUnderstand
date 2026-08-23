@@ -286,6 +286,7 @@ def _entity_rows(cls, longname):
 #: cannot silently stop being updated.
 _ENTITY_COLUMNS = {
     "_kind": "_kind_id",
+    "_parent": "_parent_id",
     "_line": "_line",
     "_column": "_column",
     "_type": "_type",
@@ -312,7 +313,7 @@ def _update_entity_columns(row, fields):
     columns, values = [], []
     for name in fields:
         columns.append(_ENTITY_COLUMNS[name])
-        raw = getattr(row, "_kind_id" if name == "_kind" else name)
+        raw = getattr(row, _ENTITY_COLUMNS[name] if name in ("_kind", "_parent") else name)
         # Through the field's own converter, not straight to the cursor. A
         # CharField coerces with str(), and `_contents` is handed a FileStream
         # by one pass -- binding that raw fails, which is how the shortcut was
@@ -488,6 +489,10 @@ class EntityModel(Model):
                 if incoming_value and not getattr(match, field, None):
                     setattr(match, field, incoming_value)
                     dirty.append(field)
+            incoming_parent = fields.get("_parent")
+            if incoming_parent is not None and match._parent_id is None:
+                match._parent = incoming_parent
+                dirty.append("_parent")
             if dirty:
                 _update_entity_columns(match, dirty)
             return match, False
