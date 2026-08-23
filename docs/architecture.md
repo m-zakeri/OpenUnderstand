@@ -5,26 +5,69 @@
 ```
 openunderstand.py          CLI and config
     ↓
-oudb.api.create_db         create the SQLite file and its four tables
+oudb.api.create_db         create the SQLite file and its five tables
     ↓
 oudb.fill.fill             seed 237 entity kinds and 106 reference kinds
     ↓
-ounderstand.runner         one worker per .java file
+symbol_table.build         index every declaration in the project
+    ↓
+ounderstand.runner         workers parse and collect, the parent writes
     ↓
 parsing_process.process_file
     ↓
-  parse once  →  run ~28 listeners over that one tree, in order
+  parse once  →  build 24 listeners  →  one shared walk  →  write, in order
     ↓
-merge_placeholder_entities + relabel_nondynamic_calls
-+ drop_shadowed_use_refs                                (once, after all files)
+models.finalise_analysis   six project-wide passes (once, after all files)
 ```
 
-Before any of that, `symbol_table.build()` indexes every declaration in the
-project -- see [Resolving names across files](#resolving-names-across-files).
+`symbol_table.build()` runs first because a pass resolving a name declared in
+another file cannot wait until that file is parsed -- see
+[Resolving names across files](#resolving-names-across-files).
 
-A file is parsed once. Every analysis pass then walks that same tree, so
-parsing is a small fraction of the total cost -- most of the time goes into the
-passes and the database writes.
+A file is parsed once and every pass walks that one tree. With the C++
+accelerator parsing is about 3% of a build; the write layer is roughly half,
+the passes' own handlers most of the rest. On the pure-Python runtime parsing
+is around a third, so any profile has to say which engine it was taken on.
+
+### Build and write are separate phases
+
+Each pass runs twice. The first pass over the list *builds* a listener, all of
+them share a single walk of the tree, and then the list runs again to *write*.
+`ListenersAndParsers.phase` selects which half; `BOTH` is the pre-split
+behaviour and the default.
+
+The ordering rules are about the **writes**, not the walks. `modify_listener`
+writes last because it resolves a variable the declaring passes must already
+have written; moving every walk ahead of every write changed two rows in the
+whole JSON benchmark.
+
+**The write layer must never touch the parse tree.** It used to: the class and
+interface property lookups walked the tree once per name asked. That is what
+made the split possible, and what makes a worker able to collect for a file the
+writer never parsed.
+
+### Analysing in parallel
+
+`runner(path, jobs=N)` collects in worker processes and writes in the parent.
+The database is byte-identical at any worker count, because a worker never
+writes -- the pool initializer even rebinds the models to a throwaway in-memory
+database so a stray write cannot reach the real one, and results are consumed
+in order, since an entity's parent is set by whichever file supplies one first.
+
+Scaling stops at about four workers: the write half is serial.
+
+### Re-analysing one file
+
+`oudb.api.update_files(paths, source_root=...)` deletes each named file's
+previous contribution, re-analyses it, and runs the same six project-wide
+passes. It expands the list to every file that depends on one of them -- a file
+depends on another when it references a type declared there -- because editing
+a base class changes what its subclasses inherit.
+
+Re-analysis has to reproduce a rebuild of the same source. Two things it needs:
+`symbol_table.build()` caches each file's contribution and reparses only what
+changed, and `purge_file()` keeps a demoted row's declaration position, which is
+what tells two overloads of one long name apart.
 
 ## The three layers
 
@@ -121,11 +164,16 @@ the reference pointed at itself from both ends.
 
 Most references leave the project, so refusing to name an external target is
 expensive: 1,197 of TheAlgorithms' 1,416 missing calls were to `java.io`,
-`java.util` and `java.lang`. `symbol_table` carries small hand-written tables
-for this -- `JAVA_LANG_TYPES`, `JDK_TYPE_PACKAGES`, `JDK_FIELD_TYPES`,
-`JDK_OVERRIDABLE` and `models.JDK_FINAL_TYPES`. They are lookup tables covering
-what the benchmarks use, not a model of the JDK, and each says so where it is
-defined.
+`java.util` and `java.lang`. `oudb/jdk_index.txt.gz` answers for those -- 3,957
+public `java.*` and `javax.*` types with their modifiers, supertypes, public
+fields, their methods' arities and each method's reference return type, read
+through `oudb/jdk_index.py`.
+
+It is **generated, not listed**: `scripts/gen_jdk_index.py` builds it from a
+local JDK's runtime image in about seven seconds. It replaced five hand-written
+tables of 208 entries between them, each added the day a benchmark tripped over
+it, and every gap in those was a wrong reference. If coverage is short, add to
+the generator; do not re-grow a table.
 
 `relabel_nondynamic_calls()` runs next and splits `Java Call` into
 `Call`/`Call Nondynamic` now that the callee's modifiers are known. A JDK
@@ -133,12 +181,31 @@ callee carries no modifiers here -- it was named from the receiver's type, not
 parsed -- so its class being final is what settles it: nothing can override
 `java.lang.String.length`.
 
-`drop_shadowed_use_refs()` runs last. Understand reports exactly one reference
+`drop_nonvariable_deref_refs()` deletes a `Deref Partial` whose target is not a
+variable: `a.b` is a partial dereference only when `a` is one, and in
+`org.evosuite.runtime.sandbox.Sandbox.goingToExecuteSUT()` the `org` is a
+package qualifier.
+
+`drop_shadowed_use_refs()` follows. Understand reports exactly one reference
 kind per position: `x` in `x.next()` is a `Use Deref Partial`, an assignment
 target is a `Set`, `i++` is a `Modify` -- and in none of those cases does it
 also report a plain `Use`. The use pass cannot know this, because it runs
 before set/dotref/modify have written anything, so the plain `Use` is deleted
 here wherever a more specific kind sits on the same position.
+
+`drop_external_inverse_refs()` then removes an inverse hung on an entity the
+project does not declare. Understand writes `Java Call` for a call to
+`java.lang.String.trim` and no `Java Callby`, because there is no analysed
+entity to hang it on. `drop_orphan_placeholders()` finishes, deleting a
+placeholder no reference points at.
+
+### One emitter for the sequence
+
+All six live in `models.finalise_analysis()`, and every entry point calls it --
+the CLI, the MCP server, the comparison harness and `update_files()`. There
+used to be three copies of the list kept in step by a comment, and a fourth
+caller that ran two of the six, which left an updated database holding rows a
+rebuilt one does not.
 
 ### Kind ids
 
