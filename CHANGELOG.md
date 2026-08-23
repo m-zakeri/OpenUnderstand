@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+### Updating one file is now faster than Understand
+
+`api.update_files()` on a single file of the JSON benchmark goes from 4.26s to
+**2.17s**, against Understand's 3.09s for the same edit. Half of the old figure
+was `relabel_nondynamic_calls`, which rescanned every Call and Callby reference
+in the project after each edit. It takes a `file_ids` scope now and
+`update_files` passes the files it re-analysed, which is exactly the set that
+can hold a changed label: the dependency closure already reaches every file
+referencing a type the edited file declares.
+
+The same pass now decides once per callee rather than once per call and writes
+one UPDATE per kind instead of a row at a time, which takes a **full build from
+38.8s to 35.6s** with the fingerprint unchanged.
+
 ### Analysis runs in parallel
 
 `runner()` collects in worker processes and writes in the parent, which is the
