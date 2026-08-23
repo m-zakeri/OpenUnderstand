@@ -311,23 +311,6 @@ def _fan_out(entries, disabled, on_error):
     return hook
 
 
-def _enclosing_type(entity):
-    """The nearest class or interface at or above `entity`, or None.
-
-    Walks `_parent`, which the define pass has already set for everything
-    enclosing this declaration: it writes in source order, so the method
-    holding a lambda was completed before the lambda reaches here.
-    """
-    seen = set()
-    while entity is not None and entity._id not in seen:
-        seen.add(entity._id)
-        if kind_family(entity._kind_id) == "type":
-            return entity
-        parent_id = entity._parent_id
-        entity = EntityModel.get_or_none(_id=parent_id) if parent_id else None
-    return None
-
-
 def _walk_all(listeners, parse_tree, on_error):
     """Walk `parse_tree` once for every listener that can share a walk.
 
@@ -757,13 +740,6 @@ class Project:
             parent = scope
             if parent is not None and kind_family(parent._kind_id) == "package":
                 parent = file_ent
-            # A lambda is declared inside a method and parented to the *class*.
-            # Understand puts `...JSONObjectTest.issue713.(lambda_expr_1)` under
-            # JSONObjectTest, not under issue713 -- the long name still runs
-            # through the method, so this is parentage disagreeing with the
-            # scope chain on purpose, the same way the package rule above does.
-            if ref_dict["ent"].startswith("(lambda_expr_"):
-                parent = _enclosing_type(parent) or parent
 
             ent, _ = EntityModel.get_or_create(
                 _kind=kind_names.resolve(
@@ -2464,7 +2440,16 @@ class Project:
                         relation.get("ent_kind", "Java Unknown Class Type Member")
                     ),
                     _name=relation["name"],
-                    _parent=None,
+                    # A lambda is declared here and nowhere else, so this is the
+                    # pass that knows what encloses it: the method it sits in,
+                    # which is what Understand reports. Everything else this
+                    # writer creates it merely names, and naming something is
+                    # not knowing where it was declared.
+                    _parent=(
+                        scope
+                        if relation.get("ent_kind") == "Java Method Lambda"
+                        else None
+                    ),
                     _longname=relation["ent_longname"],
                     _contents="",
                 )[0]

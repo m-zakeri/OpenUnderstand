@@ -429,13 +429,13 @@ class PackageEntityManager:
         if len(package_data) != 0:
             for i in range(len(package_data)):
                 package = package_data[i]
-                if (
-                    EntityModel.get_or_none(_longname=package["package_longname"])
-                    is None
-                ):
-                    parent_package = package_data[i - 1]
-                    longname = parent_package["package_longname"] if i > 0 else ""
-                    parent_package_entity = EntityModel.get_or_none(_longname=longname)
+                parent_package = package_data[i - 1]
+                longname = parent_package["package_longname"] if i > 0 else ""
+                parent_package_entity = EntityModel.get_or_none(_longname=longname)
+                existing = EntityModel.get_or_none(
+                    _longname=package["package_longname"]
+                )
+                if existing is None:
                     package_ent, success = EntityModel.get_or_create(
                         _kind=kind_id("Java Package"),
                         _name=package["package_name"],
@@ -443,12 +443,21 @@ class PackageEntityManager:
                         _parent=parent_package_entity,
                     )
                     self.package_string = package["package_longname"]
-                    result.append((self.path, package_ent, package["package_longname"]))
                 else:
-                    package_ent = EntityModel.get_or_none(
-                        _longname=package["package_longname"]
-                    )
-                    result.append((self.path, package_ent, package["package_longname"]))
+                    package_ent = existing
+                # A package's parent is the package above it, and this is the
+                # pass that knows which that is. Set it even when the row is
+                # already there: a pass that merely mentioned the name got in
+                # first and parented `org.json` to whichever file it was
+                # reading. Understand says `org`.
+                if (
+                    parent_package_entity is not None
+                    and package_ent is not None
+                    and package_ent._parent_id != parent_package_entity._id
+                ):
+                    package_ent._parent = parent_package_entity
+                    package_ent.save()
+                result.append((self.path, package_ent, package["package_longname"]))
         else:
             package_ent, success = EntityModel.get_or_create(
                 _kind=kind_id("Java Package Unnamed"),

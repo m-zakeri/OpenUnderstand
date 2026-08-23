@@ -519,18 +519,45 @@ class DefineListener(JavaParserLabeledListener):
             ent, ent_parents, decl=K.PARAMETER, modifiers=_modifiers_at(ctx)
         )
 
+    @staticmethod
+    def _lambda_scope(ctx):
+        """(scope chain above the lambda, its name), or (None, None).
+
+        `ctx` is the parameter list, which is *inside* the lambda, so
+        `findParents(ctx)` already ends with the lambda's own segment -- asking
+        from here and then appending the name again produced
+        `go.(lambda_expr_1).(lambda_expr_1)`, an entity parented to itself.
+        Ask from the lambda expression instead, whose chain stops above it.
+
+        The name comes from `class_properties` rather than from a counter of
+        this listener's own. Two numberings over the same file cannot be
+        relied on to agree, and the one that decides an entity's *scope* is
+        that one.
+        """
+        node = ctx
+        while node is not None and not isinstance(
+            node, JavaParserLabeled.LambdaExpressionContext
+        ):
+            node = node.parentCtx
+        if node is None:
+            return None, None
+        return (
+            class_properties.ClassPropertiesListener.findParents(node),
+            class_properties.lambda_name(node),
+        )
+
     def enterLambdaParameters0(self, ctx: JavaParserLabeled.LambdaParameters0Context):
-        self.lambda_expression_count += 1
+        ent_parents, ent_name = self._lambda_scope(ctx)
+        if ent_name is None:
+            return
         ent = ctx.IDENTIFIER()
-        ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        ent_name = f"(lambda_expr_{self.lambda_expression_count})"
         self.add_define_info(ent, ent_parents, ent_name, decl=K.LAMBDA)
         self.add_define_info(ent, ent_parents + [ent_name], decl=K.PARAMETER)
 
     def enterLambdaParameters2(self, ctx: JavaParserLabeled.LambdaParameters2Context):
-        self.lambda_expression_count += 1
-        ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        ent_name = f"(lambda_expr_{self.lambda_expression_count})"
+        ent_parents, ent_name = self._lambda_scope(ctx)
+        if ent_name is None:
+            return
         identifiers = ctx.IDENTIFIER()
         self.add_define_info(identifiers[0], ent_parents, ent_name, decl=K.LAMBDA)
         for ent in identifiers:

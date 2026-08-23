@@ -10,10 +10,29 @@ completes `_type`, `_value` and `_contents`. **Agreement with Understand on
 JSON benchmark, and the entities where this project answered `None` while
 Understand names a parent drop from 2,978 to 6.
 
+Four more rules take it to **0.998** -- 4,559 of 4,567 -- each the same
+principle, that the pass which *declares* an entity owns its parent, applied
+where a merely referencing pass had got in first:
+
+* a method or constructor belongs to its class, not to whichever file mentioned
+  it first (149 entities, and the file was usually the wrong one);
+* a top-level type belongs to its file, not to its package (83);
+* a lambda belongs to the enclosing class, not the method holding it (38);
+* a package belongs to the package above it.
+
 Nothing else moves: 0 of 64 reference kinds change recall or precision, entity
 matching is unchanged, and every value in `docs/metric-parity.md` is identical.
 The committed fingerprints are re-cut, since this is an intentional change to
 what a build writes.
+
+`scripts/compare/18_parent_parity.py` measures this from the dumps the harness
+already writes. It did not exist, which is how a dimension stayed at 0.300.
+
+Also fixed, found while writing the test for those rules: a lambda written
+`x -> ...` produced an entity named `...method.(lambda_expr_1).(lambda_expr_1)`
+that was its own parent, because the define pass built its scope chain from the
+parameter list, which is inside the lambda. No benchmark has that shape, so no
+fingerprint moves.
 
 ### An updated database now matches a rebuilt one
 

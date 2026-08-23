@@ -128,7 +128,7 @@ An entity: a file, class, method, variable, parameter, package.
 | `kind()` | the entity's `Kind` |
 | `kindname()` | `Java Method Private Member` |
 | `language()` | `"Java"` |
-| `parent()` | enclosing entity, or `None` |
+| `parent()` | enclosing entity, or `None` — a method's class, a top-level type's *file*, a lambda's class |
 | `type()` | declared type, for variables and methods |
 | `value()` | initialiser text, for variables |
 | `contents()` | source text of the declaration |
