@@ -105,6 +105,44 @@ def open_database(path: str) -> str:
     return json.dumps({"database": path, "entities": len(db.ents())}, indent=2)
 
 
+def update(paths: list[str], source_root: str = "") -> str:
+    """Re-analyse source files that have changed, without a full rebuild.
+
+    Use this after editing Java source instead of calling analyze() again: it
+    re-analyses only the named files and the files that depend on them, and is
+    about ten times quicker than a full build on a mid-sized project.
+
+    Each file's previous contribution is deleted first, so a renamed method
+    does not linger under both names, and the result is what a rebuild of the
+    same source would have written.
+
+    paths:       the .java files that changed. A path that no longer exists is
+                 purged and not re-analysed, so deleting a file works too.
+    source_root: the project root. Defaults to the root the open database
+                 recorded when it was built.
+    """
+    from openunderstand.oudb.api import update_files
+    from openunderstand.oudb.models import ProjectModel
+
+    _require_db()
+    if not paths:
+        raise ValueError("paths is empty: name the .java files that changed.")
+
+    root = os.path.abspath(os.path.expanduser(source_root)) if source_root else ""
+    if not root:
+        project = ProjectModel.select().first()
+        root = project.root if project is not None else ""
+    if not root or not os.path.isdir(root):
+        raise ValueError(
+            "No source root. This database did not record one, so pass "
+            "source_root=... with the project directory."
+        )
+
+    resolved = [os.path.abspath(os.path.expanduser(p)) for p in paths]
+    summary, _ = _quiet(update_files, resolved, source_root=root)
+    return json.dumps({"source_root": root, **summary}, indent=2)
+
+
 def list_entities(kind: str = "", limit: int = 100) -> str:
     """Entities in the database, optionally filtered.
 
@@ -187,6 +225,7 @@ def list_kinds(kind_filter: str = "", references: bool = False) -> str:
 TOOLS = (
     analyze,
     open_database,
+    update,
     list_entities,
     entity_references,
     entity_metrics,
@@ -359,7 +398,9 @@ def build_server():
         instructions=(
             "Analyse Java source and query its structure. Call analyze() with a "
             "source directory first, or open_database() for an existing .udb; "
-            "every other tool operates on whatever is open."
+            "every other tool operates on whatever is open. After editing "
+            "source, call update() with the changed files rather than "
+            "analyze() again."
         ),
     )
     for tool in TOOLS + PROMPTS + ALSO_TOOLS:

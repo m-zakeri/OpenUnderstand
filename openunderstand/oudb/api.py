@@ -688,7 +688,10 @@ def update_files(paths, source_root: str = ""):
         "references_removed": removed_refs,
         "placeholders_merged": finalised["merged_placeholders"],
         "calls_relabelled": finalised["relabelled_calls"],
-        **finalised,
+        "nonvariable_deref_dropped": finalised["nonvariable_deref_dropped"],
+        "shadowed_use_dropped": finalised["shadowed_use_dropped"],
+        "external_inverses_dropped": finalised["external_inverses_dropped"],
+        "orphan_placeholders_dropped": finalised["orphan_placeholders_dropped"],
     }
 
 

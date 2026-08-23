@@ -43,6 +43,30 @@ no project.
 
 Build number of this module.
 
+### `update_files(paths, source_root="")` → `dict`
+
+Re-analyse the named `.java` files in the open database and return a summary of
+what changed. Not part of Understand's API: it is how this project keeps a
+database current without rebuilding it.
+
+```python
+from openunderstand.oudb import api
+
+db = api.open("myproject.udb")
+api.update_files(["/project/src/Foo.java"], source_root="/project")
+```
+
+The list is expanded to every file that depends on one of those named -- a file
+depends on another when it references a type declared there -- because editing
+a base class changes what its subclasses inherit. Each file's previous
+contribution is deleted before it is re-analysed, so a renamed method does not
+survive under both names, and a path that no longer exists is purged rather
+than re-analysed.
+
+The result reproduces what a full rebuild of the same source would write. It is
+much quicker: one file of the 85-file `org.json` benchmark takes about 1.2s
+against 14s for the whole project.
+
 ---
 
 ## `Db`
