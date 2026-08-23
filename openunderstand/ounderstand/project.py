@@ -2440,19 +2440,21 @@ class Project:
                         relation.get("ent_kind", "Java Unknown Class Type Member")
                     ),
                     _name=relation["name"],
-                    # A lambda is declared here and nowhere else, so this is the
-                    # pass that knows what encloses it: the method it sits in,
-                    # which is what Understand reports. Everything else this
-                    # writer creates it merely names, and naming something is
-                    # not knowing where it was declared.
-                    _parent=(
-                        scope
-                        if relation.get("ent_kind") == "Java Method Lambda"
-                        else None
-                    ),
+                    _parent=None,
                     _longname=relation["ent_longname"],
                     _contents="",
                 )[0]
+
+            # A lambda is declared here and nowhere else, so this pass knows
+            # what encloses it -- the method it sits in, which is what
+            # Understand reports -- and it says so whether or not the row is
+            # already there. Setting it only on creation was not enough: one of
+            # JSON's 35 came out under `JSONArrayTest`'s identically-named test
+            # method, because something reached the name first.
+            if relation.get("ent_kind") == "Java Method Lambda" and scope is not None:
+                if ent._parent_id != scope._id:
+                    ent._parent = scope
+                    ent.save()
 
             forward = KindModel.get_or_none(_name=relation["kind"])
             if forward is None:
