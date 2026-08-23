@@ -48,8 +48,9 @@ def resolve_entity_ref(value, fallback=None):
     text = str(value).strip()
     if not text or text in {"NOT FOUND", "None", "null"}:
         return fallback
-    found = (EntityModel.get_or_none(EntityModel._longname == text)
-             or EntityModel.get_or_none(EntityModel._name == text))
+    found = EntityModel.get_or_none(
+        EntityModel._longname == text
+    ) or EntityModel.get_or_none(EntityModel._name == text)
     return found if found is not None else fallback
 
 
@@ -103,17 +104,30 @@ def kind_id(name: str) -> int:
         _KIND_NAMES[row._id] = name
     return _KIND_IDS[name]
 
+
 # Coarse groupings of entity kinds. Two rows with the same longname in the same
 # family are the same thing; two in different families are a genuine kind
 # disagreement and are left alone so the harness can still report them.
 # Longest-matching token wins, so "typevariable" does not read as "variable".
 _FAMILY_TOKENS = (
-    ("typevariable", "type"), ("annotation", "type"), ("interface", "type"),
-    ("constructor", "method"), ("parameter", "variable"), ("namespace", "package"),
-    ("package", "package"), ("variable", "variable"), ("property", "variable"),
-    ("method", "method"), ("module", "module"), ("record", "type"),
-    ("class", "type"), ("field", "variable"), ("enum", "type"), ("file", "file"),
-    ("function", "method"), ("label", "label"),
+    ("typevariable", "type"),
+    ("annotation", "type"),
+    ("interface", "type"),
+    ("constructor", "method"),
+    ("parameter", "variable"),
+    ("namespace", "package"),
+    ("package", "package"),
+    ("variable", "variable"),
+    ("property", "variable"),
+    ("method", "method"),
+    ("module", "module"),
+    ("record", "type"),
+    ("class", "type"),
+    ("field", "variable"),
+    ("enum", "type"),
+    ("file", "file"),
+    ("function", "method"),
+    ("label", "label"),
 )
 
 
@@ -166,8 +180,9 @@ def _database_name():
 @lru_cache(maxsize=4096)
 def _find_kind(_database, family, wanted):
     candidates = _entity_kind_words(_database)
-    exact = [(row, words) for row, words in candidates
-             if family in words and wanted <= words]
+    exact = [
+        (row, words) for row, words in candidates if family in words and wanted <= words
+    ]
     if exact:
         return _least_specific(exact)
     # Nothing carries every modifier. The family alone still beats None, which
@@ -182,9 +197,12 @@ def _find_kind(_database, family, wanted):
     # word `EnumConstant`, which is the shape this function exists to stop
     # trusting -- but a None here is a NOT NULL failure and a dropped entity,
     # and that is the worse outcome.
-    loose = [(row, words) for row, words in candidates
-             if family in (row._name or "").lower()
-             and all(m in (row._name or "").lower() for m in wanted)]
+    loose = [
+        (row, words)
+        for row, words in candidates
+        if family in (row._name or "").lower()
+        and all(m in (row._name or "").lower() for m in wanted)
+    ]
     return _least_specific(loose) if loose else None
 
 
@@ -197,16 +215,19 @@ def _least_specific(candidates):
     Sorting on word count alone left the winner to whatever order the rows came
     back in.
     """
-    row, _ = min(candidates,
-                 key=lambda pair: (len(pair[1]), len(pair[0]._name or ""),
-                                   pair[0]._name or ""))
+    row, _ = min(
+        candidates,
+        key=lambda pair: (len(pair[1]), len(pair[0]._name or ""), pair[0]._name or ""),
+    )
     return row
 
 
 @lru_cache(maxsize=8)
 def _entity_kind_words(_database):
-    return [(row, frozenset(w.lower() for w in (row._name or "").split()))
-            for row in KindModel.select().where(KindModel.is_ent_kind == True)]  # noqa: E712
+    return [
+        (row, frozenset(w.lower() for w in (row._name or "").split()))
+        for row in KindModel.select().where(KindModel.is_ent_kind == True)
+    ]  # noqa: E712
 
 
 def kind_family(kind) -> str:
@@ -228,6 +249,105 @@ def is_placeholder_kind(kind) -> bool:
     return bool(tokens & {"unknown", "unresolved"})
 
 
+#: long name -> the rows carrying it, for the process that is writing.
+#: `EntityModel.get_or_create` resolves identity by long name and used to ask
+#: the database every time: 11,153 SELECTs and 21% of a build of the JSON
+#: benchmark. One process writes a database, so it can answer itself. This is
+#: the same trade `ReferenceModel.get_or_create` already makes.
+_ENTITY_ROWS = None
+_ENTITY_ROWS_DB = None
+
+
+def forget_entity_rows():
+    """Drop the long-name index. Anything that deletes a row must call this."""
+    global _ENTITY_ROWS, _ENTITY_ROWS_DB
+    _ENTITY_ROWS = None
+    _ENTITY_ROWS_DB = None
+
+
+def _entity_rows(cls, longname):
+    """Every row carrying `longname`, from the index, seeding it if needed.
+
+    Seeded from the database on first use, which costs one query and keeps a
+    run over an *existing* database correct.
+    """
+    global _ENTITY_ROWS, _ENTITY_ROWS_DB
+    database = cls._meta.database
+    if _ENTITY_ROWS is None or _ENTITY_ROWS_DB is not database:
+        index = {}
+        for row in cls.select():
+            index.setdefault(row._longname, []).append(row)
+        _ENTITY_ROWS, _ENTITY_ROWS_DB = index, database
+    return _ENTITY_ROWS.get(longname, ())
+
+
+#: Model field name -> column name, for the columns `get_or_create` completes
+#: in place. Read from the model rather than written out, so a renamed field
+#: cannot silently stop being updated.
+_ENTITY_COLUMNS = {
+    "_kind": "_kind_id",
+    "_parent": "_parent_id",
+    "_line": "_line",
+    "_column": "_column",
+    "_type": "_type",
+    "_value": "_value",
+    "_contents": "_contents",
+}
+
+
+def _update_entity_columns(row, fields):
+    """UPDATE only `fields`, without going through peewee's `save()`.
+
+    A build of JSON completes 11,604 entity rows in place -- a row is created
+    by whichever pass reaches the name first and filled in by the two or three
+    that follow -- and `save()` was 1.29s of a 19s per-file loop. Naming only
+    the dirty columns took that to 1.06s, which is the tell: the cost is
+    peewee's query construction per call, not the width of the row. The
+    statement here is built from a fixed dict and executed on the cursor.
+
+    Deliberately not deferred the way reference inserts are. Passes still run
+    `EntityModel.select()` during the file loop -- 34,009 times on JSON -- and
+    a buffered update would leave those reading a stale column.
+    """
+    meta = row._meta
+    columns, values = [], []
+    for name in fields:
+        columns.append(_ENTITY_COLUMNS[name])
+        raw = getattr(
+            row, _ENTITY_COLUMNS[name] if name in ("_kind", "_parent") else name
+        )
+        # Through the field's own converter, not straight to the cursor. A
+        # CharField coerces with str(), and `_contents` is handed a FileStream
+        # by one pass -- binding that raw fails, which is how the shortcut was
+        # caught: 14 references and one logged failure, on a build whose
+        # fingerprint must not move at all.
+        values.append(meta.fields[name].db_value(raw) if raw is not None else None)
+    assignments = ", ".join(f'"{column}" = ?' for column in columns)
+    meta.database.execute_sql(
+        f'UPDATE "entitymodel" SET {assignments} WHERE "_id" = ?', values + [row._id]
+    )
+
+
+def entity_rows(longname):
+    """Every entity row carrying `longname`, in `_id` order.
+
+    The public read of the same index `EntityModel.get_or_create` and
+    `get_or_none` resolve identity through, for the callers that need *all*
+    the rows rather than the first: `project.scope_of` picks the enclosing
+    overload by declaration line, and `project.callee_of` scans for a
+    declaration position. Both ran `EntityModel.select()` per reference --
+    34,009 times on a build of JSON.
+
+    Returns the cached list itself. Callers must not mutate it.
+    """
+    return _entity_rows(EntityModel, longname)
+
+
+def _remember_entity(cls, row):
+    if _ENTITY_ROWS is not None and _ENTITY_ROWS_DB is cls._meta.database:
+        _ENTITY_ROWS.setdefault(row._longname, []).append(row)
+
+
 class EntityModel(Model):
     _id = AutoField()
     _kind = ForeignKeyField(KindModel, backref="entities")
@@ -245,6 +365,41 @@ class EntityModel(Model):
     # cannot express that, and every overload collapsed into one row.
     _line = IntegerField(null=True)
     _column = IntegerField(null=True)
+
+    @classmethod
+    def get_or_none(cls, *args, **kwargs):
+        """Answer a plain long-name lookup from the index, not from SQL.
+
+        20,063 of the 23,194 `get_or_none` calls a build of the JSON benchmark
+        makes are exactly `_longname == x`, and they cost 3.35s of a 23s
+        per-file loop -- 17% of it, spent asking the database a question this
+        process can already answer. `get_or_create` has read `_ENTITY_ROWS` for
+        the same question since it was the same 21%; this is the other half of
+        that fix, and the two now agree by construction rather than by luck.
+
+        Only the single-term long-name shapes are intercepted, in both the
+        expression and the keyword spelling. Anything compound, or keyed on
+        another field, falls through to peewee untouched.
+
+        The index preserves insertion order and is seeded in `_id` order, so
+        the row returned for a duplicated long name -- overloads, which are
+        deliberately separate rows -- is the one SQL would have returned.
+        """
+        longname = None
+        if not args and set(kwargs) == {"_longname"}:
+            longname = kwargs["_longname"]
+        elif len(args) == 1 and not kwargs:
+            expression = args[0]
+            if (
+                getattr(getattr(expression, "lhs", None), "name", None) == "_longname"
+                and getattr(expression, "op", None) == OP.EQ
+                and isinstance(getattr(expression, "rhs", None), str)
+            ):
+                longname = expression.rhs
+        if longname is None:
+            return super().get_or_none(*args, **kwargs)
+        rows = _entity_rows(cls, longname)
+        return rows[0] if rows else None
 
     @classmethod
     def get_or_create(cls, **kwargs):
@@ -286,14 +441,21 @@ class EntityModel(Model):
         incoming_site = (fields.get("_line"), fields.get("_column"))
 
         match = None
-        for row in cls.select().where(cls._longname == longname):
+        for row in _entity_rows(cls, longname):
             row_placeholder = is_placeholder_kind(row._kind_id)
-            if not (incoming_placeholder or row_placeholder
-                    or kind_family(row._kind_id) == incoming_family):
+            if not (
+                incoming_placeholder
+                or row_placeholder
+                or kind_family(row._kind_id) == incoming_family
+            ):
                 continue
             row_site = (row._line, row._column)
-            if (all(incoming_site) and all(row_site) and incoming_site != row_site
-                    and incoming_family == "method"):
+            if (
+                all(incoming_site)
+                and all(row_site)
+                and incoming_site != row_site
+                and incoming_family == "method"
+            ):
                 # Only methods overload. Two locals sharing a long name are the
                 # same declaration seen twice -- `main.name` declared in two
                 # blocks -- and splitting them by position produced 155 of the
@@ -303,14 +465,21 @@ class EntityModel(Model):
             if not row_placeholder:
                 break  # prefer a row that already has a real kind
         if match is not None:
-            dirty = False
-            if is_placeholder_kind(match._kind_id) and not incoming_placeholder \
-                    and incoming is not None:
+            # The columns that actually changed, so the UPDATE names those and
+            # not all ten. A build of JSON saves 11,604 times against 5,260
+            # entities -- a row is completed by two or three passes on average
+            # -- and rewriting every column each time was 1.29s of a 19s loop.
+            dirty = []
+            if (
+                is_placeholder_kind(match._kind_id)
+                and not incoming_placeholder
+                and incoming is not None
+            ):
                 match._kind = incoming
-                dirty = True
+                dirty.append("_kind")
             if all(incoming_site) and not all((match._line, match._column)):
                 match._line, match._column = incoming_site
-                dirty = True
+                dirty += ["_line", "_column"]
             # Fill in facts the row is missing rather than discarding them.
             # A pass that meets a method before define_listener declares it
             # creates the row with no type, and the declared return type was
@@ -321,12 +490,18 @@ class EntityModel(Model):
                 incoming_value = fields.get(field)
                 if incoming_value and not getattr(match, field, None):
                     setattr(match, field, incoming_value)
-                    dirty = True
+                    dirty.append(field)
+            incoming_parent = fields.get("_parent")
+            if incoming_parent is not None and match._parent_id is None:
+                match._parent = incoming_parent
+                dirty.append("_parent")
             if dirty:
-                match.save()
+                _update_entity_columns(match, dirty)
             return match, False
 
-        return super().create(**fields), True
+        created = super().create(**fields)
+        _remember_entity(cls, created)
+        return created, True
 
     def __str__(self):
         return str(self._name)
@@ -348,6 +523,30 @@ _REFERENCE_KEYS_DB = None
 
 #: The fields a reference is identified by, in key order.
 _REFERENCE_FIELDS = ("_kind", "_file", "_line", "_column", "_ent", "_scope")
+
+
+#: Reference rows written but not yet inserted. Flushed per file, and by
+#: every project-wide pass before it reads.
+_PENDING_REFERENCES = []
+#: The same rows by identity key, so a repeat within one file resolves to the
+#: buffered row instead of asking a database that cannot see it yet.
+_PENDING_BY_KEY = {}
+
+
+def flush_reference_writes():
+    """Insert the buffered reference rows. Returns how many were written."""
+    global _PENDING_REFERENCES
+    if not _PENDING_REFERENCES:
+        return 0
+    rows, _PENDING_REFERENCES = _PENDING_REFERENCES, []
+    _PENDING_BY_KEY.clear()
+    database = ReferenceModel._meta.database
+    with database.atomic():
+        # SQLite caps the variables in one statement; 400 rows of six columns
+        # stays well inside it on every build of Python it ships with.
+        for start in range(0, len(rows), 400):
+            ReferenceModel.insert_many(rows[start : start + 400]).execute()
+    return len(rows)
 
 
 def _row_id(value):
@@ -394,15 +593,32 @@ class ReferenceModel(Model):
         database = cls._meta.database
         if _REFERENCE_KEYS is None or _REFERENCE_KEYS_DB is not database:
             _REFERENCE_KEYS = {
-                tuple(row) for row in cls.select(
+                tuple(row)
+                for row in cls.select(
                     cls._kind, cls._file, cls._line, cls._column, cls._ent, cls._scope
                 ).tuples()
             }
             _REFERENCE_KEYS_DB = database
         if key in _REFERENCE_KEYS:
+            # A key written earlier in this file is still in the buffer, so the
+            # database cannot see it: falling through to peewee would SELECT,
+            # miss, and INSERT a second copy that the flush then duplicates.
+            buffered = _PENDING_BY_KEY.get(key)
+            if buffered is not None:
+                return buffered, False
             return super().get_or_create(defaults=defaults, **kwargs)
         _REFERENCE_KEYS.add(key)
-        return super().create(**fields), True
+        # Buffered, not inserted. peewee's per-row INSERT was the rest of the
+        # write layer once the SELECT above was gone -- 18,932 statements for
+        # one build of the JSON benchmark. Nothing reads a reference during
+        # analysis: every reader is in the query layer or in a project-wide
+        # pass, and both flush first.
+        row = cls(**fields)
+        pending = dict(row.__data__)
+        pending.pop("_id", None)
+        _PENDING_REFERENCES.append(pending)
+        _PENDING_BY_KEY[key] = row
+        return row, True
 
     def __str__(self):
         return f"{self._kind} {self._ent} {self._file}({self._line}, {self._column})"
@@ -436,6 +652,7 @@ def dependent_files(file_entity_ids):
     Transitive, because inheritance chains: editing C must reach B extends C
     and A extends B. Returns the closure *including* the starting files.
     """
+    flush_reference_writes()
     define = KindModel.get_or_none(_name="Java Define")
     if define is None:
         return set(file_entity_ids)
@@ -446,8 +663,7 @@ def dependent_files(file_entity_ids):
         current = pending.pop()
         declared = []
         for ref in ReferenceModel.select().where(
-            (ReferenceModel._kind == define._id)
-            & (ReferenceModel._file == current)
+            (ReferenceModel._kind == define._id) & (ReferenceModel._file == current)
         ):
             target = EntityModel.get_or_none(_id=ref._ent_id)
             if target is not None and kind_family(target._kind_id) == "type":
@@ -455,8 +671,7 @@ def dependent_files(file_entity_ids):
         if not declared:
             continue
         for ref in ReferenceModel.select().where(
-            (ReferenceModel._ent.in_(declared))
-            | (ReferenceModel._scope.in_(declared))
+            (ReferenceModel._ent.in_(declared)) | (ReferenceModel._scope.in_(declared))
         ):
             if ref._file_id is not None and ref._file_id not in closure:
                 closure.add(ref._file_id)
@@ -479,6 +694,7 @@ def purge_file(file_entity_id):
 
     Returns (entities_removed, references_removed).
     """
+    flush_reference_writes()
     define = KindModel.get_or_none(_name="Java Define")
     declared = set()
     if define is not None:
@@ -490,18 +706,32 @@ def purge_file(file_entity_id):
             )
         }
 
-    refs_removed = ReferenceModel.delete().where(
-        ReferenceModel._file == file_entity_id
-    ).execute()
+    refs_removed = (
+        ReferenceModel.delete().where(ReferenceModel._file == file_entity_id).execute()
+    )
+    # The metric store is derived from the reference graph, and re-analysing one
+    # file can change any entity's value -- a caller's CountInput moves when its
+    # callee's file is rewritten. Dropping the lot is the only answer that is
+    # right without tracking dependencies, and it costs a recompute rather than
+    # a wrong number.
+    try:
+        MetricModel.delete().execute()
+    except Exception:
+        pass
 
     entities_removed = 0
     for entity_id in declared:
         entity = EntityModel.get_or_none(_id=entity_id)
         if entity is None or entity._id == file_entity_id:
             continue
-        still_used = ReferenceModel.select().where(
-            (ReferenceModel._ent == entity_id) | (ReferenceModel._scope == entity_id)
-        ).exists()
+        still_used = (
+            ReferenceModel.select()
+            .where(
+                (ReferenceModel._ent == entity_id)
+                | (ReferenceModel._scope == entity_id)
+            )
+            .exists()
+        )
         if still_used:
             # Named from another file, so the row has to stay -- but its
             # declaration is gone, so it is no longer a known method or class.
@@ -512,14 +742,24 @@ def purge_file(file_entity_id):
             unknown = _PLACEHOLDER_FOR.get(kind_family(entity._kind_id))
             if unknown:
                 entity._kind = kind_id(unknown)
-                entity._line = entity._column = None
                 entity._contents = ""
+                # The declaration position stays. It is not a fact about the
+                # old source, it is this row's *identity*: overloads share a
+                # long name and are separate rows only because their positions
+                # differ. Clearing it left `org.json.CDL.toJSONArray`'s eight
+                # rows indistinguishable, so re-analysis matched declarations
+                # to whichever placeholder came first and the eight positions
+                # came back shuffled -- which then moved every call that
+                # resolves to one of them. If the declaration really has gone,
+                # a stale position is what makes the next one at a *different*
+                # position correctly create its own row rather than claim this.
                 entity.save()
             continue
         EntityModel.update({EntityModel._parent: None}).where(
             EntityModel._parent == entity_id
         ).execute()
         entity.delete_instance()
+        forget_entity_rows()
         entities_removed += 1
     return entities_removed, refs_removed
 
@@ -551,6 +791,7 @@ def drop_reference_indexes(database=None):
 
 def ensure_reference_indexes(database=None):
     """Rebuild them. Idempotent, so an already-indexed database is untouched."""
+    flush_reference_writes()
     database = database or ReferenceModel._meta.database
     for name, column in _REFERENCE_INDEXES.items():
         database.execute_sql(
@@ -578,10 +819,9 @@ def merge_placeholder_entities():
 
     Returns the number of rows merged.
     """
+    flush_reference_writes()
     ensure_reference_indexes()
-    placeholders = [
-        e for e in EntityModel.select() if is_placeholder_kind(e._kind_id)
-    ]
+    placeholders = [e for e in EntityModel.select() if is_placeholder_kind(e._kind_id)]
     if not placeholders:
         return 0
 
@@ -593,6 +833,13 @@ def merge_placeholder_entities():
 
     merged = 0
     for ghost in placeholders:
+        if "external" in _kind_name(ghost._kind_id).lower().split():
+            # `Java Unresolved External Method ...` means "outside the analysed
+            # source", which is a decision, not a failure to qualify a name.
+            # These carry a bare simple name on purpose -- it is what
+            # Understand calls them -- and folding one would put every
+            # `parse(...)` from com.jayway.jsonpath onto org.json.XML.parse.
+            continue
         if (ghost._longname or "").startswith(EXTERNAL_ROOTS):
             # A JDK long name is fully qualified by construction -- it is not a
             # local name a pass failed to qualify, so there is nothing here to
@@ -613,6 +860,7 @@ def merge_placeholder_entities():
             EntityModel._parent == ghost._id
         ).execute()
         ghost.delete_instance()
+        forget_entity_rows()
         merged += 1
     return merged
 
@@ -641,22 +889,28 @@ def drop_orphan_placeholders():
 
     Returns the number of rows deleted.
     """
+    flush_reference_writes()
     doomed = [
-        e._id for e in EntityModel.select()
+        e._id
+        for e in EntityModel.select()
         if is_placeholder_kind(e._kind_id)
-        and not ReferenceModel.select().where(
+        and not ReferenceModel.select()
+        .where(
             (ReferenceModel._ent == e._id)
             | (ReferenceModel._scope == e._id)
             | (ReferenceModel._file == e._id)
-        ).exists()
+        )
+        .exists()
     ]
     if not doomed:
         return 0
     # Nothing may point at them as a parent either, or the delete leaves a
     # dangling foreign key behind.
     EntityModel.update({EntityModel._parent: None}).where(
-        EntityModel._parent << doomed).execute()
+        EntityModel._parent << doomed
+    ).execute()
     EntityModel.delete().where(EntityModel._id << doomed).execute()
+    forget_entity_rows()
     return len(doomed)
 
 
@@ -686,21 +940,41 @@ def drop_nonvariable_deref_refs():
 
     Returns the number of references deleted.
     """
+    flush_reference_writes()
+    # One lookup per distinct target, not one per reference. The question is
+    # about the target's kind and thousands of dereferences share a few hundred
+    # targets: this was 1.15s of a 2.19s incremental update, and it is the same
+    # N+1 `relabel_nondynamic_calls` had.
+    verdicts = {}
+
+    def is_doomed(entity_id):
+        try:
+            return verdicts[entity_id]
+        except KeyError:
+            target = EntityModel.get_or_none(_id=entity_id)
+            answer = (
+                target is None
+                or is_placeholder_kind(target._kind_id)
+                or kind_family(target._kind_id) != "variable"
+            )
+            verdicts[entity_id] = answer
+            return answer
+
     # The target is _ent on the forward reference and _scope on its inverse.
     doomed = set()
-    for name, side in (("Java Use Deref Partial", "_ent_id"),
-                       ("Java Useby Deref Partial", "_scope_id"),
-                       ("Java Set Deref Partial", "_ent_id"),
-                       ("Java Setby Deref Partial", "_scope_id"),
-                       ("Java Modify Deref Partial", "_ent_id"),
-                       ("Java Modifyby Deref Partial", "_scope_id")):
+    for name, side in (
+        ("Java Use Deref Partial", "_ent_id"),
+        ("Java Useby Deref Partial", "_scope_id"),
+        ("Java Set Deref Partial", "_ent_id"),
+        ("Java Setby Deref Partial", "_scope_id"),
+        ("Java Modify Deref Partial", "_ent_id"),
+        ("Java Modifyby Deref Partial", "_scope_id"),
+    ):
         kind = KindModel.get_or_none(KindModel._name == name)
         if kind is None:
             continue
         for ref in ReferenceModel.select().where(ReferenceModel._kind == kind._id):
-            target = EntityModel.get_or_none(_id=getattr(ref, side))
-            if target is None or is_placeholder_kind(target._kind_id) \
-                    or kind_family(target._kind_id) != "variable":
+            if is_doomed(getattr(ref, side)):
                 doomed.add(ref._id)
     if not doomed:
         return 0
@@ -740,12 +1014,14 @@ def drop_external_inverse_refs():
 
     Returns the number of references deleted.
     """
+    flush_reference_writes()
     # Which half of a pair is the inverse comes from the seed file, whose lines
     # are `forward | inverse`. It cannot come from KindModel._inv: that is set
     # on *both* halves and they point at each other, so a `_inv_id IS NULL`
     # test selects entity kinds and quietly deletes nothing.
-    seed = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                        "java_ref_kinds.txt")
+    seed = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "java_ref_kinds.txt"
+    )
     inverse_names = []
     with open(seed, encoding="utf-8") as fh:
         for line in fh:
@@ -787,6 +1063,19 @@ def drop_shadowed_use_refs():
 
     Returns the number of references deleted.
     """
+    flush_reference_writes()
+    database = ReferenceModel._meta.database
+    # The EXISTS below is correlated on (file, line, column), and without an
+    # index on those three SQLite rescans the whole reference table for every
+    # candidate row: 8.39s of a 23.8s build of JSON, the single largest step in
+    # it and larger than the entire per-file loop's write layer. Built here
+    # rather than kept in `_REFERENCE_INDEXES` because it earns its keep only
+    # for this statement, and the build deliberately does not maintain
+    # reference indexes while it is inserting.
+    database.execute_sql(
+        'CREATE INDEX IF NOT EXISTS "referencemodel__position" '
+        'ON "referencemodel" ("_file_id", "_line", "_column")'
+    )
     # Any other kind at the identical position wins, whatever its endpoints.
     # Matching endpoints too was stricter than Understand: a DotRef resolves
     # its receiver to java.lang.Character where the use pass leaves an
@@ -797,8 +1086,7 @@ def drop_shadowed_use_refs():
     # the day a new one is added. Measured: this drops 110 rows on JSON and 895
     # on TheAlgorithms, and not one of them is a reference Understand reports
     # as a plain Use.
-    cursor = ReferenceModel._meta.database.execute_sql(
-        """
+    cursor = database.execute_sql("""
         DELETE FROM referencemodel
          WHERE _kind_id IN (SELECT _id FROM kindmodel
                              WHERE _name IN ('Java Use', 'Java Useby'))
@@ -809,12 +1097,11 @@ def drop_shadowed_use_refs():
                           AND other._kind_id NOT IN
                               (SELECT _id FROM kindmodel
                                 WHERE _name IN ('Java Use', 'Java Useby')))
-        """
-    )
+        """)
     return cursor.rowcount if cursor.rowcount and cursor.rowcount > 0 else 0
 
 
-def relabel_nondynamic_calls():
+def relabel_nondynamic_calls(file_ids=None):
     """Split Java Call into Call/Call Nondynamic once targets are known.
 
     Whether a call is virtual depends on the callee's modifiers, which the call
@@ -822,10 +1109,22 @@ def relabel_nondynamic_calls():
     merge_placeholder_entities() has resolved the targets, is what makes it
     answerable at all.
 
+    `file_ids` restricts the scan to calls occurring in those files, which is
+    what an incremental update wants: it re-analyses a file and every file
+    depending on it, and a call anywhere else cannot have changed. Scanning the
+    whole project after each edit was half of `update_files`' runtime. The
+    dependency closure is what makes the restriction safe -- finality is a
+    property of the *callee*, so making a method final has to reach its
+    callers, and `dependent_files()` already pulls in every file referencing a
+    type the edited file declares.
+
     Returns the number of references relabelled.
     """
-    pairs = [("Java Call", "Java Callby"),
-             ("Java Call Nondynamic", "Java Callby Nondynamic")]
+    flush_reference_writes()
+    pairs = [
+        ("Java Call", "Java Callby"),
+        ("Java Call Nondynamic", "Java Callby Nondynamic"),
+    ]
     ids = {}
     for forward, inverse in pairs:
         for name in (forward, inverse):
@@ -834,7 +1133,17 @@ def relabel_nondynamic_calls():
                 return 0
             ids[name] = row._id
 
+    # One lookup per distinct callee, not one per call. A project-wide scan
+    # asks about 12,902 references on JSON and gets 3,015 distinct answers.
+    verdicts = {}
+
     def is_nondynamic(entity_id):
+        if entity_id in verdicts:
+            return verdicts[entity_id]
+        verdicts[entity_id] = answer = _is_nondynamic(entity_id)
+        return answer
+
+    def _is_nondynamic(entity_id):
         entity = EntityModel.get_or_none(_id=entity_id)
         if entity is None:
             return False
@@ -864,14 +1173,75 @@ def relabel_nondynamic_calls():
         ("Java Call", "Java Call Nondynamic", "_ent_id"),
         ("Java Callby", "Java Callby Nondynamic", "_scope_id"),
     ):
-        for ref in ReferenceModel.select().where(
-            ReferenceModel._kind == ids[kind_name]
-        ):
-            if is_nondynamic(getattr(ref, callee)):
-                ref._kind = ids[target]
-                ref.save()
-                relabelled += 1
+        query = ReferenceModel.select().where(ReferenceModel._kind == ids[kind_name])
+        if file_ids is not None:
+            query = query.where(ReferenceModel._file.in_(list(file_ids)))
+        hits = [ref._id for ref in query if is_nondynamic(getattr(ref, callee))]
+        if hits:
+            # One UPDATE rather than a save() per row: the whole point of
+            # scoping this pass is that it stops costing an edit anything.
+            ReferenceModel.update(_kind=ids[target]).where(
+                ReferenceModel._id.in_(hits)
+            ).execute()
+            relabelled += len(hits)
     return relabelled
+
+
+def finalise_analysis(file_ids=None):
+    """The project-wide passes that must run after every file has been written.
+
+    Six passes in a fixed order, and the order is load-bearing: the merge runs
+    first so that an entity about to become real is not read as external, and
+    the inverse and shadow drops run after it for the same reason.
+
+    One function because there were three copies of this list -- in
+    `start_parsing()`, in `mcp_server.analyze()` and in
+    `scripts/compare/02_build_ou.py` -- kept in step by a comment saying
+    "all six, in this order, exactly as the others run them". A fourth caller,
+    `api.update_files()`, ran two of the six, so an updated database carried
+    114 rows a rebuilt one does not: plain `Java Use` shadowed by a variant,
+    and inverses hung on `java.lang.StringBuilder` and friends that Understand
+    never writes.
+
+    `file_ids` is passed through to `relabel_nondynamic_calls`, the only one of
+    the six an incremental update can scope. Returns the counts, keyed by pass.
+    """
+    return {
+        "merged_placeholders": merge_placeholder_entities(),
+        "relabelled_calls": relabel_nondynamic_calls(file_ids=file_ids),
+        "nonvariable_deref_dropped": drop_nonvariable_deref_refs(),
+        "shadowed_use_dropped": drop_shadowed_use_refs(),
+        "external_inverses_dropped": drop_external_inverse_refs(),
+        "orphan_placeholders_dropped": drop_orphan_placeholders(),
+    }
+
+
+class MetricModel(Model):
+    """One computed metric value, so a second query does not recompute it.
+
+    Understand computes metrics during analysis and stores them, which is most
+    of why its `ent.metric()` costs microseconds where this project's costs
+    milliseconds. Computing the whole set at analysis time here would add ~99s
+    to a 58s build of the JSON benchmark, because the computation is Python
+    over SQL rather than C++ over an in-memory graph -- so it is filled on
+    demand instead: the first caller pays, every later one reads, including in
+    another process.
+
+    Written best-effort. A database opened read-only still answers, just
+    without remembering.
+    """
+
+    _id = AutoField()
+    #: A plain integer, not a foreign key: this table is a cache, and the
+    #: constraint would cost an index maintenance per insert for nothing.
+    _ent_id = IntegerField(index=True)
+    _name = CharField(max_length=64)
+    #: Stored as text because a metric value is an int, a float or a string
+    #: (`RatioCommentToCode` is "0.53"), and the caller knows which.
+    _value = CharField(max_length=64, null=True)
+
+    class Meta:
+        indexes = ((("_ent_id", "_name"), True),)
 
 
 class ProjectModel(Model):

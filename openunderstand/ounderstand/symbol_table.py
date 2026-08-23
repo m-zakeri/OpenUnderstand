@@ -31,50 +31,15 @@ class _DeclarationIndex:
 
     def __init__(self):
         self.by_simple_name: dict[str, set[str]] = {}
-        # All the long names declaring a type under this simple name, not just
-        # the first one indexed. Keeping only the first meant every `Node` in
-        # TheAlgorithms resolved to DataStructures.Stacks.Node whichever
-        # package actually declared it -- 92 of Couple's 159 false positives
-        # there, and the same error reached DotRef through resolve_type().
         self.types: dict[str, set[str]] = {}
-        #: Class long name -> the simple names it extends *and* implements.
-        #: Interfaces matter as much as superclasses: Understand reports
-        #: BinarySearch.find as overriding SearchAlgorithm.find, and recording
-        #: only `extends` found 5 of TheAlgorithms' 47 Overrides.
         self.supertypes: dict[str, list[str]] = {}
-        #: Method long name -> every declaration under it, each as
-        #: (parameter type names, is_abstract, is_generic).
-        #:
-        #: `Java Overrides` needs the *supertype's* declaration, which lives in
-        #: another file, to tell an override from a same-named overload:
-        #: MaxHeap.getElement(int) does not override Heap.getElement().
-        #:
-        #: A list, not one entry: overloads share a long name. SortAlgorithm
-        #: declares both `sort(T[])` and `sort(List<T>)`, and keeping one
-        #: dropped the abstract generic overload that Understand refuses to
-        #: report -- which is 15 wrong rows, one per class implementing it.
         self.methods: dict[str, list[tuple[tuple[str, ...], bool, bool]]] = {}
-        #: Method long name -> its declared return type, as written. A
-        #: chained call `x.next().trim()` lands on whatever `next` returns,
-        #: and one file cannot say: 1,598 of JSON's 9,507 calls are this
-        #: shape, and the JDK index answers only for java./javax. owners.
-        #: Overloads that disagree are dropped -- a name with two return types
-        #: cannot place a call, and guessing is what took Java Call precision
-        #: to 19%.
         self.return_types: dict[str, str] = {}
-        #: (declaring type long name, field) -> the field's declared type, as
-        #: written. `process_file` sees one file, so a chain like
-        #: `node.next.previous` dies at the second hop without this: the type
-        #: of `next` is declared in whatever file declares Node.
         self.field_types: dict[tuple[str, str], str] = {}
-        #: File path -> ({simple name: long name}, [wildcard packages]).
-        #:
-        #: Sixteen passes each collected imports for themselves, and each was a
-        #: separate chance to get it wrong: four of them silently discarded
-        #: `import x.y.*`, which is how `Scanner`, `HashMap` and every
-        #: org.evosuite annotation went unresolved. Indexed once here, during
-        #: the walk that already reads every file.
         self.file_imports: dict[str, tuple[dict, list]] = {}
+        self.interfaces: set[str] = set()
+        self.overloads: dict[str, list] = {}
+        self.superclasses: dict[str, tuple] = {}
         self.files = 0
 
     def add(self, simple_name: str, longname: str, is_type: bool = False):
@@ -85,8 +50,9 @@ class _DeclarationIndex:
             self.types.setdefault(simple_name, set()).add(longname)
 
     @staticmethod
-    def _closest(candidates, simple_name: str, scope_longname: str,
-                 local_only: bool = False) -> str | None:
+    def _closest(
+        candidates, simple_name: str, scope_longname: str, local_only: bool = False
+    ) -> str | None:
         """The candidate an asking scope would bind, or None when ambiguous.
 
         Innermost scope first, the way Java resolves: a declaration in the
@@ -114,11 +80,6 @@ class _DeclarationIndex:
             if len(local) == 1:
                 return local[0]
         if local_only:
-            # Java makes a type in another package visible only through an
-            # import. Letting a globally unique project class win regardless
-            # bound `new HashMap<>()` in Conversions to the project's own
-            # DataStructures.HashMap.Hashing.HashMap rather than to
-            # java.util.HashMap, which the file wildcard-imports.
             return None
         if len(candidates) == 1:
             return next(iter(candidates))
@@ -127,13 +88,16 @@ class _DeclarationIndex:
     def resolve(self, simple_name: str, scope_longname: str = "") -> str | None:
         """Long name for a simple name, or None when it is ambiguous."""
         return self._closest(
-            self.by_simple_name.get(simple_name), simple_name, scope_longname)
+            self.by_simple_name.get(simple_name), simple_name, scope_longname
+        )
 
-    def resolve_type(self, simple_name: str, scope_longname: str = "",
-                     local_only: bool = False) -> str | None:
+    def resolve_type(
+        self, simple_name: str, scope_longname: str = "", local_only: bool = False
+    ) -> str | None:
         """Long name for a *type's* simple name, or None when it is ambiguous."""
         return self._closest(
-            self.types.get(simple_name), simple_name, scope_longname, local_only)
+            self.types.get(simple_name), simple_name, scope_longname, local_only
+        )
 
     def declares(self, type_longname: str, member: str) -> bool:
         return f"{type_longname}.{member}" in self.by_simple_name.get(member, ())
@@ -166,8 +130,9 @@ class _DeclarationIndex:
             return None
         return None
 
-    def overridden_declaration(self, owner: str, member: str,
-                               parameters: tuple) -> str | None:
+    def overridden_declaration(
+        self, owner: str, member: str, parameters: tuple
+    ) -> str | None:
         """The supertype whose declaration of `member` this one overrides.
 
         Stricter than declaring_type(): an override has to match the
@@ -196,7 +161,8 @@ class _DeclarationIndex:
                 if not resolved:
                     continue
                 for declared, abstract, generic in self.methods.get(
-                        f"{resolved}.{member}", ()):
+                    f"{resolved}.{member}", ()
+                ):
                     if declared == parameters and not (abstract and generic):
                         return resolved
                 found = search(resolved)
@@ -210,14 +176,11 @@ class _DeclarationIndex:
         return sum(len(v) for v in self.by_simple_name.values())
 
 
-#: Populated by build(); read by the passes through resolve().
 INDEX = _DeclarationIndex()
 
-#: Names java.lang declares, which every file imports implicitly. Derived from
-#: the generated JDK index rather than listed by hand -- the hand-written set
-#: had 61 names and missed whatever no benchmark had yet used.
 JAVA_LANG_TYPES = frozenset(
-    name for name, longnames in jdk_index._load()["by_simple"].items()
+    name
+    for name, longnames in jdk_index._load()["by_simple"].items()
     if any(l.rsplit(".", 1)[0] == "java.lang" for l in longnames)
 )
 
@@ -324,8 +287,39 @@ def parameter_types(ctx) -> tuple:
     return tuple(names)
 
 
+#: path -> (stat key, that file's contribution to the index). Kept across
+#: `build()` calls in one process, which is what makes re-indexing after an
+#: edit cost one file instead of the project.
+_FILE_FACTS: dict = {}
+
+
+def _stat_key(path: str):
+    """What decides whether a cached contribution is still good."""
+    try:
+        info = os.stat(path)
+    except OSError:
+        return None
+    return (info.st_mtime_ns, info.st_size)
+
+
+def forget_file_facts():
+    """Drop the per-file cache. For a caller that rewrites a file in place."""
+    _FILE_FACTS.clear()
+
+
 def build(root: str) -> _DeclarationIndex:
-    """Index every declaration under `root`. Safe to call more than once."""
+    """Index every declaration under `root`. Safe to call more than once.
+
+    Each file's contribution is computed once and cached against its mtime and
+    size, then all of them are merged into a fresh index in the walk's order --
+    so a second `build()` after one file changed reparses that file and merges
+    85 dictionaries, rather than reparsing 85 files. That is 1.36s of a 1.95s
+    incremental update, and the merge is a few milliseconds.
+
+    Merging in `_java_files()` order matters: the index is flat dictionaries
+    and `.update()` lets a later file win a collision, so the order the
+    contributions are replayed in has to be the order they were collected in.
+    """
     global INDEX
     index = _DeclarationIndex()
 
@@ -335,7 +329,8 @@ def build(root: str) -> _DeclarationIndex:
     from openunderstand.analysis_passes.define_definein import DefineListener
     from openunderstand.analysis_passes import class_properties
     from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
-        JavaParserLabeledListener)
+        JavaParserLabeledListener,
+    )
     from antlr4 import ParseTreeWalker
 
     class _Supertypes(JavaParserLabeledListener):
@@ -343,11 +338,13 @@ def build(root: str) -> _DeclarationIndex:
 
         def __init__(self):
             self.pairs = []
+            self.superclasses = {}
             self.methods = {}
             self.returns = {}
             self.fields = {}
             self.imports = {}
             self.wildcards = []
+            self.overloads = {}
 
         def enterClassDeclaration(self, ctx):
             parents = class_properties.ClassPropertiesListener.findParents(ctx)
@@ -356,10 +353,26 @@ def build(root: str) -> _DeclarationIndex:
             if ctx.EXTENDS() is not None and ctx.typeType() is not None:
                 supers.append(ctx.typeType().getText().split("<")[0])
             if ctx.IMPLEMENTS() is not None and ctx.typeList() is not None:
-                supers += [t.getText().split("<")[0]
-                           for t in ctx.typeList().typeType()]
+                supers += [t.getText().split("<")[0] for t in ctx.typeList().typeType()]
             if supers:
                 self.pairs.append((longname, supers))
+            if ctx.EXTENDS() is not None and ctx.typeType() is not None:
+                self.superclasses[longname] = ctx.typeType().getText().split("<")[0]
+
+        def enterEnumDeclaration(self, ctx):
+            """`enum MyEnum implements JSONString` -- plus the implicit parent.
+
+            Enums were skipped entirely, so `enum MyEnum implements JSONString`
+            coupled MyEnum to its own supertype, and `myEnum.name()` in a
+            *caller* found no declaring type at all: `name` is java.lang.Enum's,
+            which is every enum's superclass and was recorded for none of them.
+            """
+            parents = class_properties.ClassPropertiesListener.findParents(ctx)
+            longname = ".".join(parents + [ctx.IDENTIFIER().getText()])
+            supers = ["java.lang.Enum"]
+            if ctx.typeList() is not None:
+                supers += [t.getText().split("<")[0] for t in ctx.typeList().typeType()]
+            self.pairs.append((longname, supers))
 
         def enterInterfaceDeclaration(self, ctx):
             if ctx.EXTENDS() is None or ctx.typeList() is None:
@@ -367,8 +380,11 @@ def build(root: str) -> _DeclarationIndex:
             parents = class_properties.ClassPropertiesListener.findParents(ctx)
             longname = ".".join(parents + [ctx.IDENTIFIER().getText()])
             self.pairs.append(
-                (longname, [t.getText().split("<")[0]
-                            for t in ctx.typeList().typeType()]))
+                (
+                    longname,
+                    [t.getText().split("<")[0] for t in ctx.typeList().typeType()],
+                )
+            )
 
         # ------------------------------------------------------- signatures
 
@@ -379,13 +395,26 @@ def build(root: str) -> _DeclarationIndex:
             elif ctx.STATIC() is None:
                 self.imports[longname.split(".")[-1]] = longname
 
+        def enterEnumConstant(self, ctx):
+            """`VAL1` in `enum MyEnum { VAL1, VAL2 }` is a static field of MyEnum.
+
+            Nothing recorded them, so `MyEnum.VAL1.equals(x)` had no receiver
+            type and every member reached through an enum constant resolved to
+            nothing -- two of JSON's classes couple to java.lang.Enum for
+            exactly that call and we had neither.
+            """
+            identifier = ctx.IDENTIFIER()
+            if identifier is None:
+                return
+            owner = ".".join(class_properties.ClassPropertiesListener.findParents(ctx))
+            self.fields[(owner, identifier.getText())] = owner
+
         def enterFieldDeclaration(self, ctx):
             type_ctx = ctx.typeType()
             declarators = ctx.variableDeclarators()
             if type_ctx is None or declarators is None:
                 return
-            owner = ".".join(
-                class_properties.ClassPropertiesListener.findParents(ctx))
+            owner = ".".join(class_properties.ClassPropertiesListener.findParents(ctx))
             written = type_ctx.getText().split("<")[0]
             for declarator in declarators.variableDeclarator() or []:
                 identifier = declarator.variableDeclaratorId()
@@ -395,8 +424,25 @@ def build(root: str) -> _DeclarationIndex:
         def enterMethodDeclaration(self, ctx):
             self._signature(ctx)
 
+        def enterConstructorDeclaration(self, ctx):
+            # Constructors overload too -- org.json.JSONObject has six -- and
+            # _signature() skips them because they have no return type.
+            self._overload(ctx)
+
         def enterInterfaceMethodDeclaration(self, ctx):
             self._signature(ctx)
+
+        def _overload(self, ctx):
+            """Record one declaration's parameter count and its position."""
+            identifier = ctx.IDENTIFIER()
+            if identifier is None or isinstance(identifier, list):
+                return
+            parents = class_properties.ClassPropertiesListener.findParents(ctx)
+            longname = ".".join(parents + [identifier.getText()])
+            symbol = identifier.symbol
+            self.overloads.setdefault(longname, []).append(
+                (parameter_types(ctx), symbol.line, symbol.column + 1)
+            )
 
         def _signature(self, ctx):
             identifier = ctx.IDENTIFIER()
@@ -419,7 +465,9 @@ def build(root: str) -> _DeclarationIndex:
                 and ctx.typeParameters() is not None
             )
             self.methods.setdefault(longname, []).append(
-                (parameter_types(ctx), abstract, generic))
+                (parameter_types(ctx), abstract, generic)
+            )
+            self._overload(ctx)
 
             declared = getattr(ctx, "typeTypeOrVoid", None)
             declared = declared() if callable(declared) else None
@@ -433,7 +481,8 @@ def build(root: str) -> _DeclarationIndex:
             elif longname in self.returns:
                 self.returns[longname] = ""
 
-    for path in _java_files(root):
+    def collect(path):
+        """One file's contribution, or None when it will not parse."""
         try:
             tree = antler_parser.parse(
                 FileStream(path, encoding="utf8"), "compilationUnit"
@@ -445,24 +494,67 @@ def build(root: str) -> _DeclarationIndex:
         except Exception:
             # A file that will not parse contributes nothing; the per-file
             # pass over it logs the failure in its own right.
-            continue
+            return None
+        return {
+            "supertypes": dict(supertypes.pairs),
+            "methods": dict(supertypes.methods),
+            "overloads": {
+                name: [entry + (path,) for entry in entries]
+                for name, entries in supertypes.overloads.items()
+            },
+            "superclasses": {
+                name: (written, path)
+                for name, written in supertypes.superclasses.items()
+            },
+            "return_types": {k: v for k, v in supertypes.returns.items() if v},
+            "field_types": dict(supertypes.fields),
+            "imports": (supertypes.imports, supertypes.wildcards),
+            "defines": listener.defines,
+        }
+
+    seen = set()
+    for path in _java_files(root):
+        seen.add(path)
+        key = _stat_key(path)
+        cached = _FILE_FACTS.get(path)
+        if cached is not None and cached[0] == key and key is not None:
+            facts = cached[1]
+        else:
+            facts = collect(path)
+            if facts is None:
+                _FILE_FACTS.pop(path, None)
+                continue
+            _FILE_FACTS[path] = (key, facts)
         index.files += 1
-        index.supertypes.update(supertypes.pairs)
-        index.methods.update(supertypes.methods)
-        index.return_types.update(
-            {k: v for k, v in supertypes.returns.items() if v})
-        index.field_types.update(supertypes.fields)
-        index.file_imports[path] = (supertypes.imports, supertypes.wildcards)
-        for declaration in listener.defines:
+        index.supertypes.update(facts["supertypes"])
+        index.methods.update(facts["methods"])
+        index.overloads.update(facts["overloads"])
+        index.superclasses.update(facts["superclasses"])
+        index.return_types.update(facts["return_types"])
+        index.field_types.update(facts["field_types"])
+        index.file_imports[path] = facts["imports"]
+        for declaration in facts["defines"]:
             index.add(
                 declaration["ent"],
                 declaration["ent_longname"],
-                is_type=declaration.get("decl") in ("class", "interface", "enum",
-                                                    "annotation"),
+                is_type=declaration.get("decl")
+                in ("class", "interface", "enum", "annotation"),
             )
+            if declaration.get("decl") in ("interface", "annotation"):
+                index.interfaces.add(declaration["ent_longname"])
+
+    # A file that has gone, or a build of a different root, must not keep
+    # paying rent.
+    for stale in set(_FILE_FACTS) - seen:
+        del _FILE_FACTS[stale]
 
     INDEX = index
     return index
+
+
+def is_interface(longname: str) -> bool:
+    """Whether a long name is a project interface or annotation type."""
+    return longname in INDEX.interfaces
 
 
 def resolve(simple_name: str, scope_longname: str = "") -> str | None:
@@ -488,37 +580,21 @@ def resolve_type_name(name, imports=None, wildcards=None, scope_longname=""):
     if imports and name in imports:
         return imports[name]
     if "." in name:
+        head, _, rest = name.partition(".")
+        outer = resolve_type(head, scope_longname)
+        if outer:
+            return outer + "." + rest
         return name
-    # A type in the asking scope or its own package, which outranks any
-    # on-demand import. A project type in *another* package is not visible
-    # without an explicit import, so it is left until after the wildcards.
     in_scope = resolve_type(name, scope_longname, local_only=True)
     if in_scope:
         return in_scope
     if name in JAVA_LANG_TYPES:
         return "java.lang." + name
     if wildcards and len(wildcards) == 1 and name[:1].isupper():
-        # Only a name that could *be* a type. A lone `import java.util.*` was
-        # turning any unresolved lowercase identifier into a type long name --
-        # the variable `graph` became java.util.graph and carried 12 wrong
-        # Callby rows with it, the same shape as the type parameter that
-        # became java.util.E.
         return wildcards[0] + "." + name
-    # More than one `import x.y.*` and the lone-wildcard rule above cannot
-    # choose. Hanoi.java wildcard-imports java.awt, java.awt.event, java.util
-    # and javax.swing, so every type it constructs fell back to a bare name --
-    # 143 of TheAlgorithms' Java Create rows. The package is only accepted when
-    # the file actually imports it, so this decides between candidates the file
-    # already asked for rather than inventing one.
-    # The JDK index settles a name the file wildcard-imports, and settles it
-    # against every package offered rather than one at a time.
     from_jdk = jdk_index.resolve_simple(name, tuple(wildcards or ()))
     if from_jdk:
         return from_jdk
-    # Last: a uniquely named project type in some other package. Understand
-    # resolves plenty of these -- a file that uses one usually imports it, and
-    # that was handled at the top -- but preferring it over an on-demand import
-    # is what shadowed java.util.HashMap.
     return resolve_type(name, scope_longname)
 
 
@@ -578,6 +654,210 @@ def declaring_type(type_longname: str, member: str) -> str | None:
     return INDEX.declaring_type(type_longname, member)
 
 
+#: A primitive may be passed where a wider one is expected.
+_WIDENING = {
+    "byte": {"short", "int", "long", "float", "double"},
+    "short": {"int", "long", "float", "double"},
+    "char": {"int", "long", "float", "double"},
+    "int": {"long", "float", "double"},
+    "long": {"float", "double"},
+    "float": {"double"},
+}
+_BOXES = {
+    "boolean": "java.lang.Boolean",
+    "byte": "java.lang.Byte",
+    "char": "java.lang.Character",
+    "short": "java.lang.Short",
+    "int": "java.lang.Integer",
+    "long": "java.lang.Long",
+    "float": "java.lang.Float",
+    "double": "java.lang.Double",
+}
+#: Every box except Boolean and Character is a java.lang.Number.
+_NOT_A_NUMBER = {"java.lang.Boolean", "java.lang.Character"}
+_PRIMITIVES = frozenset(_BOXES) | {"void"}
+
+
+def _parameter_longname(written, imports, wildcards, scope):
+    """A declared parameter type as a long name, or None when it will not place.
+
+    None means "do not judge this argument on it": a type variable (`T`) never
+    resolves, and refusing the whole candidate over one would throw away every
+    generic method.
+    """
+    base = written.split("<")[0].replace("...", "").strip()
+    arrays = "[]" * base.count("[")
+    base = base.split("[")[0]
+    if not base:
+        return None
+    if base in _PRIMITIVES:
+        return base + arrays
+    resolved = resolve_type_name(
+        base, imports, wildcards, scope
+    ) or jdk_index.resolve_simple(base)
+    return (resolved + arrays) if resolved else None
+
+
+def _argument_fits(argument, parameter):
+    """0 no, 1 assignable, 2 exactly this type -- Java's "most specific" rule.
+
+    Scored rather than boolean because that is how the overload is chosen:
+    `put(String, int)` and `put(String, Object)` both accept an int and Java
+    calls the first, so an exact match has to outrank a widening one.
+    """
+    if parameter is None or argument is None:
+        return 1  # unknown on either side judges nothing
+    if argument == parameter:
+        return 2
+    if argument == "null":
+        return 0 if parameter in _PRIMITIVES else 1
+    if argument in _PRIMITIVES:
+        if parameter in _WIDENING.get(argument, ()):
+            return 1
+        boxed = _BOXES.get(argument)
+        if parameter == boxed:
+            return 1
+        if parameter == "java.lang.Object":
+            return 1
+        if parameter == "java.lang.Number" and boxed not in _NOT_A_NUMBER:
+            return 1
+        return 0
+    if parameter in _PRIMITIVES:
+        return 1 if _BOXES.get(parameter) == argument else 0
+    if parameter == "java.lang.Object":
+        return 1
+    return 1 if parameter in ancestors(argument) else 0
+
+
+def overload_site(longname: str, argument_types) -> tuple | None:
+    """(line, column) of the overload a call with these argument types names.
+
+    Understand counts distinct callee *entities*, and two overloads are two
+    entities. Resolving `JSONObject.put(...)` by long name returned whichever
+    row was created first, so a method calling three overloads counted one
+    callee: 80 of JSON's methods had a callee name set identical to
+    Understand's and a lower CountOutput for exactly that.
+
+    Arity settles 68 of JSON's 100 overloaded names and none of the ones that
+    matter -- `org.json.JSONArray.put` is 17 overloads and
+    `org.json.JSONObject.put` 8 taking two arguments each -- so the types are
+    matched too, scored for specificity the way Java resolves a call.
+
+    None whenever the answer is not unique. A wrong overload is a wrong callee,
+    and falling back to the first row is no worse than what came before.
+    """
+    entries = INDEX.overloads.get(longname)
+    if not entries or len(entries) < 2 or argument_types is None:
+        return None
+    count = len(argument_types)
+    scope = longname.rsplit(".", 1)[0]
+    scored = []
+    for written, line, column, path in entries:
+        variadic = bool(written) and written[-1].endswith("...")
+        if len(written) != count and not (variadic and count >= len(written) - 1):
+            continue
+        imports, wildcards = INDEX.file_imports.get(path, (None, None))
+        total, fits = 0, True
+        for index, argument in enumerate(argument_types):
+            if index >= len(written):
+                break  # swallowed by the variadic tail
+            declared = _parameter_longname(written[index], imports, wildcards, scope)
+            points = _argument_fits(argument, declared)
+            if not points:
+                fits = False
+                break
+            total += points
+        if fits:
+            # A fixed-arity candidate beats a variadic one taking the same
+            # arguments, which is what Java does.
+            scored.append((total + (0 if variadic else 1), line, column))
+    if not scored:
+        return None
+    best = max(entry[0] for entry in scored)
+    winners = [entry for entry in scored if entry[0] == best]
+    return (winners[0][1], winners[0][2]) if len(winners) == 1 else None
+
+
+def superclass_of(longname: str) -> str | None:
+    """The class `longname` extends, java.lang.Object when it extends nothing.
+
+    `super(...)` in a constructor calls the superclass's constructor, and
+    Understand records it: `GenericBean.GenericBean`'s `super();` is a
+    `Java Call` to java.lang.Object.Object. An enum's is java.lang.Enum.
+    """
+    if longname in INDEX.interfaces:
+        return None
+    entry = INDEX.superclasses.get(longname)
+    if entry is None:
+        parents = INDEX.supertypes.get(longname) or []
+        if "java.lang.Enum" in parents:
+            return "java.lang.Enum"
+        return "java.lang.Object"
+    written, path = entry
+    imports, wildcards = INDEX.file_imports.get(path, (None, None))
+    return resolve_type_name(written, imports, wildcards, longname)
+
+
+def declaring_type_anywhere(type_longname: str, member: str) -> str | None:
+    """The type declaring `member`, searching the project *and* then the JDK.
+
+    `INDEX.declaring_type` stops at the project boundary and `jdk_index` knows
+    only java./javax., so neither answers for `e.getMessage()` on an
+    org.json.JSONException: the declaration is java.lang.Throwable's, three
+    supertypes up and across that boundary. Understand couples 15 of JSON's
+    classes to java.lang.Throwable for exactly that, and we had none.
+
+    Kept separate from `declaring_type()`, which the Call pass uses: making
+    calls resolve across the boundary too would change what every
+    `Java Call` targets, and that is its own measurement.
+    """
+    if not type_longname or not member:
+        return None
+    found = INDEX.declaring_type(type_longname, member)
+    if found:
+        return found
+    seen, pending = set(), [type_longname]
+    while pending:
+        current = pending.pop(0)
+        if not current or current in seen:
+            continue
+        seen.add(current)
+        found = jdk_index.declaring_type(current, member)
+        if found:
+            return found
+        for parent in INDEX.supertypes.get(current, []):
+            resolved = resolve_type_name(parent, None, None, current)
+            if resolved:
+                pending.append(resolved)
+    # Only once the whole chain is exhausted. Object is every type's ancestor,
+    # so consulting it inside the walk would answer for `equals` before
+    # java.lang.Enum got the chance to.
+    return "java.lang.Object" if jdk_index.declares_on_object(member) else None
+
+
+def ancestors(longname: str) -> set:
+    """Every supertype of `longname`, transitively, across the JDK boundary.
+
+    Understand couples a class to neither itself nor an ancestor: it reports no
+    org.json.JSONException -> java.lang.Throwable even though the constructors
+    take one, and no JSONMLParserConfiguration -> org.json.ParserConfiguration.
+    Excluding only java.lang.Object left six of those on JSON.
+    """
+    found, pending = set(), [longname]
+    while pending:
+        current = pending.pop()
+        for parent in INDEX.supertypes.get(current, []):
+            resolved = resolve_type_name(parent, None, None, current)
+            if resolved and resolved not in found:
+                found.add(resolved)
+                pending.append(resolved)
+        for parent in jdk_index.supertypes(current):
+            if parent not in found:
+                found.add(parent)
+                pending.append(parent)
+    return found
+
+
 def is_project_type(longname: str) -> bool:
     """True when this long name is a type declared in the analysed source.
 
@@ -599,8 +879,9 @@ def is_project_type(longname: str) -> bool:
     return longname in INDEX.types.get(longname.rsplit(".", 1)[-1], ())
 
 
-def resolve_type(simple_name: str, scope_longname: str = "",
-                 local_only: bool = False) -> str | None:
+def resolve_type(
+    simple_name: str, scope_longname: str = "", local_only: bool = False
+) -> str | None:
     """Long name for a *type's* simple name, or None if none resolves.
 
     resolve() searches every declaration, so a variable named `value` and a

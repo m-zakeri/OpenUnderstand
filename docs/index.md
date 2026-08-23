@@ -68,6 +68,23 @@ for cls in db.ents("Class"):
 The full surface is in the [API reference](api.md); the vocabulary of kind
 names is in [Kinds](kinds.md).
 
+## Keep it current
+
+After editing source, re-analyse the files that changed rather than rebuilding:
+
+```python
+from openunderstand.oudb import api
+
+db = api.open("/path/for/database/myproject.udb")
+api.update_files(["/path/to/java/project/src/Foo.java"],
+                 source_root="/path/to/java/project")
+```
+
+It also re-analyses the files that depend on those, deletes each one's previous
+contribution first, and reproduces what a rebuild would have written. One file
+of the 85-file `org.json` benchmark takes about 1.2s against 14s for the whole
+project.
+
 ## Check it against Understand
 
 If you have Understand installed and licensed, both databases can be built

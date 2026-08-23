@@ -2,12 +2,12 @@ from openunderstand.ounderstand.project import Project
 from collections import Counter
 from antlr4 import *
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 from openunderstand.metrics.utils import get_method_prefixes
 from openunderstand.metrics import context
 from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
-
-
 
 
 def make_enum_scope():

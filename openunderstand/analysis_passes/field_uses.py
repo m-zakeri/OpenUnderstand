@@ -30,7 +30,9 @@ resolves. Recall fell 93.5% to 84.6% for 0.2 points of precision, so the plain
 """
 
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 import openunderstand.analysis_passes.class_properties as class_properties
 from openunderstand.analysis_passes import declared_types
 
@@ -69,11 +71,11 @@ class FieldUseListener(JavaParserLabeledListener):
         # collect_own: a class body contains its nested classes, and the
         # plain walk folded their fields in with its own -- `this.items`
         # resolved to whichever `items` was declared last in the file.
-        self.field_types = (declared_types.collect_own(body) if body is not None
-                            else {})
+        self.field_types = declared_types.collect_own(body) if body is not None else {}
         self.enclosing_type = ".".join(
             class_properties.ClassPropertiesListener.findParents(ctx)
-            + [ctx.IDENTIFIER().getText()])
+            + [ctx.IDENTIFIER().getText()]
+        )
 
     def exitClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         if self._scopes:
@@ -103,7 +105,8 @@ class FieldUseListener(JavaParserLabeledListener):
             return None
         declared = self.local_types.get(head) or self.field_types.get(head)
         owner = symbol_table.resolve_type_name(
-            declared or head, self.imports, self.wildcards, scope_longname)
+            declared or head, self.imports, self.wildcards, scope_longname
+        )
         if owner is None or not field:
             return owner
         return symbol_table.member_type(owner, field)
@@ -111,7 +114,7 @@ class FieldUseListener(JavaParserLabeledListener):
     def enterExpression1(self, ctx: JavaParserLabeled.Expression1Context):
         identifier = ctx.IDENTIFIER()
         if identifier is None or isinstance(identifier, list):
-            return          # a methodCall, `this`, `new`, `super`: not a read
+            return  # a methodCall, `this`, `new`, `super`: not a read
         receiver = ctx.expression()
         if receiver is None:
             return
@@ -126,11 +129,13 @@ class FieldUseListener(JavaParserLabeledListener):
             return
         name = identifier.getText()
         token = identifier.symbol
-        self.relations.append({
-            "kind": "Java Use",
-            "scope_longname": scope,
-            "ent_longname": f"{owner}.{name}",
-            "name": name,
-            "line": token.line,
-            "col": token.column,
-        })
+        self.relations.append(
+            {
+                "kind": "Java Use",
+                "scope_longname": scope,
+                "ent_longname": f"{owner}.{name}",
+                "name": name,
+                "line": token.line,
+                "col": token.column,
+            }
+        )

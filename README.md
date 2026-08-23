@@ -34,8 +34,8 @@ pip install openunderstand
 ```
 
 Python 3.9 to 3.14. On Linux x86_64, macOS arm64 and Windows x64 that wheel carries
-the C++ parse accelerator, which is 7.8x faster at parsing and takes about 17%
-off a full analysis. Everywhere else the pure-Python ANTLR runtime is used
+the C++ parse accelerator, which is 7.8x faster at parsing and takes about a
+third off a full analysis. Everywhere else the pure-Python ANTLR runtime is used
 instead and everything works the same, just slower -- both engines produce
 byte-identical databases.
 
@@ -133,6 +133,44 @@ need no database and run in about a second each:
 ```bash
 for t in tests/test_*.py; do .venv/bin/python -W ignore "$t"; done
 ```
+
+## Re-analysing after an edit
+
+A full build is not the only way in. `update_files()` re-analyses the files you
+name and every file that depends on them, deleting each one's previous
+contribution first:
+
+```python
+from openunderstand.oudb import api
+
+db = api.open("myproject.udb")
+api.update_files(["/path/to/java/project/src/Foo.java"],
+                 source_root="/path/to/java/project")
+```
+
+It reproduces what a rebuild of the same source would write, which is the point
+-- an update that only ever adds leaves a renamed method in the database under
+both names.
+
+## How fast is it?
+
+On the 85-file `org.json` benchmark, on one ordinary Linux machine:
+
+| | OpenUnderstand | Understand |
+| --- | ---: | ---: |
+| Full analysis | 14.1s | 7.6s |
+| Full analysis, 4 workers | 10.2s | -- |
+| Re-analyse one changed file | 1.2s | 3.1s |
+
+Understand is C++ over a purpose-built store, so a full build being within
+about 1.4x of it is the interesting part -- and re-analysing after an edit,
+which is what an editor integration actually does, is faster here, because it
+does less work rather than doing the same work quickly.
+
+Pass `jobs=` to `openunderstand.ounderstand.runner.runner()` for the parallel
+build, or set `OU_JOBS`. Workers only parse and collect and one process writes,
+so the database is byte-identical whatever the worker count -- which is also
+why more than about four workers buys nothing.
 
 ## Use it from an assistant
 

@@ -9,7 +9,9 @@ This module find all OpenUnderstand Usemodule and Usemoduleby references in a Ja
 __author__ = "Navid Mousavizade, Amir Mohammad Sohrabi, Sara Younesi, Deniz Ahmadi"
 __version__ = "0.1.0"
 
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 
 

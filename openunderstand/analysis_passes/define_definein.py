@@ -1,20 +1,22 @@
-"""
-
-
-"""
+""" """
 
 import os
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 import openunderstand.analysis_passes.class_properties as class_properties
 from openunderstand.utils import kind_names as K
 
-
 # Rules that carry the modifier list for a declaration nested inside them.
 # A member's modifiers hang off classBodyDeclaration/interfaceBodyDeclaration,
 # two levels above the declaration itself, so they have to be walked to.
-_MODIFIER_ACCESSORS = ("modifier", "classOrInterfaceModifier", "variableModifier",
-                       "interfaceMethodModifier")
+_MODIFIER_ACCESSORS = (
+    "modifier",
+    "classOrInterfaceModifier",
+    "variableModifier",
+    "interfaceMethodModifier",
+)
 
 
 def _modifiers_at(ctx):
@@ -67,10 +69,15 @@ def _enclosing_modifiers(ctx, depth=3):
 # Context class names (labelled alternatives get a numeric suffix, hence the
 # prefix match) that wrap a declaration together with its modifier list.
 _SPAN_WRAPPERS = (
-    "TypeDeclarationContext", "ClassBodyDeclaration", "MemberDeclaration",
-    "InterfaceBodyDeclarationContext", "InterfaceMemberDeclaration",
-    "LocalTypeDeclarationContext", "GenericMethodDeclarationContext",
-    "GenericConstructorDeclarationContext", "GenericInterfaceMethodDeclarationContext",
+    "TypeDeclarationContext",
+    "ClassBodyDeclaration",
+    "MemberDeclaration",
+    "InterfaceBodyDeclarationContext",
+    "InterfaceMemberDeclaration",
+    "LocalTypeDeclarationContext",
+    "GenericMethodDeclarationContext",
+    "GenericConstructorDeclarationContext",
+    "GenericInterfaceMethodDeclarationContext",
 )
 
 
@@ -122,8 +129,9 @@ def source_text(ctx):
     if stream is None:
         return ctx.getText()
     try:
-        return stream.getText(_doc_comment_start(stream, start.start),
-                              _line_end(stream, stop.stop))
+        return stream.getText(
+            _doc_comment_start(stream, start.start), _line_end(stream, stop.stop)
+        )
     except Exception:
         return ctx.getText()
 
@@ -169,7 +177,7 @@ def _doc_comment_start(stream, begin):
     i = begin - 1
     while i >= 0 and text[i] in " \t\r\n":
         i -= 1
-    if i < 1 or text[i - 1:i + 1] != "*/":
+    if i < 1 or text[i - 1 : i + 1] != "*/":
         return begin
 
     opening = text.rfind("/*", 0, i)
@@ -223,13 +231,23 @@ class DefineListener(JavaParserLabeledListener):
         )
 
     def add_define_info(
-        self, ent, ent_parents, ent_name=None, type=None, contents=None,
-        decl=None, modifiers=(), span=None,
+        self,
+        ent,
+        ent_parents,
+        ent_name=None,
+        type=None,
+        contents=None,
+        decl=None,
+        modifiers=(),
+        span=None,
     ):
         if ent_name is None:
             ent_name = ent.getText()
-        line = ent.symbol.line
-        column = ent.symbol.column
+        # `ent` is an IDENTIFIER node for a named declaration and a bare Token
+        # for an anonymous class, which has no identifier to hang a name on.
+        symbol = getattr(ent, "symbol", ent)
+        line = symbol.line
+        column = symbol.column
         # findParents() already includes the package components, so prefixing
         # self.package here produced it twice ("org.json" + "." + "org.json").
         scope_longname = ".".join(ent_parents)
@@ -286,6 +304,37 @@ class DefineListener(JavaParserLabeledListener):
         if isinstance(declaration, JavaParserLabeled.LocalVariableDeclarationContext):
             return K.LOCAL, _modifiers_at(declaration)
         return K.FIELD, _enclosing_modifiers(declaration or ctx)
+
+    def enterClassCreatorRest(self, ctx: JavaParserLabeled.ClassCreatorRestContext):
+        """`new Iterable<Integer>() { ... }` declares a class of its own.
+
+        Nothing declared one before, so the anonymous class's members hung off
+        the enclosing method and the class itself was simply absent -- which is
+        the whole of CountDeclClass's gap: org.json reported 28 against
+        Understand's 30, the two missing being the pair in
+        `XML.codePointIterator`.
+
+        Understand names it `(Anon_N)`, numbered over the *file* in source
+        order, and positions it on the body's opening brace -- Define, Definein
+        and Begin all sit at 79:40 for the first one, which is the `{`.
+
+        The name comes from class_properties, which is also what puts the
+        segment into every scope chain running through the body: one numbering,
+        so an entity and its declaring scope cannot disagree about it.
+        """
+        name = class_properties.anonymous_name(ctx)
+        if name is None:
+            return  # `new Foo(...)` with no body creates nothing
+        body = ctx.classBody()
+        self.add_define_info(
+            ent=body.start,
+            ent_parents=class_properties.ClassPropertiesListener.findParents(ctx),
+            ent_name=name,
+            type="Class",
+            contents=source_text(body),
+            decl=K.ANONYMOUS_CLASS,
+            span=_body_span(body),
+        )
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         ent = ctx.IDENTIFIER()
@@ -383,8 +432,9 @@ class DefineListener(JavaParserLabeledListener):
         if ent is None:
             return
         element = ctx.parentCtx
-        while element is not None and not type(
-                element).__name__.startswith("AnnotationTypeElementRest"):
+        while element is not None and not type(element).__name__.startswith(
+            "AnnotationTypeElementRest"
+        ):
             element = element.parentCtx
         declared = element.typeType() if element is not None else None
         self.add_define_info(
@@ -441,8 +491,13 @@ class DefineListener(JavaParserLabeledListener):
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
         self.add_define_info(
-            ent, ent_parents, type="Enum", contents=source_text(ctx),
-            decl=K.ENUM, modifiers=self._type_modifiers(ctx), span=_body_span(ctx),
+            ent,
+            ent_parents,
+            type="Enum",
+            contents=source_text(ctx),
+            decl=K.ENUM,
+            modifiers=self._type_modifiers(ctx),
+            span=_body_span(ctx),
         )
         # values()/valueOf() are compiler-generated statics on every enum.
         for synthetic in ("values", "valueOf"):
@@ -453,7 +508,7 @@ class DefineListener(JavaParserLabeledListener):
                 type="Enum",
                 contents=source_text(ctx),
                 decl=K.METHOD,
-            span=_body_span(ctx),
+                span=_body_span(ctx),
                 modifiers=["public", "static"],
             )
 
@@ -464,18 +519,45 @@ class DefineListener(JavaParserLabeledListener):
             ent, ent_parents, decl=K.PARAMETER, modifiers=_modifiers_at(ctx)
         )
 
+    @staticmethod
+    def _lambda_scope(ctx):
+        """(scope chain above the lambda, its name), or (None, None).
+
+        `ctx` is the parameter list, which is *inside* the lambda, so
+        `findParents(ctx)` already ends with the lambda's own segment -- asking
+        from here and then appending the name again produced
+        `go.(lambda_expr_1).(lambda_expr_1)`, an entity parented to itself.
+        Ask from the lambda expression instead, whose chain stops above it.
+
+        The name comes from `class_properties` rather than from a counter of
+        this listener's own. Two numberings over the same file cannot be
+        relied on to agree, and the one that decides an entity's *scope* is
+        that one.
+        """
+        node = ctx
+        while node is not None and not isinstance(
+            node, JavaParserLabeled.LambdaExpressionContext
+        ):
+            node = node.parentCtx
+        if node is None:
+            return None, None
+        return (
+            class_properties.ClassPropertiesListener.findParents(node),
+            class_properties.lambda_name(node),
+        )
+
     def enterLambdaParameters0(self, ctx: JavaParserLabeled.LambdaParameters0Context):
-        self.lambda_expression_count += 1
+        ent_parents, ent_name = self._lambda_scope(ctx)
+        if ent_name is None:
+            return
         ent = ctx.IDENTIFIER()
-        ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        ent_name = f"(lambda_expr_{self.lambda_expression_count})"
         self.add_define_info(ent, ent_parents, ent_name, decl=K.LAMBDA)
         self.add_define_info(ent, ent_parents + [ent_name], decl=K.PARAMETER)
 
     def enterLambdaParameters2(self, ctx: JavaParserLabeled.LambdaParameters2Context):
-        self.lambda_expression_count += 1
-        ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        ent_name = f"(lambda_expr_{self.lambda_expression_count})"
+        ent_parents, ent_name = self._lambda_scope(ctx)
+        if ent_name is None:
+            return
         identifiers = ctx.IDENTIFIER()
         self.add_define_info(identifiers[0], ent_parents, ent_name, decl=K.LAMBDA)
         for ent in identifiers:

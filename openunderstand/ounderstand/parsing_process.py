@@ -1,8 +1,7 @@
 from openunderstand.ounderstand.project import Project
 from openunderstand.ounderstand.listeners_and_parsers import ListenersAndParsers
-from openunderstand.oudb.models import ReferenceModel
+from openunderstand.oudb.models import ReferenceModel, flush_reference_writes
 import os
-from openunderstand.utils.utilities import setup_config
 from fnmatch import fnmatch
 
 
@@ -28,6 +27,134 @@ def get_files(dirName: str = ""):
     return sorted(allFiles)
 
 
+#: Every pass, in the order their *writes* must run. `modify` is not here:
+#: it is written last, after all of them.
+_PASS_NAMES = (
+    "type_listener",
+    "define_listener",
+    "create_listener",
+    "lambda_listener",
+    "use_variant_listener",
+    "method_call_listener",
+    "declare_listener",
+    "field_use_listener",
+    "static_import_listener",
+    "overrides_listener",
+    "couple_listener",
+    "useby_listener",
+    "setby_listener",
+    "setinitby_listener",
+    "setbypartialby_listener",
+    "dotref_listener",
+    "throws_listener",
+    "extend_coupled_listener",
+    "variable_listener",
+    "callbyNonDynamic_listener",
+    "cast_by_listener",
+    "contain_in_listener",
+    "extend_implict_listener",
+    "import_demand_listener",
+)
+
+
+def _passes(lap):
+    """Every pass, in the order their writes must run."""
+    return [getattr(lap, name) for name in _PASS_NAMES]
+
+
+class _NoFileEntity:
+    """Stands in for the entity generator while collecting.
+
+    `ModifyListener` reads one thing from it during the walk -- `file_ent` --
+    and that is a database row, which a worker must not create. The writer
+    stamps the real one onto each record.
+    """
+
+    file_ent = None
+
+
+def collect_file(file_address):
+    """Parse and walk one file. Runs in a worker and must not touch the database.
+
+    That is why it calls `Project.Parse` rather than
+    `ListenersAndParsers.parser`, which creates the file entity, and why
+    `modify` is handed `_NoFileEntity`. Forked workers sharing the parent's
+    connection, each with its own copy of the identity cache, is what lost
+    three quarters of the analysis the last time this was tried.
+    """
+    p = Project()
+    lap = ListenersAndParsers(phase=ListenersAndParsers.BUILD)
+    try:
+        tree = p.Parse(file_address)
+    except Exception:
+        return None
+    if tree is None:
+        return None
+    for listener in _passes(lap):
+        listener(file_address=file_address, p=p, file_ent=None, tree=tree)
+    lap.modify_listener(
+        entity_generator=_NoFileEntity(),
+        parse_tree=tree,
+        file_address=file_address,
+        p=p,
+    )
+    lap.walk_built(tree, p)
+    classes, interfaces = p.declared_types()
+    return {
+        "listeners": lap.transfer_state(),
+        # The two things the write layer used to read off the tree.
+        "declared_types": (classes, interfaces),
+        "package_data": _package_data(tree),
+    }
+
+
+def _package_data(tree):
+    """The file's package declaration, which the writer needs and cannot walk."""
+    from antlr4 import ParseTreeWalker
+
+    from openunderstand.analysis_passes.entity_manager import PackageListener
+
+    listener = PackageListener()
+    listener.package_data = []
+    ParseTreeWalker().walk(listener=listener, t=tree)
+    return listener.package_data
+
+
+def write_file(file_address, payload):
+    """Write one file's collected result. Runs in the parent, in file order."""
+    if payload is None:
+        return
+    p = Project()
+    p.seed_declared_types(*payload["declared_types"])
+    lap = ListenersAndParsers(phase=ListenersAndParsers.WRITE)
+    lap.restore(
+        payload["listeners"],
+        tree_facts={
+            "declared_types": payload["declared_types"],
+            "package_data": payload["package_data"],
+        },
+    )
+    file_ent = p.getFileEntity(path=file_address, name=os.path.basename(file_address))
+    # Before any pass writes, as the sequential path does. An entity's parent
+    # is set by whoever creates it first, so the package entities have to exist
+    # in the same order or 199 of JSON's methods hang off the wrong one.
+    lap.entity_gen(file_address=file_address, parse_tree=None)
+    modify = lap._built.get("modify_listener")
+    if modify is not None:
+        for record in modify.modify:
+            record["file"] = file_ent
+    for listener in _passes(lap):
+        listener(file_address=file_address, p=p, file_ent=file_ent, tree=None)
+    lap.modify_listener(
+        entity_generator=None, parse_tree=None, file_address=file_address, p=p
+    )
+    flush_reference_writes()
+
+
+def _collect_then_write(file_address):
+    write_file(file_address, collect_file(file_address))
+
+
 def _process_file(file_address):
     p = Project()
     lap = ListenersAndParsers()
@@ -35,74 +162,39 @@ def _process_file(file_address):
     if tree is None and parse_tree is None and file_ent is None:
         return
     entity_generator = lap.entity_gen(file_address=file_address, parse_tree=parse_tree)
-    listeners = [
-        lap.type_listener,
-        lap.define_listener,
-        # After define_listener, not before it. `new` in a field initializer
-        # has no enclosing method, so this pass's scope is the class -- and
-        # running first, it created that scope itself with a Method kind. The
-        # result was a second `org.json.JSONObject` in the method family which
-        # then captured all 110 of the class's Define references, leaving the
-        # real class entity with none.
-        lap.create_listener,
-        lap.use_variant_listener,
-        lap.method_call_listener,
-        lap.declare_listener,
-        # override_listener is gone, for the reason callby_listener is. Two
-        # passes emitted Java Overrides -- this one and overrides_listener --
-        # and this one built a method's long name by joining findParents(),
-        # which stops at the declaring class. Every method it touched created a
-        # second entity named after its *class*: `org.json.HTTPTokener` in the
-        # method family, with no references at all, shadowing the real class on
-        # any lookup by long name. Twelve of JSON's classes had one, and each
-        # cost every class-level metric an entity it could no longer answer for.
-        # callby_listener is gone: method_call_listener records the same
-        # references from an enterMethodCall0 callback, which sees every call
-        # site rather than only whole expression statements, and scopes each to
-        # the method containing it. call_callby.py walked the tree itself from
-        # enterClassDeclaration and passed the *class* context to findParents,
-        # so every reference it produced was scoped to the package. Measured on
-        # JSON: dropping it left the 394 correct Call references untouched and
-        # removed 43 wrong ones and 15 placeholder entities, taking Call
-        # precision from 48.9% to 51.7% and Call Nondynamic from 92.3% to 97.3%.
-        lap.field_use_listener,
-        lap.lambda_listener,
-        lap.static_import_listener,
-        lap.overrides_listener,
-        lap.couple_listener,
-        lap.useby_listener,
-        lap.setby_listener,
-        lap.setinitby_listener,
-        lap.setbypartialby_listener,
-        lap.dotref_listener,
-        lap.throws_listener,
-        lap.extend_coupled_listener,
-        lap.variable_listener,
-        lap.callbyNonDynamic_listener,
-        lap.cast_by_listener,
-        lap.contain_in_listener,
-        lap.extend_implict_listener,
-        lap.import_demand_listener,
-        # import_listener, open_by_listener and use_module_listener are gone.
-        # Understand reports no Java Import, Java Open or Java ModuleUse for
-        # Java on either benchmark -- an import is not a reference it records,
-        # and Open/ModuleUse belong to languages with modules. All three wrote
-        # references scoped to a *file path* rather than an entity, so none
-        # could ever match: 288 Open, 241 Import and 60 ModuleUse rows of pure
-        # noise on TheAlgorithms, and 112 on JSON.
-    ]
+    listeners = _passes(lap)
+    # Two phases, not one. Each pass used to build a listener, walk the tree
+    # and write in one breath, so the tree was descended once per pass and
+    # nothing could be reordered. Build every listener first, then write in the
+    # same order as before: the writes are what the ordering rules are about --
+    # `modify_listener` runs last because it resolves a variable the declaring
+    # passes have to have written.
+    lap.phase = ListenersAndParsers.BUILD
     for listener in listeners:
         listener(file_address=file_address, p=p, file_ent=file_ent, tree=tree)
-    # Runs last, not first: add_modify_and_modifyby_reference() resolves the
-    # modified variable by longname and drops the reference when it finds
-    # nothing. Before define_listener/declare_listener have declared the
-    # locals, that lookup misses and every += site is silently discarded.
+    # `modify_listener` is built here too: it walks the same tree, and it is
+    # the last *write* because it resolves a variable the declaring passes have
+    # to have written, which the write order below still guarantees.
     lap.modify_listener(
         entity_generator=entity_generator,
         parse_tree=parse_tree,
         file_address=file_address,
         p=p,
     )
+    lap.walk_built(tree, p)
+    lap.phase = ListenersAndParsers.WRITE
+    for listener in listeners:
+        listener(file_address=file_address, p=p, file_ent=file_ent, tree=tree)
+    lap.modify_listener(
+        entity_generator=entity_generator,
+        parse_tree=parse_tree,
+        file_address=file_address,
+        p=p,
+    )
+    lap.phase = ListenersAndParsers.BOTH
+    # One batched insert per file rather than one statement per reference.
+    flush_reference_writes()
+
 
 def process_file(file_address):
     """Analyse one file inside a single database transaction.
@@ -121,4 +213,4 @@ def process_file(file_address):
     committed fingerprints must reproduce byte for byte.
     """
     with ReferenceModel._meta.database.atomic():
-        return _process_file(file_address)
+        return _collect_then_write(file_address)

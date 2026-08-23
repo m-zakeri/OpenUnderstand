@@ -1,5 +1,7 @@
 import os
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from antlr4 import *

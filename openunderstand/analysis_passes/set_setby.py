@@ -1,5 +1,7 @@
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 from openunderstand.analysis_passes import class_properties
 from os.path import basename
 
@@ -11,6 +13,7 @@ def symbol_table_member_type(owner, field):
     still being built, and a module-level import would close the cycle.
     """
     from openunderstand.ounderstand import symbol_table
+
     return symbol_table.member_type(owner, field)
 
 
@@ -57,19 +60,31 @@ class SetAndSetByListener(JavaParserLabeledListener):
         # Parameters and locals belong to one method; fields outlive them.
         self.local_types = {}
 
-    def enterConstructorDeclaration(self, ctx: JavaParserLabeled.ConstructorDeclarationContext):
+    def enterConstructorDeclaration(
+        self, ctx: JavaParserLabeled.ConstructorDeclarationContext
+    ):
         self.local_types = {}
 
     def enterFormalParameter(self, ctx: JavaParserLabeled.FormalParameterContext):
-        self._record_type(self.local_types, ctx.typeType(), [ctx.variableDeclaratorId()])
+        self._record_type(
+            self.local_types, ctx.typeType(), [ctx.variableDeclaratorId()]
+        )
 
-    def enterLocalVariableDeclaration(self, ctx: JavaParserLabeled.LocalVariableDeclarationContext):
-        self._record_type(self.local_types, ctx.typeType(),
-                          ctx.variableDeclarators().variableDeclarator())
+    def enterLocalVariableDeclaration(
+        self, ctx: JavaParserLabeled.LocalVariableDeclarationContext
+    ):
+        self._record_type(
+            self.local_types,
+            ctx.typeType(),
+            ctx.variableDeclarators().variableDeclarator(),
+        )
 
     def enterFieldDeclaration(self, ctx: JavaParserLabeled.FieldDeclarationContext):
-        self._record_type(self.field_types, ctx.typeType(),
-                          ctx.variableDeclarators().variableDeclarator())
+        self._record_type(
+            self.field_types,
+            ctx.typeType(),
+            ctx.variableDeclarators().variableDeclarator(),
+        )
 
     @staticmethod
     def _record_type(target, type_ctx, declarators):
@@ -101,17 +116,19 @@ class SetAndSetByListener(JavaParserLabeledListener):
         more levels deep.
         """
         if target.children[1].getText() != ".":
-            return                      # `a[i] = x`: no member is named
+            return  # `a[i] = x`: no member is named
         receiver = target.children[0].getText()
         if "." in receiver and all(
-                part.split("[")[0].isidentifier() for part in receiver.split(".")):
+            part.split("[")[0].isidentifier() for part in receiver.split(".")
+        ):
             # `head.a.b = v` sets a field of b's type. Each hop is a field whose
             # type the project index knows, so the chain resolves however deep
             # it goes -- DoublyLinkedList sets `position.next.previous` and this
             # pass stopped at the first member.
             parents = class_properties.ClassPropertiesListener.findParents(ctx)
             owner = self.owner_of_member(
-                receiver.split(".")[0].split("[")[0], ".".join(parents))
+                receiver.split(".")[0].split("[")[0], ".".join(parents)
+            )
             for hop in receiver.split(".")[1:]:
                 if owner is None:
                     break
@@ -119,9 +136,14 @@ class SetAndSetByListener(JavaParserLabeledListener):
             member = target.children[2]
             if owner and hasattr(member, "symbol"):
                 self.add_set_by_entry(
-                    member.getText(), owner + "." + member.getText(), name_of_file,
-                    member.symbol.line, member.symbol.column, ctx,
-                    resolve_override=owner)
+                    member.getText(),
+                    owner + "." + member.getText(),
+                    name_of_file,
+                    member.symbol.line,
+                    member.symbol.column,
+                    ctx,
+                    resolve_override=owner,
+                )
             return
         if not receiver.isidentifier():
             # `cursorSpace[os].next = x` sets a field of the *element*. The
@@ -133,14 +155,18 @@ class SetAndSetByListener(JavaParserLabeledListener):
             receiver = head
         member = target.children[2]
         if not hasattr(member, "symbol"):
-            return                      # `a.foo() = ...` cannot occur, but be safe
+            return  # `a.foo() = ...` cannot occur, but be safe
         parents = class_properties.ClassPropertiesListener.findParents(ctx)
         owner = self.owner_of_member(receiver, ".".join(parents))
         if owner is None:
-            return                      # receiver's type is unknown: no guess
+            return  # receiver's type is unknown: no guess
         self.add_set_by_entry(
-            member.getText(), owner + "." + member.getText(), name_of_file,
-            member.symbol.line, member.symbol.column, ctx,
+            member.getText(),
+            owner + "." + member.getText(),
+            name_of_file,
+            member.symbol.line,
+            member.symbol.column,
+            ctx,
             resolve_override=owner,
         )
 
@@ -160,12 +186,18 @@ class SetAndSetByListener(JavaParserLabeledListener):
             # none of them.
             return symbol_table.resolve_type(receiver, scope_longname)
         # An array's element type is what carries the member.
-        return symbol_table.resolve_type(
-            type_name.split("[")[0], scope_longname)
+        return symbol_table.resolve_type(type_name.split("[")[0], scope_longname)
 
     def add_set_by_entry(
-        self, set_short_name, set_long_name, name_of_file, line, column, ctx,
-        scope_override=None, resolve_override=None,
+        self,
+        set_short_name,
+        set_long_name,
+        name_of_file,
+        line,
+        column,
+        ctx,
+        scope_override=None,
+        resolve_override=None,
     ):
         if self.call_function:
             set_value = self.method_name

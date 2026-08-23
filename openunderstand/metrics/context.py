@@ -107,21 +107,65 @@ def parse_entity_source(source):
         def syntaxError(self, *_args):
             self.failed = True
 
-    for candidate in (source, f"class {_WRAPPER} {{\n{source}\n}}"):
-        lexer = JavaLexer(InputStream(candidate))
-        parser = JavaParserLabeled(CommonTokenStream(lexer))
+    # The middle candidate is for an anonymous class, whose own source is a
+    # bare class *body*. Without it the last candidate wins -- `class W { { ...
+    # } }` parses, as an instance initializer -- and every member inside reads
+    # as a statement rather than a declaration: CountLineCodeDecl 0 against 1,
+    # CountStmtDecl 6 against 7, MaxCyclomatic 2 against 1. It adds no line, so
+    # the tree's line numbers still index the entity's own source.
+    from openunderstand.utils import antler_parser
+
+    def _python(candidate):
+        parser = JavaParserLabeled(CommonTokenStream(JavaLexer(InputStream(candidate))))
         detector = _Failed()
         parser.removeErrorListeners()
         parser.addErrorListener(detector)
-        tree = parser.compilationUnit()
-        if not detector.failed:
+        return parser.compilationUnit(), detector.failed
+
+    def _accelerated(candidate):
+        """(tree, failed) through the C++ parser.
+
+        It *raises* on input that is not a compilation unit rather than
+        reporting through the listener, and a method's own source is exactly
+        that, so a raise is the same verdict as a syntax error. Checked against
+        the Python parser over 1,185 candidate parses of this benchmark's
+        entities: zero disagreements. The ladder still falls back to Python
+        wholesale if nothing parses, so a disagreement could only cost speed.
+        """
+        detector = _Failed()
+        try:
+            tree = antler_parser.parse(
+                InputStream(candidate), "compilationUnit", err_listener=detector
+            )
+        except Exception:
+            return None, True
+        return tree, detector.failed
+
+    candidates = (
+        source,
+        f"class {_WRAPPER} {source}",
+        f"class {_WRAPPER} {{\n{source}\n}}",
+    )
+    if antler_parser.is_available():
+        # Cyclomatic was 18.6ms an entity and the parse is nearly all of it.
+        for candidate in candidates:
+            tree, failed = _accelerated(candidate)
+            if not failed:
+                return tree, candidate
+    for candidate in candidates:
+        tree, failed = _python(candidate)
+        if not failed:
             return tree, candidate
     return tree, candidate
 
 
-_DECLARATION = ("MethodDeclaration", "ConstructorDeclaration",
-                "GenericMethodDeclaration", "GenericConstructorDeclaration",
-                "InterfaceMethodDeclaration")
+_DECLARATION = (
+    "MethodDeclaration",
+    "ConstructorDeclaration",
+    "GenericMethodDeclaration",
+    "GenericConstructorDeclaration",
+    "InterfaceMethodDeclaration",
+)
 
 
 def _declaration_and_body(ent_model):
@@ -133,17 +177,22 @@ def _declaration_and_body(ent_model):
         name = type(node).__name__
         if name.startswith(_DECLARATION):
             found = True
-            for child in (node.children or ()):
+            for child in node.children or ():
                 if type(child).__name__ == "BlockContext":
                     return True, child
-                if type(child).__name__.startswith(("MethodBody",
-                                                    "ConstructorBody")):
-                    blocks = [c for c in (child.children or ())
-                              if type(c).__name__ == "BlockContext"]
+                if type(child).__name__.startswith(("MethodBody", "ConstructorBody")):
+                    blocks = [
+                        c
+                        for c in (child.children or ())
+                        if type(c).__name__ == "BlockContext"
+                    ]
                     if blocks:
                         return True, blocks[0]
-        stack.extend(c for c in (getattr(node, "children", None) or ())
-                     if hasattr(c, "getRuleIndex"))
+        stack.extend(
+            c
+            for c in (getattr(node, "children", None) or ())
+            if hasattr(c, "getRuleIndex")
+        )
     return found, None
 
 
@@ -166,8 +215,9 @@ def declares_without_body(ent_model):
 
 def walk_entity(ent_model, listener):
     """Walk `listener` over the entity's own source. Returns the listener."""
-    ParseTreeWalker().walk(t=parse_entity(ent_model.contents() or ""),
-                           listener=listener)
+    ParseTreeWalker().walk(
+        t=parse_entity(ent_model.contents() or ""), listener=listener
+    )
     return listener
 
 
@@ -264,12 +314,17 @@ def cyclomatic_summary(ent_model) -> dict:
     counts, listener = scoped_counts(ent_model, CyclomaticListener)
     if is_file(ent_model):
         values = list(counts.values())
-        return {"sum": listener.project_cyclomatic,
-                "max": max(values, default=0),
-                "avg": round(sum(values) / len(values)) if values else 0}
+        return {
+            "sum": listener.project_cyclomatic,
+            "max": max(values, default=0),
+            "avg": round(sum(values) / len(values)) if values else 0,
+        }
     values = list(counts.values()) or [1]
-    return {"sum": sum(values), "max": max(values),
-            "avg": round(sum(values) / len(values))}
+    return {
+        "sum": sum(values),
+        "max": max(values),
+        "avg": round(sum(values) / len(values)),
+    }
 
 
 # Derived from Understand's own numbers for `Main.main` (CountStmt 9,
@@ -282,11 +337,16 @@ def cyclomatic_summary(ent_model) -> dict:
 #   * a declaration's lines are its signature only, since its body is made of
 #     statements counted in their own right.
 _DECLARATIVE = (
-    "LocalVariableDeclarationContext", "FieldDeclarationContext",
-    "MethodDeclarationContext", "ConstructorDeclarationContext",
-    "ClassDeclarationContext", "InterfaceDeclarationContext",
-    "EnumDeclarationContext", "AnnotationTypeDeclarationContext",
-    "ConstDeclarationContext", "InterfaceMethodDeclarationContext",
+    "LocalVariableDeclarationContext",
+    "FieldDeclarationContext",
+    "MethodDeclarationContext",
+    "ConstructorDeclarationContext",
+    "ClassDeclarationContext",
+    "InterfaceDeclarationContext",
+    "EnumDeclarationContext",
+    "AnnotationTypeDeclarationContext",
+    "ConstDeclarationContext",
+    "InterfaceMethodDeclarationContext",
     # `for (char c : items)` declares c. It is not a localVariableDeclaration,
     # so it was the declarative statement validForBase was short by -- and its
     # *line* still belongs to the loop, which _add_signature_lines skips.
@@ -319,8 +379,11 @@ def _initialiser_invokes(ctx):
         node = stack.pop()
         if type(node).__name__.startswith(_INVOKING):
             return True
-        stack.extend(c for c in (getattr(node, "children", None) or ())
-                     if hasattr(c, "getRuleIndex"))
+        stack.extend(
+            c
+            for c in (getattr(node, "children", None) or ())
+            if hasattr(c, "getRuleIndex")
+        )
     return False
 
 
@@ -352,8 +415,10 @@ class _StatementClassifier:
             # loop: Understand counts validForBase at 7 declarative lines and
             # the eighth this produced was the `for`. Every counted loop with
             # an init declaration added one.
-            in_for = (type(ctx.parentCtx).__name__.startswith("ForInit")
-                      or name == "EnhancedForControlContext")
+            in_for = (
+                type(ctx.parentCtx).__name__.startswith("ForInit")
+                or name == "EnhancedForControlContext"
+            )
             # Inside `new Runnable() { ... }` the declaration still counts as a
             # declarative *statement* -- Understand puts the method holding one
             # at CountStmtDecl 3 and CountLineCodeDecl 1 -- but its lines belong
@@ -495,7 +560,8 @@ class _StatementClassifier:
             if params is not None and params.stop is not None:
                 last = params.stop.line
         elif ctx.stop is not None and type(ctx).__name__ in (
-            "LocalVariableDeclarationContext", "FieldDeclarationContext",
+            "LocalVariableDeclarationContext",
+            "FieldDeclarationContext",
             "ConstDeclarationContext",
         ):
             last = ctx.stop.line
@@ -504,14 +570,20 @@ class _StatementClassifier:
 
 #: Declarations whose lines split into declarative and executable halves.
 _DECLARATION_STATEMENTS = (
-    "LocalVariableDeclarationContext", "FieldDeclarationContext",
+    "LocalVariableDeclarationContext",
+    "FieldDeclarationContext",
     "ConstDeclarationContext",
 )
 
 
 #: Direct children that mean "the rest of this statement is its body".
-_BODY = ("Statement", "Block", "SwitchBlockStatementGroup", "CatchClause",
-         "FinallyBlock")
+_BODY = (
+    "Statement",
+    "Block",
+    "SwitchBlockStatementGroup",
+    "CatchClause",
+    "FinallyBlock",
+)
 
 
 def _child_span(child):
@@ -589,10 +661,12 @@ def _array_element_lines(initialiser):
         # `variableInitializer` is VariableInitializer0/1Context, never the
         # bare name, so an exact match found no elements and every array
         # declaration executed nothing.
-        return {element.start.line
-                for element in getattr(child, "children", None) or ()
-                if type(element).__name__.startswith("VariableInitializer")
-                and element.start is not None}
+        return {
+            element.start.line
+            for element in getattr(child, "children", None) or ()
+            if type(element).__name__.startswith("VariableInitializer")
+            and element.start is not None
+        }
     return None
 
 
@@ -644,8 +718,11 @@ def _statement_counts(source: str) -> dict:
     # `};` -- all carry something else. A statement's span crosses the closing
     # brace of any block nested inside it, which is the line that put a method
     # holding `new Runnable() { ... }` at 7 executable lines against 6.
-    closing = {number for number, raw in enumerate(text.split("\n")[:-1], 1)
-               if raw.strip() == "}"}
+    closing = {
+        number
+        for number, raw in enumerate(text.split("\n")[:-1], 1)
+        if raw.strip() == "}"
+    }
     return {
         "stmt": classifier.statements,
         "stmt_decl": classifier.decl_statements,

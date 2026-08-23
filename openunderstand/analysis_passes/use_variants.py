@@ -26,15 +26,18 @@ layer's job.
 """
 
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 import openunderstand.analysis_passes.class_properties as class_properties
 
-
-#: Java's keyword literals are valid Python identifiers, so the isidentifier()
+#: Java keywords that are valid Python identifiers, so the isidentifier()
 #: guard each handler uses lets them through. `return true;` named an entity
-#: `false`/`true`/`null` and pointed 114 references at it on TheAlgorithms.
+#: `false`/`true`/`null` and pointed 114 references at it on TheAlgorithms;
+#: `return this;` named one called `this` and put 15 `Java Use Return` rows on
+#: it, where Understand writes no reference at all. Neither names an entity.
 #: Checked once here rather than in each handler, which is where the bug got in.
-LITERALS = frozenset(("true", "false", "null"))
+LITERALS = frozenset(("true", "false", "null", "this", "super"))
 
 
 class UseVariantListener(JavaParserLabeledListener):
@@ -52,7 +55,9 @@ class UseVariantListener(JavaParserLabeledListener):
             return
         self.imports[longname.split(".")[-1]] = longname
 
-    def _add(self, kind, name, ctx, token, suffix=None, ent_longname=None):
+    def _add(
+        self, kind, name, ctx, token, suffix=None, ent_longname=None, ent_kind=None
+    ):
         if not name or name in LITERALS:
             return
         parents = class_properties.ClassPropertiesListener.findParents(ctx)
@@ -61,18 +66,26 @@ class UseVariantListener(JavaParserLabeledListener):
             # to, which findParents() stops short of.
             parents = parents + [suffix]
         scope_longname = ".".join(parents)
-        self.uses.append({
-            "kind": kind,
-            "name": name,
-            "scope_longname": scope_longname,
-            # Set when the pass already knows which entity is meant and the
-            # writer must not go looking by name. `<E extends Enum<E>>` reads
-            # its own type parameter, so entity and scope are the same thing;
-            # resolving "E" by name instead found an arbitrary other E.
-            "ent_longname": scope_longname if ent_longname is True else ent_longname,
-            "line": token.line,
-            "col": token.column,
-        })
+        self.uses.append(
+            {
+                "kind": kind,
+                "name": name,
+                "scope_longname": scope_longname,
+                # Set when the pass already knows which entity is meant and the
+                # writer must not go looking by name. `<E extends Enum<E>>` reads
+                # its own type parameter, so entity and scope are the same thing;
+                # resolving "E" by name instead found an arbitrary other E.
+                "ent_longname": (
+                    scope_longname if ent_longname is True else ent_longname
+                ),
+                # Set when the entity is outside the analysed source and its long
+                # name is therefore a bare simple name. The kind is what keeps that
+                # safe: `external` is the token merge_placeholder_entities() skips.
+                "ent_kind": ent_kind,
+                "line": token.line,
+                "col": token.column,
+            }
+        )
 
     def enterExpression1(self, ctx: JavaParserLabeled.Expression1Context):
         # `a.b` -- `a` is used by dereference. Only a bare identifier receiver
@@ -105,8 +118,10 @@ class UseVariantListener(JavaParserLabeledListener):
         if not text.isidentifier():
             return
         parent = ctx.parentCtx
-        if (type(parent).__name__ == "Expression21Context"
-                and parent.expression(0) is ctx):
+        if (
+            type(parent).__name__ == "Expression21Context"
+            and parent.expression(0) is ctx
+        ):
             return
         self._add("Java Use Deref Partial", text, ctx, receiver.start)
 
@@ -139,10 +154,65 @@ class UseVariantListener(JavaParserLabeledListener):
         # what merge_placeholder_entities() folds into any project match. The
         # writer cannot resolve it -- only this pass has read the imports.
         resolved = symbol_table.resolve_type_name(
-            qualified.getText(), self.imports, self.wildcards,
-            ".".join(class_properties.ClassPropertiesListener.findParents(ctx)))
-        self._add("Java Use Annotation", name, ctx, qualified.start,
-                  suffix=annotated, ent_longname=resolved)
+            qualified.getText(),
+            self.imports,
+            self.wildcards,
+            ".".join(class_properties.ClassPropertiesListener.findParents(ctx)),
+        )
+        self._add(
+            "Java Use Annotation",
+            name,
+            ctx,
+            qualified.start,
+            suffix=annotated,
+            ent_longname=resolved,
+        )
+
+    def enterPrimary5(self, ctx: JavaParserLabeled.Primary5Context):
+        """`int.class` and `Integer.class` read java.lang.Class.
+
+        Understand writes a plain `Java Use` on java.lang.Class, positioned on
+        the `class` keyword and scoped to whatever encloses the expression --
+        the method for `rawType == int.class`, the *class* for
+        `@Test(expected=X.class)`, which is what findParents() gives for each
+        without a special case. The named type is coupled separately; this is
+        the read of Class itself, and it is 32 of CountInput's missing pairs.
+        """
+        keyword = ctx.CLASS()
+        if keyword is None:
+            return
+        self._add(
+            "Java Use", "Class", ctx, keyword.symbol, ent_longname="java.lang.Class"
+        )
+
+    def enterElementValuePair(self, ctx):
+        """`@Test(expected=X.class)` reads the annotation's `expected` element.
+
+        Understand writes a plain `Java Use` on it, scoped to the annotated
+        declaration and positioned on the element's own name -- 65 of JSON's
+        methods carry one and this pass emitted none, which is the largest
+        single item in CountInput's gap. The element belongs to an annotation
+        the project does not declare, so it is recorded the way an unresolved
+        external callee is: the bare name Understand uses, under a kind the
+        merge refuses to fold.
+        """
+        identifier = ctx.IDENTIFIER()
+        if identifier is None:
+            return
+        node = ctx.parentCtx
+        while node is not None and not type(node).__name__.startswith("Annotation"):
+            node = node.parentCtx
+        if node is None:
+            return
+        self._add(
+            "Java Use",
+            identifier.getText(),
+            ctx,
+            identifier.symbol,
+            suffix=_annotated_name(node),
+            ent_longname=identifier.getText(),
+            ent_kind="Java Unresolved External Method Public Member",
+        )
 
     def enterTypeArguments(self, ctx: JavaParserLabeled.TypeArgumentsContext):
         """`List<T>` -- the T, labelled by where the list is written.
@@ -166,8 +236,7 @@ class UseVariantListener(JavaParserLabeledListener):
         # because such an argument is never part of a declaration's type.
         bound = _type_parameter_scope(ctx)
         declared = None if bound else _declared_owner(ctx)
-        kind = ("Java Typed GenericArgument" if declared
-                else "Java Use GenericArgument")
+        kind = "Java Typed GenericArgument" if declared else "Java Use GenericArgument"
         declared = declared or bound
         for argument in ctx.typeArgument():
             # A wildcard is an entity in its own right: Understand names it "?"
@@ -181,10 +250,16 @@ class UseVariantListener(JavaParserLabeledListener):
             if type_ctx is None:
                 continue
             argument_name = _simple_type_name(type_ctx)
-            self._add(kind, argument_name, ctx, type_ctx.start, suffix=declared,
-                      # The bound of a type parameter naming that parameter.
-                      ent_longname=bool(
-                          bound and argument_name == bound.rsplit(".", 1)[-1]) or None)
+            self._add(
+                kind,
+                argument_name,
+                ctx,
+                type_ctx.start,
+                suffix=declared,
+                # The bound of a type parameter naming that parameter.
+                ent_longname=bool(bound and argument_name == bound.rsplit(".", 1)[-1])
+                or None,
+            )
 
 
 def _type_parameter_scope(ctx):
@@ -233,11 +308,15 @@ def _annotated_name(ctx):
                 # generic method, and leaving them out left 24 of
                 # TheAlgorithms' annotations scoped to the class instead of the
                 # method.
-                for attribute in ("methodDeclaration", "fieldDeclaration",
-                                  "constructorDeclaration", "classDeclaration",
-                                  "interfaceDeclaration",
-                                  "genericMethodDeclaration",
-                                  "genericConstructorDeclaration"):
+                for attribute in (
+                    "methodDeclaration",
+                    "fieldDeclaration",
+                    "constructorDeclaration",
+                    "classDeclaration",
+                    "interfaceDeclaration",
+                    "genericMethodDeclaration",
+                    "genericConstructorDeclaration",
+                ):
                     inner = getattr(member, attribute, None)
                     inner = inner() if callable(inner) else None
                     if inner is not None:
@@ -250,8 +329,12 @@ def _annotated_name(ctx):
             # top-level type, which has no ClassBodyDeclaration above it. Every
             # annotation in testing_legacy_code is this shape, and each was
             # scoped to the package instead of the class.
-            for attribute in ("classDeclaration", "interfaceDeclaration",
-                              "enumDeclaration", "annotationTypeDeclaration"):
+            for attribute in (
+                "classDeclaration",
+                "interfaceDeclaration",
+                "enumDeclaration",
+                "annotationTypeDeclaration",
+            ):
                 inner = getattr(node, attribute, None)
                 inner = inner() if callable(inner) else None
                 if inner is not None:
@@ -271,11 +354,11 @@ def _declared_owner(ctx):
     node = ctx.parentCtx
     while node is not None:
         name = type(node).__name__
-        if name.startswith(("Creator", "CreatedName", "Expression",
-                            "MethodCall", "Block")):
+        if name.startswith(
+            ("Creator", "CreatedName", "Expression", "MethodCall", "Block")
+        ):
             return None
-        if name.startswith(("TypeList", "ClassDeclaration",
-                            "InterfaceDeclaration")):
+        if name.startswith(("TypeList", "ClassDeclaration", "InterfaceDeclaration")):
             # `class Vertex implements Comparable<Vertex>` -- the arguments
             # belong to the class, which findParents() already names. Walking
             # past this reached the class again and appended it twice, so the
@@ -284,7 +367,8 @@ def _declared_owner(ctx):
         if name.startswith(("LocalVariableDeclaration", "FieldDeclaration")):
             return _first_declared_name(node)
         if name.startswith("FormalParameter") and not name.startswith(
-                "FormalParameterList"):
+            "FormalParameterList"
+        ):
             # The *list* context shares the prefix and has no declarator id.
             identifier = node.variableDeclaratorId()
             return identifier.getText().split("[")[0] if identifier else None
@@ -324,8 +408,11 @@ def _first_declared_name(node):
 
 def _simple_type_name(type_ctx):
     """Last identifier of a type, without generics or array brackets."""
-    holder = type_ctx.classOrInterfaceType() if hasattr(
-        type_ctx, "classOrInterfaceType") else None
+    holder = (
+        type_ctx.classOrInterfaceType()
+        if hasattr(type_ctx, "classOrInterfaceType")
+        else None
+    )
     if holder is not None:
         identifiers = holder.IDENTIFIER()
         if identifiers:

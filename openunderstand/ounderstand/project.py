@@ -1,5 +1,5 @@
 """This module is the main part for creating all entities and references in database. our task was the javaModify and
-javaCreate and their reverse references. """
+javaCreate and their reverse references."""
 
 import logging
 import os
@@ -7,8 +7,15 @@ from fnmatch import fnmatch
 from antlr4 import *
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
-from openunderstand.oudb.models import (KindModel, EntityModel, ReferenceModel,
-                                        col_1based, resolve_entity_ref, kind_family)
+from openunderstand.oudb.models import (
+    KindModel,
+    EntityModel,
+    ReferenceModel,
+    col_1based,
+    entity_rows,
+    resolve_entity_ref,
+    kind_family,
+)
 from openunderstand.analysis_passes.class_properties_simple import (
     ClassPropertiesListener,
     InterfacePropertiesListener,
@@ -43,14 +50,10 @@ def _use_cpp_engine():
             requested = utilities.setup_config()["Config"]["engine_core"]
         except Exception:
             requested = "Python"
-        # The CLI default is "auto", config.ini has said "Python3", and the
-        # README says "C++ or Python". Accept anything that starts with a "c";
-        # "auto" asks for the accelerator only when it is actually present, so
-        # the common install does not log a fallback warning it can do nothing
-        # about.
         requested = requested.strip().lower()
         if requested.startswith("auto"):
             from openunderstand.utils import antler_parser
+
             _ENGINE = antler_parser.is_available()
         else:
             _ENGINE = requested.startswith("c")
@@ -58,8 +61,7 @@ def _use_cpp_engine():
 
 
 #: A primitive names no entity, so it can be neither created nor referenced.
-PRIMITIVES = frozenset(
-    "int long short byte char float double boolean void".split())
+PRIMITIVES = frozenset("int long short byte char float double boolean void".split())
 
 
 def resolved_longname(simple_name, fallback, scope_longname=""):
@@ -75,17 +77,313 @@ def resolved_longname(simple_name, fallback, scope_longname=""):
     return resolved or fallback
 
 
+def callee_of(longname, name, arguments, file_ent):
+    """The method entity a call names, picking the overload by argument count.
+
+    Overloads share a long name and are separate rows only because their
+    declaration positions differ, so resolving by long name returned whichever
+    was created first and a method calling three `put` overloads counted one
+    callee. `symbol_table.overload_site()` answers with a position when exactly
+    one declaration takes this many arguments; it refuses for
+    `org.json.JSONObject.put`, whose eight overloads all take two, because
+    telling those apart needs argument *types*.
+
+    The position is taken from the project-wide index rather than the database,
+    so it does not matter whether the file declaring the target has been parsed
+    yet: a row created here at the right position is the row the define pass
+    later fills in.
+    """
+    site = symbol_table.overload_site(longname, arguments)
+    if site is not None:
+        for row in entity_rows(longname):
+            if (row._line, row._column) == site:
+                return row
+        return EntityModel.get_or_create(
+            _kind=kind_id("Java Unknown Method Member"),
+            _name=name,
+            _parent=file_ent,
+            _longname=longname,
+            _contents="",
+            _line=site[0],
+            _column=site[1],
+        )[0]
+    rows = entity_rows(longname)
+    for row in rows:
+        if kind_family(row._kind_id) == "method":
+            return row
+    if rows:
+        return rows[0]
+    return EntityModel.get_or_create(
+        _kind=kind_id("Java Unknown Method Member"),
+        _name=name,
+        _parent=file_ent,
+        _longname=longname,
+        _contents="",
+    )[0]
+
+
+#: Use variants whose target is a type by construction, whatever it resolves to.
+_TYPE_USE_KINDS = frozenset(
+    {
+        "Java Use Annotation",
+        "Java Use Cast",
+        "Java Use GenericArgument",
+        "Java Typed",
+        "Java Typed GenericArgument",
+        "Java Use Constrains Couple",
+    }
+)
+
+
+def synthetic_scope(longname):
+    """Whether a long name ends in a scope the source never named.
+
+    `(lambda_expr_1)` and `(Anon_2)` are Understand's names for a lambda body
+    and an anonymous class body. A pass that meets one before it is declared
+    must not hand it the *enclosing method's* source as its contents: the
+    create pass did, and all four lambdas of one JSONParserConfigurationTest
+    method reported their method's 13 semicolons where Understand reports 0.
+    """
+    return (longname or "").rsplit(".", 1)[-1].startswith("(")
+
+
+def scope_of(longname, line=None):
+    """The entity a reference at `line` is scoped to.
+
+    Two things share a long name here and both were resolved wrongly by asking
+    for the long name alone.
+
+    A **field and a method**: `PersonRecord.name` is the field and its
+    accessor, `XMLParserConfiguration.shouldTrimWhiteSpace` likewise. Entity
+    identity is (long name, kind family) so both rows exist, and the accessor's
+    `return name;` was filed against the *field* -- one user instead of two,
+    and PercentLackOfCohesion 75 against Understand's 50. A variable is never
+    the scope of a read, a write or a call.
+
+    **Overloads**: `StringBuilderWriter.write` is four methods and one long
+    name, so every `builder.append(...)` in all four landed on whichever row
+    was created first. `builder` then had 3 users of 12 methods where
+    Understand counts 7, which is its 42 against our 75. Overloads cannot
+    overlap in source, so the enclosing one is the candidate whose declaration
+    starts last at or before the reference.
+    """
+    rows = entity_rows(longname)
+    if not rows:
+        return None
+    named = [r for r in rows if kind_family(r._kind_id) != "variable"] or rows
+    if len(named) == 1 or line is None:
+        return named[0]
+    enclosing = [r for r in named if r._line is not None and r._line <= line]
+    return max(enclosing, key=lambda r: r._line) if enclosing else named[0]
+
+
+#: The four hooks ANTLR's walker fires on nodes that are not rules. No pass in
+#: this project implements one, and 44% of a Java tree's nodes are tokens --
+#: 11,867 of JSONObject.java's 26,907 -- so the stock walker spent nearly half
+#: its dispatches calling no-ops, once per listener per file.
+_EVERY_NODE_HOOKS = (
+    "visitTerminal",
+    "visitErrorNode",
+    "enterEveryRule",
+    "exitEveryRule",
+)
+
+
+def _dispatches_on_every_node(listener):
+    """Whether this listener wants the hooks that fire on tokens too."""
+    from antlr4.tree.Tree import ParseTreeListener
+
+    for name in _EVERY_NODE_HOOKS:
+        method = getattr(type(listener), name, None)
+        if method is not None and method is not getattr(ParseTreeListener, name, None):
+            return True
+    return False
+
+
+from functools import lru_cache
+
+from antlr4.tree.Tree import TerminalNodeImpl as _TerminalNodeImpl
+
+#: The last tree flattened, and its event list. One entry, because a file is
+#: finished before the next is parsed.
+_FLAT_TREE = None
+_FLAT_EVENTS = ()
+
+
+def _flatten(parse_tree):
+    """[(node, entering)] in walk order, for the rule nodes only.
+
+    The tree is walked 33 times per file, once per pass, and the descent is
+    identical every time: the same children, the same terminals skipped, the
+    same order. Doing it once and replaying a flat list leaves each pass with
+    only the part that differs, which is the dispatch.
+    """
+    global _FLAT_TREE, _FLAT_EVENTS
+    if _FLAT_TREE is parse_tree:
+        return _FLAT_EVENTS
+    events = []
+    append = events.append
+    stack = [(parse_tree, True)]
+    while stack:
+        node, entering = stack.pop()
+        if not entering:
+            append((node, False))
+            continue
+        append((node, True))
+        stack.append((node, False))
+        children = node.children or ()
+        for i in range(len(children) - 1, -1, -1):
+            child = children[i]
+            if child.__class__ is not _TerminalNodeImpl:
+                stack.append((child, True))
+    _FLAT_TREE, _FLAT_EVENTS = parse_tree, events
+    return events
+
+
+class _Hooks:
+    """Carries only the hooks one pass implements.
+
+    A generated context dispatches with `if hasattr(listener, "enterX")`, and
+    `JavaParserLabeledListener` defines all 392 of them as `pass` -- so every
+    node called a no-op once per pass, and `method_calls` implements 8 of the
+    392. Handing the walk an object that has only the real handlers turns 98%
+    of those calls into a failed attribute lookup.
+    """
+
+
+@lru_cache(maxsize=256)
+def _overridden_hooks(listener_cls):
+    """Hook names a pass defines itself, not the ones it inherits as no-ops."""
+    from antlr4.tree.Tree import ParseTreeListener
+    from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+        JavaParserLabeledListener,
+    )
+
+    stop = (JavaParserLabeledListener, ParseTreeListener, object)
+    names = set()
+    for klass in listener_cls.__mro__:
+        if klass in stop:
+            break
+        names |= {
+            name
+            for name, value in klass.__dict__.items()
+            if name.startswith(("enter", "exit")) and callable(value)
+        }
+    return frozenset(names)
+
+
+def _hooks_of(listener):
+    """The object to dispatch to, or None when the pass implements nothing."""
+    names = set(_overridden_hooks(type(listener)))
+    # A handler attached to the instance rather than the class still counts.
+    names |= {
+        name
+        for name in vars(listener)
+        if name.startswith(("enter", "exit"))
+        and callable(getattr(listener, name, None))
+    }
+    if not names:
+        return None
+    target = _Hooks()
+    for name in names:
+        setattr(target, name, getattr(listener, name))
+    return target
+
+
+def _fan_out(entries, disabled, on_error):
+    """One hook that calls every listener implementing it, in pass order.
+
+    A handler that raises takes its own listener out of the rest of the walk
+    and is reported: that is the isolation each pass's own try/except gave it
+    before the walks were merged.
+    """
+
+    def hook(ctx):
+        for listener, method in entries:
+            if listener in disabled:
+                continue
+            try:
+                method(ctx)
+            except Exception as error:  # noqa: BLE001 - one pass, not all
+                disabled.add(listener)
+                on_error(listener, error)
+
+    return hook
+
+
+def _walk_all(listeners, parse_tree, on_error):
+    """Walk `parse_tree` once for every listener that can share a walk.
+
+    33 passes over 27,000 nodes is 1.8M dispatch iterations a file, and the
+    descent is identical every time. A listener wanting the hooks that fire on
+    tokens too still gets ANTLR's own walker, on its own.
+
+    Do not try replacing `node.enterRule(target)` with a {context class: hook}
+    table. It works, the fingerprint holds, and it is worth **0.12s of an 18.6s
+    per-file loop**: the generated `hasattr` probe is not what this costs, the
+    passes' own handler logic is.
+    """
+    shared, by_name = [], {}
+    for listener in listeners:
+        if _dispatches_on_every_node(listener):
+            ParseTreeWalker().walk(listener=listener, t=parse_tree)
+            continue
+        hooks = _hooks_of(listener)
+        if hooks is None:
+            continue
+        shared.append(listener)
+        for name, method in vars(hooks).items():
+            by_name.setdefault(name, []).append((listener, method))
+    if not by_name:
+        return
+    disabled = set()
+    target = _Hooks()
+    for name, entries in by_name.items():
+        setattr(
+            target,
+            name,
+            (
+                entries[0][1]
+                if len(entries) == 1
+                else _fan_out(entries, disabled, on_error)
+            ),
+        )
+    # A single listener's hook is bound straight in, but it still has to be
+    # isolated, so wrap those too when there is more than one pass sharing.
+    if len(shared) > 1:
+        for name, entries in by_name.items():
+            if len(entries) == 1:
+                setattr(target, name, _fan_out(entries, disabled, on_error))
+    for node, entering in _flatten(parse_tree):
+        if entering:
+            node.enterRule(target)
+        else:
+            node.exitRule(target)
+
+
+def _walk(listener, parse_tree):
+    """Walk `parse_tree`, skipping token dispatch when nothing wants it."""
+    if _dispatches_on_every_node(listener):
+        ParseTreeWalker().walk(listener=listener, t=parse_tree)
+        return
+    target = _hooks_of(listener)
+    if target is None:
+        return
+    for node, entering in _flatten(parse_tree):
+        if entering:
+            node.enterRule(target)
+        else:
+            node.exitRule(target)
+
+
 class Project:
     def __init__(self):
         self.tree = None
-        # getClassProperties() answers by walking the whole parse tree, and the
-        # create pass alone asked it 168 times for one file at ~80ms a call --
-        # 13.5s of JSONObject.java's 44s. The answer depends only on the long
-        # name and the tree, and the tree is fixed for the file being processed,
-        # so ask once. Cleared in Parse(), which is the only place a Project
-        # changes tree.
         self._class_properties = {}
         self._interface_properties = {}
+        #: (classes, interfaces) collected from the tree, or seeded by a caller
+        #: that had one. None until first asked.
+        self._declared_types = None
 
     @staticmethod
     def listToString(s):
@@ -107,8 +405,12 @@ class Project:
 
     @staticmethod
     def Walk(reference_listener, parse_tree):
-        walker = ParseTreeWalker()
-        walker.walk(listener=reference_listener, t=parse_tree)
+        _walk(reference_listener, parse_tree)
+
+    @staticmethod
+    def WalkAll(listeners, parse_tree, on_error):
+        """One walk shared by every listener built in this phase."""
+        _walk_all(listeners, parse_tree, on_error)
 
     def getListOfFiles(self, dirName):
         listOfFile = os.listdir(dirName)
@@ -126,7 +428,10 @@ class Project:
         # kind id: 1
         file = open(path, mode="r")
         file_ent = EntityModel.get_or_create(
-            _kind=kind_id("Java File"), _name=name, _longname=path, _contents=file.read()
+            _kind=kind_id("Java File"),
+            _name=name,
+            _longname=path,
+            _contents=file.read(),
         )[0]
         file.close()
         print("processing file:", file_ent)
@@ -148,13 +453,6 @@ class Project:
                     file_ent, ref_dict["ent"], ref_dict["ent_longname"]
                 )
 
-            # Declare: kind id 192
-            #
-            # Only between packages. For `package org.json;` Understand reports
-            # one Declare -- org -> org.json -- and no Declare at all for the
-            # root component, whose only reference is the Declarein naming the
-            # file. Emitting one there put a row at 1:9 that Understand never
-            # has, one per file.
             if ref_dict["scope"] is not None:
                 declare_ref = ReferenceModel.get_or_create(
                     _kind=kind_id("Java Declare"),
@@ -177,10 +475,6 @@ class Project:
 
     def addTypeRefs(self, d_type, file_ent, stream: str = ""):
         for type_tuple in d_type["typedBy"]:
-            # The pass resolves both ends now: gluing the package onto a simple
-            # name here named a local of CDL.getValue `org.json.x` and
-            # java.lang.String `org.json.String`, so 24 of 1062 references
-            # matched Understand on JSON.
             ent, h_c1 = EntityModel.get_or_create(
                 # was the reference kind Java Typed, written into an entity row; the referenced type
                 _kind=kind_id("Java Unknown Class Type Member"),
@@ -227,30 +521,17 @@ class Project:
 
         for type_tuple in d:
             par = EntityModel.get(_name=type_tuple[7])
-            # The scope is the enclosing method, which is not the entity's long
-            # name minus its last segment: `this.usePrevious = false` inside
-            # JSONTokener.next sets org.json.JSONTokener.usePrevious -- a field
-            # of the class -- from scope org.json.JSONTokener.next. Trimming
-            # the entity gave org.json.JSONTokener for the scope.
             scope_longname = type_tuple[11]
-            # `this.map = ...` arrives with the short name already qualified
-            # ("JSONObject.map"). Resolving that verbatim never matches, and the
-            # fallback glued it onto the scope:
-            # org.json.JSONObject.JSONObject.JSONObject.map.
             simple_name = str(type_tuple[0]).rsplit(".", 1)[-1]
-            # Where to start looking for that name. Same as the scope except
-            # for a `this.` target, which must skip the method's own locals.
             resolve_scope = type_tuple[12]
             ent, h_c1 = EntityModel.get_or_create(
                 # was the reference kind Java Set, written into an entity row; the variable being set
                 _kind=kind_id("Java Unknown Variable Member"),
                 _parent=par._id,
                 _name=simple_name,
-                # Innermost scope outwards: a local in this method wins, then a
-                # field of its class. The pass could only glue the package on
-                # the front, which named every `c` in the project org.json.c.
                 _longname=resolved_longname(
-                    simple_name, resolve_scope + "." + simple_name, resolve_scope),
+                    simple_name, resolve_scope + "." + simple_name, resolve_scope
+                ),
                 _value=type_tuple[3],
                 _type=type_tuple[9],
                 _contents="",
@@ -339,7 +620,8 @@ class Project:
                 _parent=None,
                 _name=name,
                 _longname=resolved_longname(
-                    name, scope_longname + "." + name, scope_longname),
+                    name, scope_longname + "." + name, scope_longname
+                ),
                 _contents="",
             )
 
@@ -392,7 +674,8 @@ class Project:
                 _parent=None,
                 _name=use["name"],
                 _longname=resolved_longname(
-                    use["name"], scope_longname + "." + use["name"], scope_longname),
+                    use["name"], scope_longname + "." + use["name"], scope_longname
+                ),
                 _value=None,
                 _type=None,
                 _contents=stream,
@@ -447,6 +730,16 @@ class Project:
                 scope = self.getScopeEntity(
                     file_ent, ref_dict["scope"], ref_dict["scope_longname"]
                 )
+            # The parent is not always the declaring scope. A package does not
+            # *enclose* a type, it contains it, and Understand says so with a
+            # `Java Contain` reference rather than with parentage:
+            # `org.json.CDL`'s parent there is CDL.java. 83 of JSON's types were
+            # parented to `org.json`. Kept separate from `scope`, which still
+            # decides what the Define reference below is written against --
+            # conflating the two silently added 85 Define rows.
+            parent = scope
+            if parent is not None and kind_family(parent._kind_id) == "package":
+                parent = file_ent
 
             ent, _ = EntityModel.get_or_create(
                 _kind=kind_names.resolve(
@@ -456,7 +749,7 @@ class Project:
                 ),  # re-resolved below when an earlier pass already made the row
                 # The enclosing scope, not the package: Understand's parent of a
                 # method is its class, and of a local its method.
-                _parent=scope,
+                _parent=parent,
                 _name=ref_dict["ent"],
                 _longname=ref_dict["ent_longname"],
                 _value=None,
@@ -485,6 +778,17 @@ class Project:
             if declared_kind is not None and ent._kind_id != declared_kind:
                 ent._kind = declared_kind
                 dirty = True
+            # The parent, for the same reason and with the same force. A pass
+            # that merely *mentions* a name creates the row with the file it is
+            # reading as the parent, which is a guess about someone else's
+            # declaration: `org.json.JSONTokener.next` came out parented to
+            # CDL.java, because CDL.java calls it and is read first. Only the
+            # file that declares an entity knows what encloses it -- the class
+            # for a method, the file for a top-level type -- and that is this
+            # pass, here, holding the scope chain it walked.
+            if parent is not None and ent._parent_id != parent._id:
+                ent._parent = parent
+                dirty = True
             if dirty:
                 ent.save()
 
@@ -494,8 +798,10 @@ class Project:
             # inverse: 74 Definein against 58 Define on calculator_app, the
             # difference being every class recorded as defined *in* its
             # package. One direction only, as for a static import.
-            package_scoped = (kind_family(scope._kind_id) == "package"
-                              or kind_family(ent._kind_id) == "package")
+            package_scoped = (
+                kind_family(scope._kind_id) == "package"
+                or kind_family(ent._kind_id) == "package"
+            )
             if not package_scoped:
                 define_ref = ReferenceModel.get_or_create(
                     _kind=kind_id("Java Define"),
@@ -541,9 +847,7 @@ class Project:
         all.
         """
         for ref_dict in ref_dicts:
-            scope = EntityModel.get_or_none(
-                EntityModel._longname == ref_dict["scope_longname"]
-            )
+            scope = scope_of(ref_dict["scope_longname"], ref_dict.get("line"))
             if scope is None:
                 continue
 
@@ -559,51 +863,41 @@ class Project:
                 # CountInput at 5 against Understand's 2.
                 if not owner:
                     # A chained call, or a type this project neither declares
-                    # nor imports. The call happened, but naming its target
-                    # would be a guess, and a wrong target is worse than none.
-                    continue
-                # Understand attributes the call to the class that *declares*
-                # the method, not to the receiver's static type: XMLTokener
-                # extends JSONTokener, so x.next() on an XMLTokener is a call
-                # to org.json.JSONTokener.next. Falls back to the static type
-                # when nothing in the chain declares it, which is every method
-                # inherited from the JDK.
-                # The class that declares the method, inside the project or
-                # in the JDK: Understand reports `sb.append(x)` against
-                # java.lang.AbstractStringBuilder, not StringBuilder.
-                owner = (symbol_table.declaring_type(owner, name)
-                         or jdk_index.declaring_type(owner, name)
-                         or owner)
-                longname = f"{owner}.{name}"
-                ent = EntityModel.get_or_none(EntityModel._longname == longname)
-                if ent is None:
-                    ent, _ = EntityModel.get_or_create(
-                        _kind=kind_id("Java Unknown Method Member"),
-                        _name=name,
-                        _parent=file_ent,
-                        _longname=longname,
-                        _contents="",
+                    # nor imports -- `Configuration.defaultConfiguration()`
+                    # behind `import com.jayway.jsonpath.*`. Naming a *project*
+                    # target would be a guess; naming it unresolved is what
+                    # Understand does, and is the only honest answer.
+                    ent = self._unresolved_external_method(name, file_ent)
+                else:
+                    # Understand attributes the call to the class that
+                    # *declares* the method, not to the receiver's static type:
+                    # XMLTokener extends JSONTokener, so x.next() on an
+                    # XMLTokener is a call to org.json.JSONTokener.next. Falls
+                    # back to the static type when nothing in the chain
+                    # declares it.
+                    # The class that declares the method, inside the project or
+                    # in the JDK: Understand reports `sb.append(x)` against
+                    # java.lang.AbstractStringBuilder, not StringBuilder.
+                    owner = symbol_table.declaring_type_anywhere(owner, name) or owner
+                    ent = callee_of(
+                        f"{owner}.{name}", name, ref_dict.get("arguments"), file_ent
                     )
             elif owner:
                 # No receiver, but the name was statically imported, so the
                 # call lands on the type that exported it rather than on the
                 # enclosing class: `import static Sorts.SortUtils.less` makes a
                 # bare `less(a, b)` a call to Sorts.SortUtils.less.
-                longname = f"{owner}.{name}"
-                ent = EntityModel.get_or_none(EntityModel._longname == longname)
-                if ent is None:
-                    ent, _ = EntityModel.get_or_create(
-                        _kind=kind_id("Java Unknown Method Member"),
-                        _name=name,
-                        _parent=file_ent,
-                        _longname=longname,
-                        _contents="",
-                    )
+                ent = callee_of(
+                    f"{owner}.{name}", name, ref_dict.get("arguments"), file_ent
+                )
             else:
                 # No receiver: a call on the enclosing class.
-                ent = EntityModel.get_or_none(
-                    EntityModel._longname == f"{ref_dict['scope_longname']}.{name}"
-                )
+                ent = None
+                own = f"{ref_dict['scope_longname']}.{name}"
+                if symbol_table.overload_site(own, ref_dict.get("arguments")):
+                    ent = callee_of(own, name, ref_dict.get("arguments"), file_ent)
+                if ent is None:
+                    ent = EntityModel.get_or_none(EntityModel._longname == own)
                 if ent is None:
                     # The declaration may be in another file, which this pass
                     # cannot see. The project-wide index built before the
@@ -613,17 +907,23 @@ class Project:
                     if resolved:
                         ent = EntityModel.get_or_none(EntityModel._longname == resolved)
                 if ent is None:
-                    # A bare simple name is exactly what
-                    # merge_placeholder_entities() folds into whichever single
-                    # project entity shares it, which is how `print(...)` became
-                    # a call to Sorts.SortUtils.print from 21 unrelated places.
-                    # An unresolved call is better left unwritten.
-                    continue
+                    # Nothing in the project declares it, so it came in through
+                    # a wildcard static import of a jar that is not part of the
+                    # analysed source -- `import static org.junit.Assert.*`
+                    # makes a bare `assertTrue(...)` one of 269 such calls on
+                    # JSON. Understand records the target as an unresolved
+                    # entity under its bare simple name; so does this now, with
+                    # a kind merge_placeholder_entities() refuses to fold. The
+                    # old behaviour was to write nothing, which is what left
+                    # 299 methods short of a callee and CountOutput at 0.65.
+                    ent = self._unresolved_external_method(name, file_ent)
             if ent._id == scope._id:
                 continue
 
-            for kind, (a, b) in (("Java Call", (ent, scope)),
-                                 ("Java Callby", (scope, ent))):
+            for kind, (a, b) in (
+                ("Java Call", (ent, scope)),
+                ("Java Callby", (scope, ent)),
+            ):
                 ReferenceModel.get_or_create(
                     _kind=kind_id(kind),
                     _file=file_ent,
@@ -632,6 +932,28 @@ class Project:
                     _ent=a,
                     _scope=b,
                 )
+
+    @staticmethod
+    def _unresolved_external_method(name, file_ent):
+        """The entity for a call whose target is outside the analysed source.
+
+        The long name is the *bare* simple name, which is what Understand
+        writes and what every other pass is forbidden to write: the kind is
+        what makes it safe. `Java Unresolved External ...` carries the
+        `external` token that merge_placeholder_entities() skips, so `parse`
+        can never be folded into org.json.XML.parse -- the failure that took
+        Java Call precision to 19%. It still carries `unresolved`, so
+        drop_external_inverse_refs() declines to hang a Callby on it, exactly
+        as Understand does.
+        """
+        ent, _ = EntityModel.get_or_create(
+            _kind=kind_id("Java Unresolved External Method Public Member"),
+            _name=name,
+            _parent=file_ent,
+            _longname=name,
+            _contents="",
+        )
+        return ent
 
     def addUseVariantRefs(self, ref_dicts, file_ent):
         """Write the qualified Use/Typed variants collected by use_variants.py.
@@ -643,7 +965,7 @@ class Project:
         for ref_dict in ref_dicts:
             scope_longname = ref_dict["scope_longname"]
             stated = ref_dict.get("ent_longname")
-            scope = EntityModel.get_or_none(EntityModel._longname == scope_longname)
+            scope = scope_of(scope_longname, ref_dict.get("line"))
             if scope is None and stated == scope_longname:
                 # A type parameter is its own scope here -- `<T extends
                 # Comparable<T>>` reads T inside T's declaration. Nothing has
@@ -666,7 +988,21 @@ class Project:
                 # scope first found `Others.Graph.Vertex.Vertex` -- the
                 # constructor -- for the `Vertex` of `Comparable<Vertex>`.
                 stated = symbol_table.resolve_type_name(
-                    name, scope_longname=scope_longname)
+                    name, scope_longname=scope_longname
+                )
+            if ref_dict.get("ent_kind"):
+                # The pass already knows this names something outside the
+                # analysed source, and the kind is what makes its bare long
+                # name safe to store.
+                ent = EntityModel.get_or_create(
+                    _kind=kind_id(ref_dict["ent_kind"]),
+                    _name=name,
+                    _parent=file_ent,
+                    _longname=stated or name,
+                    _contents="",
+                )[0]
+                self._write_use_variant(ref_dict, ent, scope, file_ent)
+                continue
             ent = EntityModel.get_or_none(
                 EntityModel._longname == (stated or f"{scope_longname}.{name}")
             )
@@ -689,11 +1025,27 @@ class Project:
                 # An annotation the project does not declare is java.lang's:
                 # `@Override` is java.lang.Override, not a bare "Override"
                 # that merge_placeholder_entities() folds somewhere arbitrary.
-                longname = name
-                if name in symbol_table.JAVA_LANG_TYPES:
+                longname = stated or name
+                if not stated and name in symbol_table.JAVA_LANG_TYPES:
                     longname = f"java.lang.{name}"
+                # Not everything read is a type. `java.lang.Double.NaN` is a
+                # static field and was created as an Unknown *Class Type*, so
+                # the fan metrics skipped it -- they count variables, and
+                # Understand counts NaN as the global read it is. A cast, an
+                # annotation and a type argument do name types; for a plain
+                # read, the index decides.
+                names_a_type = (
+                    ref_dict["kind"] in _TYPE_USE_KINDS
+                    or jdk_index.known(longname)
+                    or symbol_table.is_project_type(longname)
+                    or (not stated and name in symbol_table.JAVA_LANG_TYPES)
+                )
                 ent, _ = EntityModel.get_or_create(
-                    _kind=kind_id("Java Unknown Class Type Member"),
+                    _kind=kind_id(
+                        "Java Unknown Class Type Member"
+                        if names_a_type
+                        else "Java Unknown Variable Member"
+                    ),
                     _name=name,
                     _parent=file_ent,
                     _longname=longname,
@@ -704,9 +1056,10 @@ class Project:
             inverse = KindModel.get_or_none(_name=forward)
             if inverse is None or inverse._inv_id is None:
                 continue
-            for kind, (a, b) in ((forward, (ent, scope)),
-                                 (KindModel.get_by_id(inverse._inv_id)._name,
-                                  (scope, ent))):
+            for kind, (a, b) in (
+                (forward, (ent, scope)),
+                (KindModel.get_by_id(inverse._inv_id)._name, (scope, ent)),
+            ):
                 ReferenceModel.get_or_create(
                     _kind=kind_id(kind),
                     _file=file_ent,
@@ -715,6 +1068,26 @@ class Project:
                     _ent=a,
                     _scope=b,
                 )
+
+    @staticmethod
+    def _write_use_variant(ref_dict, ent, scope, file_ent):
+        """Write one Use variant and its inverse at the reference's position."""
+        forward = ref_dict["kind"]
+        row = KindModel.get_or_none(_name=forward)
+        if row is None or row._inv_id is None:
+            return
+        for kind, (a, b) in (
+            (forward, (ent, scope)),
+            (KindModel.get_by_id(row._inv_id)._name, (scope, ent)),
+        ):
+            ReferenceModel.get_or_create(
+                _kind=kind_id(kind),
+                _file=file_ent,
+                _line=ref_dict["line"],
+                _column=col_1based(ref_dict["col"]),
+                _ent=a,
+                _scope=b,
+            )
 
     def addImplementOrImplementByRefs(self, ref_dicts, file_ent, file_address):
         pass
@@ -854,7 +1227,8 @@ class Project:
                 _parent=None,
                 _name=name,
                 _longname=resolved_longname(
-                    name, resolve_scope + "." + name, resolve_scope),
+                    name, resolve_scope + "." + name, resolve_scope
+                ),
                 _contents="",
             )[0]
             scope = EntityModel.get_or_create(
@@ -865,8 +1239,11 @@ class Project:
                 _contents="",
             )[0]
             forward = ref_dict.get("kind", "Java Modify")
-            inverse = ("Java Modifyby Deref Partial"
-                       if forward.endswith("Deref Partial") else "Java Modifyby")
+            inverse = (
+                "Java Modifyby Deref Partial"
+                if forward.endswith("Deref Partial")
+                else "Java Modifyby"
+            )
             _, _ = ReferenceModel.get_or_create(
                 _kind=kind_id(forward),
                 _file=ref_dict["file"],
@@ -1238,9 +1615,7 @@ class Project:
                 # that then captured all 110 of the class's Define references,
                 # leaving the real class entity with none and its
                 # CountDeclMethodPublic at 0 against Understand's 85.
-                scope = EntityModel.get_or_none(
-                    EntityModel._longname == ref_dict["scopelongname"]
-                )
+                scope = scope_of(ref_dict["scopelongname"], ref_dict.get("line"))
                 if scope is None:
                     scope = EntityModel.get_or_create(
                         _kind=self.findKindWithKeywords(
@@ -1254,8 +1629,13 @@ class Project:
                         # ["scopecontent"], so every entity this pass created
                         # first carried the string "['scopecontent']" as its
                         # source, and every metric that reparses contents
-                        # returned 0.
-                        _contents=ref_dict["scopecontent"],
+                        # returned 0. Empty for a synthetic scope, whose text
+                        # is not this method's.
+                        _contents=(
+                            ""
+                            if synthetic_scope(ref_dict["scopelongname"])
+                            else ref_dict["scopecontent"]
+                        ),
                     )[0]
 
                 # The pass resolves the created type against the file's
@@ -1304,13 +1684,59 @@ class Project:
                 # Java Call, never Nondynamic. An array creation runs no
                 # constructor, and a type this pass could not place would give
                 # a bare simple name, so both are skipped.
+                #
+                # Only when a constructor exists to call. `new MyEnumClass()`
+                # runs the *implicit* default one, which is not an entity:
+                # Understand writes Create and no Call at all. That test can
+                # only be made for a class the project declares -- the index
+                # knows its members, and asking the index rather than the
+                # database keeps the answer independent of which files have
+                # been parsed so far. Outside the project the constructor is
+                # taken on trust, which is right: `new ArrayList<>()` is 47 of
+                # JSON's calls to java.util.ArrayList.ArrayList.
                 created = ent._longname or ""
-                if not ref_dict.get("is_array") and "." in created:
-                    constructor = self.getClassEntity(
-                        f"{created}.{created.rsplit('.', 1)[-1]}",
-                        file_address, file_ent)
-                    for kind, (a, b) in (("Java Call", (constructor, scope)),
-                                         ("Java Callby", (scope, constructor))):
+                simple = created.rsplit(".", 1)[-1]
+                declared = (
+                    symbol_table.INDEX.declares(created, simple)
+                    if symbol_table.is_project_type(created)
+                    else True
+                )
+                if not ref_dict.get("is_array") and "." in created and declared:
+                    # A constructor is method family, not type family. Built
+                    # through getClassEntity() it was a *class* placeholder,
+                    # so it never merged with the real declaration and
+                    # merge_placeholder_entities() folded it onto the class it
+                    # is named after instead -- which is why `new
+                    # JSONTokener(x)` in one file counted as a call to the
+                    # class org.json.JSONTokener.
+                    # The real kind only for a class the project declares, so
+                    # the row merges with the declaration the define pass
+                    # writes. Outside the project it has to stay a placeholder:
+                    # a real `org.junit.rules.TemporaryFolder.TemporaryFolder`
+                    # became the only non-placeholder entity named
+                    # TemporaryFolder, and merge_placeholder_entities() then
+                    # folded the *class* into its own constructor -- two
+                    # couples pointing at a constructor.
+                    kind = kind_id(
+                        "Java Method Constructor Member Public"
+                        if symbol_table.is_project_type(created)
+                        else "Java Unresolved External Method Public Member"
+                    )
+                    site = symbol_table.overload_site(
+                        f"{created}.{simple}", ref_dict.get("arguments")
+                    )
+                    constructor, _ = EntityModel.get_or_create(
+                        _kind=kind,
+                        _name=simple,
+                        _parent=file_ent,
+                        _longname=f"{created}.{simple}",
+                        _contents="",
+                        **({"_line": site[0], "_column": site[1]} if site else {}),
+                    )
+                    for kind, (a, b) in (
+                        ("Java Call", (constructor, scope)),
+                        ("Java Callby", (scope, constructor)),
+                    ):
                         ReferenceModel.get_or_create(
                             _kind=kind_id(kind),
                             _file=file_ent,
@@ -1328,8 +1754,11 @@ class Project:
         # names it, so parenting it to whichever file got there first made the
         # parent chain of every type in the package point at the wrong file.
         ent, _ = EntityModel.get_or_create(
-            _kind=kind_id("Java Package"), _name=name, _parent=None,
-            _longname=longname, _contents="",
+            _kind=kind_id("Java Package"),
+            _name=name,
+            _parent=None,
+            _longname=longname,
+            _contents="",
         )
         return ent
 
@@ -1364,25 +1793,45 @@ class Project:
         )
         return ent[0]
 
+    def declared_types(self):
+        """Every class and interface in this file, collected once.
+
+        The write layer used to reach for the parse tree here, once per
+        distinct name asked. Collecting the lot in one walk answers every
+        lookup and is what lets a writer work without a tree at all.
+        """
+        if self._declared_types is None:
+            from openunderstand.analysis_passes.class_properties import (
+                DeclaredTypesListener,
+            )
+
+            listener = DeclaredTypesListener()
+            if self.tree is not None:
+                self.Walk(listener, self.tree)
+            self._declared_types = (listener.classes, listener.interfaces)
+        return self._declared_types
+
+    def seed_declared_types(self, classes, interfaces):
+        """Use types collected elsewhere -- by a worker that had the tree."""
+        self._declared_types = (classes, interfaces)
+
     def getClassProperties(self, class_longname, file_address):
         if class_longname in self._class_properties:
             return self._class_properties[class_longname]
-        listener = ClassPropertiesListener()
-        listener.class_longname = class_longname.split(".")
-        listener.class_properties = None
-        self.Walk(listener, self.tree)
-        self._class_properties[class_longname] = listener.class_properties
-        return listener.class_properties
+        from openunderstand.analysis_passes.class_properties import match_declared_type
+
+        found = match_declared_type(self.declared_types()[0], class_longname)
+        self._class_properties[class_longname] = found
+        return found
 
     def getInterfaceProperties(self, interface_longname, file_address):
         if interface_longname in self._interface_properties:
             return self._interface_properties[interface_longname]
-        listener = InterfacePropertiesListener()
-        listener.interface_longname = interface_longname.split(".")
-        listener.interface_properties = None
-        self.Walk(listener, self.tree)
-        self._interface_properties[interface_longname] = listener.interface_properties
-        return listener.interface_properties
+        from openunderstand.analysis_passes.class_properties import match_declared_type
+
+        found = match_declared_type(self.declared_types()[1], interface_longname)
+        self._interface_properties[interface_longname] = found
+        return found
 
     def getCreatedClassEntity(
         self, class_longname, class_potential_longname, file_address, file_ent
@@ -1496,7 +1945,9 @@ class Project:
                                     ent = EntityModel.get_or_create(
                                         _kind=kind,
                                         _name=y["scope_name"],
-                                        _parent=resolve_entity_ref(y["scope_parent"], fe),
+                                        _parent=resolve_entity_ref(
+                                            y["scope_parent"], fe
+                                        ),
                                         _longname=y["scope_longname"],
                                         _contents=y["scope_contents"],
                                         _type=y["Methodkind"],
@@ -1778,9 +2229,7 @@ class Project:
             scope_longname = ref_dict["scope_longname"]
             # Prefer the entity the define pass declared, so the reference
             # attaches to the real method rather than a second placeholder.
-            scope = EntityModel.get_or_none(
-                EntityModel._longname == scope_longname
-            )
+            scope = scope_of(scope_longname, ref_dict.get("line"))
             if scope is None:
                 scope = EntityModel.get_or_create(
                     _kind=kind_id("Java Unknown Method Member"),
@@ -1818,9 +2267,7 @@ class Project:
             # Method kind here created a second row for names that are really
             # classes -- an `org.json.CDL` in the method family alongside the
             # real one in the type family, which do not merge by design.
-            scope = EntityModel.get_or_none(
-                EntityModel._longname == ref_dict["scopelongname"]
-            )
+            scope = scope_of(ref_dict["scopelongname"], ref_dict.get("line"))
             if scope is None:
                 scope = EntityModel.get_or_create(
                     _kind=self.findKindWithKeywords(
@@ -1829,7 +2276,11 @@ class Project:
                     _name=ref_dict["scopename"],
                     _parent=resolve_entity_ref(ref_dict["scope_parent"], file_ent),
                     _longname=ref_dict["scopelongname"],
-                    _contents=ref_dict["scopecontent"],
+                    _contents=(
+                        ""
+                        if synthetic_scope(ref_dict["scopelongname"])
+                        else ref_dict["scopecontent"]
+                    ),
                 )[0]
 
             if not Throw:
@@ -1865,73 +2316,96 @@ class Project:
             )
 
     def add_couple_and_couple_by_refs(self, classes, couples):
-        keykind = ''
+        keykind = ""
         for c in couples:
-            file_ent = self.getFileEntity(c['File'])
-            scope = EntityModel.get_or_create(_kind=self.findKindWithKeywords(c["scope_kind"], c["scope_modifiers"]),
-                                              _name=c["scope_name"],
-                                              _parent=resolve_entity_ref(c["scope_parent"], file_ent),
-                                              _longname=c["scope_longname"],
-                                              _contents=c["scope_contents"])
-            if 'type_ent_longname' in c:
-                keylist = c['type_ent_longname']
-                if (len(keylist) != 0):
+            file_ent = self.getFileEntity(c["File"])
+            scope = EntityModel.get_or_create(
+                _kind=self.findKindWithKeywords(c["scope_kind"], c["scope_modifiers"]),
+                _name=c["scope_name"],
+                _parent=resolve_entity_ref(c["scope_parent"], file_ent),
+                _longname=c["scope_longname"],
+                _contents=c["scope_contents"],
+            )
+            if "type_ent_longname" in c:
+                keylist = c["type_ent_longname"]
+                if len(keylist) != 0:
                     for key in keylist:
                         if key in classes:
                             c1 = classes[key]
-                            file_ent2 = self.getFileEntity(c1['File'])
-                            keykind = self.findKindWithKeywords(c1["scope_kind"], c1["scope_modifiers"])
+                            file_ent2 = self.getFileEntity(c1["File"])
+                            keykind = self.findKindWithKeywords(
+                                c1["scope_kind"], c1["scope_modifiers"]
+                            )
                             ent = EntityModel.get_or_create(
-                                _kind=self.findKindWithKeywords(c1["scope_kind"], c1["scope_modifiers"]),
+                                _kind=self.findKindWithKeywords(
+                                    c1["scope_kind"], c1["scope_modifiers"]
+                                ),
                                 _name=c1["scope_name"],
-                                _parent=resolve_entity_ref(c1["scope_parent"], file_ent2),
+                                _parent=resolve_entity_ref(
+                                    c1["scope_parent"], file_ent2
+                                ),
                                 _longname=c1["scope_longname"],
-                                _contents=c1["scope_contents"])
-                            CoupleBy_ref = ReferenceModel.get_or_create(_kind=kind_id("Java Coupleby"), _file=file_ent2, _line=c["line"],
-                                                                        _column=col_1based(c["col"]), _ent=scope[0], _scope=ent[0])
+                                _contents=c1["scope_contents"],
+                            )
+                            CoupleBy_ref = ReferenceModel.get_or_create(
+                                _kind=kind_id("Java Coupleby"),
+                                _file=file_ent2,
+                                _line=c["line"],
+                                _column=col_1based(c["col"]),
+                                _ent=scope[0],
+                                _scope=ent[0],
+                            )
 
                         else:
-                            kw = key.split('.')
+                            kw = key.split(".")
                             # 84 = Java Unknown Class Type Member. This was the
                             # string "Unknown Class", written into an integer
                             # foreign-key column.
                             keykind = kind_id("Java Unknown Class Type Member")
-                            ent = EntityModel.get_or_create(_kind=keykind, _name=kw[-1],
-                                                            _parent=file_ent,
-                                                            _longname=key,
-                                                            )
-                        Couple_ref = ReferenceModel.get_or_create(_kind=kind_id("Java Couple"), _file=file_ent, _line=c["line"],
-                                                                  _column=col_1based(c["col"]), _ent=ent[0], _scope=scope[0])
+                            ent = EntityModel.get_or_create(
+                                _kind=keykind,
+                                _name=kw[-1],
+                                _parent=file_ent,
+                                _longname=key,
+                            )
+                        Couple_ref = ReferenceModel.get_or_create(
+                            _kind=kind_id("Java Couple"),
+                            _file=file_ent,
+                            _line=c["line"],
+                            _column=col_1based(c["col"]),
+                            _ent=ent[0],
+                            _scope=scope[0],
+                        )
 
     # for c in couples:
-        #     ent = self.getImplementEntity(
-        #         c["type_ent_longname"], file_address, file_ent
-        #     )
-        #     scope = EntityModel.get_or_create(
-        #         _kind=self.findKindWithKeywords(c["scope_kind"], c["scope_modifiers"]),
-        #         _name=c["scope_name"],
-        #         _parent=(
-        #             c["scope_parent"] if c["scope_parent"] is not None else file_ent
-        #         ),
-        #         _longname=c["scope_longname"],
-        #         _contents=c["scope_contents"],
-        #     )[0]
-        #     Couple_ref = ReferenceModel.get_or_create(
-        #         _kind=kind_id("Java Couple"),
-        #         _file=file_ent,
-        #         _line=c["line"],
-        #         _column=col_1based(c["col"]),
-        #         _ent=ent,
-        #         _scope=scope,
-        #     )
-        #     CoupleBy_ref = ReferenceModel.get_or_create(
-        #         _kind=kind_id("Java Coupleby"),
-        #         _file=file_ent,
-        #         _line=c["line"],
-        #         _column=col_1based(c["col"]),
-        #         _ent=scope,
-        #         _scope=ent,
-        #     )
+    #     ent = self.getImplementEntity(
+    #         c["type_ent_longname"], file_address, file_ent
+    #     )
+    #     scope = EntityModel.get_or_create(
+    #         _kind=self.findKindWithKeywords(c["scope_kind"], c["scope_modifiers"]),
+    #         _name=c["scope_name"],
+    #         _parent=(
+    #             c["scope_parent"] if c["scope_parent"] is not None else file_ent
+    #         ),
+    #         _longname=c["scope_longname"],
+    #         _contents=c["scope_contents"],
+    #     )[0]
+    #     Couple_ref = ReferenceModel.get_or_create(
+    #         _kind=kind_id("Java Couple"),
+    #         _file=file_ent,
+    #         _line=c["line"],
+    #         _column=col_1based(c["col"]),
+    #         _ent=ent,
+    #         _scope=scope,
+    #     )
+    #     CoupleBy_ref = ReferenceModel.get_or_create(
+    #         _kind=kind_id("Java Coupleby"),
+    #         _file=file_ent,
+    #         _line=c["line"],
+    #         _column=col_1based(c["col"]),
+    #         _ent=scope,
+    #         _scope=ent,
+    #     )
 
     def addTypeRelationRefs(self, relations, file_ent):
         """Positioned type relations: `implements`, and type-parameter bounds.
@@ -1944,8 +2418,7 @@ class Project:
         Constrains Couple on TheAlgorithms with no producer at all.
         """
         for relation in relations:
-            scope = EntityModel.get_or_none(
-                EntityModel._longname == relation["scope_longname"])
+            scope = scope_of(relation["scope_longname"], relation.get("line"))
             if scope is None:
                 scope = EntityModel.get_or_create(
                     _kind=kind_id("Java Unknown Class Type Member"),
@@ -1955,20 +2428,33 @@ class Project:
                     _contents="",
                 )[0]
             ent = EntityModel.get_or_none(
-                EntityModel._longname == relation["ent_longname"])
+                EntityModel._longname == relation["ent_longname"]
+            )
             if ent is None:
                 # A pass that knows what it is creating says so. A lambda is
                 # declared by the reference itself and by nothing else, so
                 # leaving it Unknown would make it a placeholder that
                 # merge_placeholder_entities() is free to fold away.
                 ent = EntityModel.get_or_create(
-                    _kind=kind_id(relation.get(
-                        "ent_kind", "Java Unknown Class Type Member")),
+                    _kind=kind_id(
+                        relation.get("ent_kind", "Java Unknown Class Type Member")
+                    ),
                     _name=relation["name"],
                     _parent=None,
                     _longname=relation["ent_longname"],
                     _contents="",
                 )[0]
+
+            # A lambda is declared here and nowhere else, so this pass knows
+            # what encloses it -- the method it sits in, which is what
+            # Understand reports -- and it says so whether or not the row is
+            # already there. Setting it only on creation was not enough: one of
+            # JSON's 35 came out under `JSONArrayTest`'s identically-named test
+            # method, because something reached the name first.
+            if relation.get("ent_kind") == "Java Method Lambda" and scope is not None:
+                if ent._parent_id != scope._id:
+                    ent._parent = scope
+                    ent.save()
 
             forward = KindModel.get_or_none(_name=relation["kind"])
             if forward is None:
@@ -1977,14 +2463,21 @@ class Project:
             # Some relations are one-directional in Understand's own output: it
             # reports Importby for a static import and no Java Import at all.
             if not relation.get("inverse_only") and forward._inv_id is not None:
-                pairs.append(
-                    (KindModel.get_by_id(forward._inv_id)._name, (scope, ent)))
+                pairs.append((KindModel.get_by_id(forward._inv_id)._name, (scope, ent)))
+            # Understand positions an *implicit* relation on the line and at
+            # no column at all, the way it does an unpositioned Couple, so
+            # those arrive already in its terms rather than ANTLR's.
+            column = (
+                relation["col"]
+                if relation.get("column_is_absolute")
+                else col_1based(relation["col"])
+            )
             for kind, (a, b) in pairs:
                 ReferenceModel.get_or_create(
                     _kind=kind_id(kind),
                     _file=file_ent,
                     _line=relation["line"],
-                    _column=col_1based(relation["col"]),
+                    _column=column,
                     _ent=a,
                     _scope=b,
                 )
@@ -2017,7 +2510,9 @@ class Project:
                                         c1["scope_kind"], c1["scope_modifiers"]
                                     ),
                                     _name=c1["scope_name"],
-                                    _parent=resolve_entity_ref(c1["scope_parent"], file_ent2),
+                                    _parent=resolve_entity_ref(
+                                        c1["scope_parent"], file_ent2
+                                    ),
                                     _longname=c1["scope_longname"],
                                     _contents=c1["scope_contents"],
                                 )
@@ -2074,4 +2569,3 @@ class Project:
 
             except Exception as e:
                 print(e)
-

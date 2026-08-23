@@ -32,8 +32,11 @@ from openunderstand.metrics.essential import _analyse as _flow
 
 
 def _kids(ctx, prefix):
-    return [c for c in (getattr(ctx, "children", None) or ())
-            if type(c).__name__.startswith(prefix)]
+    return [
+        c
+        for c in (getattr(ctx, "children", None) or ())
+        if type(c).__name__.startswith(prefix)
+    ]
 
 
 def _falls_through(ctx):
@@ -74,26 +77,29 @@ class _Program:
         here = self.slot()
         scope[id(ctx)] = here
 
-        if name == "Statement0Context":                       # bare block
+        if name == "Statement0Context":  # bare block
             self.number(_kids(ctx, "Block")[0], scope)
-        elif name == "Statement16Context":                    # L: statement
+        elif name == "Statement16Context":  # L: statement
             self.number(_kids(ctx, "Statement")[0], scope)
-        elif name == "Statement2Context":                     # if / else
+        elif name == "Statement2Context":  # if / else
             branches = _kids(ctx, "Statement")
             self.number(branches[0], scope)
             if len(branches) > 1:
                 if _falls_through(branches[0]):
                     scope[("goto", id(ctx))] = self.slot()
                 self.number(branches[1], scope)
-        elif name in ("Statement3Context", "Statement4Context",
-                      "Statement5Context"):                   # for, while, do
+        elif name in (
+            "Statement3Context",
+            "Statement4Context",
+            "Statement5Context",
+        ):  # for, while, do
             body = _kids(ctx, "Statement")[0]
             self.number(body, scope)
             if _falls_through(body):
                 scope[("goto", id(ctx))] = self.slot()
-        elif name == "Statement9Context":                     # synchronized
+        elif name == "Statement9Context":  # synchronized
             self.number(_kids(ctx, "Block")[0], scope)
-        elif name == "Statement8Context":                     # switch
+        elif name == "Statement8Context":  # switch
             for group in _kids(ctx, "SwitchBlockStatementGroup"):
                 scope[("case", id(group))] = self.next
                 for block_statement in _kids(group, "BlockStatement"):
@@ -102,7 +108,7 @@ class _Program:
                         self.number(inner[0], scope)
                     else:
                         scope[id(block_statement)] = self.slot()
-        elif name in ("Statement6Context", "Statement7Context"):   # try
+        elif name in ("Statement6Context", "Statement7Context"):  # try
             blocks = _kids(ctx, "Block")
             catches = _kids(ctx, "CatchClause")
             finallys = _kids(ctx, "FinallyBlock")
@@ -110,8 +116,9 @@ class _Program:
                 scope[("try", id(ctx))] = self.next
                 self.number(blocks[0], scope)
             for index, clause in enumerate(catches):
-                previous = blocks[0] if index == 0 else _kids(
-                    catches[index - 1], "Block")[0]
+                previous = (
+                    blocks[0] if index == 0 else _kids(catches[index - 1], "Block")[0]
+                )
                 if _falls_through(previous):
                     scope[("goto", id(clause))] = self.slot()
                 scope[("catch", id(clause))] = self.next
@@ -129,23 +136,32 @@ class _Program:
                 inner = _kids(block_statement, "Statement")
                 statements.append(inner[0] if inner else block_statement)
             for index, statement in enumerate(statements):
-                nxt = (self.start(statements[index + 1], scope)
-                       if index + 1 < len(statements) else after)
+                nxt = (
+                    self.start(statements[index + 1], scope)
+                    if index + 1 < len(statements)
+                    else after
+                )
                 if type(statement).__name__.startswith("Statement"):
                     self.draw(statement, scope, nxt, exit_slot, breaks, continues)
             return
         here = scope.get(id(ctx))
 
         if name == "Statement0Context":
-            self.draw(_kids(ctx, "Block")[0], scope, after, exit_slot,
-                      breaks, continues)
+            self.draw(
+                _kids(ctx, "Block")[0], scope, after, exit_slot, breaks, continues
+            )
         elif name == "Statement16Context":
             label = ctx.IDENTIFIER().getText() if ctx.IDENTIFIER() else None
             inner = _kids(ctx, "Statement")[0]
-            self.draw(inner, scope, after, exit_slot,
-                      {**breaks, label: after},
-                      {**continues, label: self.start(inner, scope)})
-        elif name == "Statement2Context":                     # if / else
+            self.draw(
+                inner,
+                scope,
+                after,
+                exit_slot,
+                {**breaks, label: after},
+                {**continues, label: self.start(inner, scope)},
+            )
+        elif name == "Statement2Context":  # if / else
             branches = _kids(ctx, "Statement")
             if len(branches) > 1:
                 self.arc(here, self.start(branches[1], scope))
@@ -154,27 +170,38 @@ class _Program:
             else:
                 self.arc(here, after)
             self.draw(branches[0], scope, after, exit_slot, breaks, continues)
-        elif name in ("Statement3Context", "Statement4Context"):   # for, while
+        elif name in ("Statement3Context", "Statement4Context"):  # for, while
             body = _kids(ctx, "Statement")[0]
             self.arc(here, after)
             self.arc(scope.get(("goto", id(ctx))), here)
-            self.draw(body, scope, scope.get(("goto", id(ctx))) or after, exit_slot,
-                      {**breaks, None: after},
-                      {**continues, None: here})
-        elif name == "Statement5Context":                     # do-while
+            self.draw(
+                body,
+                scope,
+                scope.get(("goto", id(ctx))) or after,
+                exit_slot,
+                {**breaks, None: after},
+                {**continues, None: here},
+            )
+        elif name == "Statement5Context":  # do-while
             body = _kids(ctx, "Statement")[0]
-            self.arc(scope.get(("goto", id(ctx))) or here,
-                     self.start(body, scope))
-            self.draw(body, scope, scope.get(("goto", id(ctx))) or after, exit_slot,
-                      {**breaks, None: after},
-                      {**continues, None: here})
-        elif name == "Statement9Context":                     # synchronized
-            self.draw(_kids(ctx, "Block")[0], scope, after, exit_slot,
-                      breaks, continues)
-        elif name == "Statement8Context":                     # switch
+            self.arc(scope.get(("goto", id(ctx))) or here, self.start(body, scope))
+            self.draw(
+                body,
+                scope,
+                scope.get(("goto", id(ctx))) or after,
+                exit_slot,
+                {**breaks, None: after},
+                {**continues, None: here},
+            )
+        elif name == "Statement9Context":  # synchronized
+            self.draw(
+                _kids(ctx, "Block")[0], scope, after, exit_slot, breaks, continues
+            )
+        elif name == "Statement8Context":  # switch
             groups = _kids(ctx, "SwitchBlockStatementGroup")
             labels = _kids(ctx, "SwitchLabel") + [
-                l for g in groups for l in _kids(g, "SwitchLabel")]
+                l for g in groups for l in _kids(g, "SwitchLabel")
+            ]
             has_default = any(l.getText().startswith("default") for l in labels)
             for group in groups:
                 self.arc(here, scope.get(("case", id(group))))
@@ -186,15 +213,27 @@ class _Program:
                 for block_statement in _kids(group, "BlockStatement"):
                     child = _kids(block_statement, "Statement")
                     statements.append(child[0] if child else block_statement)
-                nxt = (scope.get(("case", id(groups[index + 1])))
-                       if index + 1 < len(groups) else after)
+                nxt = (
+                    scope.get(("case", id(groups[index + 1])))
+                    if index + 1 < len(groups)
+                    else after
+                )
                 for position, statement in enumerate(statements):
-                    following = (self.start(statements[position + 1], scope)
-                                 if position + 1 < len(statements) else nxt)
+                    following = (
+                        self.start(statements[position + 1], scope)
+                        if position + 1 < len(statements)
+                        else nxt
+                    )
                     if type(statement).__name__.startswith("Statement"):
-                        self.draw(statement, scope, following, exit_slot,
-                                  inner_breaks, continues)
-        elif name in ("Statement6Context", "Statement7Context"):   # try
+                        self.draw(
+                            statement,
+                            scope,
+                            following,
+                            exit_slot,
+                            inner_breaks,
+                            continues,
+                        )
+        elif name in ("Statement6Context", "Statement7Context"):  # try
             blocks = _kids(ctx, "Block")
             catches = _kids(ctx, "CatchClause")
             finallys = _kids(ctx, "FinallyBlock")
@@ -202,27 +241,36 @@ class _Program:
             for clause in catches:
                 self.arc(body_start, scope.get(("catch", id(clause))))
                 self.arc(scope.get(("goto", id(clause))), after)
-                self.draw(_kids(clause, "Block")[0], scope, after, exit_slot,
-                          breaks, continues)
+                self.draw(
+                    _kids(clause, "Block")[0],
+                    scope,
+                    after,
+                    exit_slot,
+                    breaks,
+                    continues,
+                )
             if blocks:
-                first_catch = (scope.get(("goto", id(catches[0])))
-                               or scope.get(("catch", id(catches[0])))
-                               if catches else after)
-                self.draw(blocks[0], scope, first_catch or after, exit_slot,
-                          breaks, continues)
+                first_catch = (
+                    scope.get(("goto", id(catches[0])))
+                    or scope.get(("catch", id(catches[0])))
+                    if catches
+                    else after
+                )
+                self.draw(
+                    blocks[0], scope, first_catch or after, exit_slot, breaks, continues
+                )
             for block in finallys:
-                self.draw(_kids(block, "Block")[0], scope, after, exit_slot,
-                          breaks, continues)
-        elif name == "Statement10Context":                    # return
+                self.draw(
+                    _kids(block, "Block")[0], scope, after, exit_slot, breaks, continues
+                )
+        elif name == "Statement10Context":  # return
             self.arc(here, exit_slot)
-        elif name == "Statement12Context":                    # break
+        elif name == "Statement12Context":  # break
             identifier = ctx.IDENTIFIER()
-            self.arc(here, breaks.get(
-                identifier.getText() if identifier else None))
-        elif name == "Statement13Context":                    # continue
+            self.arc(here, breaks.get(identifier.getText() if identifier else None))
+        elif name == "Statement13Context":  # continue
             identifier = ctx.IDENTIFIER()
-            self.arc(here, continues.get(
-                identifier.getText() if identifier else None))
+            self.arc(here, continues.get(identifier.getText() if identifier else None))
         # Statement11 is `throw` -- an abnormal exit, and it draws nothing.
 
     def start(self, ctx, scope):
@@ -234,7 +282,7 @@ def _crossings(arcs):
     unique = sorted(set(arcs))
     total = 0
     for index, (a, b) in enumerate(unique):
-        for c, d in unique[index + 1:]:
+        for c, d in unique[index + 1 :]:
             if a < c < b < d:
                 total += 1
     return total
@@ -260,7 +308,7 @@ def knot(ent_model=None):
 
 
 def essential_knots(ent_model=None):
-    """"Knots after structured programming constructs have been removed."
+    """ "Knots after structured programming constructs have been removed."
 
     A method whose constructs all collapse has no jumps left to cross, and
     Understand reports 0 for every one of them; when something does not
@@ -303,8 +351,11 @@ def demo():
         ("{ switch (x) { case 1: x++; break; default: x--; break; } }", 1),
         ("{ switch (x) { case 1: break; case 2: break; default: break; } }", 3),
         ("{ try { x++; } catch (Exception e) { x--; } }", 1),
-        ("{ try { x++; } catch (RuntimeException e) { x--; }"
-         " catch (Exception e) { x = 0; } }", 3),
+        (
+            "{ try { x++; } catch (RuntimeException e) { x--; }"
+            " catch (Exception e) { x = 0; } }",
+            3,
+        ),
         ("{ try { x++; } finally { x--; } }", 0),
         ("{ try { x++; } catch (Exception e) { x--; } finally { x = 0; } }", 1),
         ("{ return x > 0 ? 1 : 2; }", 0),
@@ -319,8 +370,11 @@ def demo():
         ("{ if (x>0) { return 1; } else { return 2; } }", 1),
         ("{ if (x>0) { x++; } return x; }", 0),
         ("{ if (x>0) return; x++; }", 1),
-        ("{ if (x==1) return 1; else if (x==2) return 2;"
-         " else if (x==3) return 3; return 4; }", 3),
+        (
+            "{ if (x==1) return 1; else if (x==2) return 2;"
+            " else if (x==3) return 3; return 4; }",
+            3,
+        ),
         ("{ if (x==1) return 1; else if (x==2) return 2; else return 3; }", 2),
         ("{ while (x>0) { if (x==5) return 1; x--; } return 2; }", 3),
         ("{ while (x>0) { x--; } return 2; }", 0),
@@ -331,8 +385,11 @@ def demo():
         ("{ if (x>0) return 1; if (x>1) { x++; } if (x>2) { x++; } return x; }", 1),
         ("{ if (x>0) { if (x>1) { return 1; } x++; } return 2; }", 2),
         ("{ for (int i=0;i<x;i++) { if (i==3) return i; } return -1; }", 3),
-        ("{ if (x>0){ if(x>1){ if(x>2){ return 3; } return 2; } return 1; }"
-         " return 0; }", 6),
+        (
+            "{ if (x>0){ if(x>1){ if(x>2){ return 3; } return 2; } return 1; }"
+            " return 0; }",
+            6,
+        ),
         ("{ if (x>0) { return 1; } throw new RuntimeException(); }", 1),
     ]
     for source, expected in cases:

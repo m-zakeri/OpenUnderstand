@@ -9,8 +9,126 @@ __version__ = "0.1.1"
 
 
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 from antlr4 import *
+from functools import lru_cache
+
+
+#: Two entries: the per-file walk asks about one tree at a time, and a metric
+#: that reparses a snippet alternates between two. Keyed on the root context
+#: itself, so a freed tree cannot have its id reused under a live cache entry.
+@lru_cache(maxsize=2)
+def _anonymous_names(root):
+    """{id(classCreatorRest): "(Anon_N)"} for every anonymous class in a tree.
+
+    Understand numbers them over the file in source order, which a pre-order
+    walk visits them in. Numbering cannot be done while walking *up* from a
+    declaration -- the nth anonymous class is only knowable from the whole file
+    -- so it is computed once per tree and cached.
+
+    ponytail: numbered per file, not per outer class. The two differ only in a
+    file holding more than one top-level type, which none of the eleven
+    benchmark subjects does.
+    """
+    names, count = {}, 0
+
+    def walk(node):
+        nonlocal count
+        if (
+            isinstance(node, JavaParserLabeled.ClassCreatorRestContext)
+            and node.classBody() is not None
+        ):
+            count += 1
+            names[id(node)] = "(Anon_%d)" % count
+        for i in range(node.getChildCount()):
+            child = node.getChild(i)
+            if isinstance(child, ParserRuleContext):
+                walk(child)
+
+    walk(root)
+    return names
+
+
+@lru_cache(maxsize=2)
+def _lambda_names(root):
+    """{id(lambdaExpression): "(lambda_expr_N)"} for every lambda in a tree.
+
+    Numbered from 1 within the method that encloses it, in source order, which
+    is Understand's naming: `testOptBigDecimalVariousTypes` holds
+    `(lambda_expr_1)` through `(lambda_expr_3)`.
+    """
+    names, counts = {}, {}
+
+    def enclosing(node):
+        node = node.parentCtx
+        while node is not None:
+            if node.getRuleIndex() in ClassPropertiesListener._SCOPE_RULES:
+                return id(node)
+            node = node.parentCtx
+        return None
+
+    def walk(node):
+        if isinstance(node, JavaParserLabeled.LambdaExpressionContext):
+            key = enclosing(node)
+            counts[key] = counts.get(key, 0) + 1
+            names[id(node)] = "(lambda_expr_%d)" % counts[key]
+        for i in range(node.getChildCount()):
+            child = node.getChild(i)
+            if isinstance(child, ParserRuleContext):
+                walk(child)
+
+    walk(root)
+    return names
+
+
+@lru_cache(maxsize=2)
+def catch_names(root):
+    """{id(catchClause): "(catch_N)"} for every catch clause in a tree.
+
+    Numbered over the *file* in source order, which is Understand's naming:
+    JSONTokener.java runs `more.(catch_1)` through `skipTo.(catch_7)`.
+
+    Deliberately **not** consulted by findParents(). Understand puts only the
+    catch *parameter* in this scope -- `more.(catch_1).e` -- and leaves every
+    statement inside the block scoped to the method. Feeding it to findParents
+    scoped the whole block to the clause and cost CountOutput 0.127 and
+    CountInput 0.115 in one build. Only the pass that declares the parameter
+    should use it.
+    """
+    names, count = {}, 0
+
+    def walk(node):
+        nonlocal count
+        if isinstance(node, JavaParserLabeled.CatchClauseContext):
+            count += 1
+            names[id(node)] = "(catch_%d)" % count
+        for i in range(node.getChildCount()):
+            child = node.getChild(i)
+            if isinstance(child, ParserRuleContext):
+                walk(child)
+
+    walk(root)
+    return names
+
+
+def lambda_name(ctx):
+    """`(lambda_expr_N)` for a lambda expression."""
+    root = ctx
+    while root.parentCtx is not None:
+        root = root.parentCtx
+    return _lambda_names(root).get(id(ctx))
+
+
+def anonymous_name(ctx):
+    """`(Anon_N)` for a classCreatorRest that carries a body, else None."""
+    if ctx.classBody() is None:
+        return None
+    root = ctx
+    while root.parentCtx is not None:
+        root = root.parentCtx
+    return _anonymous_names(root).get(id(ctx))
 
 
 class ClassPropertiesListener(JavaParserLabeledListener):
@@ -26,23 +144,17 @@ class ClassPropertiesListener(JavaParserLabeledListener):
             list(reversed(self.class_longname))
         )
 
-    # Rules that name an enclosing scope. Each one carries an IDENTIFIER.
-    #
-    # RULE_typeDeclaration is deliberately absent: it is only a wrapper around
-    # classDeclaration / interfaceDeclaration / enumDeclaration, it has no
-    # IDENTIFIER of its own, and the rule it wraps already contributes the
-    # name. While it was listed here it fell through to the package branch
-    # below and appended the entire class body as a name component, producing
-    # longnames like "org.json.classJSONML{privatestaticObjectparse(...".
-    _SCOPE_RULES = frozenset({
-        JavaParserLabeled.RULE_classDeclaration,
-        JavaParserLabeled.RULE_methodDeclaration,
-        JavaParserLabeled.RULE_enumDeclaration,
-        JavaParserLabeled.RULE_interfaceDeclaration,
-        JavaParserLabeled.RULE_constructorDeclaration,
-        JavaParserLabeled.RULE_annotationTypeDeclaration,
-        JavaParserLabeled.RULE_genericInterfaceMethodDeclaration,
-    })
+    _SCOPE_RULES = frozenset(
+        {
+            JavaParserLabeled.RULE_classDeclaration,
+            JavaParserLabeled.RULE_methodDeclaration,
+            JavaParserLabeled.RULE_enumDeclaration,
+            JavaParserLabeled.RULE_interfaceDeclaration,
+            JavaParserLabeled.RULE_constructorDeclaration,
+            JavaParserLabeled.RULE_annotationTypeDeclaration,
+            JavaParserLabeled.RULE_genericInterfaceMethodDeclaration,
+        }
+    )
 
     @staticmethod
     def _package_components(compilation_unit):
@@ -78,18 +190,50 @@ class ClassPropertiesListener(JavaParserLabeledListener):
         That fallback also fired for contexts where child 0 was not the package
         declaration, splicing whole class bodies into longnames.
         """
-        parents = []
+        # Cached on the node, because the answer depends on nothing else: a
+        # node's ancestry is fixed for the life of the tree, and the tree is
+        # rebuilt for every file. 94,452 calls on a build of JSON, and the
+        # passes ask about the same nodes over and over. Stored as a tuple and
+        # handed out as a fresh list, so a caller that mutates the result --
+        # several append the entity's own name to it -- cannot poison the copy
+        # the next caller gets.
+        cached = getattr(c, "_ou_parents", None)
+        if cached is not None:
+            return list(cached)
+
+        chain, root = [], None
         current = c.parentCtx
-        root = None
         while current is not None:
-            if current.getRuleIndex() in ClassPropertiesListener._SCOPE_RULES:
+            chain.append(current)
+            root = current
+            current = current.parentCtx
+
+        anonymous = _anonymous_names(root) if root is not None else {}
+        lambdas = _lambda_names(root) if root is not None else {}
+        parents = []
+        for current in chain:
+            rule = current.getRuleIndex()
+            if rule in ClassPropertiesListener._SCOPE_RULES:
                 identifier = current.IDENTIFIER()
                 if identifier is not None:
                     parents.append(identifier.getText())
-            root = current
-            current = current.parentCtx
+            elif rule == JavaParserLabeled.RULE_classCreatorRest:
+                name = anonymous.get(id(current))
+                if name is not None:
+                    parents.append(name)
+            elif rule == JavaParserLabeled.RULE_lambdaExpression:
+                name = lambdas.get(id(current))
+                if name is not None:
+                    parents.append(name)
         parents.reverse()
-        return ClassPropertiesListener._package_components(root) + parents
+        result = ClassPropertiesListener._package_components(root) + parents
+        try:
+            c._ou_parents = tuple(result)
+        except AttributeError:
+            # A context type using __slots__ cannot be tagged; it just pays
+            # the walk every time, as it did before.
+            pass
+        return result
 
     @staticmethod
     def findClassOrInterfaceModifiers(c):
@@ -123,6 +267,66 @@ class ClassPropertiesListener(JavaParserLabeledListener):
                     ClassPropertiesListener.findClassOrInterfaceModifiers(ctx)
                 )
                 self.class_properties["contents"] = ctx.getText()
+
+
+class DeclaredTypesListener(JavaParserLabeledListener):
+    """Every class and interface in a file, with what a lookup needs of it.
+
+    `ClassPropertiesListener` answers for one long name by walking the tree,
+    which is why the *write* layer walked it: `Project.getClassProperties` did
+    that once per distinct name asked. The answer depends on the query only
+    through the name itself -- `modifiers` and `contents` are the only fields
+    read off the matched node -- so one walk can collect what every future
+    lookup needs, and the write layer stops needing a tree at all.
+
+    Order is walk order, because the lookup takes the first match, as the
+    single-name listener did by returning early.
+    """
+
+    def __init__(self):
+        self.classes = []
+        self.interfaces = []
+
+    def _record(self, into, ctx):
+        identifier = ctx.IDENTIFIER()
+        if identifier is None:
+            return
+        into.append(
+            (
+                tuple(ClassPropertiesListener.findParents(ctx)),
+                identifier.getText(),
+                ClassPropertiesListener.findClassOrInterfaceModifiers(ctx),
+                ctx.getText(),
+            )
+        )
+
+    def enterClassDeclaration(self, ctx):
+        self._record(self.classes, ctx)
+
+    def enterInterfaceDeclaration(self, ctx):
+        self._record(self.interfaces, ctx)
+
+
+def match_declared_type(entries, longname):
+    """The properties a lookup of `longname` finds, or None.
+
+    The same predicate the single-name listener used: the simple names match
+    and the scope chains intersect. Intersection rather than equality is what
+    it did, so it is what this does.
+    """
+    target = longname.split(".")
+    wanted = set(target)
+    for parents, identifier, modifiers, contents in entries:
+        if identifier != target[-1] or not wanted & set(parents):
+            continue
+        return {
+            "name": target[-1],
+            "longname": longname,
+            "parent": None if len(target) == 1 else target[-2],
+            "modifiers": modifiers,
+            "contents": contents,
+        }
+    return None
 
 
 class InterfacePropertiesListener(JavaParserLabeledListener):

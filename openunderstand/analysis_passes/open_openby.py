@@ -2,8 +2,15 @@ import os
 from antlr4 import *
 from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel, col_1based
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
+from openunderstand.oudb.models import (
+    KindModel,
+    EntityModel,
+    ReferenceModel,
+    col_1based,
+)
 from openunderstand.oudb.models import kind_id
 import openunderstand.analysis_passes.class_properties as class_properties
 

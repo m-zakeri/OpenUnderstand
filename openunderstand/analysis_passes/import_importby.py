@@ -3,8 +3,16 @@ from antlr4 import *
 from pathlib import Path
 from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
-from openunderstand.oudb.models import KindModel, EntityModel, ReferenceModel, ProjectModel, col_1based
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
+from openunderstand.oudb.models import (
+    KindModel,
+    EntityModel,
+    ReferenceModel,
+    ProjectModel,
+    col_1based,
+)
 from openunderstand.oudb.models import kind_id
 
 PRJ_INDEX = 3
@@ -160,7 +168,9 @@ def get_parent(parent_file_name, files):
 def add_imported_entity(i, files):
     if i["is_built_in"]:
         imported_entity, _ = EntityModel.get_or_create(
-            _kind=kind_id("Java Unknown Class Type Member"),  # Java Unknown Class Type Member
+            _kind=kind_id(
+                "Java Unknown Class Type Member"
+            ),  # Java Unknown Class Type Member
             _parent=None,
             _name=i["imported_class_name"],
             _longname=i["imported_class_longname"],

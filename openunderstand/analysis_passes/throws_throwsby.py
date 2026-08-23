@@ -18,7 +18,9 @@ file and slicing the path at a hard-coded "org" component, which raised
 that, so the pass silently produced nothing at all for those files.
 """
 
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 import openunderstand.analysis_passes.class_properties as class_properties
 
@@ -71,15 +73,18 @@ class Throws_TrowsBy(JavaParserLabeledListener):
         scope_longname = ".".join(parents + [identifier.getText()])
         for qualified in names.qualifiedName():
             longname = symbol_table.resolve_type_name(
-                qualified.getText(), self.imports, self.wildcards, scope_longname)
+                qualified.getText(), self.imports, self.wildcards, scope_longname
+            )
             if longname is None:
                 continue
             token = qualified.start
-            self.relations.append({
-                "kind": "Java Throw",
-                "scope_longname": scope_longname,
-                "ent_longname": longname,
-                "name": longname.rsplit(".", 1)[-1],
-                "line": token.line,
-                "col": token.column,
-            })
+            self.relations.append(
+                {
+                    "kind": "Java Throw",
+                    "scope_longname": scope_longname,
+                    "ent_longname": longname,
+                    "name": longname.rsplit(".", 1)[-1],
+                    "line": token.line,
+                    "col": token.column,
+                }
+            )

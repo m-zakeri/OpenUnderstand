@@ -58,12 +58,7 @@ def analyze(source_dir: str, database: str = "") -> str:
     from openunderstand.oudb.fill import fill
     from openunderstand.ounderstand.parsing_process import process_file, get_files
     from openunderstand.ounderstand import symbol_table
-    from openunderstand.oudb.models import (merge_placeholder_entities,
-                                            relabel_nondynamic_calls,
-                                            drop_nonvariable_deref_refs,
-                                            drop_shadowed_use_refs,
-                                            drop_external_inverse_refs,
-                                            drop_orphan_placeholders)
+    from openunderstand.oudb.models import finalise_analysis
 
     source_dir = os.path.abspath(os.path.expanduser(source_dir))
     if not os.path.isdir(source_dir):
@@ -82,29 +77,22 @@ def analyze(source_dir: str, database: str = "") -> str:
         files = get_files(source_dir)
         for path in files:
             process_file(path)
-        # All six, in this order, exactly as start_parsing() and
-        # scripts/compare/02_build_ou.py run them. Stopping after the first
-        # two left this server -- and the IDEA plugin that reads it -- holding
-        # rows the CLI deletes: plain Use references shadowed by a variant,
-        # inverses hung on entities the project does not declare, and
-        # placeholders nothing resolved.
-        merge_placeholder_entities()
-        relabel_nondynamic_calls()
-        drop_nonvariable_deref_refs()
-        drop_shadowed_use_refs()
-        # After the merge, so an entity about to become real is not treated as
-        # external and stripped of its inverses.
-        drop_external_inverse_refs()
-        drop_orphan_placeholders()
+        # Every entry point runs the same six, in the same order, through the
+        # one function. Stopping after the first two left this server -- and
+        # the IDEA plugin that reads it -- holding rows the CLI deletes.
+        finalise_analysis()
         return len(files), ou_open(os.path.join(out_dir, name))
 
     (count, db), _ = _quiet(run)
     _STATE["db"], _STATE["path"] = db, os.path.join(out_dir, name)
-    return json.dumps({
-        "database": _STATE["path"],
-        "files_analyzed": count,
-        "entities": len(db.ents()),
-    }, indent=2)
+    return json.dumps(
+        {
+            "database": _STATE["path"],
+            "files_analyzed": count,
+            "entities": len(db.ents()),
+        },
+        indent=2,
+    )
 
 
 def open_database(path: str) -> str:
@@ -112,9 +100,47 @@ def open_database(path: str) -> str:
     from openunderstand.oudb.api import open as ou_open
 
     path = os.path.abspath(os.path.expanduser(path))
-    (db, _) = _quiet(ou_open, path)
+    db, _ = _quiet(ou_open, path)
     _STATE["db"], _STATE["path"] = db, path
     return json.dumps({"database": path, "entities": len(db.ents())}, indent=2)
+
+
+def update(paths: list[str], source_root: str = "") -> str:
+    """Re-analyse source files that have changed, without a full rebuild.
+
+    Use this after editing Java source instead of calling analyze() again: it
+    re-analyses only the named files and the files that depend on them, and is
+    about ten times quicker than a full build on a mid-sized project.
+
+    Each file's previous contribution is deleted first, so a renamed method
+    does not linger under both names, and the result is what a rebuild of the
+    same source would have written.
+
+    paths:       the .java files that changed. A path that no longer exists is
+                 purged and not re-analysed, so deleting a file works too.
+    source_root: the project root. Defaults to the root the open database
+                 recorded when it was built.
+    """
+    from openunderstand.oudb.api import update_files
+    from openunderstand.oudb.models import ProjectModel
+
+    _require_db()
+    if not paths:
+        raise ValueError("paths is empty: name the .java files that changed.")
+
+    root = os.path.abspath(os.path.expanduser(source_root)) if source_root else ""
+    if not root:
+        project = ProjectModel.select().first()
+        root = project.root if project is not None else ""
+    if not root or not os.path.isdir(root):
+        raise ValueError(
+            "No source root. This database did not record one, so pass "
+            "source_root=... with the project directory."
+        )
+
+    resolved = [os.path.abspath(os.path.expanduser(p)) for p in paths]
+    summary, _ = _quiet(update_files, resolved, source_root=root)
+    return json.dumps({"source_root": root, **summary}, indent=2)
 
 
 def list_entities(kind: str = "", limit: int = 100) -> str:
@@ -124,10 +150,11 @@ def list_entities(kind: str = "", limit: int = 100) -> str:
           ors. "Class", "Method ~Static" and "Class,Interface" all work.
     """
     db = _require_db()
-    (ents, _) = _quiet(db.ents, kind or None)
+    ents, _ = _quiet(db.ents, kind or None)
     rows = [{"longname": e.longname(), "kind": e.kindname()} for e in ents[:limit]]
-    return json.dumps({"total": len(ents), "shown": len(rows), "entities": rows},
-                      indent=2)
+    return json.dumps(
+        {"total": len(ents), "shown": len(rows), "entities": rows}, indent=2
+    )
 
 
 def entity_references(longname: str, reference_kind: str = "", limit: int = 100) -> str:
@@ -136,29 +163,32 @@ def entity_references(longname: str, reference_kind: str = "", limit: int = 100)
     reference_kind: e.g. "Call", "Define", "Use". Same filter grammar as kind.
     """
     db = _require_db()
-    (ents, _) = _quiet(db.ents)
+    ents, _ = _quiet(db.ents)
     match = next((e for e in ents if e.longname() == longname), None)
     if match is None:
         raise ValueError(f"no entity with longname {longname!r}")
-    (refs, _) = _quiet(match.refs, reference_kind or None)
+    refs, _ = _quiet(match.refs, reference_kind or None)
     rows = []
     by_id = {e._id: e for e in ents}
     for ref in refs[:limit]:
         target = by_id.get(ref._ent)
-        rows.append({
-            "kind": ref.kindname(),
-            "entity": target.longname() if target else None,
-            "line": ref.line(),
-            "column": ref.column(),
-        })
-    return json.dumps({"entity": longname, "total": len(refs),
-                       "references": rows}, indent=2)
+        rows.append(
+            {
+                "kind": ref.kindname(),
+                "entity": target.longname() if target else None,
+                "line": ref.line(),
+                "column": ref.column(),
+            }
+        )
+    return json.dumps(
+        {"entity": longname, "total": len(refs), "references": rows}, indent=2
+    )
 
 
 def entity_metrics(longname: str, metrics: list[str] | None = None) -> str:
     """Metric values for an entity. Omit `metrics` for every available name."""
     db = _require_db()
-    (ents, _) = _quiet(db.ents)
+    ents, _ = _quiet(db.ents)
     match = next((e for e in ents if e.longname() == longname), None)
     if match is None:
         raise ValueError(f"no entity with longname {longname!r}")
@@ -166,13 +196,14 @@ def entity_metrics(longname: str, metrics: list[str] | None = None) -> str:
     values = {}
     for name in names:
         try:
-            (result, _) = _quiet(match.metric, [name])
+            result, _ = _quiet(match.metric, [name])
             if result.get(name) is not None:
                 values[name] = result[name]
         except NotImplementedError:
             continue
-    return json.dumps({"entity": longname, "kind": match.kindname(),
-                       "metrics": values}, indent=2)
+    return json.dumps(
+        {"entity": longname, "kind": match.kindname(), "metrics": values}, indent=2
+    )
 
 
 def list_kinds(kind_filter: str = "", references: bool = False) -> str:
@@ -181,16 +212,25 @@ def list_kinds(kind_filter: str = "", references: bool = False) -> str:
     from openunderstand.oudb.models import KindModel
 
     _require_db()
-    (rows, _) = _quiet(lambda: [
-        k._name for k in KindModel.select().where(
-            KindModel.is_ent_kind == (not references))
-        if kind_matches(k._name, kind_filter)
-    ])
+    rows, _ = _quiet(
+        lambda: [
+            k._name
+            for k in KindModel.select().where(KindModel.is_ent_kind == (not references))
+            if kind_matches(k._name, kind_filter)
+        ]
+    )
     return json.dumps({"count": len(rows), "kinds": sorted(rows)}, indent=2)
 
 
-TOOLS = (analyze, open_database, list_entities, entity_references,
-         entity_metrics, list_kinds)
+TOOLS = (
+    analyze,
+    open_database,
+    update,
+    list_entities,
+    entity_references,
+    entity_metrics,
+    list_kinds,
+)
 
 
 # --------------------------------------------------------------------- resources
@@ -200,15 +240,21 @@ TOOLS = (analyze, open_database, list_entities, entity_references,
 # is a kind string, and a wrong filter returns an empty list rather than an
 # error -- so an assistant that has to guess fails silently.
 
+
 def _kind_names(is_entity: bool) -> str:
     from openunderstand.oudb.models import KindModel
 
     if _STATE["db"] is None:
-        return ("No database open. The kind vocabulary is seeded per database; "
-                "call analyze() or open_database() first.")
-    (rows, _) = _quiet(lambda: sorted(
-        k._name for k in KindModel.select().where(
-            KindModel.is_ent_kind == is_entity)))
+        return (
+            "No database open. The kind vocabulary is seeded per database; "
+            "call analyze() or open_database() first."
+        )
+    rows, _ = _quiet(
+        lambda: sorted(
+            k._name
+            for k in KindModel.select().where(KindModel.is_ent_kind == is_entity)
+        )
+    )
     return "\n".join(rows)
 
 
@@ -234,9 +280,10 @@ def current_database() -> str:
     """What is open right now, and how big it is."""
     if _STATE["db"] is None:
         return json.dumps({"open": False}, indent=2)
-    (ents, _) = _quiet(_STATE["db"].ents)
-    return json.dumps({"open": True, "path": _STATE["path"],
-                       "entities": len(ents)}, indent=2)
+    ents, _ = _quiet(_STATE["db"].ents)
+    return json.dumps(
+        {"open": True, "path": _STATE["path"], "entities": len(ents)}, indent=2
+    )
 
 
 def metric_names() -> str:
@@ -247,10 +294,10 @@ def metric_names() -> str:
     db = _STATE["db"]
     if db is None:
         return "No database open."
-    (ents, _) = _quiet(db.ents)
+    ents, _ = _quiet(db.ents)
     if not ents:
         return "Database is empty."
-    (names, _) = _quiet(ents[0].metrics)
+    names, _ = _quiet(ents[0].metrics)
     return "\n".join(names)
 
 
@@ -284,6 +331,7 @@ ALSO_TOOLS = (current_database, metric_names)
 # return their instructions either way; nothing about them changes with the
 # surface they are reached through.
 
+
 def review_class(longname: str) -> str:
     """Review one class: size, complexity, what it declares and couples to."""
     return (
@@ -291,9 +339,9 @@ def review_class(longname: str) -> str:
         "1. entity_metrics on it for CountLine, CountDeclMethod, "
         "SumCyclomatic, MaxCyclomatic, CountClassCoupled and "
         "PercentLackOfCohesion.\n"
-        "2. entity_references with reference_kind=\"Define\" to see what it "
+        '2. entity_references with reference_kind="Define" to see what it '
         "declares.\n"
-        "3. entity_references with reference_kind=\"Couple\" for what it "
+        '3. entity_references with reference_kind="Couple" for what it '
         "depends on.\n\n"
         "Then say whether it is doing too much, where the complexity is "
         "concentrated, and what you would split out first. Quote the numbers "
@@ -306,11 +354,11 @@ def complexity_hotspots(limit: int = 10) -> str:
     """Find the most complex methods in the project."""
     return (
         f"Find the {limit} most complex methods in the open database.\n\n"
-        "Use list_entities with kind=\"Method ~Unknown\", then entity_metrics "
+        'Use list_entities with kind="Method ~Unknown", then entity_metrics '
         "on each for Cyclomatic, MaxNesting and CountLine. Rank by Cyclomatic "
         "and show the numbers in a table.\n\n"
         "For the worst few, read what they call with entity_references "
-        "reference_kind=\"Call\" and suggest what to extract. Complexity alone "
+        'reference_kind="Call" and suggest what to extract. Complexity alone '
         "is not a defect -- say which ones actually look worth changing."
     )
 
@@ -319,7 +367,7 @@ def trace_callers(longname: str) -> str:
     """Who calls this method, and who calls them."""
     return (
         f"Trace the callers of `{longname}`.\n\n"
-        "entity_references with reference_kind=\"Callby\" gives the direct "
+        'entity_references with reference_kind="Callby" gives the direct '
         "callers; repeat on each to go up a level or two.\n\n"
         "Present it as a tree. Note that this analysis resolves roughly half "
         "of Understand's references, so treat an empty result as 'none found' "
@@ -350,15 +398,24 @@ def build_server():
         instructions=(
             "Analyse Java source and query its structure. Call analyze() with a "
             "source directory first, or open_database() for an existing .udb; "
-            "every other tool operates on whatever is open."
+            "every other tool operates on whatever is open. After editing "
+            "source, call update() with the changed files rather than "
+            "analyze() again."
         ),
     )
     for tool in TOOLS + PROMPTS + ALSO_TOOLS:
         server.add_tool(tool, name=tool.__name__, description=tool.__doc__)
     for uri, name, reader in RESOURCES:
-        server.resource(uri, name=name, description=reader.__doc__,
-                        mime_type="text/plain" if name.endswith("kinds")
-                        or name == "metric-names" else "application/json")(reader)
+        server.resource(
+            uri,
+            name=name,
+            description=reader.__doc__,
+            mime_type=(
+                "text/plain"
+                if name.endswith("kinds") or name == "metric-names"
+                else "application/json"
+            ),
+        )(reader)
     for prompt in PROMPTS:
         server.prompt(name=prompt.__name__, description=prompt.__doc__)(prompt)
     return server

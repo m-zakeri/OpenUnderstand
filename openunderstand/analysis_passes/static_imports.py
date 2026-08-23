@@ -15,7 +15,9 @@ the pass that used to emit 241 of them scoped to a file path was removed.
 """
 
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
-from openunderstand.gen.javaLabeled.JavaParserLabeledListener import JavaParserLabeledListener
+from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
+    JavaParserLabeledListener,
+)
 
 
 class StaticImportListener(JavaParserLabeledListener):
@@ -35,12 +37,14 @@ class StaticImportListener(JavaParserLabeledListener):
             return
         on_demand = ctx.getText().rstrip(";").endswith(".*")
         token = identifiers[-1].symbol
-        self.relations.append({
-            "kind": ("Java Importby Demand" if on_demand else "Java Importby"),
-            "scope_longname": qualified.getText(),
-            "ent_longname": self.file_longname,
-            "name": identifiers[-1].getText(),
-            "line": token.line,
-            "col": token.column,
-            "inverse_only": True,
-        })
+        self.relations.append(
+            {
+                "kind": ("Java Importby Demand" if on_demand else "Java Importby"),
+                "scope_longname": qualified.getText(),
+                "ent_longname": self.file_longname,
+                "name": identifiers[-1].getText(),
+                "line": token.line,
+                "col": token.column,
+                "inverse_only": True,
+            }
+        )

@@ -54,7 +54,9 @@ from pathlib import Path
 
 ANTLR_VERSION = "4.13.2"  # must match the antlr4-python3-runtime pin
 ANTLR_JAR_URL = f"https://www.antlr.org/download/antlr-{ANTLR_VERSION}-complete.jar"
-CPP_RUNTIME_URL = f"https://www.antlr.org/download/antlr4-cpp-runtime-{ANTLR_VERSION}-source.zip"
+CPP_RUNTIME_URL = (
+    f"https://www.antlr.org/download/antlr4-cpp-runtime-{ANTLR_VERSION}-source.zip"
+)
 
 HERE = Path(__file__).resolve().parent
 REPO_ROOT = HERE.parents[2]
@@ -103,9 +105,11 @@ def _static_lib(build: Path) -> Path | None:
     rather than assume, so a generator change surfaces as "not found" instead
     of linking something stale.
     """
-    for pattern in ("runtime/libantlr4-runtime.a",
-                    "runtime/**/antlr4-runtime-static.lib",
-                    "runtime/**/libantlr4-runtime.a"):
+    for pattern in (
+        "runtime/libantlr4-runtime.a",
+        "runtime/**/antlr4-runtime-static.lib",
+        "runtime/**/libantlr4-runtime.a",
+    ):
         hits = sorted(build.glob(pattern))
         if hits:
             return hits[0]
@@ -140,8 +144,11 @@ def patch_runtime_sources(src: Path) -> None:
     if marker not in text:
         raise SystemExit(
             "ProfilingATNSimulator.cpp no longer opens with the include this "
-            "patch anchors on; re-check the <chrono> fix against the runtime")
-    f.write_text(text.replace(marker, "#include <chrono>\n\n" + marker, 1), encoding="utf8")
+            "patch anchors on; re-check the <chrono> fix against the runtime"
+        )
+    f.write_text(
+        text.replace(marker, "#include <chrono>\n\n" + marker, 1), encoding="utf8"
+    )
     print("  patched ProfilingATNSimulator.cpp: added #include <chrono>")
 
 
@@ -155,7 +162,9 @@ def build_cpp_runtime(cache: Path, jobs: int) -> tuple[Path, Path]:
         print(f"  cached {lib.name}")
         return inc, lib
 
-    zip_path = fetch(CPP_RUNTIME_URL, cache / f"antlr4-cpp-runtime-{ANTLR_VERSION}-source.zip")
+    zip_path = fetch(
+        CPP_RUNTIME_URL, cache / f"antlr4-cpp-runtime-{ANTLR_VERSION}-source.zip"
+    )
     src.mkdir(parents=True, exist_ok=True)
     import zipfile
 
@@ -165,32 +174,49 @@ def build_cpp_runtime(cache: Path, jobs: int) -> tuple[Path, Path]:
 
     need("cmake")
     build.mkdir(exist_ok=True)
-    run([
-        "cmake", "..",
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DANTLR4_INSTALL=OFF",
-        "-DANTLR_BUILD_CPP_TESTS=OFF",
-        "-DANTLR_BUILD_SHARED=OFF",
-        "-DANTLR_BUILD_STATIC=ON",
-        "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
-        "-DWITH_DEMO=OFF",
-        # ANTLR defaults WITH_STATIC_CRT to On, which builds the runtime /MT.
-        # A CPython extension must be /MD, because Python itself links the
-        # dynamic CRT and every object in one image has to agree. Without this
-        # the compile succeeds and the *link* fails with 146 LNK2038s --
-        # "'MT_StaticRelease' doesn't match value 'MD_DynamicRelease'" -- one
-        # per runtime object. Ignored by every generator that is not MSVC.
-        "-DWITH_STATIC_CRT=OFF",
-    ], cwd=build)
+    run(
+        [
+            "cmake",
+            "..",
+            "-DCMAKE_BUILD_TYPE=Release",
+            "-DANTLR4_INSTALL=OFF",
+            "-DANTLR_BUILD_CPP_TESTS=OFF",
+            "-DANTLR_BUILD_SHARED=OFF",
+            "-DANTLR_BUILD_STATIC=ON",
+            "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
+            "-DWITH_DEMO=OFF",
+            # ANTLR defaults WITH_STATIC_CRT to On, which builds the runtime /MT.
+            # A CPython extension must be /MD, because Python itself links the
+            # dynamic CRT and every object in one image has to agree. Without this
+            # the compile succeeds and the *link* fails with 146 LNK2038s --
+            # "'MT_StaticRelease' doesn't match value 'MD_DynamicRelease'" -- one
+            # per runtime object. Ignored by every generator that is not MSVC.
+            "-DWITH_STATIC_CRT=OFF",
+        ],
+        cwd=build,
+    )
     # `cmake --build`, not `make`: the same line drives Makefiles, Ninja and
     # MSBuild, and --config is what the Visual Studio generator needs to
     # produce a Release library rather than a Debug one.
-    run(["cmake", "--build", ".", "--config", "Release",
-         "--target", "antlr4_static", "--parallel", str(jobs)], cwd=build)
+    run(
+        [
+            "cmake",
+            "--build",
+            ".",
+            "--config",
+            "Release",
+            "--target",
+            "antlr4_static",
+            "--parallel",
+            str(jobs),
+        ],
+        cwd=build,
+    )
     lib = _static_lib(build)
     if lib is None:
         raise SystemExit(
-            f"runtime build finished but no static library was found under {build}")
+            f"runtime build finished but no static library was found under {build}"
+        )
     return inc, lib
 
 
@@ -204,14 +230,20 @@ def rename_grammars(work: Path) -> Path:
     (g / "JavaLabeledLexer.g4").write_text(lex)
 
     par = (GRAMMARS / "JavaParserLabeled.g4").read_text()
-    par = par.replace("parser grammar JavaParserLabeled;", "parser grammar JavaLabeledParser;")
+    par = par.replace(
+        "parser grammar JavaParserLabeled;", "parser grammar JavaLabeledParser;"
+    )
     par = par.replace("tokenVocab=JavaLexer", "tokenVocab=JavaLabeledLexer")
     (g / "JavaLabeledParser.g4").write_text(par)
 
-    for f, marker in ((g / "JavaLabeledLexer.g4", "lexer grammar JavaLabeledLexer;"),
-                      (g / "JavaLabeledParser.g4", "parser grammar JavaLabeledParser;")):
+    for f, marker in (
+        (g / "JavaLabeledLexer.g4", "lexer grammar JavaLabeledLexer;"),
+        (g / "JavaLabeledParser.g4", "parser grammar JavaLabeledParser;"),
+    ):
         if marker not in f.read_text():
-            raise SystemExit(f"grammar rename failed for {f.name}; upstream grammar header changed")
+            raise SystemExit(
+                f"grammar rename failed for {f.name}; upstream grammar header changed"
+            )
     return g
 
 
@@ -223,18 +255,37 @@ def generate(work: Path, jar: Path):
         d.mkdir(parents=True, exist_ok=True)
 
     need("java")
-    for lang, extra, out in (("Cpp", ["-visitor", "-no-listener"], cpp),
-                             ("Python3", ["-no-visitor", "-no-listener"], py)):
+    for lang, extra, out in (
+        ("Cpp", ["-visitor", "-no-listener"], cpp),
+        ("Python3", ["-no-visitor", "-no-listener"], py),
+    ):
         for name in ("JavaLabeledLexer.g4", "JavaLabeledParser.g4"):
-            run(["java", "-jar", str(jar), f"-Dlanguage={lang}", *extra,
-                 "-lib", str(out), "-o", str(out), name], cwd=g)
+            run(
+                [
+                    "java",
+                    "-jar",
+                    str(jar),
+                    f"-Dlanguage={lang}",
+                    *extra,
+                    "-lib",
+                    str(out),
+                    "-o",
+                    str(out),
+                    name,
+                ],
+                cwd=g,
+            )
 
     try:
         from speedy_antlr_tool import generate as sa_generate
     except ImportError:
-        raise SystemExit("speedy-antlr-tool is not installed:  pip install speedy-antlr-tool")
+        raise SystemExit(
+            "speedy-antlr-tool is not installed:  pip install speedy-antlr-tool"
+        )
     print("  running speedy-antlr-tool")
-    sa_generate(py_parser_path=str(py / "JavaLabeledParser.py"), cpp_output_dir=str(cpp))
+    sa_generate(
+        py_parser_path=str(py / "JavaLabeledParser.py"), cpp_output_dir=str(cpp)
+    )
     return cpp
 
 
@@ -275,8 +326,11 @@ def compile_extension(cpp: Path, inc: Path, lib: Path, out_so: Path):
     # object at 65,536 sections and ANTLR's C++ target documents the flag for
     # large grammars, but this one compiles without it. Kept because it costs
     # nothing and the grammar only grows.
-    cflags = (["/O2", "/std:c++17", "/EHsc", "/bigobj"] if msvc
-              else ["-O2", "-std=c++17", "-fvisibility=hidden"])
+    cflags = (
+        ["/O2", "/std:c++17", "/EHsc", "/bigobj"]
+        if msvc
+        else ["-O2", "-std=c++17", "-fvisibility=hidden"]
+    )
     objects = cc.compile(
         [str(cpp / s) for s in CPP_SOURCES],
         output_dir=str(objs_dir),
@@ -287,8 +341,14 @@ def compile_extension(cpp: Path, inc: Path, lib: Path, out_so: Path):
 
     # MSVC finds pythonXY.lib through a pragma in pyconfig.h, but only if the
     # directory holding it is on the library path.
-    lib_dirs = [d for d in (sysconfig.get_config_var("LIBDIR"),
-                            os.path.join(sys.base_prefix, "libs")) if d and os.path.isdir(d)]
+    lib_dirs = [
+        d
+        for d in (
+            sysconfig.get_config_var("LIBDIR"),
+            os.path.join(sys.base_prefix, "libs"),
+        )
+        if d and os.path.isdir(d)
+    ]
     # target_lang="c++" is load-bearing: without it distutils links with the C
     # driver and the extension imports with an undefined `__cxxabiv1` symbol
     # because libstdc++ was never pulled in.
@@ -340,13 +400,23 @@ def verify(out_so: Path) -> bool:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description=__doc__,
-                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--cache", default=str(HERE / ".build-cache"),
-                    help="where to keep the ANTLR jar and C++ runtime")
+    ap = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    ap.add_argument(
+        "--cache",
+        default=str(HERE / ".build-cache"),
+        help="where to keep the ANTLR jar and C++ runtime",
+    )
     ap.add_argument("--jobs", type=int, default=os.cpu_count() or 4)
-    ap.add_argument("--force", action="store_true", help="regenerate even if the .so exists")
-    ap.add_argument("--keep-work", action="store_true", help="do not delete generated C++ afterwards")
+    ap.add_argument(
+        "--force", action="store_true", help="regenerate even if the .so exists"
+    )
+    ap.add_argument(
+        "--keep-work",
+        action="store_true",
+        help="do not delete generated C++ afterwards",
+    )
     a = ap.parse_args()
 
     out_so = HERE / f"{MODULE_NAME}{sysconfig.get_config_var('EXT_SUFFIX') or '.so'}"
@@ -374,9 +444,11 @@ def main() -> int:
     if not a.keep_work:
         shutil.rmtree(work, ignore_errors=True)
     print(f"\nbuilt {out_so}")
-    print("Nothing to enable: engine_core defaults to `auto`, which uses this "
-          "when it is present. `Python` in config.ini pins the pure-Python "
-          "parser.")
+    print(
+        "Nothing to enable: engine_core defaults to `auto`, which uses this "
+        "when it is present. `Python` in config.ini pins the pure-Python "
+        "parser."
+    )
     return 0
 
 

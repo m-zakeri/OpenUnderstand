@@ -1,6 +1,10 @@
 import re
 from peewee import fn
 from openunderstand.oudb.models import *
+
+# Explicit: `import *` skips a leading underscore, and kindname() needs
+# the memoised lookup rather than a SELECT per call.
+from openunderstand.oudb.models import _kind_name
 from dataclasses import dataclass
 from functools import reduce
 from openunderstand.ounderstand.parsing_process import process_file
@@ -270,77 +274,81 @@ _CODE_CHECK_METRICS = {
 #: Every metric name this project knows, in Understand's documented order.
 #: dict.fromkeys, not set(): the list carried CountDeclClassMethod and
 #: CountDeclMethodAll twice.
-_ALL_METRICS = tuple(dict.fromkeys([
-    "CountDeclMethodAll",
-    "CountDeclClassVariable",
-    "AvgCyclomatic",
-    "AvgCyclomaticModified",
-    "AvgCyclomaticStrict",
-    "AvgEssential",
-    "CountDeclClassMethod",
-    "AvgCountLine",
-    "AvgCountLineBlank",
-    "AvgCountLineCode",
-    "AvgCountLineComment",
-    "CountClassBase",
-    "CountClassCoupled",
-    "CountClassCoupledModified",
-    "CountClassDerived",
-    "CountDeclClass",
-    "CountDeclClassMethod",
-    "CountDeclExecutableUnit",
-    "CountDeclFile",
-    "CountDeclFunction",
-    "CountDeclInstanceMethod",
-    "CountDeclInstanceVariable",
-    "CountDeclInstanceVariablePrivate",
-    "CountDeclInstanceVariableProtected",
-    "CountDeclInstanceVariablePublic",
-    "CountDeclMethod",
-    "CountCCViol",
-    "CountCCViolType",
-    "CCViolDensityCode",
-    "CCViolDensityLine",
-    "CountDeclMethodAll",
-    "CountDeclMethodDefault",
-    "CountDeclMethodPrivate",
-    "CountDeclMethodProtected",
-    "CountDeclMethodPublic",
-    "CountInput",
-    "CountLine",
-    "CountLineBlank",
-    "CountLineCode",
-    "CountLineCodeDecl",
-    "CountLineCodeExe",
-    "CountLineComment",
-    "CountOutput",
-    "CountPath",
-    "CountPathLog",
-    "CountSemicolon",
-    "CountStmt",
-    "CountStmtDecl",
-    "CountStmtExe",
-    "Cyclomatic",
-    "CyclomaticModified",
-    "CyclomaticStrict",
-    "Essential",
-    "Knots",
-    "MaxCyclomatic",
-    "MaxCyclomaticModified",
-    "MaxCyclomaticStrict",
-    "MaxEssential",
-    "MaxEssentialKnots",
-    "MaxInheritanceTree",
-    "MaxNesting",
-    "MinEssentialKnots",
-    "PercentLackOfCohesion",
-    "PercentLackOfCohesionModified",
-    "RatioCommentToCode",
-    "SumCyclomatic",
-    "SumCyclomaticModified",
-    "SumCyclomaticStrict",
-    "SumEssential",
-]))
+_ALL_METRICS = tuple(
+    dict.fromkeys(
+        [
+            "CountDeclMethodAll",
+            "CountDeclClassVariable",
+            "AvgCyclomatic",
+            "AvgCyclomaticModified",
+            "AvgCyclomaticStrict",
+            "AvgEssential",
+            "CountDeclClassMethod",
+            "AvgCountLine",
+            "AvgCountLineBlank",
+            "AvgCountLineCode",
+            "AvgCountLineComment",
+            "CountClassBase",
+            "CountClassCoupled",
+            "CountClassCoupledModified",
+            "CountClassDerived",
+            "CountDeclClass",
+            "CountDeclClassMethod",
+            "CountDeclExecutableUnit",
+            "CountDeclFile",
+            "CountDeclFunction",
+            "CountDeclInstanceMethod",
+            "CountDeclInstanceVariable",
+            "CountDeclInstanceVariablePrivate",
+            "CountDeclInstanceVariableProtected",
+            "CountDeclInstanceVariablePublic",
+            "CountDeclMethod",
+            "CountCCViol",
+            "CountCCViolType",
+            "CCViolDensityCode",
+            "CCViolDensityLine",
+            "CountDeclMethodAll",
+            "CountDeclMethodDefault",
+            "CountDeclMethodPrivate",
+            "CountDeclMethodProtected",
+            "CountDeclMethodPublic",
+            "CountInput",
+            "CountLine",
+            "CountLineBlank",
+            "CountLineCode",
+            "CountLineCodeDecl",
+            "CountLineCodeExe",
+            "CountLineComment",
+            "CountOutput",
+            "CountPath",
+            "CountPathLog",
+            "CountSemicolon",
+            "CountStmt",
+            "CountStmtDecl",
+            "CountStmtExe",
+            "Cyclomatic",
+            "CyclomaticModified",
+            "CyclomaticStrict",
+            "Essential",
+            "Knots",
+            "MaxCyclomatic",
+            "MaxCyclomaticModified",
+            "MaxCyclomaticStrict",
+            "MaxEssential",
+            "MaxEssentialKnots",
+            "MaxInheritanceTree",
+            "MaxNesting",
+            "MinEssentialKnots",
+            "PercentLackOfCohesion",
+            "PercentLackOfCohesionModified",
+            "RatioCommentToCode",
+            "SumCyclomatic",
+            "SumCyclomaticModified",
+            "SumCyclomaticStrict",
+            "SumEssential",
+        ]
+    )
+)
 
 #: Which metrics Understand answers, by entity kind family. Read off a built
 #: `.und` with `ent.metric(every_name)`: availability turns on the family
@@ -349,67 +357,181 @@ _ALL_METRICS = tuple(dict.fromkeys([
 #: `ent.metric()` will answer -- the *cyclomatic variants and CountPath are
 #: absent from it and still valued -- so this is keyed off what it answers.
 _METRIC_SCOPE = {
-    "method": frozenset({
-        "CCViolDensityCode", "CCViolDensityLine", "CountCCViol",
-        "CountCCViolType", "CountInput", "CountLine", "CountLineBlank",
-        "CountLineCode", "CountLineCodeDecl", "CountLineCodeExe",
-        "CountLineComment", "CountOutput", "CountPath", "CountPathLog",
-        "CountSemicolon", "CountStmt", "CountStmtDecl", "CountStmtExe",
-        "Cyclomatic", "CyclomaticModified", "CyclomaticStrict", "Essential",
-        "Knots", "MaxEssentialKnots", "MaxNesting", "MinEssentialKnots",
-        "RatioCommentToCode", "SumCyclomatic", "SumCyclomaticModified",
-        "SumCyclomaticStrict", "SumEssential",
-    }),
-    "class": frozenset({
-        "AvgCountLine", "AvgCountLineBlank", "AvgCountLineCode",
-        "AvgCountLineComment", "AvgCyclomatic", "AvgCyclomaticModified",
-        "AvgCyclomaticStrict", "AvgEssential", "CountClassBase",
-        "CountClassCoupled", "CountClassCoupledModified", "CountClassDerived",
-        "CountDeclClassMethod", "CountDeclClassVariable",
-        "CountDeclInstanceMethod", "CountDeclInstanceVariable",
-        "CountDeclMethod", "CountDeclMethodAll", "CountDeclMethodDefault",
-        "CountDeclMethodPrivate", "CountDeclMethodProtected",
-        "CountDeclMethodPublic", "CountLine", "CountLineBlank",
-        "CountLineCode", "CountLineCodeDecl", "CountLineCodeExe",
-        "CountLineComment", "CountSemicolon", "CountStmt", "CountStmtDecl",
-        "CountStmtExe", "MaxCyclomatic", "MaxCyclomaticModified",
-        "MaxCyclomaticStrict", "MaxEssential", "MaxInheritanceTree",
-        "MaxNesting", "PercentLackOfCohesion", "PercentLackOfCohesionModified",
-        "RatioCommentToCode", "SumCyclomatic", "SumCyclomaticModified",
-        "SumCyclomaticStrict", "SumEssential",
-    }),
-    "file": frozenset({
-        "AvgCountLine", "AvgCountLineBlank", "AvgCountLineCode",
-        "AvgCountLineComment", "AvgCyclomatic", "AvgCyclomaticModified",
-        "AvgCyclomaticStrict", "AvgEssential", "CCViolDensityCode",
-        "CCViolDensityLine", "CountCCViol", "CountCCViolType",
-        "CountDeclClass", "CountDeclClassMethod", "CountDeclClassVariable",
-        "CountDeclExecutableUnit", "CountDeclFunction",
-        "CountDeclInstanceMethod", "CountDeclInstanceVariable",
-        "CountDeclMethod", "CountDeclMethodDefault", "CountDeclMethodPrivate",
-        "CountDeclMethodProtected", "CountDeclMethodPublic", "CountLine",
-        "CountLineBlank", "CountLineCode", "CountLineCodeDecl",
-        "CountLineCodeExe", "CountLineComment", "CountSemicolon", "CountStmt",
-        "CountStmtDecl", "CountStmtExe", "MaxCyclomatic",
-        "MaxCyclomaticModified", "MaxCyclomaticStrict", "MaxEssential",
-        "MaxNesting", "RatioCommentToCode", "SumCyclomatic",
-        "SumCyclomaticModified", "SumCyclomaticStrict", "SumEssential",
-    }),
-    "package": frozenset({
-        "AvgCountLine", "AvgCountLineBlank", "AvgCountLineCode",
-        "AvgCountLineComment", "AvgCyclomatic", "AvgCyclomaticModified",
-        "AvgCyclomaticStrict", "AvgEssential", "CountDeclClass",
-        "CountDeclClassMethod", "CountDeclClassVariable", "CountDeclFile",
-        "CountDeclInstanceMethod", "CountDeclInstanceVariable",
-        "CountDeclMethod", "CountDeclMethodDefault", "CountDeclMethodPrivate",
-        "CountDeclMethodProtected", "CountDeclMethodPublic", "CountLine",
-        "CountLineBlank", "CountLineCode", "CountLineCodeDecl",
-        "CountLineCodeExe", "CountLineComment", "CountSemicolon", "CountStmt",
-        "CountStmtDecl", "CountStmtExe", "MaxCyclomatic",
-        "MaxCyclomaticModified", "MaxCyclomaticStrict", "MaxEssential",
-        "MaxNesting", "RatioCommentToCode", "SumCyclomatic",
-        "SumCyclomaticModified", "SumCyclomaticStrict", "SumEssential",
-    }),
+    "method": frozenset(
+        {
+            "CCViolDensityCode",
+            "CCViolDensityLine",
+            "CountCCViol",
+            "CountCCViolType",
+            "CountInput",
+            "CountLine",
+            "CountLineBlank",
+            "CountLineCode",
+            "CountLineCodeDecl",
+            "CountLineCodeExe",
+            "CountLineComment",
+            "CountOutput",
+            "CountPath",
+            "CountPathLog",
+            "CountSemicolon",
+            "CountStmt",
+            "CountStmtDecl",
+            "CountStmtExe",
+            "Cyclomatic",
+            "CyclomaticModified",
+            "CyclomaticStrict",
+            "Essential",
+            "Knots",
+            "MaxEssentialKnots",
+            "MaxNesting",
+            "MinEssentialKnots",
+            "RatioCommentToCode",
+            "SumCyclomatic",
+            "SumCyclomaticModified",
+            "SumCyclomaticStrict",
+            "SumEssential",
+        }
+    ),
+    "class": frozenset(
+        {
+            "AvgCountLine",
+            "AvgCountLineBlank",
+            "AvgCountLineCode",
+            "AvgCountLineComment",
+            "AvgCyclomatic",
+            "AvgCyclomaticModified",
+            "AvgCyclomaticStrict",
+            "AvgEssential",
+            "CountClassBase",
+            "CountClassCoupled",
+            "CountClassCoupledModified",
+            "CountClassDerived",
+            "CountDeclClassMethod",
+            "CountDeclClassVariable",
+            "CountDeclInstanceMethod",
+            "CountDeclInstanceVariable",
+            "CountDeclMethod",
+            "CountDeclMethodAll",
+            "CountDeclMethodDefault",
+            "CountDeclMethodPrivate",
+            "CountDeclMethodProtected",
+            "CountDeclMethodPublic",
+            "CountLine",
+            "CountLineBlank",
+            "CountLineCode",
+            "CountLineCodeDecl",
+            "CountLineCodeExe",
+            "CountLineComment",
+            "CountSemicolon",
+            "CountStmt",
+            "CountStmtDecl",
+            "CountStmtExe",
+            "MaxCyclomatic",
+            "MaxCyclomaticModified",
+            "MaxCyclomaticStrict",
+            "MaxEssential",
+            "MaxInheritanceTree",
+            "MaxNesting",
+            "PercentLackOfCohesion",
+            "PercentLackOfCohesionModified",
+            "RatioCommentToCode",
+            "SumCyclomatic",
+            "SumCyclomaticModified",
+            "SumCyclomaticStrict",
+            "SumEssential",
+        }
+    ),
+    "file": frozenset(
+        {
+            "AvgCountLine",
+            "AvgCountLineBlank",
+            "AvgCountLineCode",
+            "AvgCountLineComment",
+            "AvgCyclomatic",
+            "AvgCyclomaticModified",
+            "AvgCyclomaticStrict",
+            "AvgEssential",
+            "CCViolDensityCode",
+            "CCViolDensityLine",
+            "CountCCViol",
+            "CountCCViolType",
+            "CountDeclClass",
+            "CountDeclClassMethod",
+            "CountDeclClassVariable",
+            "CountDeclExecutableUnit",
+            "CountDeclFunction",
+            "CountDeclInstanceMethod",
+            "CountDeclInstanceVariable",
+            "CountDeclMethod",
+            "CountDeclMethodDefault",
+            "CountDeclMethodPrivate",
+            "CountDeclMethodProtected",
+            "CountDeclMethodPublic",
+            "CountLine",
+            "CountLineBlank",
+            "CountLineCode",
+            "CountLineCodeDecl",
+            "CountLineCodeExe",
+            "CountLineComment",
+            "CountSemicolon",
+            "CountStmt",
+            "CountStmtDecl",
+            "CountStmtExe",
+            "MaxCyclomatic",
+            "MaxCyclomaticModified",
+            "MaxCyclomaticStrict",
+            "MaxEssential",
+            "MaxNesting",
+            "RatioCommentToCode",
+            "SumCyclomatic",
+            "SumCyclomaticModified",
+            "SumCyclomaticStrict",
+            "SumEssential",
+        }
+    ),
+    "package": frozenset(
+        {
+            "AvgCountLine",
+            "AvgCountLineBlank",
+            "AvgCountLineCode",
+            "AvgCountLineComment",
+            "AvgCyclomatic",
+            "AvgCyclomaticModified",
+            "AvgCyclomaticStrict",
+            "AvgEssential",
+            "CountDeclClass",
+            "CountDeclClassMethod",
+            "CountDeclClassVariable",
+            "CountDeclFile",
+            "CountDeclInstanceMethod",
+            "CountDeclInstanceVariable",
+            "CountDeclMethod",
+            "CountDeclMethodDefault",
+            "CountDeclMethodPrivate",
+            "CountDeclMethodProtected",
+            "CountDeclMethodPublic",
+            "CountLine",
+            "CountLineBlank",
+            "CountLineCode",
+            "CountLineCodeDecl",
+            "CountLineCodeExe",
+            "CountLineComment",
+            "CountSemicolon",
+            "CountStmt",
+            "CountStmtDecl",
+            "CountStmtExe",
+            "MaxCyclomatic",
+            "MaxCyclomaticModified",
+            "MaxCyclomaticStrict",
+            "MaxEssential",
+            "MaxNesting",
+            "RatioCommentToCode",
+            "SumCyclomatic",
+            "SumCyclomaticModified",
+            "SumCyclomaticStrict",
+            "SumEssential",
+        }
+    ),
 }
 
 
@@ -417,11 +539,20 @@ _METRIC_SCOPE = {
 #: interface -- 0 on all of these, not the 1 an empty body earns. Verified on
 #: JSON's `JSONString.toJSONString` and `XMLXsiTypeConverter.convert`, which
 #: answer 0 for every one and still carry CountLine 7 and CountStmtDecl 1.
-_BODYLESS_ZERO = frozenset({
-    "Cyclomatic", "CyclomaticModified", "CyclomaticStrict", "Essential",
-    "CountPath", "CountPathLog", "Knots", "MaxEssentialKnots",
-    "MinEssentialKnots", "MaxNesting",
-})
+_BODYLESS_ZERO = frozenset(
+    {
+        "Cyclomatic",
+        "CyclomaticModified",
+        "CyclomaticStrict",
+        "Essential",
+        "CountPath",
+        "CountPathLog",
+        "Knots",
+        "MaxEssentialKnots",
+        "MinEssentialKnots",
+        "MaxNesting",
+    }
+)
 
 
 def _metric_family(kindname):
@@ -480,9 +611,11 @@ def update_files(paths, source_root: str = ""):
 
     Returns a summary dict.
     """
-    from openunderstand.oudb.models import (dependent_files, purge_file,
-                                            merge_placeholder_entities,
-                                            relabel_nondynamic_calls)
+    from openunderstand.oudb.models import (
+        dependent_files,
+        purge_file,
+        finalise_analysis,
+    )
     from openunderstand.ounderstand.parsing_process import process_file
     from openunderstand.ounderstand import symbol_table
 
@@ -490,19 +623,27 @@ def update_files(paths, source_root: str = ""):
 
     # Expand to the files that depend on these, before anything is purged --
     # purging deletes the references the dependency graph is derived from.
-    seeds = [e._id for e in
-             (EntityModel.get_or_none(EntityModel._longname == p) for p in requested)
-             if e is not None]
+    seeds = [
+        e._id
+        for e in (
+            EntityModel.get_or_none(EntityModel._longname == p) for p in requested
+        )
+        if e is not None
+    ]
     affected = dependent_files(seeds)
     # Filter to real file entities: some passes still record a non-file entity
     # as a reference's _file, and following those would drag in things that
     # are not files at all.
     file_kind = kind_id("Java File")
-    dependents = [
-        e._longname for e in
-        EntityModel.select().where(EntityModel._id.in_(affected))
-        if e._kind_id == file_kind
-    ] if affected else []
+    dependents = (
+        [
+            e._longname
+            for e in EntityModel.select().where(EntityModel._id.in_(affected))
+            if e._kind_id == file_kind
+        ]
+        if affected
+        else []
+    )
     paths = sorted({*requested, *dependents})
 
     removed_entities = removed_refs = 0
@@ -514,6 +655,7 @@ def update_files(paths, source_root: str = ""):
             removed_refs += refs
             if not os.path.exists(path):
                 file_ent.delete_instance()
+                forget_entity_rows()
 
     # The index feeds cross-file name resolution, so it has to see the new
     # source before the passes run.
@@ -524,8 +666,19 @@ def update_files(paths, source_root: str = ""):
     for path in reanalysed:
         process_file(path)
 
-    merged = merge_placeholder_entities()
-    relabelled = relabel_nondynamic_calls()
+    # The same six passes a full build runs, through the one function. Running
+    # only the first two left an updated database holding rows a rebuilt one
+    # does not -- plain Use references shadowed by a variant, and inverses hung
+    # on entities the project does not declare.
+    # Only the files just re-analysed can hold a call whose label changed.
+    touched = [
+        ent._id
+        for ent in (
+            EntityModel.get_or_none(EntityModel._longname == p) for p in reanalysed
+        )
+        if ent is not None
+    ]
+    finalised = finalise_analysis(file_ids=touched)
     return {
         "requested": len(requested),
         "files": len(paths),
@@ -533,8 +686,12 @@ def update_files(paths, source_root: str = ""):
         "deleted": len(paths) - len(reanalysed),
         "entities_removed": removed_entities,
         "references_removed": removed_refs,
-        "placeholders_merged": merged,
-        "calls_relabelled": relabelled,
+        "placeholders_merged": finalised["merged_placeholders"],
+        "calls_relabelled": finalised["relabelled_calls"],
+        "nonvariable_deref_dropped": finalised["nonvariable_deref_dropped"],
+        "shadowed_use_dropped": finalised["shadowed_use_dropped"],
+        "external_inverses_dropped": finalised["external_inverses_dropped"],
+        "orphan_placeholders_dropped": finalised["orphan_placeholders_dropped"],
     }
 
 
@@ -551,8 +708,9 @@ def update_db(repo_path: str = "", branch: str = "origin/master"):
 
     repo_path = os.path.abspath(repo_path)
     changed = git.Repo(repo_path).git.diff(branch, name_only=True).split("\n")
-    paths = [os.path.join(repo_path, name)
-             for name in changed if name.endswith(".java")]
+    paths = [
+        os.path.join(repo_path, name) for name in changed if name.endswith(".java")
+    ]
     return update_files(paths, source_root=repo_path)
 
 
@@ -569,8 +727,11 @@ def create_db(
             "synchronous": 0,
         },
     )
-    db.bind([KindModel, EntityModel, ReferenceModel, ProjectModel])
-    db.create_tables([KindModel, EntityModel, ReferenceModel, ProjectModel])
+    db.bind([KindModel, EntityModel, ReferenceModel, ProjectModel, MetricModel])
+    db.create_tables(
+        [KindModel, EntityModel, ReferenceModel, ProjectModel, MetricModel]
+    )
+    forget_entity_rows()
 
     # Build without the reference table's four foreign-key indexes. Each insert
     # would otherwise update four B-trees as well as the table -- about two
@@ -579,6 +740,7 @@ def create_db(
     # write. merge_placeholder_entities() rebuilds them before the first pass
     # that reads, so a finished database is always fully indexed.
     from openunderstand.oudb.models import drop_reference_indexes
+
     drop_reference_indexes(db)
 
     ProjectModel.get_or_create(
@@ -587,6 +749,68 @@ def create_db(
         db_path=path_of_db_file,
     )
     return open(path_of_db_file)
+
+
+def _stored_metrics(ent, names):
+    """(values already known, names still to compute) for one entity.
+
+    A miss is remembered as an explicit null, because "this metric is not
+    defined on this kind" is an answer worth not recomputing.
+    """
+    if not names or getattr(ent, "_id", None) is None:
+        return {}, names
+    try:
+        rows = list(
+            MetricModel.select().where(
+                (MetricModel._ent_id == ent._id) & (MetricModel._name.in_(names))
+            )
+        )
+    except Exception:
+        return {}, names
+    found, values = set(), {}
+    for row in rows:
+        found.add(row._name)
+        if row._value is not None:
+            values[row._name] = _metric_from_text(row._value)
+    return values, [n for n in names if n not in found]
+
+
+def _metric_from_text(text):
+    """A stored value back to the type the caller expects."""
+    try:
+        return int(text)
+    except ValueError:
+        pass
+    # RatioCommentToCode is reported as a two-decimal *string*, and a float
+    # here would compare unequal to Understand's "0.53".
+    return text
+
+
+def _remember_metrics(ent, names, values):
+    """Write what was just computed, so the next caller reads it.
+
+    Best effort: a database opened read-only still answers, it just does not
+    remember. Floats are stored as text for the same reason they are returned
+    as text.
+    """
+    if not names or getattr(ent, "_id", None) is None:
+        return
+    rows = [
+        {
+            "_ent_id": ent._id,
+            "_name": name,
+            "_value": None if values.get(name) is None else str(values[name]),
+        }
+        for name in names
+    ]
+    try:
+        MetricModel.insert_many(rows).on_conflict_ignore().execute()
+    except Exception:
+        pass
+
+
+#: Every column of a reference row, in a fixed order, for cheap identity.
+_REFERENCE_COLUMNS = ("_id", "_kind", "_file", "_line", "_column", "_ent", "_scope")
 
 
 def open(dbname):  # real signature unknown; restored from __doc__
@@ -618,7 +842,17 @@ def open(dbname):  # real signature unknown; restored from __doc__
         },
     )
 
-    db.bind([KindModel, EntityModel, ReferenceModel, ProjectModel])
+    db.bind([KindModel, EntityModel, ReferenceModel, ProjectModel, MetricModel])
+    # The query layer remembers entity rows and kind ids between calls, which
+    # is only sound while the database it read them from is the one bound.
+    graph_metrics.clear_entity_cache()
+    forget_entity_rows()
+    # Older databases predate the metric store; creating it is a no-op when it
+    # is already there and makes one written by an earlier release usable.
+    try:
+        db.create_tables([MetricModel])
+    except Exception:
+        pass
 
     # db_path is whatever absolute path the database was built at, so an exact
     # match fails as soon as the file is copied or opened by a different route,
@@ -1080,9 +1314,12 @@ class Ent:
         Return the simple name for the kind of the entity.
 
         This is similar to ent.kind().name(), but does not create a Kind
-        object.
+        object -- and it must not, which is the point. Going through kind()
+        cost a SELECT and a Kind construction per call, 186us an entity where
+        Understand does a pointer dereference. `_kind_name` is memoised on the
+        id, and the kind table never changes after fill().
         """
-        return self.kind().name()
+        return _kind_name(self._kind) or self.kind().name()
 
     def language(self):  # real signature unknown; restored from __doc__
         """
@@ -1150,12 +1387,23 @@ class Ent:
         Metric list must be a tuple or list containing the names of metrics
         as strings. If the metric is not available, it's value will be None.
         """
+        metric_list = list(metric_list or [])
+        # Answered from the store first. A metric here costs milliseconds where
+        # Understand's costs microseconds, because it is recomputed from SQL on
+        # every call; remembering the answer is what closes that for the second
+        # caller, and the store outlives the process.
+        stored, metric_list = _stored_metrics(self, metric_list)
+        if not metric_list:
+            return stored
+
         metrics = {}
         known = set(self.metrics())
         # Computed once: it reparses, and the complexity family asks ten times.
-        bodyless = (_metric_family(self.kindname()) == "method"
-                    and any(m in _BODYLESS_ZERO for m in metric_list)
-                    and metric_context.declares_without_body(self))
+        bodyless = (
+            _metric_family(self.kindname()) == "method"
+            and any(m in _BODYLESS_ZERO for m in metric_list)
+            and metric_context.declares_without_body(self)
+        )
 
         # A package has no source of its own: Understand reports the roll-up
         # over the files it spans. Doing this before the dispatch chain keeps
@@ -1165,16 +1413,23 @@ class Ent:
             nested = graph_metrics.container_methods(self)
             classes = graph_metrics.container_classes(self)
             for item in metric_list:
-                if (item not in known or item in graph_metrics._NOT_AGGREGATED
-                        or item in graph_metrics.METHOD_SUMMARY):
+                if (
+                    item not in known
+                    or item in graph_metrics._NOT_AGGREGATED
+                    or item in graph_metrics.METHOD_SUMMARY
+                ):
                     continue
                 if graph_metrics.aggregates_over_classes(item):
                     over = classes
                 else:
                     over = members
                 metrics[item] = graph_metrics.aggregate(
-                    item, [Ent(**row.__dict__.get("__data__")).metric([item]).get(item)
-                           for row in over])
+                    item,
+                    [
+                        Ent(**row.__dict__.get("__data__")).metric([item]).get(item)
+                        for row in over
+                    ],
+                )
             metric_list = [m for m in metric_list if m not in metrics]
         for item in metric_list:
             # The docstring promises None for a metric this entity has no
@@ -1197,21 +1452,38 @@ class Ent:
                 metrics.update({"CountDeclMethodAll": count_decl_method_all(self)})
             elif item == "CountDeclClassVariable":
                 metrics.update(
-                    {"CountDeclClassVariable":
-                         graph_metrics.count_decl_class_variable(self)}
+                    {
+                        "CountDeclClassVariable": graph_metrics.count_decl_class_variable(
+                            self
+                        )
+                    }
                 )
             elif item == "CountDeclClassMethod":
-                metrics.update({"CountDeclClassMethod":
-                                graph_metrics.count_decl_class_method(self)})
+                metrics.update(
+                    {
+                        "CountDeclClassMethod": graph_metrics.count_decl_class_method(
+                            self
+                        )
+                    }
+                )
             elif item == "CountClassBase":
                 metrics.update({"CountClassBase": graph_metrics.count_class_base(self)})
             elif item == "CountClassCoupled":
-                metrics.update({"CountClassCoupled": graph_metrics.count_class_coupled(self)})
+                metrics.update(
+                    {"CountClassCoupled": graph_metrics.count_class_coupled(self)}
+                )
             elif item == "CountClassCoupledModified":
-                metrics.update({"CountClassCoupledModified":
-                                graph_metrics.count_class_coupled(self, True)})
+                metrics.update(
+                    {
+                        "CountClassCoupledModified": graph_metrics.count_class_coupled(
+                            self, True
+                        )
+                    }
+                )
             elif item == "CountClassDerived":
-                metrics.update({"CountClassDerived": graph_metrics.count_class_derived(self)})
+                metrics.update(
+                    {"CountClassDerived": graph_metrics.count_class_derived(self)}
+                )
             elif item == "CountDeclClass":
                 metrics.update({"CountDeclClass": graph_metrics.count_decl_class(self)})
             elif item == "CountDeclFile":
@@ -1221,19 +1493,53 @@ class Ent:
                     {"CountDeclExecutableUnit": declare_executable_unit(self)}
                 )
             elif item == "CountDeclFunction":
-                metrics.update({"CountDeclFunction": graph_metrics.count_decl_function(self)})
+                metrics.update(
+                    {"CountDeclFunction": graph_metrics.count_decl_function(self)}
+                )
             elif item == "CountDeclInstanceMethod":
-                metrics.update({"CountDeclInstanceMethod": graph_metrics.count_decl_instance_method(self)})
+                metrics.update(
+                    {
+                        "CountDeclInstanceMethod": graph_metrics.count_decl_instance_method(
+                            self
+                        )
+                    }
+                )
             elif item == "CountDeclInstanceVariable":
-                metrics.update({"CountDeclInstanceVariable": graph_metrics.count_decl_instance_variable(self)})
+                metrics.update(
+                    {
+                        "CountDeclInstanceVariable": graph_metrics.count_decl_instance_variable(
+                            self
+                        )
+                    }
+                )
             elif item == "CountDeclInstanceVariablePrivate":
-                metrics.update({"CountDeclInstanceVariablePrivate": graph_metrics.count_decl_instance_variable(self, "private")})
+                metrics.update(
+                    {
+                        "CountDeclInstanceVariablePrivate": graph_metrics.count_decl_instance_variable(
+                            self, "private"
+                        )
+                    }
+                )
             elif item == "CountDeclInstanceVariableProtected":
-                metrics.update({"CountDeclInstanceVariableProtected": graph_metrics.count_decl_instance_variable(self, "protected")})
+                metrics.update(
+                    {
+                        "CountDeclInstanceVariableProtected": graph_metrics.count_decl_instance_variable(
+                            self, "protected"
+                        )
+                    }
+                )
             elif item == "CountDeclInstanceVariablePublic":
-                metrics.update({"CountDeclInstanceVariablePublic": graph_metrics.count_decl_instance_variable(self, "public")})
+                metrics.update(
+                    {
+                        "CountDeclInstanceVariablePublic": graph_metrics.count_decl_instance_variable(
+                            self, "public"
+                        )
+                    }
+                )
             elif item == "CountDeclMethod":
-                metrics.update({"CountDeclMethod": graph_metrics.count_decl_method(self)})
+                metrics.update(
+                    {"CountDeclMethod": graph_metrics.count_decl_method(self)}
+                )
             elif item == "CountDeclMethodDefault":
                 metrics.update(
                     {"CountDeclMethodDefault": count_decl_method_default(self)}
@@ -1247,31 +1553,62 @@ class Ent:
                     {"CountDeclMethodPrivate": count_decl_method_private(self)}
                 )
             elif item == "CountDeclMethodPublic":
-                metrics.update({"CountDeclMethodPublic":
-                                graph_metrics.count_decl_method_public(self)})
+                metrics.update(
+                    {
+                        "CountDeclMethodPublic": graph_metrics.count_decl_method_public(
+                            self
+                        )
+                    }
+                )
             elif item == "CountInput":
                 metrics.update({"CountInput": graph_metrics.count_input(self)})
             elif item == "CountLine":
-                metrics.update({"CountLine": metric_context.line_counts(
-                    self.contents())["total"]})
+                metrics.update(
+                    {"CountLine": metric_context.line_counts(self.contents())["total"]}
+                )
             elif item == "CountLineBlank":
-                metrics.update({"CountLineBlank": metric_context.line_counts(
-                    self.contents())["blank"]})
+                metrics.update(
+                    {
+                        "CountLineBlank": metric_context.line_counts(self.contents())[
+                            "blank"
+                        ]
+                    }
+                )
             elif item == "CountLineCode":
                 # Counted from the entity's own source. The listener this used
                 # to call was constructed but never walked, so the sums were
                 # always over empty lists.
-                metrics.update({"CountLineCode": metric_context.line_counts(
-                    self.contents())["code"]})
+                metrics.update(
+                    {
+                        "CountLineCode": metric_context.line_counts(self.contents())[
+                            "code"
+                        ]
+                    }
+                )
             elif item == "CountLineCodeDecl":
-                metrics.update({"CountLineCodeDecl":
-                                metric_context.statement_counts(self)["line_decl"]})
+                metrics.update(
+                    {
+                        "CountLineCodeDecl": metric_context.statement_counts(self)[
+                            "line_decl"
+                        ]
+                    }
+                )
             elif item == "CountLineCodeExe":
-                metrics.update({"CountLineCodeExe":
-                                metric_context.statement_counts(self)["line_exe"]})
+                metrics.update(
+                    {
+                        "CountLineCodeExe": metric_context.statement_counts(self)[
+                            "line_exe"
+                        ]
+                    }
+                )
             elif item == "CountLineComment":
-                metrics.update({"CountLineComment": metric_context.line_counts(
-                    self.contents())["comment"]})
+                metrics.update(
+                    {
+                        "CountLineComment": metric_context.line_counts(self.contents())[
+                            "comment"
+                        ]
+                    }
+                )
             elif item == "CountOutput":
                 metrics.update({"CountOutput": graph_metrics.count_output(self)})
             elif item == "CountPath":
@@ -1281,14 +1618,21 @@ class Ent:
             elif item == "CountSemicolon":
                 metrics.update({"CountSemicolon": graph_metrics.count_semicolon(self)})
             elif item == "CountStmt":
-                metrics.update({"CountStmt":
-                                metric_context.statement_counts(self)["stmt"]})
+                metrics.update(
+                    {"CountStmt": metric_context.statement_counts(self)["stmt"]}
+                )
             elif item == "CountStmtDecl":
-                metrics.update({"CountStmtDecl":
-                                metric_context.statement_counts(self)["stmt_decl"]})
+                metrics.update(
+                    {
+                        "CountStmtDecl": metric_context.statement_counts(self)[
+                            "stmt_decl"
+                        ]
+                    }
+                )
             elif item == "CountStmtExe":
-                metrics.update({"CountStmtExe":
-                                metric_context.statement_counts(self)["stmt_exe"]})
+                metrics.update(
+                    {"CountStmtExe": metric_context.statement_counts(self)["stmt_exe"]}
+                )
             elif item == "Cyclomatic":
                 metrics.update({"Cyclomatic": cyclomatic(self)})
             elif item == "CyclomaticModified":
@@ -1302,34 +1646,44 @@ class Ent:
             elif item == "MaxEssentialKnots":
                 metrics.update({"MaxEssentialKnots": knots.essential_knots(self)})
             elif item == "MaxInheritanceTree":
-                metrics.update({"MaxInheritanceTree":
-                                graph_metrics.max_inheritance_tree(self)})
+                metrics.update(
+                    {"MaxInheritanceTree": graph_metrics.max_inheritance_tree(self)}
+                )
             elif item == "MaxNesting":
                 metrics.update({"MaxNesting": max_nesting(self)})
             elif item == "MinEssentialKnots":
                 metrics.update({"MinEssentialKnots": knots.essential_knots(self)})
             elif item == "PercentLackOfCohesion":
-                metrics.update(
-                    {"PercentLackOfCohesion":
-                        graph_metrics.percent_lack_of_cohesion(self)}
-                )
+                # None means "not defined for this kind", which is an absent
+                # key rather than a zero: Understand reports nothing for an
+                # enum and a 0 would be scored as a wrong answer.
+                value = graph_metrics.percent_lack_of_cohesion(self)
+                if value is not None:
+                    metrics.update({"PercentLackOfCohesion": value})
             elif item == "PercentLackOfCohesionModified":
                 # The listener in metrics/percent_lack_of_cohesion_modified.py is
                 # the reparsing version that found no uses at all; this is the
                 # same reference-graph answer PercentLackOfCohesion already
                 # gives, with the accessor allowance the name promises.
-                metrics.update(
-                    {"PercentLackOfCohesionModified":
-                        graph_metrics.percent_lack_of_cohesion(self, modified=True)}
-                )
+                value = graph_metrics.percent_lack_of_cohesion(self, modified=True)
+                if value is not None:
+                    metrics.update({"PercentLackOfCohesionModified": value})
             elif item == "RatioCommentToCode":
                 # Understand reports this to two decimal places as a string.
                 # Returning a full-precision float meant a value that was
                 # arithmetically right still compared unequal.
                 counts = metric_context.line_counts(self.contents())
-                metrics.update({"RatioCommentToCode": (
-                    f"{counts['comment'] / counts['code']:.2f}"
-                    if counts["code"] else "0.00")})
+                metrics.update(
+                    {
+                        "RatioCommentToCode": (
+                            f"{counts['comment'] / counts['code']:.2f}"
+                            if counts["code"]
+                            else "0.00"
+                        )
+                    }
+                )
+        _remember_metrics(self, metric_list, metrics)
+        metrics.update(stored)
         return metrics
 
     def metrics(self):  # real signature unknown; restored from __doc__
@@ -1456,7 +1810,10 @@ class Ent:
         seen_ents = set()
         for row in query:
             data = row.__dict__.get("__data__")
-            key = tuple(sorted(data.items(), key=lambda kv: kv[0]))
+            # A fixed column order, not sorted(data.items()). The columns are
+            # the same for every row, so sorting them per row was 43,272 dict
+            # sorts to read one project's references.
+            key = tuple(data.get(column) for column in _REFERENCE_COLUMNS)
             if key in seen_refs:
                 continue
             seen_refs.add(key)

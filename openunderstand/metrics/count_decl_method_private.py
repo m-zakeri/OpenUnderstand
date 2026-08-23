@@ -17,5 +17,7 @@ def count_decl_method_private(ent_model=None):
     entity = graph_metrics._entity(ent_model)
     if entity is None:
         return 0
-    return sum("private" in graph_metrics._visibility(method)
-               for method in graph_metrics._declares(entity._id, "method"))
+    return sum(
+        "private" in graph_metrics._visibility(method)
+        for method in graph_metrics._declares(entity._id, "method")
+    )

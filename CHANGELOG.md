@@ -2,6 +2,271 @@
 
 ## Unreleased
 
+### An entity's parent is filled in, not fixed by whichever file arrived first
+
+`EntityModel.get_or_create` completes a missing `_parent` the way it already
+completes `_type`, `_value` and `_contents`. **Agreement with Understand on
+`Ent.parent()` goes from 0.300 to 0.939** over the 4,567 matched entities of the
+JSON benchmark, and the entities where this project answered `None` while
+Understand names a parent drop from 2,978 to 6.
+
+Four more rules take it to **0.9996** -- 4,565 of 4,567 -- each the same
+principle, that the pass which *declares* an entity owns its parent, applied
+where a merely referencing pass had got in first:
+
+* a method or constructor belongs to its class, not to whichever file mentioned
+  it first (149 entities, and the file was usually the wrong one);
+* a top-level type belongs to its file, not to its package (83);
+* a lambda belongs to the method holding it (38);
+* a package belongs to the package above it.
+
+Nothing else moves: 0 of 64 reference kinds change recall or precision, entity
+matching is unchanged, and every value in `docs/metric-parity.md` is identical.
+The committed fingerprints are re-cut, since this is an intentional change to
+what a build writes.
+
+`scripts/compare/18_parent_parity.py` measures this from the dumps the harness
+already writes. It did not exist, which is how a dimension stayed at 0.300.
+
+Also fixed, found while writing the test for those rules: a lambda written
+`x -> ...` produced an entity named `...method.(lambda_expr_1).(lambda_expr_1)`
+that was its own parent, because the define pass built its scope chain from the
+parameter list, which is inside the lambda. No benchmark has that shape, so no
+fingerprint moves.
+
+### An updated database now matches a rebuilt one
+
+`api.update_files()` left the database holding rows a full build does not:
+re-analysing one file of the JSON benchmark took its reference count from 974
+to 1149 and kept it there. Over the whole database and repeated updates it is
+now **0 rows added and 0 lost**, on both entities and references.
+
+* **All four entry points run the same six project-wide passes**, through
+  `models.finalise_analysis()`. There were three copies of that list and a
+  fourth caller running two of the six, so an update kept 122 plain `Java Use`
+  rows shadowed by a variant and 54 inverses hung on entities the project does
+  not declare.
+* **`purge_file` no longer clears a demoted row's declaration position.**
+  Overloads share a long name and are separate rows only because their
+  positions differ, so clearing it made them indistinguishable: re-analysis
+  matched declarations to whichever placeholder came first, and every call
+  resolving to one of them moved.
+
+An update is 1.24s in a warm process against Understand's 3.09s, including all
+six passes. `drop_nonvariable_deref_refs` now decides once per target rather
+than once per reference, which took it from 1.15s to near nothing.
+
+### A build of the JSON benchmark is 15.2s, from 35.6s
+
+Every change below leaves the database byte for byte identical -- both fixture
+fingerprints are unmoved -- so no parity or metric figure changes.
+
+* **`drop_shadowed_use_refs` was 8.4s, and is 0.07s.** It deletes a plain
+  `Java Use` wherever a more specific kind sits at the same position, with a
+  correlated `EXISTS` on (file, line, column), and there was no index on those
+  three columns -- so SQLite rescanned the whole reference table for every
+  candidate row. One index, built in the function that needs it. This single
+  step was larger than the entire per-file loop's write layer.
+* **`ctx.getText()` is memoised.** It concatenates every token beneath a node,
+  the passes ask constantly, and a build made 4.1 million calls re-deriving the
+  same strings. A parse tree is immutable here and is rebuilt per file, so the
+  cache dies with it. 3.5s.
+* **`EntityModel.get_or_none` answers a long-name lookup from the index**
+  `get_or_create` has always used, instead of from SQL. 20,063 of a build's
+  23,194 calls are exactly that shape, and they cost 3.3s.
+* **`scope_of` and `callee_of` read the same index.** Both ran a `SELECT` per
+  reference to pick an overload by declaration position: 34,009 queries. 4.4s.
+* **A completed entity row is updated with the columns that changed**, through
+  the cursor rather than `Model.save()`. 0.7s.
+* `findParents()` caches its answer on the node it was asked about.
+
+Understand builds the same project in 7.55s, in C++ over a purpose-built store.
+
+### Updating one file is now faster than Understand
+
+`api.update_files()` on a single file of the JSON benchmark goes from 4.26s to
+**1.95s**, against Understand's 3.09s for the same edit. Half of the old figure
+was `relabel_nondynamic_calls`, which rescanned every Call and Callby reference
+in the project after each edit. It takes a `file_ids` scope now and
+`update_files` passes the files it re-analysed, which is exactly the set that
+can hold a changed label: the dependency closure already reaches every file
+referencing a type the edited file declares.
+
+The same pass now decides once per callee rather than once per call and writes
+one UPDATE per kind instead of a row at a time, which takes a **full build from
+38.8s to 35.6s** with the fingerprint unchanged.
+
+`symbol_table.build()` then dominated what was left, reindexing all 85 files so
+that one could resolve a cross-file name. It caches each file's contribution
+against that file's mtime and size and replays the merge, so a rebuild with
+nothing changed is 0.00s and an edit reparses one file. **A second edit in the
+same process is 0.88s** against Understand's 3.09s; the first is 1.96s, since
+the index has to be built once before it can be reused.
+
+### Analysis runs in parallel
+
+`runner()` collects in worker processes and writes in the parent, which is the
+layering `analysis_passes/` always claimed. A build of the JSON benchmark goes
+from 45.6s to 30.8s on this machine, and the database is **identical** --
+entities, references and parents all equal at 1, 7, 12 and 15 workers. Workers
+are capped at one per core less the writer; `OU_JOBS` overrides, and `jobs=1`
+is the old sequential loop.
+
+Two things had to be true first, and neither was:
+
+* **The write layer had to stop walking the parse tree.**
+  `Project.getClassProperties` and `getInterfaceProperties` ran a listener over
+  the tree once per distinct name asked, and `EntityGenerator` did the same for
+  class properties and the package declaration. They read precollected
+  declarations now. The answer only ever depended on the query through the
+  name, so one collection answers every lookup -- which also removes a walk per
+  distinct name from the sequential path.
+* **Each pass had to be split into "build a listener" and "write its result".**
+
+A worker never touches the database, and to be sure of it the pool initializer
+rebinds the models to a throwaway in-memory one. Results are consumed with
+`imap`, which preserves order: an entity's parent is set by whichever file
+creates it first.
+
+Scaling stops at about seven workers because the write half is serial, which is
+also why the remaining work is in the write layer rather than in more cores.
+
+### Analysis is 30% faster, and the fingerprint does not move
+
+A build of the JSON benchmark went 58s to 39.1s, and calculator_app's
+fingerprint is identical to its baseline throughout. JSON's moved once, by two
+rows, and both are references Understand reports and this project was dropping. Where the time went, timed
+directly rather than under cProfile: the write layer was 63% of a build, parse
+19%, tree walking 17%.
+
+* `EntityModel.get_or_create` resolved identity with a `SELECT ... WHERE
+  _longname = ?` on every call: 11,153 queries and 21% of a build. It answers
+  from a process-local index now, the same trade `ReferenceModel` already made.
+  Any path that deletes an entity drops the index.
+* Reference rows are buffered and inserted in batches instead of one statement
+  each, 18,932 of them per build. Nothing reads a reference during analysis --
+  every reader is in the query layer or in a project-wide pass, and both flush
+  first.
+* A repeated reference key inside one file resolved against the database,
+  which cannot see a row that is still buffered, so it would have inserted a
+  second copy. Buffered rows are keyed as well as listed. Found by the unit
+  test, not by the fingerprint: the benchmarks happen to contain no such
+  repeat.
+* Each pass is split into "build a listener" and "write its result", so the
+  tree is walked **once** per file instead of once per pass. The writes still
+  run in exactly the order they did, which is what the ordering rules are
+  about. A handler that raises now takes its own listener out of the walk and
+  is logged, which is the isolation each pass's `try/except` gave it before.
+  This also recovered a reference: `chars[pos] = this.next()` in
+  `JSONTokener.next` gets its `Java Set Deref Partial`, which Understand
+  reports and which the old interleaving dropped.
+* The tree is flattened once per file and replayed, rather than descended 33
+  times, and each pass is handed an object carrying only the hooks it actually
+  implements -- `JavaParserLabeledListener` defines all 392 as `pass`, so every
+  node was calling a no-op once per pass.
+* The tree walker no longer dispatches on tokens. No pass implements
+  `visitTerminal`, `visitErrorNode` or the `EveryRule` hooks, and 44% of a Java
+  parse tree's nodes are terminals, so nearly half of every walk was calling
+  no-ops -- 33 times per file. A listener that does implement one still gets
+  ANTLR's own walker.
+
+### Queries are much faster, and every value is unchanged
+
+Measured on the JSON benchmark over 1,407 methods and 43,272 references, with
+`docs/metric-parity.md` byte-identical before and after. A full metric-parity
+scoring run went 29.0s to 5.8s.
+
+| operation | before | after |
+| --- | ---: | ---: |
+| `ent.kindname()` | 0.292s | 0.003s |
+| `ent.refs()` | 0.944s | 0.481s |
+| three metrics over every method | 45.4s | 11.6s cold, 2.2s warm |
+
+* `ent.kindname()` went through `ent.kind()`, which cost a SELECT and a `Kind`
+  construction per call. It uses the memoised name lookup now.
+* `graph_metrics._targets()` issued one `EntityModel` query per reference. The
+  rows are fetched together and remembered per database, and the id behind each
+  reference-kind name is memoised.
+* Metrics that reparse an entity's source used the pure-Python ANTLR parser
+  even where the C++ accelerator was built. `Cyclomatic` was 18.6ms an entity
+  and is 1.6ms.
+* New `MetricModel` table: a computed metric value is remembered, so a second
+  query reads it instead of recomputing. Filled on demand rather than during
+  analysis, which leaves build time unchanged.
+
+## 0.4.0
+
+### Every metric is at or above 0.90 against Understand
+
+`docs/metric-parity.md` scores all 67 names in `Ent.metrics()`; the lowest was
+0.500 and is now 0.906. Macro F1 0.970, micro 0.970, and no metric raises.
+The names that moved most:
+
+| metric | before | after |
+| --- | ---: | ---: |
+| `CountDeclClass` | 0.500 | 1.000 |
+| `CountClassBase` | 0.957 | 1.000 |
+| `CountClassDerived` | 0.979 | 1.000 |
+| `CountClassCoupled` | 0.585 | 0.906 |
+| `CountClassCoupledModified` | 0.851 | 0.972 |
+| `CountOutput` | 0.655 | 0.916 |
+| `CountInput` | 0.794 | 0.935 |
+| `CountDeclMethodAll` | 0.894 | 0.943 |
+| `PercentLackOfCohesion` | 0.870 | 0.912 |
+| `PercentLackOfCohesionModified` | 0.837 | 0.912 |
+
+Reference parity moved with it: `Java Create` is now 1467 of Understand's 1467
+on the raw dump, precision and recall both 1.000, and `Java Couple` is 831 of
+840 with none we emit that it does not have.
+
+Every rule below was derived by reading Understand's own reference graph rather
+than by inferring one from Java source.
+
+**Entities the analysis never created.** An anonymous class body is a class:
+`class_properties.anonymous_name()` numbers each `(Anon_N)` over the file in
+source order, `findParents()` puts that segment into every scope chain running
+through the body, and `define_listener` declares it. Twelve entities on the
+JSON benchmark, and entity recall went 92.7% to 93.0%.
+
+**Overload resolution at the call site.** Understand counts distinct callee
+entities, and two overloads are two entities, so a method calling three
+`JSONObject.put` overloads counted one callee. `symbol_table.INDEX.overloads`
+records each declaration's parameter types and position, and `overload_site()`
+scores candidates the way Java resolves a call. Arity alone settles 68 of the
+benchmark's 100 overloaded names and none of the ones that matter, so the
+argument types are matched too, with `type_binding.argument_type()` typing a
+literal that is being passed rather than called on.
+
+**References that were never emitted at all.** `super(...)` and `this(...)`
+(only the identifier alternative of `methodCall` was handled), the annotation
+element in `@Test(expected=X.class)`, `int.class` as a read of
+`java.lang.Class`, an enum's implicit `java.lang.Enum` supertype, and every
+`new X(...)` written outside a block statement or a variable initialiser --
+`throw new JSONException(...)` and `return new X(...)` among them.
+
+**Resolution fixes.** A long name can name two things: `PersonRecord.name` is a
+field and its accessor, and `StringBuilderWriter.write` is four overloads.
+`project.scope_of()` resolves a reference's scope by kind family and by
+declaration position, which moved four metrics at once. A lambda body is a
+scope, so its calls are its own. `symbol_table.declaring_type_anywhere()` walks
+a member to its declaring type across the project/JDK boundary.
+
+**Metric definitions corrected against `understand.Metric.description`.**
+Neither cohesion metric is defined on an enum. `CountDeclMethodAll` is RFC and
+counts every declared member of the whole superclass chain, constructors and
+private ones included, which needed two new columns in the JDK index. A
+placeholder entity's *kind* cannot be trusted but its name can: an Unknown row
+whose owner is a known type names a member of it, which is how
+`java.lang.Boolean.TRUE` came to be counted as the global read it is.
+
+### JDK index
+
+`jdk_index.txt.gz` gains an interface flag in column 2 (`F` final, `I`
+interface, `FI` both, `-` neither) and two columns: the number of members a
+type declares and its superclass. Five columns still load, so an older index
+is readable. Regenerated from the same JDK; the first four columns are
+byte-identical.
+
 ### CPython 3.14 wheels
 
 `CIBW_BUILD` gains `cp314-*`, taking the matrix to 18 wheels. This needed

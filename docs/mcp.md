@@ -29,6 +29,7 @@ stdio, so it will sit waiting for a client -- that is correct behaviour.
 | --- | --- |
 | `analyze(source_dir, database="")` | Parse a Java project and open the result |
 | `open_database(path)` | Open an existing `.udb` |
+| `update(paths, source_root="")` | Re-analyse changed files, without a full rebuild |
 | `list_entities(kind="", limit=100)` | Entities, optionally filtered by kind |
 | `entity_references(longname, reference_kind="", limit=100)` | References scoped to an entity |
 | `entity_metrics(longname, metrics=None)` | Metric values; omit `metrics` for all |
@@ -36,6 +37,16 @@ stdio, so it will sit waiting for a client -- that is correct behaviour.
 
 `analyze` or `open_database` has to come first -- the others operate on
 whichever database is open.
+
+After editing source, call `update` rather than `analyze` again. It re-analyses
+only the files named and the files that depend on them, which is about ten
+times quicker on a mid-sized project -- one file of the 85-file `org.json`
+benchmark takes 1.2s against 14s for the whole thing. Each file's previous
+contribution is deleted first, so a renamed method does not linger under both
+names, and the result is what a rebuild of the same source would have written.
+`source_root` defaults to the root the open database recorded when it was
+built, so it is usually not needed. A path that no longer exists is purged and
+not re-analysed, which is how you record a deleted file.
 
 ## Resources
 

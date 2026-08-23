@@ -3,7 +3,6 @@ from antlr4 import *
 from openunderstand.gen.javaLabeled.JavaLexer import JavaLexer
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
 
-
 # Common Helper Functions
 
 

@@ -1,28 +1,87 @@
-"""Analyse every ``.java`` file under a project, one file at a time.
+"""Analyse every ``.java`` file under a project.
 
-Sequential on purpose. A ``Pool`` here handed every forked worker the parent's
-already-open SQLite connection and its own copy of the process-local entity
-identity cache, so writes were lost and duplicated *with no exception raised*:
-``pool.map`` on calculator_app committed 43 entities and 208 references against
-the sequential 90 and 578, and JSON came out at 5606 entities against 5186.
-``map_async`` without ``.get()`` then discarded whatever the workers did raise,
-which is why this looked like it worked.
+Workers only *collect* and the parent writes, which is the layering
+``analysis_passes/`` always claimed. Getting there needed two things that were
+not true before:
 
-``mcp_server.analyze()`` and ``scripts/compare/02_build_ou.py`` have always
-looped sequentially for this reason. This is the same loop, so every entry
-point -- the CLI, ``start_parsing()``, the MCP server and the comparison
-harness -- now builds the same database from the same source.
+* the write layer had to stop walking the parse tree.
+  ``Project.getClassProperties`` and ``getInterfaceProperties`` did, once per
+  distinct name asked, and so did ``EntityGenerator``. They read precollected
+  declarations now, which a worker computes where the tree is.
+* every pass had to be split into "build a listener" and "write its result",
+  so the two halves can run in different processes.
 
-Parallelism needs workers that only *collect* and a parent that writes, which
-is the layering ``analysis_passes/`` already claims. That is a project, not a
-flag, and it is not what a wall-clock number is worth here: JSON is dominated
-by per-file work that was already halved by doing less of it, not by a missing
-core.
+A ``Pool`` here used to hand every forked worker the parent's already-open
+SQLite connection and its own copy of the process-local entity identity cache,
+so writes were lost and duplicated *with no exception raised*: ``pool.map`` on
+calculator_app committed 43 entities and 208 references against the sequential
+90 and 578. That cannot happen now, because a worker never writes -- and to
+make sure of it, ``_isolate`` rebinds the models to a throwaway in-memory
+database in each worker, so a stray write goes nowhere near the real one.
+
+Results are consumed with ``imap``, which preserves order. That is not a
+detail: an entity's parent is set by whichever file creates it first, and
+``get_files`` sorts for the same reason.
 """
 
-from openunderstand.ounderstand.parsing_process import process_file, get_files
+import os
+
+from openunderstand.ounderstand.parsing_process import (
+    collect_file,
+    get_files,
+    process_file,
+    write_file,
+)
 
 
-def runner(path_project: str = ""):
-    for file_address in get_files(path_project):
-        process_file(file_address)
+def _isolate():
+    """A worker must not reach the real database. Give it a dead one."""
+    from peewee import SqliteDatabase
+
+    from openunderstand.oudb.models import (
+        EntityModel,
+        KindModel,
+        ProjectModel,
+        ReferenceModel,
+    )
+
+    SqliteDatabase(":memory:").bind(
+        [KindModel, EntityModel, ReferenceModel, ProjectModel]
+    )
+
+
+def _default_jobs():
+    """One worker per core, less the one writing. `OU_JOBS` overrides."""
+    override = os.environ.get("OU_JOBS")
+    if override:
+        return max(1, int(override))
+    return max(1, (os.cpu_count() or 2) - 1)
+
+
+def runner(path_project: str = "", jobs: int = None):
+    files = get_files(path_project)
+    jobs = _default_jobs() if jobs is None else jobs
+    if jobs <= 1 or len(files) < 4:
+        for file_address in files:
+            process_file(file_address)
+        return
+
+    from multiprocessing import get_context
+
+    from openunderstand.oudb.models import ReferenceModel
+
+    # fork, so a worker inherits the symbol table the caller already built
+    # rather than spending a second rebuilding it.
+    context = get_context("fork") if "fork" in _methods() else get_context()
+    with context.Pool(processes=jobs, initializer=_isolate) as pool:
+        for file_address, payload in zip(
+            files, pool.imap(collect_file, files, chunksize=2)
+        ):
+            with ReferenceModel._meta.database.atomic():
+                write_file(file_address, payload)
+
+
+def _methods():
+    from multiprocessing import get_all_start_methods
+
+    return get_all_start_methods()
