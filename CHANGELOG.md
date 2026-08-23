@@ -2,6 +2,34 @@
 
 ## Unreleased
 
+### Analysis runs in parallel
+
+`runner()` collects in worker processes and writes in the parent, which is the
+layering `analysis_passes/` always claimed. A build of the JSON benchmark goes
+from 45.6s to 30.8s on this machine, and the database is **identical** --
+entities, references and parents all equal at 1, 7, 12 and 15 workers. Workers
+are capped at one per core less the writer; `OU_JOBS` overrides, and `jobs=1`
+is the old sequential loop.
+
+Two things had to be true first, and neither was:
+
+* **The write layer had to stop walking the parse tree.**
+  `Project.getClassProperties` and `getInterfaceProperties` ran a listener over
+  the tree once per distinct name asked, and `EntityGenerator` did the same for
+  class properties and the package declaration. They read precollected
+  declarations now. The answer only ever depended on the query through the
+  name, so one collection answers every lookup -- which also removes a walk per
+  distinct name from the sequential path.
+* **Each pass had to be split into "build a listener" and "write its result".**
+
+A worker never touches the database, and to be sure of it the pool initializer
+rebinds the models to a throwaway in-memory one. Results are consumed with
+`imap`, which preserves order: an entity's parent is set by whichever file
+creates it first.
+
+Scaling stops at about seven workers because the write half is serial, which is
+also why the remaining work is in the write layer rather than in more cores.
+
 ### Analysis is 30% faster, and the fingerprint does not move
 
 A build of the JSON benchmark went 58s to 39.1s, and calculator_app's
