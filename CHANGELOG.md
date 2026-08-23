@@ -4,8 +4,9 @@
 
 ### Analysis is 30% faster, and the fingerprint does not move
 
-A build of the JSON benchmark went 58s to 39.7s, and calculator_app's
-fingerprint is identical to its baseline throughout. Where the time went, timed
+A build of the JSON benchmark went 58s to 39.1s, and calculator_app's
+fingerprint is identical to its baseline throughout. JSON's moved once, by two
+rows, and both are references Understand reports and this project was dropping. Where the time went, timed
 directly rather than under cProfile: the write layer was 63% of a build, parse
 19%, tree walking 17%.
 
@@ -22,6 +23,14 @@ directly rather than under cProfile: the write layer was 63% of a build, parse
   second copy. Buffered rows are keyed as well as listed. Found by the unit
   test, not by the fingerprint: the benchmarks happen to contain no such
   repeat.
+* Each pass is split into "build a listener" and "write its result", so the
+  tree is walked **once** per file instead of once per pass. The writes still
+  run in exactly the order they did, which is what the ordering rules are
+  about. A handler that raises now takes its own listener out of the walk and
+  is logged, which is the isolation each pass's `try/except` gave it before.
+  This also recovered a reference: `chars[pos] = this.next()` in
+  `JSONTokener.next` gets its `Java Set Deref Partial`, which Understand
+  reports and which the old interleaving dropped.
 * The tree is flattened once per file and replayed, rather than descended 33
   times, and each pass is handed an object carrying only the hooks it actually
   implements -- `JavaParserLabeledListener` defines all 392 as `pass`, so every

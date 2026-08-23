@@ -27,6 +27,127 @@ def get_files(dirName: str = ""):
     return sorted(allFiles)
 
 
+#: Every pass, in the order their *writes* must run. `modify` is not here:
+#: it is written last, after all of them.
+_PASS_NAMES = (
+    "type_listener",
+    "define_listener",
+    "create_listener",
+    "lambda_listener",
+    "use_variant_listener",
+    "method_call_listener",
+    "declare_listener",
+    "field_use_listener",
+    "static_import_listener",
+    "overrides_listener",
+    "couple_listener",
+    "useby_listener",
+    "setby_listener",
+    "setinitby_listener",
+    "setbypartialby_listener",
+    "dotref_listener",
+    "throws_listener",
+    "extend_coupled_listener",
+    "variable_listener",
+    "callbyNonDynamic_listener",
+    "cast_by_listener",
+    "contain_in_listener",
+    "extend_implict_listener",
+    "import_demand_listener",
+)
+
+
+def _passes(lap):
+    """Every pass, in the order their writes must run."""
+    return [getattr(lap, name) for name in _PASS_NAMES]
+
+
+class _NoFileEntity:
+    """Stands in for the entity generator while collecting.
+
+    `ModifyListener` reads one thing from it during the walk -- `file_ent` --
+    and that is a database row, which a worker must not create. The writer
+    stamps the real one onto each record.
+    """
+
+    file_ent = None
+
+
+def collect_file(file_address):
+    """Parse and walk one file. Runs in a worker and must not touch the database.
+
+    That is why it calls `Project.Parse` rather than
+    `ListenersAndParsers.parser`, which creates the file entity, and why
+    `modify` is handed `_NoFileEntity`. Forked workers sharing the parent's
+    connection, each with its own copy of the identity cache, is what lost
+    three quarters of the analysis the last time this was tried.
+    """
+    p = Project()
+    lap = ListenersAndParsers(phase=ListenersAndParsers.BUILD)
+    try:
+        tree = p.Parse(file_address)
+    except Exception:
+        return None
+    if tree is None:
+        return None
+    for listener in _passes(lap):
+        listener(file_address=file_address, p=p, file_ent=None, tree=tree)
+    lap.modify_listener(entity_generator=_NoFileEntity(), parse_tree=tree,
+                        file_address=file_address, p=p)
+    lap.walk_built(tree, p)
+    classes, interfaces = p.declared_types()
+    return {
+        "listeners": lap.transfer_state(),
+        # The two things the write layer used to read off the tree.
+        "declared_types": (classes, interfaces),
+        "package_data": _package_data(tree),
+    }
+
+
+def _package_data(tree):
+    """The file's package declaration, which the writer needs and cannot walk."""
+    from antlr4 import ParseTreeWalker
+
+    from openunderstand.analysis_passes.entity_manager import PackageListener
+
+    listener = PackageListener()
+    listener.package_data = []
+    ParseTreeWalker().walk(listener=listener, t=tree)
+    return listener.package_data
+
+
+def write_file(file_address, payload):
+    """Write one file's collected result. Runs in the parent, in file order."""
+    if payload is None:
+        return
+    p = Project()
+    p.seed_declared_types(*payload["declared_types"])
+    lap = ListenersAndParsers(phase=ListenersAndParsers.WRITE)
+    lap.restore(payload["listeners"], tree_facts={
+        "declared_types": payload["declared_types"],
+        "package_data": payload["package_data"],
+    })
+    file_ent = p.getFileEntity(path=file_address,
+                               name=os.path.basename(file_address))
+    # Before any pass writes, as the sequential path does. An entity's parent
+    # is set by whoever creates it first, so the package entities have to exist
+    # in the same order or 199 of JSON's methods hang off the wrong one.
+    lap.entity_gen(file_address=file_address, parse_tree=None)
+    modify = lap._built.get("modify_listener")
+    if modify is not None:
+        for record in modify.modify:
+            record["file"] = file_ent
+    for listener in _passes(lap):
+        listener(file_address=file_address, p=p, file_ent=file_ent, tree=None)
+    lap.modify_listener(entity_generator=None, parse_tree=None,
+                        file_address=file_address, p=p)
+    flush_reference_writes()
+
+
+def _collect_then_write(file_address):
+    write_file(file_address, collect_file(file_address))
+
+
 def _process_file(file_address):
     p = Project()
     lap = ListenersAndParsers()
@@ -34,32 +155,23 @@ def _process_file(file_address):
     if tree is None and parse_tree is None and file_ent is None:
         return
     entity_generator = lap.entity_gen(file_address=file_address, parse_tree=parse_tree)
-    listeners = [
-        lap.type_listener,
-        lap.define_listener,
-        lap.create_listener,
-        lap.lambda_listener,
-        lap.use_variant_listener,
-        lap.method_call_listener,
-        lap.declare_listener,
-        lap.field_use_listener,
-        lap.static_import_listener,
-        lap.overrides_listener,
-        lap.couple_listener,
-        lap.useby_listener,
-        lap.setby_listener,
-        lap.setinitby_listener,
-        lap.setbypartialby_listener,
-        lap.dotref_listener,
-        lap.throws_listener,
-        lap.extend_coupled_listener,
-        lap.variable_listener,
-        lap.callbyNonDynamic_listener,
-        lap.cast_by_listener,
-        lap.contain_in_listener,
-        lap.extend_implict_listener,
-        lap.import_demand_listener,
-    ]
+    listeners = _passes(lap)
+    # Two phases, not one. Each pass used to build a listener, walk the tree
+    # and write in one breath, so the tree was descended once per pass and
+    # nothing could be reordered. Build every listener first, then write in the
+    # same order as before: the writes are what the ordering rules are about --
+    # `modify_listener` runs last because it resolves a variable the declaring
+    # passes have to have written.
+    lap.phase = ListenersAndParsers.BUILD
+    for listener in listeners:
+        listener(file_address=file_address, p=p, file_ent=file_ent, tree=tree)
+    # `modify_listener` is built here too: it walks the same tree, and it is
+    # the last *write* because it resolves a variable the declaring passes have
+    # to have written, which the write order below still guarantees.
+    lap.modify_listener(entity_generator=entity_generator, parse_tree=parse_tree,
+                        file_address=file_address, p=p)
+    lap.walk_built(tree, p)
+    lap.phase = ListenersAndParsers.WRITE
     for listener in listeners:
         listener(file_address=file_address, p=p, file_ent=file_ent, tree=tree)
     lap.modify_listener(
@@ -68,6 +180,7 @@ def _process_file(file_address):
         file_address=file_address,
         p=p,
     )
+    lap.phase = ListenersAndParsers.BOTH
     # One batched insert per file rather than one statement per reference.
     flush_reference_writes()
 
@@ -89,4 +202,4 @@ def process_file(file_address):
     committed fingerprints must reproduce byte for byte.
     """
     with ReferenceModel._meta.database.atomic():
-        return _process_file(file_address)
+        return _collect_then_write(file_address)

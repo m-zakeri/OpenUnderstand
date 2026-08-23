@@ -70,14 +70,22 @@ def checkModifiersInKind(modifiers, kind):
 
 
 class EntityGenerator:
-    def __init__(self, path, tree):
-        """Automatically generates all entities are required for create and createBy reference."""
+    def __init__(self, path, tree, declared_types=None, package_data=None):
+        """Every entity create/createBy needs.
+
+        `declared_types` and `package_data` are the two things this used to
+        read off the parse tree. A caller that has already collected them --
+        a worker that parsed the file -- passes them in, and this then needs no
+        tree, which is what lets the write layer run without one.
+        """
         file_manager = FileEntityManager(path)
         # Making entities
         self.path = path
         self.tree = tree
+        self._declared_types = declared_types
         self.file_ent = file_manager.get_or_create_file_entity()
-        self.package_ent = PackageEntityManager(path, self.file_ent, tree)
+        self.package_ent = PackageEntityManager(path, self.file_ent, tree,
+                                                package_data=package_data)
         self.package_entities_list = self.package_ent.get_or_create_package_entity()
         self.package_string = self.package_ent.package_string
 
@@ -253,20 +261,29 @@ class EntityGenerator:
             modifiers.append("default")
         return find_kind("Method", modifiers)
 
+    def declared_types(self):
+        """Every class and interface here, collected once instead of per name."""
+        if self._declared_types is None:
+            from openunderstand.analysis_passes.class_properties import (
+                DeclaredTypesListener)
+
+            listener = DeclaredTypesListener()
+            if self.tree is not None:
+                ParseTreeWalker().walk(listener=listener, t=self.tree)
+            self._declared_types = (listener.classes, listener.interfaces)
+        return self._declared_types
+
     def getClassProperties(self, class_longname) -> dict:
-        listener = ClassPropertiesListener()
-        listener.class_longname = class_longname.split(".")
-        listener.class_properties = {}
-        walker = ParseTreeWalker()
-        walker.walk(listener=listener, t=self.tree)
-        return listener.class_properties
+        from openunderstand.analysis_passes.class_properties import (
+            match_declared_type)
+
+        return match_declared_type(self.declared_types()[0], class_longname)
 
     def getInterfaceProperties(self, interface_longname):
-        listener = InterfacePropertiesListener()
-        listener.interface_longname = interface_longname.split(".")
-        walker = ParseTreeWalker()
-        walker.walk(listener=listener, t=self.tree)
-        return listener.interface_properties
+        from openunderstand.analysis_passes.class_properties import (
+            match_declared_type)
+
+        return match_declared_type(self.declared_types()[1], interface_longname)
 
     def getCreatedClassEntity(
         self, class_longname, class_potential_longname, file_address
@@ -387,7 +404,7 @@ class FileEntityManager:
 class PackageEntityManager:
     """This class is for creating and updating Package entity in database."""
 
-    def __init__(self, path, file_ent, tree):
+    def __init__(self, path, file_ent, tree, package_data=None):
         """Define the path to the file for finding package entity."""
         file_reader = open(path, mode="r")
         self.path = path
@@ -395,16 +412,20 @@ class PackageEntityManager:
         self.package_string = None
         self.file_ent = file_ent
         self.tree = tree
+        #: The package declaration, read off the tree by whoever had one.
+        self.package_data = package_data
         file_reader.close()
 
     def get_or_create_package_entity(self):
         """Create or get if it exists a package entity and return it according to object fields."""
-        listener_class = PackageListener()
         result = []
-        listener_class.package_data = []
-        walker = ParseTreeWalker()
-        walker.walk(listener=listener_class, t=self.tree)
-        package_data = listener_class.package_data
+        if self.package_data is None:
+            listener_class = PackageListener()
+            listener_class.package_data = []
+            if self.tree is not None:
+                ParseTreeWalker().walk(listener=listener_class, t=self.tree)
+            self.package_data = listener_class.package_data
+        package_data = self.package_data
         if len(package_data) != 0:
             for i in range(len(package_data)):
                 package = package_data[i]

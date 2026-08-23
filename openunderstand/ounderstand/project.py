@@ -278,6 +278,64 @@ def _hooks_of(listener):
     return target
 
 
+def _fan_out(entries, disabled, on_error):
+    """One hook that calls every listener implementing it, in pass order.
+
+    A handler that raises takes its own listener out of the rest of the walk
+    and is reported: that is the isolation each pass's own try/except gave it
+    before the walks were merged.
+    """
+    def hook(ctx):
+        for listener, method in entries:
+            if listener in disabled:
+                continue
+            try:
+                method(ctx)
+            except Exception as error:      # noqa: BLE001 - one pass, not all
+                disabled.add(listener)
+                on_error(listener, error)
+    return hook
+
+
+def _walk_all(listeners, parse_tree, on_error):
+    """Walk `parse_tree` once for every listener that can share a walk.
+
+    33 passes over 27,000 nodes is 1.8M dispatch iterations a file, and the
+    descent is identical every time. A listener wanting the hooks that fire on
+    tokens too still gets ANTLR's own walker, on its own.
+    """
+    shared, by_name = [], {}
+    for listener in listeners:
+        if _dispatches_on_every_node(listener):
+            ParseTreeWalker().walk(listener=listener, t=parse_tree)
+            continue
+        hooks = _hooks_of(listener)
+        if hooks is None:
+            continue
+        shared.append(listener)
+        for name, method in vars(hooks).items():
+            by_name.setdefault(name, []).append((listener, method))
+    if not by_name:
+        return
+    disabled = set()
+    target = _Hooks()
+    for name, entries in by_name.items():
+        setattr(target, name,
+                entries[0][1] if len(entries) == 1
+                else _fan_out(entries, disabled, on_error))
+    # A single listener's hook is bound straight in, but it still has to be
+    # isolated, so wrap those too when there is more than one pass sharing.
+    if len(shared) > 1:
+        for name, entries in by_name.items():
+            if len(entries) == 1:
+                setattr(target, name, _fan_out(entries, disabled, on_error))
+    for node, entering in _flatten(parse_tree):
+        if entering:
+            node.enterRule(target)
+        else:
+            node.exitRule(target)
+
+
 def _walk(listener, parse_tree):
     """Walk `parse_tree`, skipping token dispatch when nothing wants it."""
     if _dispatches_on_every_node(listener):
@@ -298,6 +356,9 @@ class Project:
         self.tree = None
         self._class_properties = {}
         self._interface_properties = {}
+        #: (classes, interfaces) collected from the tree, or seeded by a caller
+        #: that had one. None until first asked.
+        self._declared_types = None
 
     @staticmethod
     def listToString(s):
@@ -320,6 +381,11 @@ class Project:
     @staticmethod
     def Walk(reference_listener, parse_tree):
         _walk(reference_listener, parse_tree)
+
+    @staticmethod
+    def WalkAll(listeners, parse_tree, on_error):
+        """One walk shared by every listener built in this phase."""
+        _walk_all(listeners, parse_tree, on_error)
 
     def getListOfFiles(self, dirName):
         listOfFile = os.listdir(dirName)
@@ -1677,25 +1743,46 @@ class Project:
         )
         return ent[0]
 
+    def declared_types(self):
+        """Every class and interface in this file, collected once.
+
+        The write layer used to reach for the parse tree here, once per
+        distinct name asked. Collecting the lot in one walk answers every
+        lookup and is what lets a writer work without a tree at all.
+        """
+        if self._declared_types is None:
+            from openunderstand.analysis_passes.class_properties import (
+                DeclaredTypesListener)
+
+            listener = DeclaredTypesListener()
+            if self.tree is not None:
+                self.Walk(listener, self.tree)
+            self._declared_types = (listener.classes, listener.interfaces)
+        return self._declared_types
+
+    def seed_declared_types(self, classes, interfaces):
+        """Use types collected elsewhere -- by a worker that had the tree."""
+        self._declared_types = (classes, interfaces)
+
     def getClassProperties(self, class_longname, file_address):
         if class_longname in self._class_properties:
             return self._class_properties[class_longname]
-        listener = ClassPropertiesListener()
-        listener.class_longname = class_longname.split(".")
-        listener.class_properties = None
-        self.Walk(listener, self.tree)
-        self._class_properties[class_longname] = listener.class_properties
-        return listener.class_properties
+        from openunderstand.analysis_passes.class_properties import (
+            match_declared_type)
+
+        found = match_declared_type(self.declared_types()[0], class_longname)
+        self._class_properties[class_longname] = found
+        return found
 
     def getInterfaceProperties(self, interface_longname, file_address):
         if interface_longname in self._interface_properties:
             return self._interface_properties[interface_longname]
-        listener = InterfacePropertiesListener()
-        listener.interface_longname = interface_longname.split(".")
-        listener.interface_properties = None
-        self.Walk(listener, self.tree)
-        self._interface_properties[interface_longname] = listener.interface_properties
-        return listener.interface_properties
+        from openunderstand.analysis_passes.class_properties import (
+            match_declared_type)
+
+        found = match_declared_type(self.declared_types()[1], interface_longname)
+        self._interface_properties[interface_longname] = found
+        return found
 
     def getCreatedClassEntity(
         self, class_longname, class_potential_longname, file_address, file_ent

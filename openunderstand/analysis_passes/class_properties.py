@@ -251,6 +251,64 @@ class ClassPropertiesListener(JavaParserLabeledListener):
                 self.class_properties["contents"] = ctx.getText()
 
 
+class DeclaredTypesListener(JavaParserLabeledListener):
+    """Every class and interface in a file, with what a lookup needs of it.
+
+    `ClassPropertiesListener` answers for one long name by walking the tree,
+    which is why the *write* layer walked it: `Project.getClassProperties` did
+    that once per distinct name asked. The answer depends on the query only
+    through the name itself -- `modifiers` and `contents` are the only fields
+    read off the matched node -- so one walk can collect what every future
+    lookup needs, and the write layer stops needing a tree at all.
+
+    Order is walk order, because the lookup takes the first match, as the
+    single-name listener did by returning early.
+    """
+
+    def __init__(self):
+        self.classes = []
+        self.interfaces = []
+
+    def _record(self, into, ctx):
+        identifier = ctx.IDENTIFIER()
+        if identifier is None:
+            return
+        into.append((
+            tuple(ClassPropertiesListener.findParents(ctx)),
+            identifier.getText(),
+            ClassPropertiesListener.findClassOrInterfaceModifiers(ctx),
+            ctx.getText(),
+        ))
+
+    def enterClassDeclaration(self, ctx):
+        self._record(self.classes, ctx)
+
+    def enterInterfaceDeclaration(self, ctx):
+        self._record(self.interfaces, ctx)
+
+
+def match_declared_type(entries, longname):
+    """The properties a lookup of `longname` finds, or None.
+
+    The same predicate the single-name listener used: the simple names match
+    and the scope chains intersect. Intersection rather than equality is what
+    it did, so it is what this does.
+    """
+    target = longname.split(".")
+    wanted = set(target)
+    for parents, identifier, modifiers, contents in entries:
+        if identifier != target[-1] or not wanted & set(parents):
+            continue
+        return {
+            "name": target[-1],
+            "longname": longname,
+            "parent": None if len(target) == 1 else target[-2],
+            "modifiers": modifiers,
+            "contents": contents,
+        }
+    return None
+
+
 class InterfacePropertiesListener(JavaParserLabeledListener):
     interface_longname = []
     interface_properties = None

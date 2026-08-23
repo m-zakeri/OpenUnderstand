@@ -37,6 +37,27 @@ class ClassTypeData:
         self.column: int = -1
         self.prefixes: list = []
 
+        #: Set by freeze(): everything normally read off `childClass`.
+        self._frozen = None
+
+    def freeze(self):
+        """Materialise what is derived from the parse tree, and drop the tree.
+
+        `childClass` is a parse-tree context. This is the one pass whose
+        *result* holds one, so collecting in a worker means computing the
+        derived values where the tree is.
+        """
+        if self.childClass is None or self._frozen is not None:
+            return self
+        self._frozen = {
+            "long_name": self.get_long_name(),
+            "name": self.get_name(),
+            "contents": self.get_contents(),
+            "prefixes": list(self.get_prefixes()),
+        }
+        self.childClass = None
+        return self
+
     def set_child_class(self, child: JavaParserLabeled.ClassDeclarationContext):
         self.childClass = child
 
@@ -101,6 +122,8 @@ class ClassTypeData:
         already uses the right accessor; get_contents() genuinely wants the
         body text.
         """
+        if self._frozen is not None:
+            return self._frozen["long_name"]
         parts = [
             self.package_name,
             *self._enclosing_types(),
@@ -112,12 +135,18 @@ class ClassTypeData:
         return "extends" + " " + self.parentClass
 
     def get_name(self) -> str:
+        if self._frozen is not None:
+            return self._frozen["name"]
         return str(self.childClass.IDENTIFIER())
 
     def get_contents(self) -> str:
+        if self._frozen is not None:
+            return self._frozen["contents"]
         return self.childClass.getText()
 
     def get_prefixes(self) -> list:
+        if self._frozen is not None:
+            return self._frozen["prefixes"]
         return self.prefixes
 
 
