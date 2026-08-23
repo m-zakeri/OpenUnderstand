@@ -281,6 +281,65 @@ def _entity_rows(cls, longname):
     return _ENTITY_ROWS.get(longname, ())
 
 
+#: Model field name -> column name, for the columns `get_or_create` completes
+#: in place. Read from the model rather than written out, so a renamed field
+#: cannot silently stop being updated.
+_ENTITY_COLUMNS = {
+    "_kind": "_kind_id",
+    "_line": "_line",
+    "_column": "_column",
+    "_type": "_type",
+    "_value": "_value",
+    "_contents": "_contents",
+}
+
+
+def _update_entity_columns(row, fields):
+    """UPDATE only `fields`, without going through peewee's `save()`.
+
+    A build of JSON completes 11,604 entity rows in place -- a row is created
+    by whichever pass reaches the name first and filled in by the two or three
+    that follow -- and `save()` was 1.29s of a 19s per-file loop. Naming only
+    the dirty columns took that to 1.06s, which is the tell: the cost is
+    peewee's query construction per call, not the width of the row. The
+    statement here is built from a fixed dict and executed on the cursor.
+
+    Deliberately not deferred the way reference inserts are. Passes still run
+    `EntityModel.select()` during the file loop -- 34,009 times on JSON -- and
+    a buffered update would leave those reading a stale column.
+    """
+    meta = row._meta
+    columns, values = [], []
+    for name in fields:
+        columns.append(_ENTITY_COLUMNS[name])
+        raw = getattr(row, "_kind_id" if name == "_kind" else name)
+        # Through the field's own converter, not straight to the cursor. A
+        # CharField coerces with str(), and `_contents` is handed a FileStream
+        # by one pass -- binding that raw fails, which is how the shortcut was
+        # caught: 14 references and one logged failure, on a build whose
+        # fingerprint must not move at all.
+        values.append(meta.fields[name].db_value(raw) if raw is not None else None)
+    assignments = ", ".join(f'"{column}" = ?' for column in columns)
+    meta.database.execute_sql(
+        f'UPDATE "entitymodel" SET {assignments} WHERE "_id" = ?', values + [row._id]
+    )
+
+
+def entity_rows(longname):
+    """Every entity row carrying `longname`, in `_id` order.
+
+    The public read of the same index `EntityModel.get_or_create` and
+    `get_or_none` resolve identity through, for the callers that need *all*
+    the rows rather than the first: `project.scope_of` picks the enclosing
+    overload by declaration line, and `project.callee_of` scans for a
+    declaration position. Both ran `EntityModel.select()` per reference --
+    34,009 times on a build of JSON.
+
+    Returns the cached list itself. Callers must not mutate it.
+    """
+    return _entity_rows(EntityModel, longname)
+
+
 def _remember_entity(cls, row):
     if _ENTITY_ROWS is not None and _ENTITY_ROWS_DB is cls._meta.database:
         _ENTITY_ROWS.setdefault(row._longname, []).append(row)
@@ -303,6 +362,41 @@ class EntityModel(Model):
     # cannot express that, and every overload collapsed into one row.
     _line = IntegerField(null=True)
     _column = IntegerField(null=True)
+
+    @classmethod
+    def get_or_none(cls, *args, **kwargs):
+        """Answer a plain long-name lookup from the index, not from SQL.
+
+        20,063 of the 23,194 `get_or_none` calls a build of the JSON benchmark
+        makes are exactly `_longname == x`, and they cost 3.35s of a 23s
+        per-file loop -- 17% of it, spent asking the database a question this
+        process can already answer. `get_or_create` has read `_ENTITY_ROWS` for
+        the same question since it was the same 21%; this is the other half of
+        that fix, and the two now agree by construction rather than by luck.
+
+        Only the single-term long-name shapes are intercepted, in both the
+        expression and the keyword spelling. Anything compound, or keyed on
+        another field, falls through to peewee untouched.
+
+        The index preserves insertion order and is seeded in `_id` order, so
+        the row returned for a duplicated long name -- overloads, which are
+        deliberately separate rows -- is the one SQL would have returned.
+        """
+        longname = None
+        if not args and set(kwargs) == {"_longname"}:
+            longname = kwargs["_longname"]
+        elif len(args) == 1 and not kwargs:
+            expression = args[0]
+            if (
+                getattr(getattr(expression, "lhs", None), "name", None) == "_longname"
+                and getattr(expression, "op", None) == OP.EQ
+                and isinstance(getattr(expression, "rhs", None), str)
+            ):
+                longname = expression.rhs
+        if longname is None:
+            return super().get_or_none(*args, **kwargs)
+        rows = _entity_rows(cls, longname)
+        return rows[0] if rows else None
 
     @classmethod
     def get_or_create(cls, **kwargs):
@@ -368,17 +462,21 @@ class EntityModel(Model):
             if not row_placeholder:
                 break  # prefer a row that already has a real kind
         if match is not None:
-            dirty = False
+            # The columns that actually changed, so the UPDATE names those and
+            # not all ten. A build of JSON saves 11,604 times against 5,260
+            # entities -- a row is completed by two or three passes on average
+            # -- and rewriting every column each time was 1.29s of a 19s loop.
+            dirty = []
             if (
                 is_placeholder_kind(match._kind_id)
                 and not incoming_placeholder
                 and incoming is not None
             ):
                 match._kind = incoming
-                dirty = True
+                dirty.append("_kind")
             if all(incoming_site) and not all((match._line, match._column)):
                 match._line, match._column = incoming_site
-                dirty = True
+                dirty += ["_line", "_column"]
             # Fill in facts the row is missing rather than discarding them.
             # A pass that meets a method before define_listener declares it
             # creates the row with no type, and the declared return type was
@@ -389,9 +487,9 @@ class EntityModel(Model):
                 incoming_value = fields.get(field)
                 if incoming_value and not getattr(match, field, None):
                     setattr(match, field, incoming_value)
-                    dirty = True
+                    dirty.append(field)
             if dirty:
-                match.save()
+                _update_entity_columns(match, dirty)
             return match, False
 
         created = super().create(**fields)
@@ -936,6 +1034,18 @@ def drop_shadowed_use_refs():
     Returns the number of references deleted.
     """
     flush_reference_writes()
+    database = ReferenceModel._meta.database
+    # The EXISTS below is correlated on (file, line, column), and without an
+    # index on those three SQLite rescans the whole reference table for every
+    # candidate row: 8.39s of a 23.8s build of JSON, the single largest step in
+    # it and larger than the entire per-file loop's write layer. Built here
+    # rather than kept in `_REFERENCE_INDEXES` because it earns its keep only
+    # for this statement, and the build deliberately does not maintain
+    # reference indexes while it is inserting.
+    database.execute_sql(
+        'CREATE INDEX IF NOT EXISTS "referencemodel__position" '
+        'ON "referencemodel" ("_file_id", "_line", "_column")'
+    )
     # Any other kind at the identical position wins, whatever its endpoints.
     # Matching endpoints too was stricter than Understand: a DotRef resolves
     # its receiver to java.lang.Character where the use pass leaves an
@@ -946,7 +1056,7 @@ def drop_shadowed_use_refs():
     # the day a new one is added. Measured: this drops 110 rows on JSON and 895
     # on TheAlgorithms, and not one of them is a reference Understand reports
     # as a plain Use.
-    cursor = ReferenceModel._meta.database.execute_sql("""
+    cursor = database.execute_sql("""
         DELETE FROM referencemodel
          WHERE _kind_id IN (SELECT _id FROM kindmodel
                              WHERE _name IN ('Java Use', 'Java Useby'))

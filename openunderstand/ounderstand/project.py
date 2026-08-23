@@ -12,6 +12,7 @@ from openunderstand.oudb.models import (
     EntityModel,
     ReferenceModel,
     col_1based,
+    entity_rows,
     resolve_entity_ref,
     kind_family,
 )
@@ -94,13 +95,9 @@ def callee_of(longname, name, arguments, file_ent):
     """
     site = symbol_table.overload_site(longname, arguments)
     if site is not None:
-        ent = EntityModel.get_or_none(
-            (EntityModel._longname == longname)
-            & (EntityModel._line == site[0])
-            & (EntityModel._column == site[1])
-        )
-        if ent is not None:
-            return ent
+        for row in entity_rows(longname):
+            if (row._line, row._column) == site:
+                return row
         return EntityModel.get_or_create(
             _kind=kind_id("Java Unknown Method Member"),
             _name=name,
@@ -110,7 +107,7 @@ def callee_of(longname, name, arguments, file_ent):
             _line=site[0],
             _column=site[1],
         )[0]
-    rows = list(EntityModel.select().where(EntityModel._longname == longname))
+    rows = entity_rows(longname)
     for row in rows:
         if kind_family(row._kind_id) == "method":
             return row
@@ -170,7 +167,7 @@ def scope_of(longname, line=None):
     overlap in source, so the enclosing one is the candidate whose declaration
     starts last at or before the reference.
     """
-    rows = list(EntityModel.select().where(EntityModel._longname == longname))
+    rows = entity_rows(longname)
     if not rows:
         return None
     named = [r for r in rows if kind_family(r._kind_id) != "variable"] or rows
@@ -320,6 +317,11 @@ def _walk_all(listeners, parse_tree, on_error):
     33 passes over 27,000 nodes is 1.8M dispatch iterations a file, and the
     descent is identical every time. A listener wanting the hooks that fire on
     tokens too still gets ANTLR's own walker, on its own.
+
+    Do not try replacing `node.enterRule(target)` with a {context class: hook}
+    table. It works, the fingerprint holds, and it is worth **0.12s of an 18.6s
+    per-file loop**: the generated `hasattr` probe is not what this costs, the
+    passes' own handler logic is.
     """
     shared, by_name = [], {}
     for listener in listeners:

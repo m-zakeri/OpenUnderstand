@@ -2,10 +2,36 @@
 
 ## Unreleased
 
+### A build of the JSON benchmark is 15.2s, from 35.6s
+
+Every change below leaves the database byte for byte identical -- both fixture
+fingerprints are unmoved -- so no parity or metric figure changes.
+
+* **`drop_shadowed_use_refs` was 8.4s, and is 0.07s.** It deletes a plain
+  `Java Use` wherever a more specific kind sits at the same position, with a
+  correlated `EXISTS` on (file, line, column), and there was no index on those
+  three columns -- so SQLite rescanned the whole reference table for every
+  candidate row. One index, built in the function that needs it. This single
+  step was larger than the entire per-file loop's write layer.
+* **`ctx.getText()` is memoised.** It concatenates every token beneath a node,
+  the passes ask constantly, and a build made 4.1 million calls re-deriving the
+  same strings. A parse tree is immutable here and is rebuilt per file, so the
+  cache dies with it. 3.5s.
+* **`EntityModel.get_or_none` answers a long-name lookup from the index**
+  `get_or_create` has always used, instead of from SQL. 20,063 of a build's
+  23,194 calls are exactly that shape, and they cost 3.3s.
+* **`scope_of` and `callee_of` read the same index.** Both ran a `SELECT` per
+  reference to pick an overload by declaration position: 34,009 queries. 4.4s.
+* **A completed entity row is updated with the columns that changed**, through
+  the cursor rather than `Model.save()`. 0.7s.
+* `findParents()` caches its answer on the node it was asked about.
+
+Understand builds the same project in 7.55s, in C++ over a purpose-built store.
+
 ### Updating one file is now faster than Understand
 
 `api.update_files()` on a single file of the JSON benchmark goes from 4.26s to
-**2.17s**, against Understand's 3.09s for the same edit. Half of the old figure
+**1.95s**, against Understand's 3.09s for the same edit. Half of the old figure
 was `relabel_nondynamic_calls`, which rescanned every Call and Callby reference
 in the project after each edit. It takes a `file_ids` scope now and
 `update_files` passes the files it re-analysed, which is exactly the set that

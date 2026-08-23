@@ -190,6 +190,17 @@ class ClassPropertiesListener(JavaParserLabeledListener):
         That fallback also fired for contexts where child 0 was not the package
         declaration, splicing whole class bodies into longnames.
         """
+        # Cached on the node, because the answer depends on nothing else: a
+        # node's ancestry is fixed for the life of the tree, and the tree is
+        # rebuilt for every file. 94,452 calls on a build of JSON, and the
+        # passes ask about the same nodes over and over. Stored as a tuple and
+        # handed out as a fresh list, so a caller that mutates the result --
+        # several append the entity's own name to it -- cannot poison the copy
+        # the next caller gets.
+        cached = getattr(c, "_ou_parents", None)
+        if cached is not None:
+            return list(cached)
+
         chain, root = [], None
         current = c.parentCtx
         while current is not None:
@@ -215,7 +226,14 @@ class ClassPropertiesListener(JavaParserLabeledListener):
                 if name is not None:
                     parents.append(name)
         parents.reverse()
-        return ClassPropertiesListener._package_components(root) + parents
+        result = ClassPropertiesListener._package_components(root) + parents
+        try:
+            c._ou_parents = tuple(result)
+        except AttributeError:
+            # A context type using __slots__ cannot be tagged; it just pays
+            # the walk every time, as it did before.
+            pass
+        return result
 
     @staticmethod
     def findClassOrInterfaceModifiers(c):
