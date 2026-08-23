@@ -10,14 +10,14 @@ completes `_type`, `_value` and `_contents`. **Agreement with Understand on
 JSON benchmark, and the entities where this project answered `None` while
 Understand names a parent drop from 2,978 to 6.
 
-Four more rules take it to **0.998** -- 4,559 of 4,567 -- each the same
+Four more rules take it to **0.9996** -- 4,565 of 4,567 -- each the same
 principle, that the pass which *declares* an entity owns its parent, applied
 where a merely referencing pass had got in first:
 
 * a method or constructor belongs to its class, not to whichever file mentioned
   it first (149 entities, and the file was usually the wrong one);
 * a top-level type belongs to its file, not to its package (83);
-* a lambda belongs to the enclosing class, not the method holding it (38);
+* a lambda belongs to the method holding it (38);
 * a package belongs to the package above it.
 
 Nothing else moves: 0 of 64 reference kinds change recall or precision, entity
