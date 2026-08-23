@@ -27,18 +27,27 @@ detail: an entity's parent is set by whichever file creates it first, and
 import os
 
 from openunderstand.ounderstand.parsing_process import (
-    collect_file, get_files, process_file, write_file)
+    collect_file,
+    get_files,
+    process_file,
+    write_file,
+)
 
 
 def _isolate():
     """A worker must not reach the real database. Give it a dead one."""
     from peewee import SqliteDatabase
 
-    from openunderstand.oudb.models import (EntityModel, KindModel,
-                                            ProjectModel, ReferenceModel)
+    from openunderstand.oudb.models import (
+        EntityModel,
+        KindModel,
+        ProjectModel,
+        ReferenceModel,
+    )
 
     SqliteDatabase(":memory:").bind(
-        [KindModel, EntityModel, ReferenceModel, ProjectModel])
+        [KindModel, EntityModel, ReferenceModel, ProjectModel]
+    )
 
 
 def _default_jobs():
@@ -66,7 +75,8 @@ def runner(path_project: str = "", jobs: int = None):
     context = get_context("fork") if "fork" in _methods() else get_context()
     with context.Pool(processes=jobs, initializer=_isolate) as pool:
         for file_address, payload in zip(
-                files, pool.imap(collect_file, files, chunksize=2)):
+            files, pool.imap(collect_file, files, chunksize=2)
+        ):
             with ReferenceModel._meta.database.atomic():
                 write_file(file_address, payload)
 

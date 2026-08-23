@@ -1,6 +1,7 @@
 import re
 from peewee import fn
 from openunderstand.oudb.models import *
+
 # Explicit: `import *` skips a leading underscore, and kindname() needs
 # the memoised lookup rather than a SELECT per call.
 from openunderstand.oudb.models import _kind_name
@@ -667,7 +668,15 @@ def update_files(paths, source_root: str = ""):
         process_file(path)
 
     merged = merge_placeholder_entities()
-    relabelled = relabel_nondynamic_calls()
+    # Only the files just re-analysed can hold a call whose label changed.
+    touched = [
+        ent._id
+        for ent in (
+            EntityModel.get_or_none(EntityModel._longname == p) for p in reanalysed
+        )
+        if ent is not None
+    ]
+    relabelled = relabel_nondynamic_calls(file_ids=touched)
     return {
         "requested": len(requested),
         "files": len(paths),
@@ -713,8 +722,9 @@ def create_db(
         },
     )
     db.bind([KindModel, EntityModel, ReferenceModel, ProjectModel, MetricModel])
-    db.create_tables([KindModel, EntityModel, ReferenceModel, ProjectModel,
-                      MetricModel])
+    db.create_tables(
+        [KindModel, EntityModel, ReferenceModel, ProjectModel, MetricModel]
+    )
     forget_entity_rows()
 
     # Build without the reference table's four foreign-key indexes. Each insert
@@ -744,8 +754,11 @@ def _stored_metrics(ent, names):
     if not names or getattr(ent, "_id", None) is None:
         return {}, names
     try:
-        rows = list(MetricModel.select().where(
-            (MetricModel._ent_id == ent._id) & (MetricModel._name.in_(names))))
+        rows = list(
+            MetricModel.select().where(
+                (MetricModel._ent_id == ent._id) & (MetricModel._name.in_(names))
+            )
+        )
     except Exception:
         return {}, names
     found, values = set(), {}
@@ -776,9 +789,14 @@ def _remember_metrics(ent, names, values):
     """
     if not names or getattr(ent, "_id", None) is None:
         return
-    rows = [{"_ent_id": ent._id, "_name": name,
-             "_value": None if values.get(name) is None else str(values[name])}
-            for name in names]
+    rows = [
+        {
+            "_ent_id": ent._id,
+            "_name": name,
+            "_value": None if values.get(name) is None else str(values[name]),
+        }
+        for name in names
+    ]
     try:
         MetricModel.insert_many(rows).on_conflict_ignore().execute()
     except Exception:

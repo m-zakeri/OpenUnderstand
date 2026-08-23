@@ -119,8 +119,10 @@ def _targets(entity_id, kind_name, family=None):
     wanted = {ref._ent_id for ref in refs}
     missing = [i for i in wanted if (database, i) not in _ENTITY_CACHE]
     if missing:
-        found = {row._id: row for row in
-                 EntityModel.select().where(EntityModel._id.in_(missing))}
+        found = {
+            row._id: row
+            for row in EntityModel.select().where(EntityModel._id.in_(missing))
+        }
         for i in missing:
             _ENTITY_CACHE[(database, i)] = found.get(i)
     out = {}
@@ -441,7 +443,7 @@ def _placeholder_member(target):
     if "." not in longname or not is_placeholder_kind(target._kind_id):
         return False
     if jdk_index.known(longname) or symbol_table.is_project_type(longname):
-        return False                        # a type in its own right
+        return False  # a type in its own right
     owner = longname.rsplit(".", 1)[0]
     return bool(jdk_index.known(owner) or symbol_table.is_project_type(owner))
 
@@ -472,8 +474,9 @@ def _fan_targets(entity_id, ref_kinds, owner_longname):
     for kind in ref_kinds:
         for target in _targets(entity_id, kind):
             if kind_family(target._kind_id) != "variable":
-                if ("external" in (_kind_name(target._kind_id) or "").lower().split()
-                        or _placeholder_member(target)):
+                if "external" in (
+                    _kind_name(target._kind_id) or ""
+                ).lower().split() or _placeholder_member(target):
                     out.add(target._id)
                 continue
             if "Parameter" in (_kind_name(target._kind_id) or ""):
@@ -582,9 +585,12 @@ def count_input(ent_model):
     entity = _entity(ent_model)
     if entity is None:
         return 0
-    fan = {t._id for k in ("Java Callby", "Java Callby Nondynamic")
-           for t in _targets(entity._id, k)
-           if kind_family(t._kind_id) == "method"}
+    fan = {
+        t._id
+        for k in ("Java Callby", "Java Callby Nondynamic")
+        for t in _targets(entity._id, k)
+        if kind_family(t._kind_id) == "method"
+    }
     fan.discard(entity._id)  # a recursive call is not an input
     fan |= _fan_targets(entity._id, _use_kind_names(), entity._longname)
     return len(fan)

@@ -49,7 +49,6 @@ class CreateAndCreateBy(JavaParserLabeledListener):
 
         return parents, context
 
-
     def findmethodaccess(self, ctx):
         modifiers_list = [
             "Default",
@@ -231,4 +230,3 @@ class CreateAndCreateBy(JavaParserLabeledListener):
 
     def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
         self.package_long_name = ctx.qualifiedName().getText()
-

@@ -134,15 +134,18 @@ def parse_entity_source(source):
         """
         detector = _Failed()
         try:
-            tree = antler_parser.parse(InputStream(candidate), "compilationUnit",
-                                       err_listener=detector)
+            tree = antler_parser.parse(
+                InputStream(candidate), "compilationUnit", err_listener=detector
+            )
         except Exception:
             return None, True
         return tree, detector.failed
 
-    candidates = (source,
-                  f"class {_WRAPPER} {source}",
-                  f"class {_WRAPPER} {{\n{source}\n}}")
+    candidates = (
+        source,
+        f"class {_WRAPPER} {source}",
+        f"class {_WRAPPER} {{\n{source}\n}}",
+    )
     if antler_parser.is_available():
         # Cyclomatic was 18.6ms an entity and the parse is nearly all of it.
         for candidate in candidates:

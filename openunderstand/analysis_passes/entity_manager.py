@@ -84,8 +84,9 @@ class EntityGenerator:
         self.tree = tree
         self._declared_types = declared_types
         self.file_ent = file_manager.get_or_create_file_entity()
-        self.package_ent = PackageEntityManager(path, self.file_ent, tree,
-                                                package_data=package_data)
+        self.package_ent = PackageEntityManager(
+            path, self.file_ent, tree, package_data=package_data
+        )
         self.package_entities_list = self.package_ent.get_or_create_package_entity()
         self.package_string = self.package_ent.package_string
 
@@ -265,7 +266,8 @@ class EntityGenerator:
         """Every class and interface here, collected once instead of per name."""
         if self._declared_types is None:
             from openunderstand.analysis_passes.class_properties import (
-                DeclaredTypesListener)
+                DeclaredTypesListener,
+            )
 
             listener = DeclaredTypesListener()
             if self.tree is not None:
@@ -274,14 +276,12 @@ class EntityGenerator:
         return self._declared_types
 
     def getClassProperties(self, class_longname) -> dict:
-        from openunderstand.analysis_passes.class_properties import (
-            match_declared_type)
+        from openunderstand.analysis_passes.class_properties import match_declared_type
 
         return match_declared_type(self.declared_types()[0], class_longname)
 
     def getInterfaceProperties(self, interface_longname):
-        from openunderstand.analysis_passes.class_properties import (
-            match_declared_type)
+        from openunderstand.analysis_passes.class_properties import match_declared_type
 
         return match_declared_type(self.declared_types()[1], interface_longname)
 

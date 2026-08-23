@@ -92,8 +92,12 @@ def collect_file(file_address):
         return None
     for listener in _passes(lap):
         listener(file_address=file_address, p=p, file_ent=None, tree=tree)
-    lap.modify_listener(entity_generator=_NoFileEntity(), parse_tree=tree,
-                        file_address=file_address, p=p)
+    lap.modify_listener(
+        entity_generator=_NoFileEntity(),
+        parse_tree=tree,
+        file_address=file_address,
+        p=p,
+    )
     lap.walk_built(tree, p)
     classes, interfaces = p.declared_types()
     return {
@@ -123,12 +127,14 @@ def write_file(file_address, payload):
     p = Project()
     p.seed_declared_types(*payload["declared_types"])
     lap = ListenersAndParsers(phase=ListenersAndParsers.WRITE)
-    lap.restore(payload["listeners"], tree_facts={
-        "declared_types": payload["declared_types"],
-        "package_data": payload["package_data"],
-    })
-    file_ent = p.getFileEntity(path=file_address,
-                               name=os.path.basename(file_address))
+    lap.restore(
+        payload["listeners"],
+        tree_facts={
+            "declared_types": payload["declared_types"],
+            "package_data": payload["package_data"],
+        },
+    )
+    file_ent = p.getFileEntity(path=file_address, name=os.path.basename(file_address))
     # Before any pass writes, as the sequential path does. An entity's parent
     # is set by whoever creates it first, so the package entities have to exist
     # in the same order or 199 of JSON's methods hang off the wrong one.
@@ -139,8 +145,9 @@ def write_file(file_address, payload):
             record["file"] = file_ent
     for listener in _passes(lap):
         listener(file_address=file_address, p=p, file_ent=file_ent, tree=None)
-    lap.modify_listener(entity_generator=None, parse_tree=None,
-                        file_address=file_address, p=p)
+    lap.modify_listener(
+        entity_generator=None, parse_tree=None, file_address=file_address, p=p
+    )
     flush_reference_writes()
 
 
@@ -168,8 +175,12 @@ def _process_file(file_address):
     # `modify_listener` is built here too: it walks the same tree, and it is
     # the last *write* because it resolves a variable the declaring passes have
     # to have written, which the write order below still guarantees.
-    lap.modify_listener(entity_generator=entity_generator, parse_tree=parse_tree,
-                        file_address=file_address, p=p)
+    lap.modify_listener(
+        entity_generator=entity_generator,
+        parse_tree=parse_tree,
+        file_address=file_address,
+        p=p,
+    )
     lap.walk_built(tree, p)
     lap.phase = ListenersAndParsers.WRITE
     for listener in listeners:

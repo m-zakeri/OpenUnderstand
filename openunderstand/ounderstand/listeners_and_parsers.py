@@ -96,8 +96,7 @@ class ListenersAndParsers:
         """
         payload = {}
         for name, listener in self._built.items():
-            state = {k: v for k, v in vars(listener).items()
-                     if k not in self._SCRATCH}
+            state = {k: v for k, v in vars(listener).items() if k not in self._SCRATCH}
             handler = state.get("dbHandler")
             if handler is not None:
                 # The one result that holds parse-tree contexts.
@@ -125,7 +124,9 @@ class ListenersAndParsers:
         def on_error(listener, error):
             self.logger.error(
                 "An Error occurred during the shared walk in %s:\n%s",
-                names.get(id(listener), type(listener).__name__), error)
+                names.get(id(listener), type(listener).__name__),
+                error,
+            )
 
         p.WalkAll(pending, tree, on_error)
 
@@ -172,13 +173,16 @@ class ListenersAndParsers:
     @timer_decorator()
     def entity_gen(self, file_address, parse_tree):
         return EntityGenerator(
-            file_address, parse_tree,
+            file_address,
+            parse_tree,
             declared_types=self.tree_facts.get("declared_types"),
-            package_data=self.tree_facts.get("package_data"))
+            package_data=self.tree_facts.get("package_data"),
+        )
 
     @timer_decorator()
     def variable_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 listener = VariableListener()
                 return listener
@@ -205,6 +209,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def extend_coupled_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 listener = ExtendCoupleAndExtendCoupleBy()
                 return listener
@@ -225,6 +230,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def extend_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 listener = ExtendListener()
                 return listener
@@ -245,6 +251,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def type_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 listener = TypedAndTypedByListener()
                 return listener
@@ -262,6 +269,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def create_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 listener = CreateAndCreateBy()
                 listener.file_address = file_address
@@ -280,6 +288,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def field_use_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 listener = FieldUseListener(file_address)
                 return listener
@@ -302,6 +311,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def lambda_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 listener = LambdaListener(file_address)
                 return listener
@@ -324,6 +334,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def static_import_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 listener = StaticImportListener(file_address)
                 return listener
@@ -346,6 +357,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def overrides_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 listener = OverridesListener()
                 return listener
@@ -368,6 +380,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def method_call_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 listener = MethodCallListener(file_address)
                 return listener
@@ -390,6 +403,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def use_variant_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 listener = UseVariantListener(file_address)
                 return listener
@@ -412,6 +426,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def define_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 listener = DefineListener(file_address)
                 return listener
@@ -431,10 +446,10 @@ class ListenersAndParsers:
                 + traceback.format_exc()
             )
 
-
     @timer_decorator()
     def declare_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 # declare
                 listener = DeclareAndDeclareinListener()
@@ -456,6 +471,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def modify_listener(self, parse_tree, entity_generator, file_address, p):
         try:
+
             def _build():
                 listener = ModifyListener(entity_generator)
                 return listener
@@ -478,6 +494,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def override_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 listener = overridelistener()
                 return listener
@@ -500,6 +517,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def couple_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 couple = []
                 classescoupleby = {}
@@ -530,6 +548,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def throws_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 # Throws
                 listener = Throws_TrowsBy()
@@ -553,6 +572,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def dotref_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 listener = DotRef_DotRefBy()
                 return listener
@@ -570,6 +590,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def setby_listener(self, tree, file_ent, file_address, p, stream: str = ""):
         try:
+
             def _build():
                 # set ref
                 listener = SetAndSetByListener(file_address)
@@ -587,6 +608,7 @@ class ListenersAndParsers:
 
     def setinitby_listener(self, tree, file_ent, file_address, p, stream: str = ""):
         try:
+
             def _build():
                 # setinit ref
                 listener = SetInitAndSetByInitListener(file_address)
@@ -609,6 +631,7 @@ class ListenersAndParsers:
         self, tree, file_ent, file_address, p, stream: str = ""
     ):
         try:
+
             def _build():
                 listener = SetPartialAndSetByPartialListener(file_address)
                 return listener
@@ -629,6 +652,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def useby_listener(self, tree, file_ent, file_address, p, stream: str = ""):
         try:
+
             def _build():
                 # use ref
                 listener = UseAndUseByListener()
@@ -647,6 +671,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def callbyNonDynamic_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 listener = CallNonDynamicAndCallNonDynamicBy()
                 return listener
@@ -671,6 +696,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def cast_by_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 listener = CastAndCastBy(file_address)
                 return listener
@@ -692,6 +718,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def contain_in_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 listener = ContainAndContainBy()
                 return listener
@@ -714,6 +741,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def extend_implict_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 # Two walks, and the second listener needs the first's answer,
                 # so this pass does its own walking.
@@ -723,8 +751,9 @@ class ListenersAndParsers:
                 p.Walk(my_listener, tree)
                 return my_listener
 
-            my_listener = self._stage("extend_implict_listener", _build, tree, p,
-                                      walk=False)
+            my_listener = self._stage(
+                "extend_implict_listener", _build, tree, p, walk=False
+            )
             if my_listener is None:
                 return
             for item in my_listener.dbHandler.classTypes:
@@ -742,6 +771,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def import_demand_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 listener = ImportListenerDemand(file_address)
                 return listener
@@ -762,6 +792,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def import_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 listener = ImportListener(file_address)
                 return listener
@@ -784,6 +815,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def use_module_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 listener = UseModuleUseModuleByListener()
                 return listener
@@ -811,6 +843,7 @@ class ListenersAndParsers:
     @timer_decorator()
     def open_by_listener(self, tree, file_ent, file_address, p):
         try:
+
             def _build():
                 listener = OpenListener(file_address)
                 return listener

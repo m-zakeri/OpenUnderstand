@@ -181,8 +181,9 @@ class UseVariantListener(JavaParserLabeledListener):
         keyword = ctx.CLASS()
         if keyword is None:
             return
-        self._add("Java Use", "Class", ctx, keyword.symbol,
-                  ent_longname="java.lang.Class")
+        self._add(
+            "Java Use", "Class", ctx, keyword.symbol, ent_longname="java.lang.Class"
+        )
 
     def enterElementValuePair(self, ctx):
         """`@Test(expected=X.class)` reads the annotation's `expected` element.

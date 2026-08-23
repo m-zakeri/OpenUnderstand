@@ -273,12 +273,14 @@ class DeclaredTypesListener(JavaParserLabeledListener):
         identifier = ctx.IDENTIFIER()
         if identifier is None:
             return
-        into.append((
-            tuple(ClassPropertiesListener.findParents(ctx)),
-            identifier.getText(),
-            ClassPropertiesListener.findClassOrInterfaceModifiers(ctx),
-            ctx.getText(),
-        ))
+        into.append(
+            (
+                tuple(ClassPropertiesListener.findParents(ctx)),
+                identifier.getText(),
+                ClassPropertiesListener.findClassOrInterfaceModifiers(ctx),
+                ctx.getText(),
+            )
+        )
 
     def enterClassDeclaration(self, ctx):
         self._record(self.classes, ctx)

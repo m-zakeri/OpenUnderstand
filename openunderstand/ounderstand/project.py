@@ -126,10 +126,16 @@ def callee_of(longname, name, arguments, file_ent):
 
 
 #: Use variants whose target is a type by construction, whatever it resolves to.
-_TYPE_USE_KINDS = frozenset({
-    "Java Use Annotation", "Java Use Cast", "Java Use GenericArgument",
-    "Java Typed", "Java Typed GenericArgument", "Java Use Constrains Couple",
-})
+_TYPE_USE_KINDS = frozenset(
+    {
+        "Java Use Annotation",
+        "Java Use Cast",
+        "Java Use GenericArgument",
+        "Java Typed",
+        "Java Typed GenericArgument",
+        "Java Use Constrains Couple",
+    }
+)
 
 
 def synthetic_scope(longname):
@@ -174,13 +180,16 @@ def scope_of(longname, line=None):
     return max(enclosing, key=lambda r: r._line) if enclosing else named[0]
 
 
-
 #: The four hooks ANTLR's walker fires on nodes that are not rules. No pass in
 #: this project implements one, and 44% of a Java tree's nodes are tokens --
 #: 11,867 of JSONObject.java's 26,907 -- so the stock walker spent nearly half
 #: its dispatches calling no-ops, once per listener per file.
-_EVERY_NODE_HOOKS = ("visitTerminal", "visitErrorNode",
-                     "enterEveryRule", "exitEveryRule")
+_EVERY_NODE_HOOKS = (
+    "visitTerminal",
+    "visitErrorNode",
+    "enterEveryRule",
+    "exitEveryRule",
+)
 
 
 def _dispatches_on_every_node(listener):
@@ -197,7 +206,6 @@ def _dispatches_on_every_node(listener):
 from functools import lru_cache
 
 from antlr4.tree.Tree import TerminalNodeImpl as _TerminalNodeImpl
-
 
 #: The last tree flattened, and its event list. One entry, because a file is
 #: finished before the next is parsed.
@@ -251,15 +259,19 @@ def _overridden_hooks(listener_cls):
     """Hook names a pass defines itself, not the ones it inherits as no-ops."""
     from antlr4.tree.Tree import ParseTreeListener
     from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
-        JavaParserLabeledListener)
+        JavaParserLabeledListener,
+    )
 
     stop = (JavaParserLabeledListener, ParseTreeListener, object)
     names = set()
     for klass in listener_cls.__mro__:
         if klass in stop:
             break
-        names |= {name for name, value in klass.__dict__.items()
-                  if name.startswith(("enter", "exit")) and callable(value)}
+        names |= {
+            name
+            for name, value in klass.__dict__.items()
+            if name.startswith(("enter", "exit")) and callable(value)
+        }
     return frozenset(names)
 
 
@@ -267,9 +279,12 @@ def _hooks_of(listener):
     """The object to dispatch to, or None when the pass implements nothing."""
     names = set(_overridden_hooks(type(listener)))
     # A handler attached to the instance rather than the class still counts.
-    names |= {name for name in vars(listener)
-              if name.startswith(("enter", "exit"))
-              and callable(getattr(listener, name, None))}
+    names |= {
+        name
+        for name in vars(listener)
+        if name.startswith(("enter", "exit"))
+        and callable(getattr(listener, name, None))
+    }
     if not names:
         return None
     target = _Hooks()
@@ -285,15 +300,17 @@ def _fan_out(entries, disabled, on_error):
     and is reported: that is the isolation each pass's own try/except gave it
     before the walks were merged.
     """
+
     def hook(ctx):
         for listener, method in entries:
             if listener in disabled:
                 continue
             try:
                 method(ctx)
-            except Exception as error:      # noqa: BLE001 - one pass, not all
+            except Exception as error:  # noqa: BLE001 - one pass, not all
                 disabled.add(listener)
                 on_error(listener, error)
+
     return hook
 
 
@@ -320,9 +337,15 @@ def _walk_all(listeners, parse_tree, on_error):
     disabled = set()
     target = _Hooks()
     for name, entries in by_name.items():
-        setattr(target, name,
-                entries[0][1] if len(entries) == 1
-                else _fan_out(entries, disabled, on_error))
+        setattr(
+            target,
+            name,
+            (
+                entries[0][1]
+                if len(entries) == 1
+                else _fan_out(entries, disabled, on_error)
+            ),
+        )
     # A single listener's hook is bound straight in, but it still has to be
     # isolated, so wrap those too when there is more than one pass sharing.
     if len(shared) > 1:
@@ -992,10 +1015,14 @@ class Project:
                     ref_dict["kind"] in _TYPE_USE_KINDS
                     or jdk_index.known(longname)
                     or symbol_table.is_project_type(longname)
-                    or (not stated and name in symbol_table.JAVA_LANG_TYPES))
+                    or (not stated and name in symbol_table.JAVA_LANG_TYPES)
+                )
                 ent, _ = EntityModel.get_or_create(
-                    _kind=kind_id("Java Unknown Class Type Member" if names_a_type
-                                  else "Java Unknown Variable Member"),
+                    _kind=kind_id(
+                        "Java Unknown Class Type Member"
+                        if names_a_type
+                        else "Java Unknown Variable Member"
+                    ),
                     _name=name,
                     _parent=file_ent,
                     _longname=longname,
@@ -1752,7 +1779,8 @@ class Project:
         """
         if self._declared_types is None:
             from openunderstand.analysis_passes.class_properties import (
-                DeclaredTypesListener)
+                DeclaredTypesListener,
+            )
 
             listener = DeclaredTypesListener()
             if self.tree is not None:
@@ -1767,8 +1795,7 @@ class Project:
     def getClassProperties(self, class_longname, file_address):
         if class_longname in self._class_properties:
             return self._class_properties[class_longname]
-        from openunderstand.analysis_passes.class_properties import (
-            match_declared_type)
+        from openunderstand.analysis_passes.class_properties import match_declared_type
 
         found = match_declared_type(self.declared_types()[0], class_longname)
         self._class_properties[class_longname] = found
@@ -1777,8 +1804,7 @@ class Project:
     def getInterfaceProperties(self, interface_longname, file_address):
         if interface_longname in self._interface_properties:
             return self._interface_properties[interface_longname]
-        from openunderstand.analysis_passes.class_properties import (
-            match_declared_type)
+        from openunderstand.analysis_passes.class_properties import match_declared_type
 
         found = match_declared_type(self.declared_types()[1], interface_longname)
         self._interface_properties[interface_longname] = found
