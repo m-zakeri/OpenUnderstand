@@ -377,7 +377,16 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         return symbol_table.JDK_FIELD_TYPES.get((owner, member.getText()))
 
     def lookup_receiver(self, name):
-        """Long name if `name` denotes a type, else None. No guessing."""
+        """Long name if `name` denotes a type, else None. No guessing.
+
+        Deliberately narrower than `lookup()` and **measured that way**: with
+        the two collapsed into one, `Java Couple` on JSON keeps all 837 of its
+        matched rows and gains 9 it should not have, precision 1.000 to 0.989,
+        and TheAlgorithms 0.946 to 0.944. Nothing is gained on either. A
+        receiver in an expression may be a value, so java.lang and the JDK
+        index -- safe in a type position, where everything is a type by
+        construction -- become guesses here.
+        """
         from openunderstand.ounderstand import symbol_table
 
         if not name or name in self.type_parameters:

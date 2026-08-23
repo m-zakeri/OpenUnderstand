@@ -1,4 +1,5 @@
 from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+from openunderstand.analysis_passes import declared_types
 from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
     JavaParserLabeledListener,
 )
@@ -43,6 +44,12 @@ class SetAndSetByListener(JavaParserLabeledListener):
         self.field_types = {}
         #: Same for the parameters and locals of the method being walked.
         self.local_types = {}
+        #: Saved field_types per open class declaration, so a nested class
+        #: does not keep its fields after it closes.
+        self._field_scopes = []
+        #: The file's imports, so a receiver's declared type can be placed.
+        self.Imports = {}
+        self.wildcard_imports = []
 
     # ---- declared types, for resolving `receiver.field = ...` -------------
     #
@@ -58,53 +65,12 @@ class SetAndSetByListener(JavaParserLabeledListener):
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         self.ex_name = ctx.children[1].getText()
         # Parameters and locals belong to one method; fields outlive them.
-        self.local_types = {}
+        self.local_types = declared_types.collect(ctx)
 
     def enterConstructorDeclaration(
         self, ctx: JavaParserLabeled.ConstructorDeclarationContext
     ):
-        self.local_types = {}
-
-    def enterFormalParameter(self, ctx: JavaParserLabeled.FormalParameterContext):
-        self._record_type(
-            self.local_types, ctx.typeType(), [ctx.variableDeclaratorId()]
-        )
-
-    def enterLocalVariableDeclaration(
-        self, ctx: JavaParserLabeled.LocalVariableDeclarationContext
-    ):
-        self._record_type(
-            self.local_types,
-            ctx.typeType(),
-            ctx.variableDeclarators().variableDeclarator(),
-        )
-
-    def enterFieldDeclaration(self, ctx: JavaParserLabeled.FieldDeclarationContext):
-        self._record_type(
-            self.field_types,
-            ctx.typeType(),
-            ctx.variableDeclarators().variableDeclarator(),
-        )
-
-    @staticmethod
-    def _record_type(target, type_ctx, declarators):
-        if type_ctx is None:
-            return
-        # Generic arguments and array brackets are not part of the type's name:
-        # a field declared `Node<Element> firstElement` has type Node.
-        name = type_ctx.getText().split("<")[0].split("[")[0]
-        for declarator in declarators or []:
-            # `variableDeclarator: variableDeclaratorId ('=' variableInitializer)?`
-            # -- getText() on an initialised one is "temp=null", so the name has
-            # to come from the id. Keying on the whole text recorded a type for
-            # "temp=null" and left `temp` itself untyped, which is why only the
-            # uninitialised declarations resolved.
-            declarator_id = getattr(declarator, "variableDeclaratorId", None)
-            if callable(declarator_id):
-                declarator = declarator_id() or declarator
-            identifier = declarator.getText().split("[")[0]
-            if identifier:
-                target[identifier] = name
+        self.local_types = declared_types.collect(ctx)
 
     def add_member_set(self, target, ctx, name_of_file):
         """Record `receiver.member = ...` as a Set against the member's field.
@@ -175,7 +141,14 @@ class SetAndSetByListener(JavaParserLabeledListener):
         return self.local_types.get(name) or self.field_types.get(name)
 
     def owner_of_member(self, receiver, scope_longname):
-        """Long name of the class declaring the member accessed on `receiver`."""
+        """Long name of the class declaring the member accessed on `receiver`.
+
+        `resolve_type_name` rather than `resolve_type`: the latter searches the
+        project and nothing else, so a receiver whose type is imported, in
+        java.lang, or in the JDK at all resolved to None and the Set was never
+        written. That is the same narrowing that cost `dotref_dotrefby` a
+        third of its rows.
+        """
         from openunderstand.ounderstand import symbol_table
 
         type_name = self.declared_type(receiver)
@@ -184,9 +157,14 @@ class SetAndSetByListener(JavaParserLabeledListener):
             # *type*, so the field is a static one on that type. Understand
             # reports these as an ordinary Java Set and this pass produced
             # none of them.
-            return symbol_table.resolve_type(receiver, scope_longname)
+            type_name = receiver
         # An array's element type is what carries the member.
-        return symbol_table.resolve_type(type_name.split("[")[0], scope_longname)
+        return symbol_table.resolve_type_name(
+            type_name.split("[")[0],
+            self.Imports,
+            self.wildcard_imports,
+            scope_longname,
+        )
 
     def add_set_by_entry(
         self,
@@ -265,6 +243,26 @@ class SetAndSetByListener(JavaParserLabeledListener):
         long_name = self.file_name.replace(".java", "") + "." + self.ex_name
         line = ctx.children[0].symbol.line
         col = ctx.children[0].symbol.column
+        # A stack, because a nested class ends and the outer one resumes. The
+        # fields used to be collected into one flat map for the whole file, so
+        # `Outer.items` and `Outer.Inner.items` shared an entry and whichever
+        # was declared last decided the receiver's type for both.
+        self._field_scopes.append(self.field_types)
+        body = ctx.classBody()
+        self.field_types = (
+            declared_types.collect_own(body) if body is not None else {}
+        )
+
+    def exitClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
+        if self._field_scopes:
+            self.field_types = self._field_scopes.pop()
+
+    def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
+        longname = ctx.qualifiedName().getText()
+        if ctx.getText().rstrip(";").endswith(".*"):
+            self.wildcard_imports.append(longname)
+            return
+        self.Imports[longname.split(".")[-1]] = longname
 
     def enterExpression21(self, ctx: JavaParserLabeled.Expression21Context):
         self.entered_expression = True
