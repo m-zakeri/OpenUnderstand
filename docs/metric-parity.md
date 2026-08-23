@@ -89,7 +89,7 @@ what is left is genuine disagreement about values.
 | `SumCyclomaticModified` | 0.945 | 0.945 | 0.94 | 0.94 | 1094 | 1158 | 1158 |
 | `Knots` | 0.941 | 0.944 | 0.94 | 0.94 | 982 | 1048 | 1040 |
 | `CountDeclMethodAll` | 0.943 | 0.943 | 0.94 | 0.94 | 100 | 106 | 106 |
-| `CountInput` | 0.935 | 0.938 | 0.93 | 0.94 | 976 | 1048 | 1040 |
+| `CountInput` | 0.939 | 0.942 | 0.94 | 0.94 | 980 | 1048 | 1040 |
 | `CountStmtExe` | 0.927 | 0.930 | 0.92 | 0.93 | 1070 | 1158 | 1150 |
 | `CountOutput` | 0.916 | 0.919 | 0.91 | 0.92 | 956 | 1048 | 1040 |
 | `PercentLackOfCohesion` | 0.912 | 0.912 | 0.91 | 0.91 | 93 | 102 | 102 |
