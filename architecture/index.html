@@ -411,6 +411,45 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="The pipeline">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#build-and-write-are-separate-phases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build and write are separate phases
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#analysing-in-parallel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Analysing in parallel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#re-analysing-one-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Re-analysing one file
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -452,6 +491,17 @@
     <span class="md-ellipsis">
       
         Resolving names across files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#one-emitter-for-the-sequence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One emitter for the sequence
       
     </span>
   </a>
@@ -718,6 +768,45 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="The pipeline">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#build-and-write-are-separate-phases" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Build and write are separate phases
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#analysing-in-parallel" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Analysing in parallel
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#re-analysing-one-file" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Re-analysing one file
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -759,6 +848,17 @@
     <span class="md-ellipsis">
       
         Resolving names across files
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#one-emitter-for-the-sequence" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        One emitter for the sequence
       
     </span>
   </a>
@@ -871,24 +971,57 @@
 <h2 id="the-pipeline">The pipeline</h2>
 <pre><code>openunderstand.py          CLI and config
     ↓
-oudb.api.create_db         create the SQLite file and its four tables
+oudb.api.create_db         create the SQLite file and its five tables
     ↓
 oudb.fill.fill             seed 237 entity kinds and 106 reference kinds
     ↓
-ounderstand.runner         one worker per .java file
+symbol_table.build         index every declaration in the project
+    ↓
+ounderstand.runner         workers parse and collect, the parent writes
     ↓
 parsing_process.process_file
     ↓
-  parse once  →  run ~28 listeners over that one tree, in order
+  parse once  →  build 24 listeners  →  one shared walk  →  write, in order
     ↓
-merge_placeholder_entities + relabel_nondynamic_calls
-+ drop_shadowed_use_refs                                (once, after all files)
+models.finalise_analysis   six project-wide passes (once, after all files)
 </code></pre>
-<p>Before any of that, <code>symbol_table.build()</code> indexes every declaration in the
-project -- see <a href="#resolving-names-across-files">Resolving names across files</a>.</p>
-<p>A file is parsed once. Every analysis pass then walks that same tree, so
-parsing is a small fraction of the total cost -- most of the time goes into the
-passes and the database writes.</p>
+<p><code>symbol_table.build()</code> runs first because a pass resolving a name declared in
+another file cannot wait until that file is parsed -- see
+<a href="#resolving-names-across-files">Resolving names across files</a>.</p>
+<p>A file is parsed once and every pass walks that one tree. With the C++
+accelerator parsing is about 3% of a build; the write layer is roughly half,
+the passes' own handlers most of the rest. On the pure-Python runtime parsing
+is around a third, so any profile has to say which engine it was taken on.</p>
+<h3 id="build-and-write-are-separate-phases">Build and write are separate phases</h3>
+<p>Each pass runs twice. The first pass over the list <em>builds</em> a listener, all of
+them share a single walk of the tree, and then the list runs again to <em>write</em>.
+<code>ListenersAndParsers.phase</code> selects which half; <code>BOTH</code> is the pre-split
+behaviour and the default.</p>
+<p>The ordering rules are about the <strong>writes</strong>, not the walks. <code>modify_listener</code>
+writes last because it resolves a variable the declaring passes must already
+have written; moving every walk ahead of every write changed two rows in the
+whole JSON benchmark.</p>
+<p><strong>The write layer must never touch the parse tree.</strong> It used to: the class and
+interface property lookups walked the tree once per name asked. That is what
+made the split possible, and what makes a worker able to collect for a file the
+writer never parsed.</p>
+<h3 id="analysing-in-parallel">Analysing in parallel</h3>
+<p><code>runner(path, jobs=N)</code> collects in worker processes and writes in the parent.
+The database is byte-identical at any worker count, because a worker never
+writes -- the pool initializer even rebinds the models to a throwaway in-memory
+database so a stray write cannot reach the real one, and results are consumed
+in order, since an entity's parent is set by whichever file supplies one first.</p>
+<p>Scaling stops at about four workers: the write half is serial.</p>
+<h3 id="re-analysing-one-file">Re-analysing one file</h3>
+<p><code>oudb.api.update_files(paths, source_root=...)</code> deletes each named file's
+previous contribution, re-analyses it, and runs the same six project-wide
+passes. It expands the list to every file that depends on one of them -- a file
+depends on another when it references a type declared there -- because editing
+a base class changes what its subclasses inherit.</p>
+<p>Re-analysis has to reproduce a rebuild of the same source. Two things it needs:
+<code>symbol_table.build()</code> caches each file's contribution and reparses only what
+changed, and <code>purge_file()</code> keeps a demoted row's declaration position, which is
+what tells two overloads of one long name apart.</p>
 <h2 id="the-three-layers">The three layers</h2>
 <p><strong><code>analysis_passes/</code></strong> -- one ANTLR listener per reference kind. A listener's
 only job is to collect dictionaries while walking. It never touches the
@@ -964,22 +1097,41 @@ Without that, <code>java.lang.Object.equals</code> was folded into
 the reference pointed at itself from both ends.</p>
 <p>Most references leave the project, so refusing to name an external target is
 expensive: 1,197 of TheAlgorithms' 1,416 missing calls were to <code>java.io</code>,
-<code>java.util</code> and <code>java.lang</code>. <code>symbol_table</code> carries small hand-written tables
-for this -- <code>JAVA_LANG_TYPES</code>, <code>JDK_TYPE_PACKAGES</code>, <code>JDK_FIELD_TYPES</code>,
-<code>JDK_OVERRIDABLE</code> and <code>models.JDK_FINAL_TYPES</code>. They are lookup tables covering
-what the benchmarks use, not a model of the JDK, and each says so where it is
-defined.</p>
+<code>java.util</code> and <code>java.lang</code>. <code>oudb/jdk_index.txt.gz</code> answers for those -- 3,957
+public <code>java.*</code> and <code>javax.*</code> types with their modifiers, supertypes, public
+fields, their methods' arities and each method's reference return type, read
+through <code>oudb/jdk_index.py</code>.</p>
+<p>It is <strong>generated, not listed</strong>: <code>scripts/gen_jdk_index.py</code> builds it from a
+local JDK's runtime image in about seven seconds. It replaced five hand-written
+tables of 208 entries between them, each added the day a benchmark tripped over
+it, and every gap in those was a wrong reference. If coverage is short, add to
+the generator; do not re-grow a table.</p>
 <p><code>relabel_nondynamic_calls()</code> runs next and splits <code>Java Call</code> into
 <code>Call</code>/<code>Call Nondynamic</code> now that the callee's modifiers are known. A JDK
 callee carries no modifiers here -- it was named from the receiver's type, not
 parsed -- so its class being final is what settles it: nothing can override
 <code>java.lang.String.length</code>.</p>
-<p><code>drop_shadowed_use_refs()</code> runs last. Understand reports exactly one reference
+<p><code>drop_nonvariable_deref_refs()</code> deletes a <code>Deref Partial</code> whose target is not a
+variable: <code>a.b</code> is a partial dereference only when <code>a</code> is one, and in
+<code>org.evosuite.runtime.sandbox.Sandbox.goingToExecuteSUT()</code> the <code>org</code> is a
+package qualifier.</p>
+<p><code>drop_shadowed_use_refs()</code> follows. Understand reports exactly one reference
 kind per position: <code>x</code> in <code>x.next()</code> is a <code>Use Deref Partial</code>, an assignment
 target is a <code>Set</code>, <code>i++</code> is a <code>Modify</code> -- and in none of those cases does it
 also report a plain <code>Use</code>. The use pass cannot know this, because it runs
 before set/dotref/modify have written anything, so the plain <code>Use</code> is deleted
 here wherever a more specific kind sits on the same position.</p>
+<p><code>drop_external_inverse_refs()</code> then removes an inverse hung on an entity the
+project does not declare. Understand writes <code>Java Call</code> for a call to
+<code>java.lang.String.trim</code> and no <code>Java Callby</code>, because there is no analysed
+entity to hang it on. <code>drop_orphan_placeholders()</code> finishes, deleting a
+placeholder no reference points at.</p>
+<h3 id="one-emitter-for-the-sequence">One emitter for the sequence</h3>
+<p>All six live in <code>models.finalise_analysis()</code>, and every entry point calls it --
+the CLI, the MCP server, the comparison harness and <code>update_files()</code>. There
+used to be three copies of the list kept in step by a comment, and a fourth
+caller that ran two of the six, which left an updated database holding rows a
+rebuilt one does not.</p>
 <h3 id="kind-ids">Kind ids</h3>
 <p>Kind ids are assigned by <code>AutoField</code> in the order <code>fill.py</code> reads the seed
 files, so they are positions, not identities. <strong>Always resolve a kind by name:</strong></p>

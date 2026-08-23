@@ -353,6 +353,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#keep-it-current" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keep it current
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#check-it-against-understand" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -658,6 +669,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#keep-it-current" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Keep it current
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#check-it-against-understand" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -750,6 +772,18 @@ for cls in db.ents(&quot;Class&quot;):
 </code></pre>
 <p>The full surface is in the <a href="api/">API reference</a>; the vocabulary of kind
 names is in <a href="kinds/">Kinds</a>.</p>
+<h2 id="keep-it-current">Keep it current</h2>
+<p>After editing source, re-analyse the files that changed rather than rebuilding:</p>
+<pre><code class="language-python">from openunderstand.oudb import api
+
+db = api.open(&quot;/path/for/database/myproject.udb&quot;)
+api.update_files([&quot;/path/to/java/project/src/Foo.java&quot;],
+                 source_root=&quot;/path/to/java/project&quot;)
+</code></pre>
+<p>It also re-analyses the files that depend on those, deletes each one's previous
+contribution first, and reproduces what a rebuild would have written. One file
+of the 85-file <code>org.json</code> benchmark takes about 1.2s against 14s for the whole
+project.</p>
 <h2 id="check-it-against-understand">Check it against Understand</h2>
 <p>If you have Understand installed and licensed, both databases can be built
 from the same source and every difference reported:</p>

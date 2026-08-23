@@ -757,6 +757,10 @@ stdio, so it will sit waiting for a client -- that is correct behaviour.</p>
 <td>Open an existing <code>.udb</code></td>
 </tr>
 <tr>
+<td><code>update(paths, source_root="")</code></td>
+<td>Re-analyse changed files, without a full rebuild</td>
+</tr>
+<tr>
 <td><code>list_entities(kind="", limit=100)</code></td>
 <td>Entities, optionally filtered by kind</td>
 </tr>
@@ -776,6 +780,15 @@ stdio, so it will sit waiting for a client -- that is correct behaviour.</p>
 </table>
 <p><code>analyze</code> or <code>open_database</code> has to come first -- the others operate on
 whichever database is open.</p>
+<p>After editing source, call <code>update</code> rather than <code>analyze</code> again. It re-analyses
+only the files named and the files that depend on them, which is about ten
+times quicker on a mid-sized project -- one file of the 85-file <code>org.json</code>
+benchmark takes 1.2s against 14s for the whole thing. Each file's previous
+contribution is deleted first, so a renamed method does not linger under both
+names, and the result is what a rebuild of the same source would have written.
+<code>source_root</code> defaults to the root the open database recorded when it was
+built, so it is usually not needed. A path that no longer exists is purged and
+not re-analysed, which is how you record a deleted file.</p>
 <h2 id="resources">Resources</h2>
 <p>Reference data the client can read without spending a tool call.</p>
 <table>

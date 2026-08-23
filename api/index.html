@@ -393,6 +393,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#update_filespaths-source_root-dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        update_files(paths, source_root="") → dict
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -887,6 +898,17 @@
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#update_filespaths-source_root-dict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        update_files(paths, source_root="") → dict
+      
+    </span>
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -1183,6 +1205,24 @@ not, because Java is not.</p>
 no project.</p>
 <h3 id="version-str"><code>version()</code> → <code>str</code></h3>
 <p>Build number of this module.</p>
+<h3 id="update_filespaths-source_root-dict"><code>update_files(paths, source_root="")</code> → <code>dict</code></h3>
+<p>Re-analyse the named <code>.java</code> files in the open database and return a summary of
+what changed. Not part of Understand's API: it is how this project keeps a
+database current without rebuilding it.</p>
+<pre><code class="language-python">from openunderstand.oudb import api
+
+db = api.open(&quot;myproject.udb&quot;)
+api.update_files([&quot;/project/src/Foo.java&quot;], source_root=&quot;/project&quot;)
+</code></pre>
+<p>The list is expanded to every file that depends on one of those named -- a file
+depends on another when it references a type declared there -- because editing
+a base class changes what its subclasses inherit. Each file's previous
+contribution is deleted before it is re-analysed, so a renamed method does not
+survive under both names, and a path that no longer exists is purged rather
+than re-analysed.</p>
+<p>The result reproduces what a full rebuild of the same source would write. It is
+much quicker: one file of the 85-file <code>org.json</code> benchmark takes about 1.2s
+against 14s for the whole project.</p>
 <hr />
 <h2 id="db"><code>Db</code></h2>
 <h3 id="entskindstring-listent"><code>ents([kindstring])</code> → <code>list[Ent]</code></h3>
@@ -1248,7 +1288,7 @@ compiled pattern for case-insensitive search:</p>
 </tr>
 <tr>
 <td><code>parent()</code></td>
-<td>enclosing entity, or <code>None</code></td>
+<td>enclosing entity, or <code>None</code> — a method's class, a top-level type's <em>file</em>, a lambda's method</td>
 </tr>
 <tr>
 <td><code>type()</code></td>
