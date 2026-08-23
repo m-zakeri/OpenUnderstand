@@ -1529,25 +1529,6 @@ class Project:
             )
         return imported_entity
 
-    def add_import_demand(self, ents, file_path):
-        for i in ents:
-            ent, _ = EntityModel.get_or_create(
-                _kind=kind_id("Java File"),
-                _parent="None",
-                _name=i["name"],
-                _longname=i["longname"],
-                _contents=FileStream(file_path, encoding="utf-8"),
-            )
-
-            ReferenceModel.get_or_create(
-                _kind=kind_id("Java Import Demand"),
-                _file=file_path,
-                _line=i["line"],
-                _column=col_1based(i["col"]),
-                _ent=ent.get_id(),
-                _scope=file_path,
-            )
-
     def add_references(self, importing_ent, imported_ent, cls_data: ClassTypeData):
         """`class X` implicitly extending java.lang.Object.
 

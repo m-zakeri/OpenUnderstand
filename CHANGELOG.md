@@ -2,6 +2,38 @@
 
 ## Unreleased
 
+### The diff refuses an incomplete dump
+
+`05_dump_und.py` writes its data files first and its manifest last, so an
+interrupted run leaves a short `refs.jsonl` beside a stale manifest from an
+earlier complete run -- and `07_diff.py` would happily score against it. That
+produced a reported precision of 0.309 on xerces2j where the true figure is
+0.865. The diff now compares each file's row count against the manifest's own
+counts and stops if they disagree.
+
+### A plain `import` is a reference, and the second import emitter is gone
+
+`import org.json.CDL;` is a `Java Importby` in Understand -- 91 of them on the
+JSON benchmark -- and this project recorded none. `static_imports.py` returned
+early on anything without `static`, and its docstring asserted Understand does
+not record a plain import. It does. Now **91 of 91, precision and recall
+1.000**, and `Java Importby Demand` goes from 13 rows with 0 correct to 12 of
+Understand's 12.
+
+`Project.add_import_demand` is deleted. It was a second emitter for the same
+thing and every line of it was wrong: 21 `Java Import Demand` rows where
+Understand writes none, a `Java File` entity for `org.junit.Assert`, the
+literal string `"None"` in an integer foreign key, a `FileStream` object in a
+text column, and a file *path* in `_scope_id` and `_file_id`. **Eight of the
+eleven benchmark fixtures failed the harness's kind-integrity check on
+`NONINT_FK` because of it; all eleven pass now.**
+
+Note that in `07_diff.py` this reads as a small precision *loss* -- 0.8280 to
+0.8274 with recall unchanged -- because Understand flags all 91 of those
+`Importby` rows `external` and the diff drops external refs, so correct new
+rows can only land in `ou_only`. Scored against the raw dump, which is the
+right measure for an external-flagged kind, it is +91 correct and -21 wrong.
+
 ### An entity's parent is filled in, not fixed by whichever file arrived first
 
 `EntityModel.get_or_create` completes a missing `_parent` the way it already
