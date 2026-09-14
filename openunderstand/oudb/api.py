@@ -568,6 +568,11 @@ def _metric_family(kindname):
         return "method"
     if words & {"Class", "Interface", "Annotation", "Enum"}:
         return "class"
+    if "GenericParameter" in words:
+        # A type parameter (`<E extends Enum>`) gets the class metric set --
+        # all zero but CountClassCoupled (its bound), CountClassBase and
+        # MaxInheritanceTree, which Understand answers for it as for a class.
+        return "class"
     return None
 
 

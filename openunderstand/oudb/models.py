@@ -1101,6 +1101,48 @@ def drop_shadowed_use_refs():
     return cursor.rowcount if cursor.rowcount and cursor.rowcount > 0 else 0
 
 
+def drop_duplicate_bare_call_refs():
+    """Delete a bare-name callee when a resolved one sits at the same position.
+
+    `super.withKeepStrings(v)` produces two Call rows at the identical
+    (file, line, column): the call pass resolves it to
+    `org.json.ParserConfiguration.withKeepStrings`, and a second pass leaves a
+    bare `withKeepStrings` placeholder that never merged (three classes override
+    it, so `merge_placeholder_entities()` has more than one candidate and folds
+    nothing). Understand records only the resolved call, so the bare row is a
+    pure duplicate -- it inflates CountOutput, which counts distinct callees,
+    and it is a bare simple name the codebase otherwise refuses to store.
+
+    Position is the rule, as in `drop_shadowed_use_refs`: a call site belongs to
+    one scope, so a resolved Call-family row at the same (file, line, column) is
+    the same call. Only 4 rows on JSON, all `super.method()`.
+
+    Returns the number of references deleted.
+    """
+    flush_reference_writes()
+    database = ReferenceModel._meta.database
+    database.execute_sql(
+        'CREATE INDEX IF NOT EXISTS "referencemodel__position" '
+        'ON "referencemodel" ("_file_id", "_line", "_column")'
+    )
+    cursor = database.execute_sql("""
+        DELETE FROM referencemodel
+         WHERE _kind_id IN (SELECT _id FROM kindmodel
+                             WHERE _name IN ('Java Call', 'Java Call Nondynamic'))
+           AND _ent_id IN (SELECT _id FROM entitymodel WHERE instr(_longname, '.') = 0)
+           AND EXISTS (SELECT 1 FROM referencemodel other
+                        JOIN entitymodel oe ON oe._id = other._ent_id
+                        WHERE other._file_id = referencemodel._file_id
+                          AND other._line    = referencemodel._line
+                          AND other._column  = referencemodel._column
+                          AND other._kind_id IN
+                              (SELECT _id FROM kindmodel
+                                WHERE _name IN ('Java Call', 'Java Call Nondynamic'))
+                          AND instr(oe._longname, '.') > 0)
+        """)
+    return cursor.rowcount if cursor.rowcount and cursor.rowcount > 0 else 0
+
+
 def relabel_nondynamic_calls(file_ids=None):
     """Split Java Call into Call/Call Nondynamic once targets are known.
 
@@ -1190,9 +1232,10 @@ def relabel_nondynamic_calls(file_ids=None):
 def finalise_analysis(file_ids=None):
     """The project-wide passes that must run after every file has been written.
 
-    Six passes in a fixed order, and the order is load-bearing: the merge runs
+    Seven passes in a fixed order, and the order is load-bearing: the merge runs
     first so that an entity about to become real is not read as external, and
-    the inverse and shadow drops run after it for the same reason.
+    the inverse and shadow drops run after it for the same reason. The bare-call
+    drop runs after `relabel_nondynamic_calls` so both Call kinds are settled.
 
     One function because there were three copies of this list -- in
     `start_parsing()`, in `mcp_server.analyze()` and in
@@ -1209,6 +1252,7 @@ def finalise_analysis(file_ids=None):
     return {
         "merged_placeholders": merge_placeholder_entities(),
         "relabelled_calls": relabel_nondynamic_calls(file_ids=file_ids),
+        "duplicate_bare_calls_dropped": drop_duplicate_bare_call_refs(),
         "nonvariable_deref_dropped": drop_nonvariable_deref_refs(),
         "shadowed_use_dropped": drop_shadowed_use_refs(),
         "external_inverses_dropped": drop_external_inverse_refs(),

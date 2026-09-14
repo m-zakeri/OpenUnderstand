@@ -39,6 +39,17 @@ _ARGUMENT_LITERALS = {
     "Literal5Context": "null",
 }
 
+#: Methods every type inherits from java.lang.Object whose return type is a
+#: reference type and so can be a receiver. `javap -public` lists them only
+#: under Object, so the JDK index never carries them for a subtype -- yet
+#: `x.getClass().getSimpleName()` needs `x.getClass()` to type as Class. Only
+#: reference returns matter here (equals/hashCode are primitive, wait/notify
+#: void); getClass is final and toString is String in Object and every override.
+_OBJECT_RETURNS = {
+    "getClass": "java.lang.Class",
+    "toString": "java.lang.String",
+}
+
 
 def literal_type(ctx):
     """The literal type of `ctx` when it is nothing but a literal, else None."""
@@ -353,8 +364,10 @@ class TypeBinder:
             written = self._own_returns(node).get(member)
             if written:
                 return self._resolve(written, owner)
-        return jdk_index.return_type(owner, member) or symbol_table.return_type(
-            owner, member, owner
+        return (
+            jdk_index.return_type(owner, member)
+            or symbol_table.return_type(owner, member, owner)
+            or _OBJECT_RETURNS.get(member)
         )
 
     def _own_returns(self, type_ctx):

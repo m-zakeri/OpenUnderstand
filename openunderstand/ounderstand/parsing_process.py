@@ -53,7 +53,6 @@ _PASS_NAMES = (
     "cast_by_listener",
     "contain_in_listener",
     "extend_implict_listener",
-    "import_demand_listener",
 )
 
 

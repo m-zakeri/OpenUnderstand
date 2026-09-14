@@ -362,7 +362,13 @@ def count_class_coupled(ent_model, exclude_standard=False):
     bases = set(_supertypes(entity._id))
 
     coupled = set()
-    for target in _targets(entity._id, "Java Couple", "type"):
+    # `Java Couple` for a real type; `Java Use Constrains Couple` for a type
+    # parameter, whose one coupling is its bound (`<E extends Enum>` -> Enum).
+    # The bound is scoped to the parameter entity, never to a class, so counting
+    # both kinds is safe for every entity.
+    targets = list(_targets(entity._id, "Java Couple", "type"))
+    targets += _targets(entity._id, "Java Use Constrains Couple", "type")
+    for target in targets:
         if target._id == entity._id or target._id in bases:
             continue
         if exclude_standard and _is_standard(target):

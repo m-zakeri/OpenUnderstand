@@ -359,26 +359,35 @@ _EXECUTABLE = tuple(
 )
 
 
-#: Contexts that make an initialiser *do* something rather than copy a value.
-_INVOKING = ("MethodCall", "Creator", "CreatedName")
-
-
 def _initialiser_invokes(ctx):
     """Whether a declaration's initialiser does something rather than copy.
 
     `T temp = item;` is declarative only -- CycleSort.replace is Understand's
     StmtDecl 2 / StmtExe 3 -- while `int comp = key.compareTo(...)` also
-    executes, which is how BinarySearch.search reaches 8.
+    executes, which is how BinarySearch.search reaches 8. A method call or an
+    *object* `new T(...)` executes; arithmetic and a plain copy do not.
 
-    Calling *anything else* executable was tried and measured worse: array
-    literals and arithmetic pushed CountStmtExe from 64.5% down to 59.5%, so
-    invoking something is the line, until a traced method says otherwise.
+    An **array** initialiser is declarative however its elements are written:
+    `Integer[] a = {Integer.valueOf(1)}` and `new Object[]{h()}` are both
+    StmtExe 0 to Understand, so the walk does not descend into an array literal
+    or an array creation and an array `new` does not itself count. Descending
+    into the elements counted valueToString and testObjectConstructor one
+    executable statement high. Measured, tests/fixtures/stmtexe/Arrays.java.
     """
     stack = [ctx]
     while stack:
         node = stack.pop()
-        if type(node).__name__.startswith(_INVOKING):
+        name = type(node).__name__
+        if name.startswith(("ArrayInitializer", "ArrayCreatorRest")):
+            continue
+        if name.startswith("MethodCall"):
             return True
+        if name.startswith("Creator"):
+            rest = getattr(node, "arrayCreatorRest", None)
+            rest = rest() if callable(rest) else None
+            if rest is None:
+                return True  # new T(...) -- object creation executes
+            continue  # new T[]{...} -- array creation is declarative
         stack.extend(
             c
             for c in (getattr(node, "children", None) or ())
@@ -429,13 +438,22 @@ class _StatementClassifier:
                     self._add_declaration_lines(ctx)
                 else:
                     self._add_signature_lines(ctx, self.decl_lines)
-            if name == "LocalVariableDeclarationContext" and _has_initialiser(ctx):
+            # A field initialiser executes once at construction and Understand
+            # counts it on the class -- `Object f = new Object();` is a class
+            # StmtExe of 1 that our per-member aggregation misses, since a field
+            # belongs to no method (MyNumberContainer class StmtExe 2 = its one
+            # method plus the field, against our 1). A field inside an anonymous
+            # class belongs to that class, not the scope being counted.
+            is_field = name == "FieldDeclarationContext" and not self.anonymous
+            if (
+                name == "LocalVariableDeclarationContext" or is_field
+            ) and _has_initialiser(ctx):
                 # The line carries executable code either way -- CycleSort's
                 # `T temp = item;` is one of that method's four
                 # CountLineCodeExe lines. Off the `for` path
                 # _add_declaration_lines has already said so, and with the
                 # initialiser's other lines.
-                if in_for and ctx.start is not None:
+                if not is_field and in_for and ctx.start is not None:
                     self.exe_lines.add(ctx.start.line)
                 # Whether it is also an executable *statement* depends on what
                 # the initialiser does. `T temp = item;` is not one and
@@ -447,6 +465,25 @@ class _StatementClassifier:
             self.statements += 1
             self.exe_statements += 1
             self._add_statement_lines(ctx)
+            # A C-style `for`'s update (`i += 1`, `++i`) is a statement of its
+            # own to Understand, and so is its init when the init is an
+            # *expression* (`i = 0`, i already declared) rather than a
+            # declaration -- `for (i=0; i<n; i+=1)` is three executable
+            # statements before its body. `for (int i=0; ...)` counts the
+            # declaration as declarative instead; a foreach has neither clause.
+            # The update alone is JSONObject.indent 3 against our 2; the
+            # expression init is XMLTokener.skipPast and XML.noSpace. Multiple
+            # comma-separated init or update expressions still count once.
+            if name == "Statement3Context":
+                control = ctx.forControl()
+                if control is not None:
+                    if getattr(control, "forUpdate", None) is not None:
+                        self.statements += 1
+                        self.exe_statements += 1
+                    init = control.forInit() if hasattr(control, "forInit") else None
+                    if type(init).__name__.startswith("ForInit1"):
+                        self.statements += 1
+                        self.exe_statements += 1
         elif name.startswith("SwitchLabel") and ctx.start is not None:
             # `case 0:` is an executable line of its own -- Understand puts a
             # switch with three groups and four labels at 8 executable lines,

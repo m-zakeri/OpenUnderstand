@@ -40,7 +40,7 @@ is one kind, not five attributes.
 | `Java Bean Primary Variable` | -- |
 | `Java Bean Variable` | yes |
 | `Java Catch Parameter` | yes |
-| `Java Class Type Anonymous Member` | -- |
+| `Java Class Type Anonymous Member` | yes |
 | `Java Class Type Default Member` | yes |
 | `Java Class Type Private Member` | yes |
 | `Java Class Type Protected Member` | yes |
@@ -230,7 +230,7 @@ is one kind, not five attributes.
 | `Java Unresolved External Method Default Member` | -- |
 | `Java Unresolved External Method Private Member` | -- |
 | `Java Unresolved External Method Protected Member` | -- |
-| `Java Unresolved External Method Public Member` | -- |
+| `Java Unresolved External Method Public Member` | yes |
 | `Java Unresolved External Static Final Method Default Member` | -- |
 | `Java Unresolved External Static Final Method Private Member` | -- |
 | `Java Unresolved External Static Final Method Protected Member` | -- |
@@ -280,7 +280,7 @@ once in each direction, at the same file, line and column.
 | `Java HasRepository` | `Java Repositoryfor` | -- |
 | `Java Implement Couple` | `Java Implementby Coupleby` | yes |
 | `Java Import` | `Java Importby` | -- |
-| `Java Import Demand` | `Java Importby Demand` | yes |
+| `Java Import Demand` | `Java Importby Demand` | -- |
 | `Java Manytomany Relation` | `Java Manytomanyby Relation` | -- |
 | `Java Manytoone Relation` | `Java Manytooneby Relation` | -- |
 | `Java Mapstojava Copy Implicit` | `Java Mapstospring Copy Implicit` | -- |

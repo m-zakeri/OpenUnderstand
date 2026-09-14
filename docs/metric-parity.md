@@ -21,8 +21,8 @@ comparison keyed on the name says nothing.
 
 | | macro | micro |
 | --- | ---: | ---: |
-| F1 | **0.970** | **0.970** |
-| F1 over pairs Understand answers | **0.971** | **0.972** |
+| F1 | **0.972** | **0.973** |
+| F1 over pairs Understand answers | **0.973** | **0.975** |
 
 The two rows used to be far apart, because `Ent.metric()` answered 0
 for every entity while Understand answers only for the kinds a metric
@@ -54,6 +54,8 @@ what is left is genuine disagreement about values.
 | `CountStmtDecl` | 0.993 | 0.997 | 0.99 | 1.00 | 1146 | 1158 | 1150 |
 | `Essential` | 0.991 | 0.995 | 0.99 | 1.00 | 1035 | 1048 | 1040 |
 | `CountSemicolon` | 0.990 | 0.994 | 0.99 | 0.99 | 1143 | 1158 | 1150 |
+| `CountStmt` | 0.988 | 0.991 | 0.98 | 0.99 | 1140 | 1158 | 1150 |
+| `CountStmtExe` | 0.987 | 0.990 | 0.98 | 0.99 | 1139 | 1158 | 1150 |
 | `CountPathLog` | 0.987 | 0.990 | 0.98 | 0.99 | 1030 | 1048 | 1040 |
 | `CyclomaticModified` | 0.984 | 0.988 | 0.98 | 0.99 | 1027 | 1048 | 1040 |
 | `CountLineComment` | 0.983 | 0.986 | 0.98 | 0.99 | 1134 | 1158 | 1150 |
@@ -82,7 +84,6 @@ what is left is genuine disagreement about values.
 | `MaxCyclomaticModified` | 0.955 | 0.955 | 0.95 | 0.95 | 105 | 110 | 110 |
 | `CountLine` | 0.948 | 0.951 | 0.94 | 0.95 | 1094 | 1158 | 1150 |
 | `CountLineCodeExe` | 0.945 | 0.948 | 0.94 | 0.95 | 1090 | 1158 | 1150 |
-| `CountStmt` | 0.944 | 0.947 | 0.94 | 0.95 | 1089 | 1158 | 1150 |
 | `AvgCountLine` | 0.945 | 0.945 | 0.95 | 0.95 | 104 | 110 | 110 |
 | `CountDeclClassMethod` | 0.945 | 0.945 | 0.95 | 0.95 | 104 | 110 | 110 |
 | `CountDeclInstanceMethod` | 0.945 | 0.945 | 0.95 | 0.95 | 104 | 110 | 110 |
@@ -90,8 +91,7 @@ what is left is genuine disagreement about values.
 | `Knots` | 0.941 | 0.944 | 0.94 | 0.94 | 982 | 1048 | 1040 |
 | `CountDeclMethodAll` | 0.943 | 0.943 | 0.94 | 0.94 | 100 | 106 | 106 |
 | `CountInput` | 0.935 | 0.938 | 0.93 | 0.94 | 976 | 1048 | 1040 |
-| `CountStmtExe` | 0.927 | 0.930 | 0.92 | 0.93 | 1070 | 1158 | 1150 |
-| `CountOutput` | 0.916 | 0.919 | 0.91 | 0.92 | 956 | 1048 | 1040 |
+| `CountOutput` | 0.920 | 0.924 | 0.92 | 0.92 | 961 | 1048 | 1040 |
 | `PercentLackOfCohesion` | 0.912 | 0.912 | 0.91 | 0.91 | 93 | 102 | 102 |
 | `PercentLackOfCohesionModified` | 0.912 | 0.912 | 0.91 | 0.91 | 93 | 102 | 102 |
 | `CountClassCoupled` | 0.906 | 0.906 | 0.91 | 0.91 | 96 | 106 | 106 |

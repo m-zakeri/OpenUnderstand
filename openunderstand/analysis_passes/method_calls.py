@@ -26,6 +26,12 @@ from openunderstand.analysis_passes import declared_types
 #: type is what a call on it lands on.
 _CAST = re.compile(r"^\(?\(([A-Z][\w.$]*)\)[^)]*\)?$")
 
+#: Final java.lang.Object methods: every class inherits them and none can
+#: override them, so a bare `getClass()` on `this` dispatches to Object. The
+#: overridable ones (equals/hashCode/toString/clone/finalize) are left out --
+#: a bare `toString()` may be the enclosing class's own override.
+_FINAL_OBJECT_METHODS = frozenset({"getClass", "wait", "notify", "notifyAll"})
+
 
 class MethodCallListener(JavaParserLabeledListener):
     def __init__(self, file_address=""):
@@ -375,10 +381,18 @@ class MethodCallListener(JavaParserLabeledListener):
                 # became a call to org.json.CDL.getValue, the only getValue the
                 # project declares.
                 # A bare call may be a statically imported member rather than one
-                # of the enclosing class's own.
+                # of the enclosing class's own -- or a final java.lang.Object
+                # method (`getClass()`), which every class inherits and cannot
+                # override, so it dispatches to Object however it is written.
+                # Without this, `getClass()` on `this` left a bare `getClass`
+                # placeholder while `obj.getClass()` resolved to
+                # java.lang.Object.getClass, and CountOutput counted two callees
+                # where Understand counts one.
                 "owner_longname": (
                     self._owner(receiver, scope_longname, receiver_ctx)
                     if receiver
+                    else "java.lang.Object"
+                    if identifier.getText() in _FINAL_OBJECT_METHODS
                     else self.static_imports.get(identifier.getText())
                 ),
                 "scope_longname": scope_longname,
