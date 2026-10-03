@@ -141,7 +141,17 @@ def _entity(ent_model):
 
 
 def _declares(entity_id, family):
-    return _targets(entity_id, "Java Define", family)
+    """What an entity declares, compiler-supplied members included.
+
+    Understand counts an enum's values()/valueOf() and a record's implicit
+    canonical constructor as declared methods -- `Define Implicit` in its own
+    refs -- so org.json.junit.data.MyEnum is CountDeclMethod 2 and a record
+    with no constructor of its own is 1.
+    """
+    out = {e._id: e for e in _targets(entity_id, "Java Define", family)}
+    for entity in _targets(entity_id, "Java Define Implicit", family):
+        out.setdefault(entity._id, entity)
+    return list(out.values())
 
 
 def _visibility(entity):

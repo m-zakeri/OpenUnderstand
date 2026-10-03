@@ -13,10 +13,12 @@ _OBJECT_METHODS = 13
 
 def _defined_methods(entity_id):
     """Ids of the methods an entity declares, via its Define references."""
-    define = kind_id("Java Define")
+    # Define Implicit too: an enum's values()/valueOf() and a record's
+    # compiler-supplied constructor are declared methods to Understand.
+    defines = [kind_id("Java Define"), kind_id("Java Define Implicit")]
     out = set()
     for ref in ReferenceModel.select().where(
-        (ReferenceModel._kind == define) & (ReferenceModel._scope == entity_id)
+        (ReferenceModel._kind.in_(defines)) & (ReferenceModel._scope == entity_id)
     ):
         target = EntityModel.get_or_none(_id=ref._ent_id)
         if target is not None and kind_family(target._kind_id) == "method":

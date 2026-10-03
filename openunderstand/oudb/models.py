@@ -113,6 +113,10 @@ _FAMILY_TOKENS = (
     ("typevariable", "type"),
     ("annotation", "type"),
     ("interface", "type"),
+    # Understand's own irregular spelling, `Java SealedInterface Type Public`:
+    # without it a sealed interface fell into "other" and every pass that
+    # named it as an interface created a second row.
+    ("sealedinterface", "type"),
     ("constructor", "method"),
     ("parameter", "variable"),
     ("namespace", "package"),
@@ -1176,6 +1180,17 @@ def drop_duplicate_bare_call_refs():
     return cursor.rowcount if cursor.rowcount and cursor.rowcount > 0 else 0
 
 
+def _declared_in_final_class(entity):
+    """Whether a project method's declaring class is declared `final`."""
+    if entity._parent_id is None or kind_family(entity._kind_id) != "method":
+        return False
+    owner = EntityModel.get_or_none(_id=entity._parent_id)
+    if owner is None:
+        return False
+    tokens = set(_kind_name(owner._kind_id).lower().split())
+    return "final" in tokens and "class" in tokens and not {"record", "enum"} & tokens
+
+
 def relabel_nondynamic_calls(file_ids=None):
     """Split Java Call into Call/Call Nondynamic once targets are known.
 
@@ -1238,13 +1253,19 @@ def relabel_nondynamic_calls(file_ids=None):
             return False
         if set(_kind_name(entity._kind_id).lower().split()) & _NONDYNAMIC_TOKENS:
             return True
+        # A method of a *final class* cannot be overridden either: Understand
+        # labels 142 of 142 such calls on jenetics Nondynamic. Not a record or
+        # an enum, though both are implicitly final -- 24 of 26 record calls
+        # there are a plain Call.
+        if _declared_in_final_class(entity):
+            return True
         # A JDK callee carries no modifiers here -- it is a placeholder named
         # from the receiver's type, never a declaration this project parsed.
         # Its class being final is what settles it: nothing can override
         # java.lang.String.length, so the call cannot dispatch virtually.
         # These are 303 of TheAlgorithms' missing Call Nondynamic rows for
         # String alone, and 180 of JSON's.
-        return jdk_index.is_final(owner)
+        return jdk_index.is_final(owner) or jdk_index.cannot_dispatch(owner, simple)
 
     relabelled = 0
     # The callee is _ent on a Call and _scope on its inverse.

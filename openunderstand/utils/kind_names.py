@@ -125,10 +125,10 @@ def candidates(decl, modifiers=(), name=""):
         return out
 
     if decl in (FIELD, CONSTANT):
-        # An interface constant is implicitly public static final.
-        if decl == CONSTANT:
-            mods |= {"public", "static", "final"}
-            vis = "Public"
+        # An interface constant is implicitly public static final, but
+        # Understand names it by what is *written*: `CsvWriter DEFAULT = ...`
+        # in an interface is `Java Variable Default Member`, and its metrics
+        # then count it as an instance variable.
         prefix = _prefix(mods, allow_abstract=False)
         out.append(" ".join(["Java", *prefix, "Variable", vis, "Member"]))
         if prefix:

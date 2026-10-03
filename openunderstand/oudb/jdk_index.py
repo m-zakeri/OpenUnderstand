@@ -51,8 +51,12 @@ def _load() -> dict:
             if len(parts) != 7:
                 continue
             longname, flags, supers, fields, methods, members, superclass = parts
-            arities, returns = {}, {}
+            arities, returns, sealed = {}, {}, set()
             for item in methods.split(","):
+                if item.startswith("!"):
+                    # A name every overload of which is static or final.
+                    sealed.add(item[1:])
+                    continue
                 if "/" not in item:
                     continue
                 name, tail = item.split("/", 1)
@@ -71,6 +75,7 @@ def _load() -> dict:
                 ),
                 "methods": arities,
                 "returns": returns,
+                "sealed": sealed,
                 # Declared members at this type -- constructors included, every
                 # overload counted, at any visibility. This is what RFC sums
                 # over the superclass chain: java.lang.Throwable is 27 and
@@ -116,6 +121,19 @@ def is_final(longname: str) -> bool:
     """Whether a JDK type is declared final, so a call on it never dispatches."""
     entry = _load()["types"].get(longname)
     return bool(entry and entry["final"])
+
+
+def cannot_dispatch(longname: str, member: str) -> bool:
+    """Whether a call to a JDK method can never dispatch virtually: every
+    overload of `member` declared at `longname` is static or final.
+
+    Understand's split of Java Call from Java Call Nondynamic for a JDK
+    callee: `List.of`, `Map.entry`, `BigDecimal.valueOf` are static and
+    `Object.getClass`, `Enum.equals` final -- 151 of JSON's calls and 212 of
+    jenetics', which a final *class* alone could not explain.
+    """
+    entry = _load()["types"].get(longname)
+    return bool(entry and member in entry.get("sealed", ()))
 
 
 def is_interface(longname: str) -> bool:

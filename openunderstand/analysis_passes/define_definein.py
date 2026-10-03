@@ -475,14 +475,20 @@ class DefineListener(JavaParserLabeledListener):
 
         `interfaceMethodDeclaration` is its own rule with its own modifier
         list, so without this callback no interface method was ever defined.
-        They are implicitly public, and abstract unless declared `default`.
+        Understand names them by what is *written*, not by what is implicit:
+        `public` only when it says so (10 of JSON's 14), abstract only when
+        there is no body. `static` and `default` usually sit on the enclosing
+        interfaceBodyDeclaration, not in this rule's own modifier list --
+        reading only the latter made every static interface method abstract,
+        and its calls virtual (`PathValue.of`, 16 Call Nondynamic on jenetics).
         """
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        modifiers = ["public"] + _modifiers_at(ctx)
-        if "default" not in modifiers and "static" not in modifiers:
+        modifiers = list(dict.fromkeys(_modifiers_at(ctx) + _enclosing_modifiers(ctx)))
+        body = ctx.methodBody()
+        if body is None or body.block() is None:
             modifiers.append("abstract")
-        if ctx.typeParameters() is not None:
+        if ctx.typeParameters() is not None or _is_generic(ctx.parentCtx):
             modifiers.append("generic")
         self.add_define_info(
             ent=ent,
