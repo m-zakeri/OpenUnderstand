@@ -23,6 +23,21 @@ from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
 import openunderstand.analysis_passes.class_properties as class_properties
 
 
+def _lambda_source(ctx):
+    """The lambda's own text, plus a newline so its last line counts.
+
+    Every line and statement metric reads an entity's contents, and a lambda
+    had none, so all of them answered 0 -- CountLineCodeExe disagreed with
+    Understand on 145 of jenetics' lambdas. The newline is what Understand
+    counts as the end of a line: `s -> f(s));` is one line to it.
+    """
+    stream = ctx.start.getInputStream()
+    try:
+        return stream.getText(ctx.start.start, ctx.stop.stop) + "\n"
+    except Exception:
+        return ""
+
+
 class LambdaListener(JavaParserLabeledListener):
     def __init__(self, file_longname=""):
         self.file_longname = file_longname
@@ -53,5 +68,31 @@ class LambdaListener(JavaParserLabeledListener):
                 "name": name,
                 "line": token.line,
                 "col": token.column,
+                "contents": _lambda_source(ctx),
             }
         )
+
+        # After the Use Ptr above, which is what declares the lambda: written
+        # first, this End made the lambda its own scope and created it as an
+        # Unknown class placeholder that the declaration then never upgraded
+        # -- five of JSON's lambdas lost their kind.
+        # Understand ends a lambda with an End and no Begin, unlike every other
+        # declaration: *on* the closing brace of a block body, but just *past*
+        # the last character of an expression body. 35 of JSON's.
+        body = ctx.lambdaBody()
+        close = body.stop if body is not None else None
+        if close is not None:
+            column = close.column
+            if not isinstance(body, JavaParserLabeled.LambdaBody1Context):
+                column += len(close.text)
+            self.relations.append(
+                {
+                    "kind": "Java End",
+                    "scope_longname": f"{scope}.{name}",
+                    "ent_longname": f"{scope}.{name}",
+                    "ent_kind": "Java Method Lambda",
+                    "name": name,
+                    "line": close.line,
+                    "col": column,
+                }
+            )

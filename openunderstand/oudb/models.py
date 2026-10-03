@@ -230,6 +230,13 @@ def _entity_kind_words(_database):
     ]  # noqa: E712
 
 
+def _parameter_vs_member(a, b) -> bool:
+    """True when one kind is a parameter and the other a member field."""
+    ta = set(_kind_name(a).lower().split())
+    tb = set(_kind_name(b).lower().split())
+    return ("parameter" in ta and "member" in tb) or ("parameter" in tb and "member" in ta)
+
+
 def kind_family(kind) -> str:
     tokens = set(_kind_name(kind).lower().split())
     for token, family in _FAMILY_TOKENS:
@@ -448,6 +455,16 @@ class EntityModel(Model):
                 or row_placeholder
                 or kind_family(row._kind_id) == incoming_family
             ):
+                continue
+            if (
+                not incoming_placeholder
+                and not row_placeholder
+                and _parameter_vs_member(row._kind_id, incoming)
+            ):
+                # A record component `R(T c)` is both the field R.c and the
+                # implicit constructor's parameter R.c -- Understand's long
+                # names for the two are identical. Nowhere else can a
+                # parameter and a member share a long name (C.m.x, C.x).
                 continue
             row_site = (row._line, row._column)
             if (
@@ -1086,6 +1103,11 @@ def drop_shadowed_use_refs():
     # the day a new one is added. Measured: this drops 110 rows on JSON and 895
     # on TheAlgorithms, and not one of them is a reference Understand reports
     # as a plain Use.
+    #
+    # Typed is the exception. `x instanceof Character v` is a Use of Character
+    # *and* v Typed Character, at the same token, and Understand keeps both --
+    # 74 positions on jenetics, none on JSON or TheAlgorithms, which have no
+    # patterns. They are two facts about two entities, not one fact twice.
     cursor = database.execute_sql("""
         DELETE FROM referencemodel
          WHERE _kind_id IN (SELECT _id FROM kindmodel
@@ -1096,7 +1118,8 @@ def drop_shadowed_use_refs():
                           AND other._column   = referencemodel._column
                           AND other._kind_id NOT IN
                               (SELECT _id FROM kindmodel
-                                WHERE _name IN ('Java Use', 'Java Useby')))
+                                WHERE _name IN ('Java Use', 'Java Useby',
+                                                'Java Typed', 'Java Typedby')))
         """)
     return cursor.rowcount if cursor.rowcount and cursor.rowcount > 0 else 0
 
@@ -1198,6 +1221,10 @@ def relabel_nondynamic_calls(file_ids=None):
         # relabelled all of them and cost 17 points of Call Nondynamic
         # precision.
         if owner and owner.rsplit(".", 1)[-1] == simple:
+            return False
+        # A call to a record accessor targets the component's *field*, which
+        # is private -- and Understand still reports it as a plain Call.
+        if kind_family(entity._kind_id) == "variable":
             return False
         if set(_kind_name(entity._kind_id).lower().split()) & _NONDYNAMIC_TOKENS:
             return True

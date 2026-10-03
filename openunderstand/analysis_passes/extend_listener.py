@@ -36,8 +36,13 @@ class ExtendListener(JavaParserLabeledListener):
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         self.class_name = ctx.IDENTIFIER().getText()
-        if ctx.getChild(2).getText() == "extends":
-            childs = ctx.getChild(3).getChildren()
+        # Positions counted from the `class` keyword, which is child 0 unless
+        # a `sealed` modifier precedes it. A record has no `extends`.
+        if ctx.CLASS() is None:
+            return
+        at = ctx.children.index(ctx.CLASS())
+        if ctx.getChildCount() > at + 3 and ctx.getChild(at + 2).getText() == "extends":
+            childs = ctx.getChild(at + 3).getChildren()
             for c in childs:
                 if not self.refers.__contains__(self.class_name):
                     self.refers[self.class_name] = []

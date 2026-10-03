@@ -227,7 +227,11 @@ These are deliberate and measured, not accidental:
   declaration position, so they are separate entities here too.
 - **External types are not resolved.** No JDK or third-party jars are analysed,
   so `java.lang.String` exists as an unresolved entity with no members.
-- **Java 8 only.** The grammar predates records, sealed types, `var`, text
-  blocks and `yield`. Files using them fail to parse and contribute nothing.
+- **Java 9-25 is analysed, measured on one modern fixture.** Records (with
+  their implicit constructor, parameters and accessor calls), sealed types and
+  `permits`, pattern variables, `var` and switch expressions are modelled the
+  way Understand models them, checked against Understand on jenetics'
+  incubator module (Java 25). Java 25 compact source files (top-level methods)
+  do not parse, and `module-info.java` parses but declares nothing.
 - **Coverage is partial.** [Parity](parity.md) reports exactly how partial,
   per kind, against the real tool.

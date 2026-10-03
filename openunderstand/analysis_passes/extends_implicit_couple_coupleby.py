@@ -79,10 +79,8 @@ class ClassTypeData:
     def set_prefixes(self, prefix_list: list):
         self.prefixes = prefix_list
 
-    # Declarations that contribute a component to a nested type's long name.
-    # Methods are deliberately absent: a class local to a method is named for
-    # its enclosing *type* here, and adding the method would invent a component
-    # no other pass writes.
+    # No longer used for naming -- see get_long_name -- but kept as the set of
+    # rules that declare a type.
     _TYPE_SCOPES = frozenset(
         {
             JavaParserLabeled.RULE_classDeclaration,
@@ -124,10 +122,17 @@ class ClassTypeData:
         """
         if self._frozen is not None:
             return self._frozen["long_name"]
-        parts = [
-            self.package_name,
-            *self._enclosing_types(),
-            str(self.childClass.IDENTIFIER()),
+        # findParents(), the scope chain every other pass uses. This used to
+        # walk enclosing *types* only, on the claim that no other pass names a
+        # local class by its method -- but the define pass does, and so does
+        # Understand (`Row.of.Columns`), so a class local to a method got a
+        # second entity here.
+        from openunderstand.analysis_passes.class_properties import (
+            ClassPropertiesListener,
+        )
+
+        parts = ClassPropertiesListener.findParents(self.childClass) + [
+            str(self.childClass.IDENTIFIER())
         ]
         return ".".join(p for p in parts if p)
 
@@ -179,8 +184,8 @@ class DSCmetric(JavaParserLabeledListener):
                     return True
             return False
 
-        if ctx.EXTENDS():
-            return
+        if ctx.EXTENDS() or ctx.recordKeyword() is not None:
+            return  # a record extends java.lang.Record (extendcouple_extendcoupleby)
         prefix_list = []
         for child in ctx.parentCtx.children:
             if type(child) == JavaParserLabeled.ClassDeclarationContext:

@@ -131,6 +131,33 @@ def anonymous_name(ctx):
     return _anonymous_names(root).get(id(ctx))
 
 
+def record_constructor(record_ctx):
+    """How a record declares its canonical constructor, as Understand models it.
+
+    "compact" for `R { ... }`; "explicit" when the record declares any other
+    constructor; "implicit" when it declares none. Understand models the
+    compiler-supplied constructor only in the last case -- read off its
+    database, where `record BrentRootFinder(Limit limit)` declaring only
+    `BrentRootFinder()` gets no implicit canonical constructor at all, though
+    javac still supplies one.
+    """
+    for declaration in record_ctx.classBody().classBodyDeclaration():
+        member = getattr(declaration, "memberDeclaration", None)
+        member = member() if callable(member) else None
+        constructor = getattr(member, "constructorDeclaration", None)
+        constructor = constructor() if callable(constructor) else None
+        if constructor is None:
+            generic = getattr(member, "genericConstructorDeclaration", None)
+            generic = generic() if callable(generic) else None
+            if generic is not None:
+                return "explicit"
+            continue
+        if constructor.formalParameters() is None:
+            return "compact"
+        return "explicit"
+    return "implicit"
+
+
 class ClassPropertiesListener(JavaParserLabeledListener):
     def __init__(self):
         self.class_longname = []
@@ -152,9 +179,19 @@ class ClassPropertiesListener(JavaParserLabeledListener):
             JavaParserLabeled.RULE_interfaceDeclaration,
             JavaParserLabeled.RULE_constructorDeclaration,
             JavaParserLabeled.RULE_annotationTypeDeclaration,
-            JavaParserLabeled.RULE_genericInterfaceMethodDeclaration,
+            # The declaration carrying the name. Its generic wrapper,
+            # genericInterfaceMethodDeclaration, has no IDENTIFIER and was the
+            # one listed, so a default or static interface method was no scope
+            # at all and its locals came out as I.x instead of I.m.x.
+            JavaParserLabeled.RULE_interfaceMethodDeclaration,
         }
     )
+
+    _GENERIC_WRAPPERS = {
+        JavaParserLabeled.RULE_genericMethodDeclaration: lambda c: c.methodDeclaration(),
+        JavaParserLabeled.RULE_genericConstructorDeclaration: lambda c: c.constructorDeclaration(),
+        JavaParserLabeled.RULE_genericInterfaceMethodDeclaration: lambda c: c.interfaceMethodDeclaration(),
+    }
 
     @staticmethod
     def _package_components(compilation_unit):
@@ -211,8 +248,20 @@ class ClassPropertiesListener(JavaParserLabeledListener):
         anonymous = _anonymous_names(root) if root is not None else {}
         lambdas = _lambda_names(root) if root is not None else {}
         parents = []
+        previous = c
         for current in chain:
             rule = current.getRuleIndex()
+            if (
+                rule in ClassPropertiesListener._GENERIC_WRAPPERS
+                and isinstance(previous, JavaParserLabeled.TypeParametersContext)
+            ):
+                # `<A> R m()`: the type parameters sit beside the method in
+                # its generic wrapper, not inside it, so walking up from `A`
+                # never met the method and A came out as C.A, not C.m.A.
+                inner = ClassPropertiesListener._GENERIC_WRAPPERS[rule](current)
+                if inner is not None and inner.IDENTIFIER() is not None:
+                    parents.append(inner.IDENTIFIER().getText())
+            previous = current
             if rule in ClassPropertiesListener._SCOPE_RULES:
                 identifier = current.IDENTIFIER()
                 if identifier is not None:

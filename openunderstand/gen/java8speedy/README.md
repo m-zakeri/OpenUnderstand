@@ -77,7 +77,7 @@ filename and then assumes a matching `<X>Lexer`. Our grammars are
 `JavaLabeledParser` / `JavaLabeledLexer` for the accelerator build only. The
 rename is cosmetic: the generated translator resolves every context class by
 name off the `parser_cls` passed in at runtime, and we pass the real
-`gen.javaLabeled.JavaParserLabeled`. Both grammars yield the same 218 context
+`gen.javaLabeled.JavaParserLabeled`. Both grammars yield the same context
 classes.
 
 ## Four things that will bite a port

@@ -261,10 +261,9 @@ class SetAndSetByListener(JavaParserLabeledListener):
         )
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
-        self.ex_name = ctx.children[1].getText()
-        long_name = self.file_name.replace(".java", "") + "." + self.ex_name
-        line = ctx.children[0].symbol.line
-        col = ctx.children[0].symbol.column
+        # IDENTIFIER, not children[1]: a record's or a sealed class's first
+        # child is a sub-rule, and children[0].symbol raised on every one.
+        self.ex_name = ctx.IDENTIFIER().getText()
 
     def enterExpression21(self, ctx: JavaParserLabeled.Expression21Context):
         self.entered_expression = True

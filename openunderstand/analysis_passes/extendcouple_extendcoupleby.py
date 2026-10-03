@@ -36,6 +36,55 @@ class ExtendCoupleAndExtendCoupleBy(JavaParserLabeledListener):
             return
         self.imports[longname.split(".")[-1]] = longname
 
+    def enterPermitsClause(self, ctx: JavaParserLabeled.PermitsClauseContext):
+        """`sealed interface P permits A, B` (Java 17): Java Permit Couple from
+        P to each permitted type, at that type's token -- the inverse is
+        Permitby Coupleby. On a class or an interface alike."""
+        from openunderstand.ounderstand import symbol_table
+
+        declaration = ctx.parentCtx
+        scope_parents = class_properties.ClassPropertiesListener.findParents(declaration)
+        scope_longname = ".".join(scope_parents + [declaration.IDENTIFIER().getText()])
+        for type_ctx in ctx.typeList().typeType():
+            written = type_ctx.getText().split("<")[0]
+            longname = symbol_table.resolve_type_name(
+                written, self.imports, self.wildcards, scope_longname
+            )
+            if longname is None:
+                continue
+            token = type_ctx.start
+            self.relations.append(
+                {
+                    "kind": "Java Permit Couple",
+                    "scope_longname": scope_longname,
+                    "ent_longname": longname,
+                    "name": longname.rsplit(".", 1)[-1],
+                    "line": token.line,
+                    "col": token.column,
+                }
+            )
+
+    def enterTypeParameter(self, ctx: JavaParserLabeled.TypeParameterContext):
+        """`<T>` with no bound implicitly extends java.lang.Object.
+
+        Understand records it like a class's: Extend Couple Implicit External
+        on the parameter's line at no column, scoped to C.m.T.
+        """
+        if ctx.EXTENDS() is not None:
+            return
+        parents = class_properties.ClassPropertiesListener.findParents(ctx)
+        self.relations.append(
+            {
+                "kind": "Java Extend Couple Implicit External",
+                "scope_longname": ".".join(parents + [ctx.IDENTIFIER().getText()]),
+                "ent_longname": "java.lang.Object",
+                "name": "Object",
+                "line": ctx.start.line,
+                "col": 0,
+                "column_is_absolute": True,
+            }
+        )
+
     def enterEnumDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
         """`enum MyEnum implements JSONString` -- plus the implicit parent.
 
@@ -178,6 +227,23 @@ class ExtendCoupleAndExtendCoupleBy(JavaParserLabeledListener):
         `class` keyword's column under the non-External kind, so none of the
         three on TheAlgorithms matched.
         """
+        if ctx.recordKeyword() is not None:
+            # Every record extends java.lang.Record, and Understand writes it
+            # as an explicit External couple -- not Implicit, unlike Object --
+            # on the record's line at no column.
+            scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
+            self.relations.append(
+                {
+                    "kind": "Java Extend Couple External",
+                    "scope_longname": ".".join(scope_parents + [ctx.IDENTIFIER().getText()]),
+                    "ent_longname": "java.lang.Record",
+                    "name": "Record",
+                    "line": ctx.start.line,
+                    "col": 0,
+                    "column_is_absolute": True,
+                }
+            )
+            return
         if not ctx.EXTENDS():
             return
         scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)

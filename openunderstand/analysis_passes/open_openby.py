@@ -94,8 +94,11 @@ class OpenListener(JavaParserLabeledListener):
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         class_longname = self._qualified_name(ctx)
         class_name = ctx.IDENTIFIER().getText()
-        line = ctx.children[0].symbol.line
-        col = ctx.children[0].symbol.column
+        # ctx.start, not children[0].symbol: a record's or a sealed type's
+        # first child is a sub-rule. For any other declaration it is the
+        # same token.
+        line = ctx.start.line
+        col = ctx.start.column
 
         self.repository.append(
             {
@@ -111,8 +114,11 @@ class OpenListener(JavaParserLabeledListener):
     def enterEnumDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
         enum_longname = self._qualified_name(ctx)
         enum_name = enum_longname.split(".")[-1]
-        line = ctx.children[0].symbol.line
-        col = ctx.children[0].symbol.column
+        # ctx.start, not children[0].symbol: a record's or a sealed type's
+        # first child is a sub-rule. For any other declaration it is the
+        # same token.
+        line = ctx.start.line
+        col = ctx.start.column
 
         self.repository.append(
             {
@@ -130,8 +136,11 @@ class OpenListener(JavaParserLabeledListener):
     ):
         interface_longname = self._qualified_name(ctx)
         interface_name = ctx.IDENTIFIER().getText()
-        line = ctx.children[0].symbol.line
-        col = ctx.children[0].symbol.column
+        # ctx.start, not children[0].symbol: a record's or a sealed type's
+        # first child is a sub-rule. For any other declaration it is the
+        # same token.
+        line = ctx.start.line
+        col = ctx.start.column
         self.repository.append(
             {
                 "name": interface_name,

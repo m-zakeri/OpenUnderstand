@@ -305,6 +305,10 @@ class TypeBinder:
             kind = type(node).__name__
             if kind.startswith(_SCOPE):
                 declared = self._declared_in(node).get(name)
+                if declared == "var":
+                    # Java 10: the type is the initialiser's. Returned fully
+                    # qualified, which every caller's resolve passes through.
+                    return self._var_type(node, name)
                 if declared:
                     return declared
             elif kind.startswith(_TYPE_DECLARATION):
@@ -313,6 +317,28 @@ class TypeBinder:
                     return declared
             node = node.parentCtx
         return None
+
+    def var_initializer(self, scope_node, name):
+        """The initialiser expression of `var name = ...` in `scope_node`."""
+        stack = [scope_node]
+        while stack:
+            node = stack.pop()
+            kind = type(node).__name__
+            if kind == "LocalVariableDeclarationContext":
+                written = node.typeType()
+                if written is not None and written.getText() == "var":
+                    for declarator in node.variableDeclarators().variableDeclarator():
+                        identifier = declarator.variableDeclaratorId().IDENTIFIER()
+                        initializer = declarator.variableInitializer()
+                        if identifier is not None and identifier.getText() == name:
+                            return getattr(initializer, "expression", lambda: None)()
+            for child in getattr(node, "children", None) or ():
+                if hasattr(child, "getRuleIndex"):
+                    stack.append(child)
+        return None
+
+    def _var_type(self, scope_node, name):
+        return self.type_of(self.var_initializer(scope_node, name))
 
     def _declared_types(self):
         """`{long name: declaration ctx}` for every type this file declares."""
@@ -387,6 +413,11 @@ class TypeBinder:
             if not first and name.startswith(_TYPE_DECLARATION):
                 continue
             first = False
+            if name == "RecordComponentContext":
+                # `record R(T c)` declares an accessor c() returning T.
+                written = _written_name(node.typeType())
+                if written:
+                    found.setdefault(node.IDENTIFIER().getText(), written)
             if name.startswith(("MethodDeclaration", "InterfaceMethodDeclaration")):
                 identifier = node.IDENTIFIER()
                 declared = getattr(node, "typeTypeOrVoid", None)

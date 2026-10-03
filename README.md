@@ -205,8 +205,12 @@ See [docs/idea-plugin.md](https://m-zakeri.github.io/OpenUnderstand/idea-plugin/
 
 ## What it does not do
 
-- **Java 8 only.** The grammar predates records, sealed types, `var`, text
-  blocks and `yield`.
+- **Java 9-25 is analysed, measured on one modern fixture.** Records (with
+  their implicit constructor, parameters and accessor calls), sealed types and
+  `permits`, pattern variables, `var` and switch expressions are modelled the
+  way Understand models them, checked against Understand on jenetics'
+  incubator module (Java 25). Java 25 compact source files (top-level methods)
+  do not parse, and `module-info.java` parses but declares nothing.
 - **No external resolution.** The JDK and third-party jars are not analysed, so
   `java.lang.String` exists but has no members.
 - **Partial coverage.** 90 to 98% of Understand's references are reproduced at

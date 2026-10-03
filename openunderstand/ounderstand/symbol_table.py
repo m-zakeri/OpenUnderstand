@@ -432,6 +432,15 @@ def build(root: str) -> _DeclarationIndex:
         def enterInterfaceMethodDeclaration(self, ctx):
             self._signature(ctx)
 
+        def enterRecordComponent(self, ctx):
+            """`record R(T c)` declares an accessor `c()` returning T. An
+            explicit accessor of the same name returns the same type."""
+            parents = class_properties.ClassPropertiesListener.findParents(ctx)
+            longname = ".".join(parents + [ctx.IDENTIFIER().getText()])
+            written = ctx.typeType().getText().split("<")[0].split("[")[0]
+            if written:
+                self.returns.setdefault(longname, written)
+
         def _overload(self, ctx):
             """Record one declaration's parameter count and its position."""
             identifier = ctx.IDENTIFIER()
@@ -538,7 +547,7 @@ def build(root: str) -> _DeclarationIndex:
                 declaration["ent"],
                 declaration["ent_longname"],
                 is_type=declaration.get("decl")
-                in ("class", "interface", "enum", "annotation"),
+                in ("class", "record", "interface", "enum", "annotation"),
             )
             if declaration.get("decl") in ("interface", "annotation"):
                 index.interfaces.add(declaration["ent_longname"])

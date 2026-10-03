@@ -417,6 +417,17 @@ class _StatementClassifier:
                 if hasattr(child, "getRuleIndex"):
                     self.visit(child)
             return
+        if name == "LocalVariableDeclarationContext" and isinstance(
+            ctx.parentCtx, JavaParserLabeled.PatternContext
+        ):
+            # `x instanceof T v`, `case T v ->`: the grammar spells a type
+            # pattern as a local declaration so the passes declare v, but it
+            # is part of an expression or a case label -- not a statement and
+            # no declarative line of its own.
+            for child in getattr(ctx, "children", None) or ():
+                if hasattr(child, "getRuleIndex"):
+                    self.visit(child)
+            return
         if name in _DECLARATIVE:
             self.statements += 1
             self.decl_statements += 1
@@ -737,7 +748,64 @@ def statement_counts(ent_model) -> dict:
     Five metrics read this one result, and each used to recompute it. The
     returned dict is shared and must not be mutated.
     """
-    return _statement_counts(ent_model.contents() or "")
+    source = ent_model.contents() or ""
+    if _LAMBDA_NAME.search(getattr(ent_model, "_longname", "") or ""):
+        return _lambda_statement_counts(source)
+    return _statement_counts(source)
+
+
+#: Keyed on the name, not the kind: 30 of JSON's lambdas carry a method kind.
+_LAMBDA_NAME = __import__("re").compile(r"\(lambda_expr_\d+\)$")
+
+
+@lru_cache(maxsize=256)
+def _lambda_statement_counts(source: str) -> dict:
+    """A lambda counts as its body would inside a method, with no declaration
+    of its own: Understand puts a 16-line block lambda at CountStmt 7 -- its two
+    locals, three calls, a return and the nested lambda's two statements -- and
+    an expression lambda at 0 statements and 1 executable line.
+
+    Its text is no compilation unit or member, so it is parsed with the
+    grammar's own lambdaExpression rule rather than parse_entity()'s wrappers.
+    """
+    from openunderstand.utils import antler_parser
+    from antlr4 import InputStream
+    from antlr4.error.ErrorListener import ErrorListener
+
+    class _Failed(ErrorListener):
+        failed = False
+
+        def syntaxError(self, *_args):
+            self.failed = True
+
+    detector = _Failed()
+    try:
+        tree = antler_parser.parse(
+            InputStream(source), "lambdaExpression", prefer_cpp=False,
+            err_listener=detector,
+        )
+    except Exception:
+        tree = None
+    if tree is None or detector.failed:
+        return _statement_counts(source)
+    classifier = _StatementClassifier()
+    classifier.visit(tree)
+    body = tree.lambdaBody()
+    if isinstance(body, JavaParserLabeled.LambdaBody0Context) and body.start is not None:
+        classifier.exe_lines.update(range(body.start.line, body.stop.line + 1))
+    code = {number for number, has_code, _ in _scan_lines(source) if has_code}
+    closing = {
+        number
+        for number, raw in enumerate(source.split("\n")[:-1], 1)
+        if raw.strip() == "}"
+    }
+    return {
+        "stmt": classifier.statements,
+        "stmt_decl": classifier.decl_statements,
+        "stmt_exe": classifier.exe_statements,
+        "line_decl": len(classifier.decl_lines & code),
+        "line_exe": len((classifier.exe_lines & code) - closing),
+    }
 
 
 @lru_cache(maxsize=256)

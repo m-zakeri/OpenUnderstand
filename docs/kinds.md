@@ -316,5 +316,5 @@ once in each direction, at the same file, line and column.
 
 "Produced" means at least one row of that kind exists in the
 comparison fixtures' databases. A dash is not necessarily a defect --
-several kinds only apply to Java features the Java 8 grammar cannot
-parse, and several are Spring or record specific.
+several kinds only apply to Java features the analysis passes do not yet
+handle, and several are Spring or record specific.

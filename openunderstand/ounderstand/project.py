@@ -23,7 +23,7 @@ from openunderstand.analysis_passes.class_properties_simple import (
 
 from openunderstand.utils.utilities import ClassTypeData
 from openunderstand.utils import antler_parser, utilities
-from openunderstand.oudb.models import find_kind, kind_id
+from openunderstand.oudb.models import find_kind, kind_id, _kind_name
 from openunderstand.utils import kind_names
 from openunderstand.oudb import jdk_index
 from openunderstand.ounderstand import symbol_table
@@ -77,6 +77,29 @@ def resolved_longname(simple_name, fallback, scope_longname=""):
     return resolved or fallback
 
 
+def record_component(row):
+    """Whether an entity row is a record's component field.
+
+    A call can name a variable in exactly one case: `r.x()` on a record, whose
+    accessor is never written in the source and which Understand points at
+    the field R.x. Any other variable a call resolves to -- a local `count`
+    shadowing the method `count()` -- is a wrong target.
+    """
+    if row is None or kind_family(row._kind_id) != "variable" or row._parent_id is None:
+        return False
+    parent = EntityModel.get_or_none(_id=row._parent_id)
+    return parent is not None and "record" in _kind_name(parent._kind_id).lower().split()
+
+
+def callable_target(row):
+    """`row` if a call may target it, else None (see record_component)."""
+    if row is None:
+        return None
+    if kind_family(row._kind_id) == "variable" and not record_component(row):
+        return None
+    return row
+
+
 def callee_of(longname, name, arguments, file_ent):
     """The method entity a call names, picking the overload by argument count.
 
@@ -111,8 +134,12 @@ def callee_of(longname, name, arguments, file_ent):
     for row in rows:
         if kind_family(row._kind_id) == "method":
             return row
-    if rows:
-        return rows[0]
+    for row in rows:
+        if callable_target(row) is not None and kind_family(row._kind_id) != "variable":
+            return row
+    for row in rows:
+        if record_component(row):
+            return row
     return EntityModel.get_or_create(
         _kind=kind_id("Java Unknown Method Member"),
         _name=name,
@@ -488,7 +515,7 @@ class Project:
 
             scope, h_c2 = EntityModel.get_or_create(
                 # was the reference kind Java Typedby, written into an entity row; the declared variable
-                _kind=kind_id("Java Unknown Variable Member"),
+                _kind=kind_id(type_tuple.get("scope_kind", "Java Unknown Variable Member")),
                 _parent=None,
                 _name=type_tuple["name"],
                 _longname=type_tuple["scope_longname"],
@@ -500,8 +527,9 @@ class Project:
             # _file is the file the reference occurs in -- it used to be set to
             # the referenced entity, and the inverse to the declaration's own
             # position, so neither direction landed where Understand puts it.
+            kind = type_tuple.get("kind", "Java Typed")
             typed_ref = ReferenceModel.get_or_create(
-                _kind=kind_id("Java Typed"),
+                _kind=kind_id(kind),
                 _file=file_ent,
                 _line=type_tuple["line"],
                 _column=col_1based(type_tuple["col"]),
@@ -509,7 +537,7 @@ class Project:
                 _scope=scope,
             )
             typedby_ref = ReferenceModel.get_or_create(
-                _kind=kind_id("Java Typedby"),
+                _kind=kind_id(kind.replace("Typed", "Typedby", 1)),
                 _file=file_ent,
                 _line=type_tuple["line"],
                 _column=col_1based(type_tuple["col"]),
@@ -568,11 +596,14 @@ class Project:
 
     def addSetInitRefs(self, d, file_ent, stream: str = ""):
         for type_tuple in d:
-            par = EntityModel.get(_name=type_tuple[7])
+            # get_or_none: [7] is the enclosing method's *simple* name, which
+            # is stale inside an interface method, and get() raised there --
+            # aborting every Set Init after it in the same file.
+            par = EntityModel.get_or_none(_name=type_tuple[7])
             ent, h_c1 = EntityModel.get_or_create(
                 # was the reference kind Java Set Init, written into an entity row; the variable being init-set
                 _kind=kind_id("Java Unknown Variable Member"),
-                _parent=par._id,
+                _parent=par._id if par is not None else None,
                 _name=str(type_tuple[12]).rsplit(".", 1)[-1],
                 _longname=type_tuple[12],
                 _value=type_tuple[3],
@@ -730,6 +761,14 @@ class Project:
                 scope = self.getScopeEntity(
                     file_ent, ref_dict["scope"], ref_dict["scope_longname"]
                 )
+                # A record and its implicit constructor share a long name, so
+                # the declaration says which of the two it means.
+                family = ref_dict.get("scope_family")
+                if family is not None and kind_family(scope._kind_id) != family:
+                    for row in entity_rows(ref_dict["scope_longname"]):
+                        if kind_family(row._kind_id) == family:
+                            scope = row
+                            break
             # The parent is not always the declaring scope. A package does not
             # *enclose* a type, it contains it, and Understand says so with a
             # `Java Contain` reference rather than with parentage:
@@ -802,9 +841,12 @@ class Project:
                 kind_family(scope._kind_id) == "package"
                 or kind_family(ent._kind_id) == "package"
             )
+            # A member the compiler supplies -- a record's canonical
+            # constructor and its parameters -- is Define Implicit.
+            implicit = " Implicit" if ref_dict.get("implicit") else ""
             if not package_scoped:
                 define_ref = ReferenceModel.get_or_create(
-                    _kind=kind_id("Java Define"),
+                    _kind=kind_id("Java Define" + implicit),
                     _file=file_ent,
                     _line=ref_dict["line"],
                     _column=col_1based(ref_dict["col"]),
@@ -814,7 +856,7 @@ class Project:
 
             # Definein: kind id 195
             definein_ref = ReferenceModel.get_or_create(
-                _kind=kind_id("Java Definein"),
+                _kind=kind_id("Java Definein" + implicit),
                 _file=file_ent,
                 _line=ref_dict["line"],
                 _column=col_1based(ref_dict["col"]),
@@ -897,7 +939,9 @@ class Project:
                 if symbol_table.overload_site(own, ref_dict.get("arguments")):
                     ent = callee_of(own, name, ref_dict.get("arguments"), file_ent)
                 if ent is None:
-                    ent = EntityModel.get_or_none(EntityModel._longname == own)
+                    ent = callable_target(
+                        EntityModel.get_or_none(EntityModel._longname == own)
+                    )
                 if ent is None:
                     # The declaration may be in another file, which this pass
                     # cannot see. The project-wide index built before the
@@ -905,7 +949,7 @@ class Project:
                     # rather than guessing.
                     resolved = symbol_table.resolve(name, ref_dict["scope_longname"])
                     if resolved:
-                        ent = EntityModel.get_or_none(EntityModel._longname == resolved)
+                        ent = self._callable_row(resolved)
                 if ent is None:
                     # Nothing in the project declares it, so it came in through
                     # a wildcard static import of a jar that is not part of the
@@ -932,6 +976,18 @@ class Project:
                     _ent=a,
                     _scope=b,
                 )
+
+    @staticmethod
+    def _callable_row(longname):
+        """A method row for `longname`, else a record component, else None."""
+        rows = entity_rows(longname)
+        for row in rows:
+            if kind_family(row._kind_id) == "method":
+                return row
+        for row in rows:
+            if record_component(row):
+                return row
+        return None
 
     @staticmethod
     def _unresolved_external_method(name, file_ent):
@@ -2430,6 +2486,12 @@ class Project:
             ent = EntityModel.get_or_none(
                 EntityModel._longname == relation["ent_longname"]
             )
+            contents = relation.get("contents")
+            if ent is not None and contents and not ent._contents:
+                # A lambda is declared here and nowhere else, so its source
+                # arrives only on this relation.
+                ent._contents = contents
+                ent.save()
             if ent is None:
                 # A pass that knows what it is creating says so. A lambda is
                 # declared by the reference itself and by nothing else, so
@@ -2442,7 +2504,7 @@ class Project:
                     _name=relation["name"],
                     _parent=None,
                     _longname=relation["ent_longname"],
-                    _contents="",
+                    _contents=contents or "",
                 )[0]
 
             # A lambda is declared here and nowhere else, so this pass knows
