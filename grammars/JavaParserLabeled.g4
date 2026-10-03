@@ -402,7 +402,9 @@ block
     ;
 
 blockStatement
-    : localVariableDeclaration ';' #blockStatement0
+    // `yield t;` is a yield statement (Java 14), not `t` declared with a type
+    // named yield -- which no longer exists to be declared.
+    : {self._input.LT(1).text != "yield"}? localVariableDeclaration ';' #blockStatement0
     | statement #blockStatement1
     | localTypeDeclaration #blockStatement2
     ;

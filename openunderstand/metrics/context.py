@@ -75,6 +75,9 @@ def parse(source):
 #: classifiers can tell it apart from a real declaration.
 _WRAPPER = "__OpenUnderstandScope"
 
+#: The start of a lambda's own text: `x ->`, `(a, b) ->`, `(int a) ->`.
+_LAMBDA_TEXT = __import__("re").compile(r"\s*(\([^()]*\)|[A-Za-z_$][\w$]*)\s*->")
+
 
 # 2048, not 256: a package's Sum/Max/Avg roll-up asks every method in the
 # package for sixteen metrics, and org.json alone declares over a thousand --
@@ -146,6 +149,15 @@ def parse_entity_source(source):
         f"class {_WRAPPER} {source}",
         f"class {_WRAPPER} {{\n{source}\n}}",
     )
+    if _LAMBDA_TEXT.match(source):
+        # A lambda's text is an expression, which none of the above accepts.
+        # Inside a method it is scored as that method: base 1 plus its own
+        # decisions, which is what Understand reports for a lambda. Only for
+        # lambda text: an annotation element's `value()` would parse here too
+        # and score 1 where Understand reports 0.
+        candidates += (
+            f"class {_WRAPPER} {{ Object {_WRAPPER}() {{ return {source.rstrip()}; }} }}",
+        )
     if antler_parser.is_available():
         # Cyclomatic was 18.6ms an entity and the parse is nearly all of it.
         for candidate in candidates:

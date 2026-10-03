@@ -90,7 +90,9 @@ class LambdaListener(JavaParserLabeledListener):
                     "kind": "Java End",
                     "scope_longname": f"{scope}.{name}",
                     "ent_longname": f"{scope}.{name}",
-                    "ent_kind": "Java Method Lambda",
+                    # No ent_kind: the Use Ptr above declares the lambda, and
+                    # the writer re-parents an ent_kind lambda to the scope --
+                    # which here is the lambda itself.
                     "name": name,
                     "line": close.line,
                     "col": column,

@@ -49,6 +49,7 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         self._binder = None
         #: Supertypes of the open frame's class, which are never couplings.
         self.ancestors = {"java.lang.Object"}
+        self.static_members = {}
 
     def set_file(self, filex):
         self.file = filex
@@ -144,10 +145,22 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
 
         from openunderstand.ounderstand import symbol_table
 
-        ancestors = symbol_table.ancestors(scope_longname) | {"java.lang.Object"}
+        record = callable(getattr(ctx, "recordKeyword", None)) and (
+            ctx.recordKeyword() is not None
+        )
+        if record:
+            # A record couples to its supertypes, unlike a class: Understand
+            # writes java.lang.Record for every one, its implemented interfaces
+            # and java.lang.Object where it is used -- 107 supertype couples on
+            # jenetics' records, and none on its classes.
+            ancestors = set()
+        else:
+            ancestors = symbol_table.ancestors(scope_longname) | {"java.lang.Object"}
         self.stack.append((self.dic, [], ancestors))
         self.couplebyrefrences = self.stack[-1][1]
         self.ancestors = ancestors
+        if record:
+            self.add("java.lang.Record")
 
         pending, self.pending_annotations = self.pending_annotations, []
         for keyname in pending:
@@ -160,6 +173,11 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
 
     def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
         imported_class_longname = ctx.qualifiedName().getText()
+        if ctx.STATIC() is not None and not ctx.getText().rstrip(";").endswith(".*"):
+            # `import static java.util.Objects.requireNonNull;`: a bare
+            # `requireNonNull(x)` uses a member of java.util.Objects.
+            owner, _, member = imported_class_longname.rpartition(".")
+            self.static_members[member] = owner
         if ctx.getText().rstrip(";").endswith(".*"):
             self.wildcard_imports.append(imported_class_longname)
             return
@@ -227,6 +245,9 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
             == "ClassDeclarationContext"
         ):
             self.record_relation("Java Implement Couple", ctx, self.classlongname)
+            if ctx.parentCtx.parentCtx.parentCtx.recordKeyword() is not None:
+                # A record couples to the interfaces it implements as well.
+                self.add(self.resolve_type_longname(ctx))
             return
         bound = self.constrained_parameter(ctx)
         if bound is not None:
@@ -430,7 +451,19 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         parent = ctx.parentCtx
         if type(parent).__name__ != "Expression1Context":
             # A bare `f()` is a call on `this`, which is the enclosing class or
-            # one of its supertypes -- neither is a coupling.
+            # one of its supertypes -- neither is a coupling. Unless it was
+            # statically imported: `requireNonNull(x)` behind `import static
+            # java.util.Objects.requireNonNull` uses a member of
+            # java.util.Objects, and 28 of jenetics' records couple to it.
+            # Only a type Understand can see: `import static org.junit.Assert.*`
+            # names a jar outside the analysed source, and it couples nothing.
+            owner = self.static_members.get(identifier.getText())
+            if owner:
+                from openunderstand.oudb import jdk_index
+                from openunderstand.ounderstand import symbol_table
+
+                if jdk_index.known(owner) or symbol_table.is_project_type(owner):
+                    self.add(owner)
             return
         receiver_ctx = parent.expression()
         if receiver_ctx is None or isinstance(receiver_ctx, list):
@@ -491,6 +524,12 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         so the coarser scope costs nothing.
         """
         self.type_parameters.add(ctx.IDENTIFIER().getText())
+        # An unbounded `<T>` is `<T extends Object>`, and Understand couples
+        # the declaring type to java.lang.Object for it: 31 of jenetics' 69
+        # records, every one generic or holding a generic method. A class never
+        # shows it because Object is an ancestor, which add() excludes.
+        if ctx.EXTENDS() is None:
+            self.add("java.lang.Object")
 
     def enterQualifiedNameList(self, ctx: JavaParserLabeled.QualifiedNameListContext):
         """A `throws` clause couples the class to the exception types.

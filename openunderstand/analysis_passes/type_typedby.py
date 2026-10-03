@@ -236,6 +236,43 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
             scope_longname=".".join(parents),
         )
 
+    def _typed(self, scope_longname, name, type_longname, token, kind=None, scope_kind=None):
+        """One Typed row whose type is already known."""
+        entry = {"kind": kind} if kind else {}
+        if scope_kind:
+            entry["scope_kind"] = scope_kind
+        self.typedBy.append(
+            {
+                **entry,
+                "name": name,
+                "scope_longname": scope_longname,
+                "type_name": type_longname.rsplit(".", 1)[-1],
+                "type_longname": type_longname,
+                "line": token.line,
+                "col": token.column,
+            }
+        )
+
+    def enterEnumDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
+        """Understand types an enum's constants by the enum, at each constant,
+        and its implicit members at the enum's name: values() and valueOf()
+        Typed Implicit the enum, valueOf's `s` Typed Implicit String."""
+        identifier = ctx.IDENTIFIER()
+        enum = ".".join(
+            class_properties.ClassPropertiesListener.findParents(ctx) + [identifier.getText()]
+        )
+        token = identifier.symbol
+        for member in ("values", "valueOf"):
+            self._typed(f"{enum}.{member}", member, enum, token,
+                        kind="Java Typed Implicit", scope_kind="Java Static Method Public Member")
+        self._typed(f"{enum}.valueOf.s", "s", "java.lang.String", token,
+                    kind="Java Typed Implicit", scope_kind="Java Parameter")
+        constants = ctx.enumConstants()
+        for constant in constants.enumConstant() if constants is not None else ():
+            name = constant.IDENTIFIER()
+            self._typed(f"{enum}.{name.getText()}", name.getText(), enum, name.symbol,
+                        scope_kind="Java Variable EnumConstant Public Member")
+
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         """A method is typed by its return type."""
         returns = ctx.typeTypeOrVoid()

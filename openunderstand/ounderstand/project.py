@@ -854,14 +854,22 @@ class Project:
                     _scope=scope,
                 )
 
-            # Definein: kind id 195
+            # A top-level type is defined in its *file*: all 85 of JSON's
+            # point there in Understand's own refs, not at the package that
+            # contains them (the package says so with Java Contain).
+            defined_in = scope
+            if (
+                kind_family(scope._kind_id) == "package"
+                and kind_family(ent._kind_id) != "package"
+            ):
+                defined_in = file_ent
             definein_ref = ReferenceModel.get_or_create(
                 _kind=kind_id("Java Definein" + implicit),
                 _file=file_ent,
                 _line=ref_dict["line"],
                 _column=col_1based(ref_dict["col"]),
                 _scope=ent,
-                _ent=scope,
+                _ent=defined_in,
             )
 
             # Understand marks the extent of every braced declaration with a
@@ -1604,7 +1612,9 @@ class Project:
                 _scope=file_path,
             )
 
-    def add_references(self, importing_ent, imported_ent, cls_data: ClassTypeData):
+    def add_references(
+        self, importing_ent, imported_ent, cls_data: ClassTypeData, file_ent=None
+    ):
         """`class X` implicitly extending java.lang.Object.
 
         The kind is the *External* variant: the supertype lies outside the
@@ -1615,8 +1625,10 @@ class Project:
         The column is Understand's own 0 rather than col_1based(0) = 1 -- it
         positions these on the class's line at no column.
         """
-        # _file is the file the reference occurs in; this was the class entity.
-        file_ent = self.get_parent(cls_data.file_path) or importing_ent
+        # _file is the file the reference occurs in. The caller has it; the
+        # fallback reads cls_data.file_path, which the listener never sets, and
+        # landed on the class entity whenever the lookup missed.
+        file_ent = file_ent or self.get_parent(cls_data.file_path) or importing_ent
         for kind, (ent, scope) in (
             ("Java Extend Couple Implicit External", (imported_ent, importing_ent)),
             ("Java Extendby Coupleby Implicit External", (importing_ent, imported_ent)),
@@ -2475,9 +2487,30 @@ class Project:
         """
         for relation in relations:
             scope = scope_of(relation["scope_longname"], relation.get("line"))
+            wanted = relation.get("scope_kind")
+            if (
+                scope is not None
+                and wanted is not None
+                and kind_family(scope._kind_id) != kind_family(kind_id(wanted))
+            ):
+                # A module and the package it is named after share a long name
+                # (`module com.ex.app` holding `package com.ex.app`): the
+                # module's references belong to the module row, not the package.
+                scope = next(
+                    (
+                        row
+                        for row in entity_rows(relation["scope_longname"])
+                        if kind_family(row._kind_id) == kind_family(kind_id(wanted))
+                    ),
+                    None,
+                )
             if scope is None:
                 scope = EntityModel.get_or_create(
-                    _kind=kind_id("Java Unknown Class Type Member"),
+                    # A pass that knows what the scope is says so: a module is
+                    # declared by the references scoped to it and nothing else.
+                    _kind=kind_id(
+                        relation.get("scope_kind", "Java Unknown Class Type Member")
+                    ),
                     _name=relation["scope_longname"].rsplit(".", 1)[-1],
                     _parent=None,
                     _longname=relation["scope_longname"],

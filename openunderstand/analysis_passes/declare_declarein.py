@@ -12,7 +12,9 @@ class DeclareAndDeclareinListener(JavaParserLabeledListener):
         self.declare = []
 
     def enterCompilationUnit(self, ctx: JavaParserLabeled.CompilationUnitContext):
-        if not ctx.packageDeclaration():  # unnamed package
+        # A file with no `package` line is in the unnamed package -- unless it
+        # is a module-info.java, which declares a module and no package at all.
+        if not ctx.packageDeclaration() and not ctx.moduleDeclaration():
             self.declare.append({"scope": None, "ent": None, "line": 1, "col": 0})
 
     def enterPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):

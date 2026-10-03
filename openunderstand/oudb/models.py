@@ -1108,6 +1108,11 @@ def drop_shadowed_use_refs():
     # *and* v Typed Character, at the same token, and Understand keeps both --
     # 74 positions on jenetics, none on JSON or TheAlgorithms, which have no
     # patterns. They are two facts about two entities, not one fact twice.
+    #
+    # A module's Use is kept too: `provides p.S with p.Impl` is a Use of
+    # p.Impl and a DotRef of p at the same token, and Understand keeps both.
+    # Exempting DotRef everywhere instead added 2,382 false Uses on JSON,
+    # which this project writes beside a DotRef where Understand does not.
     cursor = database.execute_sql("""
         DELETE FROM referencemodel
          WHERE _kind_id IN (SELECT _id FROM kindmodel
@@ -1120,6 +1125,11 @@ def drop_shadowed_use_refs():
                               (SELECT _id FROM kindmodel
                                 WHERE _name IN ('Java Use', 'Java Useby',
                                                 'Java Typed', 'Java Typedby')))
+           AND NOT EXISTS (SELECT 1 FROM entitymodel m
+                            WHERE m._id IN (referencemodel._scope_id,
+                                            referencemodel._ent_id)
+                              AND m._kind_id = (SELECT _id FROM kindmodel
+                                                 WHERE _name = 'Java Module'))
         """)
     return cursor.rowcount if cursor.rowcount and cursor.rowcount > 0 else 0
 
@@ -1256,6 +1266,55 @@ def relabel_nondynamic_calls(file_ids=None):
     return relabelled
 
 
+def retarget_compact_constructor_reads():
+    """Inside a record's compact constructor a component's name is the
+    *parameter*, not the field.
+
+    `record Accuracy(double relative, ...) { public Accuracy { if
+    (Double.isNaN(relative)) ... } }` reads the parameter Accuracy.relative --
+    and the field is also Accuracy.relative, so every pass resolving the name
+    by long name landed on whichever row came first, the field. Understand
+    gives Accuracy a PercentLackOfCohesion of 100 (no method touches a field);
+    with the reads on the field it was 0.
+
+    The constructor that `Define Implicit`s a parameter is the canonical one;
+    its references to the field of that name are moved to the parameter, both
+    halves. Returns the number of rows moved.
+    """
+    flush_reference_writes()
+    database = ReferenceModel._meta.database
+    define_implicit = kind_id("Java Define Implicit")
+    pairs = database.execute_sql(
+        """
+        SELECT r._scope_id, p._id, f._id
+          FROM referencemodel r
+          JOIN entitymodel p ON p._id = r._ent_id
+          JOIN entitymodel f ON f._longname = p._longname AND f._id != p._id
+         WHERE r._kind_id = ?
+        """,
+        (define_implicit,),
+    ).fetchall()
+    moved = 0
+    for constructor, parameter, field in pairs:
+        if kind_family(EntityModel.get_by_id(constructor)._kind_id) != "method":
+            continue
+        if not _parameter_vs_member(
+            EntityModel.get_by_id(parameter)._kind_id,
+            EntityModel.get_by_id(field)._kind_id,
+        ):
+            continue
+        moved += database.execute_sql(
+            "UPDATE referencemodel SET _ent_id = ? WHERE _scope_id = ? AND _ent_id = ?",
+            (parameter, constructor, field),
+        ).rowcount
+        moved += database.execute_sql(
+            "UPDATE referencemodel SET _scope_id = ? WHERE _ent_id = ? AND _scope_id = ?"
+            " AND _kind_id != ?",
+            (parameter, constructor, field, define_implicit),
+        ).rowcount
+    return moved
+
+
 def finalise_analysis(file_ids=None):
     """The project-wide passes that must run after every file has been written.
 
@@ -1284,6 +1343,7 @@ def finalise_analysis(file_ids=None):
         "shadowed_use_dropped": drop_shadowed_use_refs(),
         "external_inverses_dropped": drop_external_inverse_refs(),
         "orphan_placeholders_dropped": drop_orphan_placeholders(),
+        "compact_constructor_reads": retarget_compact_constructor_reads(),
     }
 
 

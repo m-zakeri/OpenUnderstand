@@ -99,9 +99,15 @@ class CastAndCastBy(JavaParserLabeledListener):
         name. The variable itself is a local -- the pattern is spelled as a
         localVariableDeclaration -- so Define, Set Init and Typed come from the
         passes that handle locals."""
-        declaration = ctx.pattern().localVariableDeclaration()
+        pattern = ctx.pattern()
+        declaration = pattern.localVariableDeclaration()
         if declaration is not None:
             self._type_use(ctx, declaration.typeType(), "Java Use")
+        elif pattern.typeType() is not None:
+            # `o instanceof Pair(String l, Integer r)` (Java 21): the record
+            # type is used the same way; its components are patterns of their
+            # own and declare their variables as locals.
+            self._type_use(ctx, pattern.typeType(), "Java Use")
 
     def _type_use(self, ctx, type_ctx, kind):
         from openunderstand.ounderstand import symbol_table

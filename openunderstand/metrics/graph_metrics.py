@@ -359,7 +359,10 @@ def count_class_coupled(ent_model, exclude_standard=False):
     entity = _entity(ent_model)
     if entity is None:
         return 0
-    bases = set(_supertypes(entity._id))
+    # A record's supertypes count: Understand puts Row.of.Columns at 9 with
+    # java.lang.Record and the interface it implements among them.
+    record = "record" in _kind_name(entity._kind_id).lower().split()
+    bases = set() if record else set(_supertypes(entity._id))
 
     coupled = set()
     # `Java Couple` for a real type; `Java Use Constrains Couple` for a type

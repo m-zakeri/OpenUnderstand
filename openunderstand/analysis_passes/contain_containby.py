@@ -48,6 +48,11 @@ class ContainAndContainBy(JavaParserLabeledListener):
         self._record(ctx, "Enum")
 
     def _record(self, ctx, kind):
+        # A package contains its top-level types only. A nested or a local
+        # type -- `record Pair` in a class, `enum Color` in a method -- is
+        # defined in what encloses it, and Understand writes no Contain for it.
+        if not isinstance(ctx.parentCtx, JavaParserLabeled.TypeDeclarationContext):
+            return
         name = ctx.IDENTIFIER().getText()
         line = ctx.IDENTIFIER().symbol.line
         col = ctx.IDENTIFIER().symbol.column

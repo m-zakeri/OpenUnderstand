@@ -32,6 +32,7 @@ def get_files(dirName: str = ""):
 _PASS_NAMES = (
     "type_listener",
     "define_listener",
+    "module_listener",
     "create_listener",
     "lambda_listener",
     "use_variant_listener",

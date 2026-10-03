@@ -241,6 +241,7 @@ class DefineListener(JavaParserLabeledListener):
         decl=None,
         modifiers=(),
         span=None,
+        implicit=False,
     ):
         if ent_name is None:
             ent_name = ent.getText()
@@ -272,6 +273,7 @@ class DefineListener(JavaParserLabeledListener):
                 "ent_longname": ent_longname,
                 "line": line,
                 "col": column,
+                "implicit": implicit,
             }
         )
 
@@ -598,18 +600,26 @@ class DefineListener(JavaParserLabeledListener):
         )
         # values()/valueOf() are compiler-generated statics on every enum.
         # No span: they have no source, and Understand writes no Begin or End
-        # for them -- these carried the enum's own, 8 false rows on JSON.
+        # for them -- these carried the enum's own, 8 false rows on JSON. And
+        # Define *Implicit*, with valueOf's parameter `s` -- 12 Definein
+        # Implicit on JSON's four enums that nothing produced.
+        enum_parents = ent_parents + [ent.getText()]
         for synthetic in ("values", "valueOf"):
             self.add_define_info(
                 ent,
-                ent_parents + [ent.getText()],
+                enum_parents,
                 synthetic,
                 type="Enum",
                 contents=source_text(ctx),
                 decl=K.METHOD,
                 span=None,
                 modifiers=["public", "static"],
+                implicit=True,
             )
+        self.add_define_info(
+            ent, enum_parents + ["valueOf"], "s", type="String",
+            decl=K.PARAMETER, implicit=True,
+        )
 
     def enterFormalParameter(self, ctx: JavaParserLabeled.FormalParameterContext):
         ent = ctx.variableDeclaratorId().IDENTIFIER()
@@ -652,6 +662,20 @@ class DefineListener(JavaParserLabeledListener):
         ent = ctx.IDENTIFIER()
         self.add_define_info(ent, ent_parents, ent_name, decl=K.LAMBDA)
         self.add_define_info(ent, ent_parents + [ent_name], decl=K.PARAMETER)
+
+    def enterLambdaParameters1(self, ctx: JavaParserLabeled.LambdaParameters1Context):
+        """`() -> ...` and `(var a, final var b) -> ...`: the lambda, declared at
+        its opening parenthesis. The parameters, if any, are formalParameters
+        and declared by enterFormalParameter, already under the lambda's scope.
+
+        Nothing declared this shape, so all 35 of JSON's `() -> {...}` lambdas
+        lacked their Define/Definein, and a lambda with `var` parameters kept
+        the placeholder kind the parameters' scope lookup gave it.
+        """
+        ent_parents, ent_name = self._lambda_scope(ctx)
+        if ent_name is None:
+            return
+        self.add_define_info(ctx.start, ent_parents, ent_name, decl=K.LAMBDA)
 
     def enterLambdaParameters2(self, ctx: JavaParserLabeled.LambdaParameters2Context):
         ent_parents, ent_name = self._lambda_scope(ctx)
