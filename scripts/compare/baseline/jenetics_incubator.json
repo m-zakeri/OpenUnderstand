@@ -1,0 +1,41 @@
+{
+  "digested_rows": {
+    "entities": 5125,
+    "kinds": 343,
+    "references": 41912
+  },
+  "digests": {
+    "entities": "d2b3d58ed84e36c5a34894ac44c4fecddd0887786263dd823be1eba986d6ed6c",
+    "kinds": "bae23209d69549c8b4860f7fd18b906aced5d9b518768f1691e6db42a137e9b9",
+    "references": "a851c23869c2e3d6e330a944a335376ef96d1f62348cb9e01e6ed80b473941b5"
+  },
+  "fingerprint": "fab85d8e448a0e7d2c514aeef10677fe92fd4112377391a821a7618f807702dc",
+  "kind_histograms": {
+    "entitymodel": {
+      "9": {
+        "kind": "Java Abstract Generic Class Type Default Member",
+        "n": 1
+      }
+    },
+    "referencemodel": {
+      "238": {
+        "kind": "Java Begin",
+        "n": 1332
+      }
+    }
+  },
+  "row_counts": {
+    "entitymodel": 5125,
+    "kindmodel": 343,
+    "metricmodel": 0,
+    "projectmodel": 1,
+    "referencemodel": 41912
+  },
+  "tables": [
+    "entitymodel",
+    "kindmodel",
+    "metricmodel",
+    "projectmodel",
+    "referencemodel"
+  ]
+}

@@ -81,6 +81,10 @@ causes were:
 
 * a dotted type name such as `Point2D.Double` resolved its head against the
   project only, ignoring imports, and came back half-resolved;
+* `new Point2D.Double(...)` and `(Point2D.Double) p` did not couple
+  `Point2D`, as Understand does when a nested type is named in an expression
+  (a declaration alone does not). jhotdraw's Point2D couples went from 14 of
+  110 to 110 of 110, and Couple from recall 0.936 to 0.948 at precision 0.988;
 * the JDK index held no nested types and no primitive fields;
 * a name supplied by `import static` coupled to nothing;
 * a field read coupled to nothing; only method calls were followed;

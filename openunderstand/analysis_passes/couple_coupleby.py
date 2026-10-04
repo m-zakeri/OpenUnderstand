@@ -521,7 +521,37 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         rest = rest() if callable(rest) else None
         if rest is not None and rest.classBody() is not None:
             return
-        self.add(self.lookup(".".join(i.getText() for i in ctx.IDENTIFIER())))
+        parts = [i.getText() for i in ctx.IDENTIFIER()]
+        self.add(self.lookup(".".join(parts)))
+        self._couple_qualifiers(parts)
+
+    def enterExpression5(self, ctx: JavaParserLabeled.Expression5Context):
+        """`(Point2D.Double) x` -- the cast type itself comes in through
+        enterClassOrInterfaceType; its qualifier is coupled here."""
+        written = ctx.typeType().classOrInterfaceType()
+        if written is not None:
+            self._couple_qualifiers([i.getText() for i in written.IDENTIFIER()])
+
+    def _couple_qualifiers(self, parts):
+        """Couple each *type* qualifying a nested type named in an expression.
+
+        In expression position Understand resolves `Point2D.Double` segment by
+        segment, so `new Point2D.Double(...)` and `(Point2D.Double) p` use
+        java.awt.geom.Point2D too, and the class couples to it. A declaration
+        `Point2D.Double p;` does not: there the qualifier is only a DotRef.
+        That rule reproduces Understand's java.awt.geom.Point2D couples on all
+        110 jhotdraw classes carrying one. A package prefix (`new
+        java.util.ArrayList()`) is skipped: lookup() hands a qualified package
+        name back unchanged, and coupling it put 144 package couples on
+        jhotdraw that Understand does not have.
+        """
+        from openunderstand.oudb import jdk_index
+        from openunderstand.ounderstand import symbol_table
+
+        for end in range(1, len(parts)):
+            owner = self.lookup(".".join(parts[:end]))
+            if owner and (jdk_index.known(owner) or symbol_table.is_project_type(owner)):
+                self.add(owner)
 
     def enterCatchType(self, ctx: JavaParserLabeled.CatchTypeContext):
         """`catch (JSONException e)` -- catchType holds qualifiedNames."""

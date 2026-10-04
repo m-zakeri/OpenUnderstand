@@ -176,7 +176,15 @@ scripts/compare/out/
 openunderstand/gen/java8speedy/.build-cache/
 openunderstand/gen/java8speedy/*.so
 
-scripts
+# scripts/ stays local except the fingerprint baselines and idea_metrics.py,
+# which the plugin build copies into its jar. Git cannot re-include a file
+# under an excluded directory, so each level is excluded by its contents
+# (dir/*) and the path down to the baselines re-included.
+/scripts/*
+!/scripts/idea_metrics.py
+!/scripts/compare/
+/scripts/compare/*
+!/scripts/compare/baseline/
 .claude
 CLAUDE.md
 .DS_Store
