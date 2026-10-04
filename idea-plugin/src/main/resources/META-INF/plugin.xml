@@ -15,6 +15,33 @@
     ]]></description>
 
     <change-notes><![CDATA[
+    <b>0.4.0</b>
+    <ul>
+      <li><b>Java 9 to 25.</b> Records, sealed types and <code>permits</code>,
+          pattern matching for <code>instanceof</code> and <code>switch</code>,
+          record patterns, switch expressions and <code>yield</code>,
+          <code>var</code>, text blocks, local enums and interfaces, and
+          <code>module-info.java</code> are parsed and analysed the way
+          Understand analyses them. Before, a file using any of them failed to
+          parse and showed no metrics at all.</li>
+      <li>On a Java 25 project (jenetics' incubator module) metric macro F1
+          against Understand went from 0.859 to 0.934, and no metric scores
+          lower than before.</li>
+      <li>On Java 8 code nothing got worse and several metrics improved:
+          on the JSON benchmark <code>CountLineCode</code> 0.964 to 0.994,
+          <code>CountDeclMethodPublic</code> 0.955 to 0.982, and
+          <code>PercentLackOfCohesion</code> 0.912 to 0.980.</li>
+      <li><b>Symbol Table</b> and <b>References</b> buttons. The first lists
+          every declared entity with its kind, type, parent and location; the
+          second lists every reference to or from the selected entity, so
+          selecting a row and pressing it again walks the graph.</li>
+      <li>Not supported: Java 25 compact source files (a method with no
+          class around it).</li>
+      <li>Ships analyser 0.5.0. The bundled virtualenv is keyed on the analyser
+          version, so the first <b>Analyse Project</b> after updating builds a
+          fresh one.</li>
+    </ul>
+
     <b>0.3.0</b>
     <ul>
       <li><b>Every metric in the tool window now agrees with SciTools Understand

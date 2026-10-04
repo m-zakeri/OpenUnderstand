@@ -1,6 +1,131 @@
 # Changelog
 
-## Unreleased
+## 0.5.0
+
+### Java 9 to 25 are parsed and analysed
+
+The grammar was Java 8, so a file using a record, a sealed type, a switch
+expression, `var` or a text block failed to parse and contributed nothing. It
+now parses every final language feature from Java 9 to 25, and the analysis
+models each the way Understand does, read off Understand's own database on a
+Java 25 project (jenetics' `jenetics.incubator` module, 173 files) and on a
+hand-written probe of the constructs it does not use.
+
+On that Java 25 project, against Understand:
+
+| | before | after |
+| --- | ---: | ---: |
+| reference recall (harness) | 0.597 | 0.945 |
+| reference precision (harness) | 0.576 | 0.751 |
+| metric F1, macro / micro | 0.859 / 0.886 | 0.934 / 0.933 |
+
+Every metric is at or above where it started on that project.
+
+The grammar was extended rather than replaced, so a Java 8 file parses to
+exactly the tree it always did: 4,164 of the 4,165 Java 8 benchmark files
+compare identical node by node, rule index included, and the one that differs
+is a `module-info.java` that used to fail. Contextual keywords (`record`,
+`sealed`, `permits`, `yield`, `when`, `module`) stay ordinary identifiers, so
+`int record;` still parses, and every new rule sits at the end of the grammar
+because two passes compare rule indices as integers.
+
+What is modelled now:
+
+* **Records**: the record, its component fields, the implicit canonical
+  constructor and its parameters (`Define Implicit`, `Typed Implicit`), the
+  `java.lang.Record` supertype, accessor calls landing on the component, and
+  compact constructors. Understand models the implicit constructor only when
+  the record declares none.
+* **Sealed types** with their kinds and `Permit Couple`.
+* **Pattern variables** in `instanceof` and `switch`, record patterns, and the
+  `Use` of the matched type.
+* **`var`**, typed by its initialiser, so calls on it resolve.
+* **Switch expressions, `yield`, text blocks, local enums and interfaces**.
+* **`module-info.java`**: the module and its `requires`, `exports`, `opens`,
+  `uses` and `provides` directives.
+* **Enum `values()` and `valueOf(String)`** as compiler-generated members.
+
+Not supported: Java 25 compact source files (a method with no class around
+it), because they would make a bare method a valid file and the metrics
+depend on that failing. `import module` parses but cannot be checked:
+Understand 7.0 does not parse it either.
+
+### Call Nondynamic is right for JDK and project callees
+
+`List.of`, `Map.entry` and `Object.getClass` were labelled plain `Call`: the
+JDK index recorded which methods are static or final, but the committed index
+predated that and the loader never read it. It is regenerated from GraalVM
+21.0.2, the JDK the committed copy came from, and is identical line for line
+apart from the new information. Mislabelled JDK calls: 151 to 0 on JSON, 212
+to 1 on jenetics.
+
+A method of a `final` class cannot be overridden either, and Understand labels
+every such call Nondynamic (142 of 142 on jenetics); records and enums keep the
+plain label. Interface methods are now named by what is written rather than
+always public and abstract, which had made static interface methods virtual;
+that alone took `CountDeclMethodPublic` on jenetics from 0.712 to 0.983.
+
+### Coupling, CountInput and cohesion across every fixture
+
+These metrics were tuned on JSON alone. Measured on the other fixtures, the
+causes were:
+
+* a dotted type name such as `Point2D.Double` resolved its head against the
+  project only, ignoring imports, and came back half-resolved;
+* the JDK index held no nested types and no primitive fields;
+* a name supplied by `import static` coupled to nothing;
+* a field read coupled to nothing; only method calls were followed;
+* reading `array.length` was not a read: Understand counts it as one global;
+* `Outer.this.field` and a variable typed by a type parameter resolved to
+  nothing;
+* a write or read inside one of two overloaded constructors was filed under
+  whichever was created first;
+* each lambda a method defines is an input to it, and a method's `Sum*` metrics
+  include its lambdas.
+
+On JSON, `PercentLackOfCohesion` went from 0.912 to 0.980 and nothing got
+worse. On TheAlgorithms `CountInput` went from 0.835 to 0.910 and
+`CountClassCoupled` from 0.703 to 0.740; on jhotdraw `CountClassCoupled` went
+from 0.451 to 0.499 and `CountClassCoupledModified` from 0.495 to 0.624.
+
+### Java 8 defects found along the way
+
+Modern code uses some constructs heavily that JSON barely does, and that is
+what surfaced these. Each is fixed for every fixture:
+
+* a `default` or `static` interface method was not a scope, so its locals were
+  named as the interface's;
+* a generic method's type parameters were scoped to the class;
+* abstract methods and lambdas had no Begin or End reference; JSON's Begin and
+  End now match Understand exactly;
+* `x instanceof T` wrote no `Use` of T (144 of JSON's 145);
+* a top-level type was `Definein` its package instead of its file (85 on JSON);
+* `Contain` was written for nested and local types;
+* a call could resolve to a local variable named like the method;
+* three passes crashed on any record or sealed class, and the `set` writer
+  raised inside enums, silently dropping the rest of the file; JSON now builds
+  with no logged pass failure.
+
+### Symbol table and references in the IDEA plugin and the MCP server
+
+The plugin's tool window has two more buttons. **Symbol Table** lists every
+entity the project declares with its kind, type, parent, file and line.
+**References** lists every reference to or from the selected row's entity, and
+reuses the last analysis rather than re-running it. All three views keep
+Entity, File and Line first, so double-click navigation and CSV export work on
+each. Both come from `scripts/idea_metrics.py --symbols` and `--references`;
+the plugin only displays them.
+
+The MCP server's `list_entities` now returns each entity's type, parent and
+declaring file and line, and `entity_references` each reference's file.
+
+### New benchmark fixtures
+
+`jenetics_incubator` (Java 25) and `java25_probe` (hand-written, one construct
+per file), both fetched by `scripts/fetch_benchmarks.sh`. Against the previous
+recorded figures, harness recall rose on 9 of the 11 existing fixtures and held
+on the other two: ganttproject 0.931 to 0.962, jhotdraw 0.936 to 0.957,
+freemind 0.946 to 0.965, xerces2j 0.934 to 0.951, jfreechart 0.965 to 0.980.
 
 ### An entity's parent is filled in, not fixed by whichever file arrived first
 

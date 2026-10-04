@@ -21,8 +21,8 @@ comparison keyed on the name says nothing.
 
 | | macro | micro |
 | --- | ---: | ---: |
-| F1 | **0.975** | **0.977** |
-| F1 over pairs Understand answers | **0.977** | **0.980** |
+| F1 | **0.978** | **0.978** |
+| F1 over pairs Understand answers | **0.979** | **0.980** |
 
 The two rows used to be far apart, because `Ent.metric()` answered 0
 for every entity while Understand answers only for the kinds a metric
@@ -67,13 +67,15 @@ what is left is genuine disagreement about values.
 | `MaxCyclomatic` | 0.982 | 0.982 | 0.98 | 0.98 | 108 | 110 | 110 |
 | `MaxCyclomaticStrict` | 0.982 | 0.982 | 0.98 | 0.98 | 108 | 110 | 110 |
 | `CountLine` | 0.978 | 0.982 | 0.97 | 0.98 | 1129 | 1158 | 1150 |
+| `CountClassCoupledModified` | 0.981 | 0.981 | 0.98 | 0.98 | 104 | 106 | 106 |
+| `PercentLackOfCohesion` | 0.980 | 0.980 | 0.98 | 0.98 | 100 | 102 | 102 |
 | `CountLineCodeExe` | 0.971 | 0.974 | 0.97 | 0.97 | 1120 | 1158 | 1150 |
 | `MaxEssentialKnots` | 0.969 | 0.973 | 0.97 | 0.97 | 1012 | 1048 | 1040 |
 | `AvgCyclomatic` | 0.973 | 0.973 | 0.97 | 0.97 | 107 | 110 | 110 |
 | `AvgCyclomaticStrict` | 0.973 | 0.973 | 0.97 | 0.97 | 107 | 110 | 110 |
 | `MaxEssential` | 0.973 | 0.973 | 0.97 | 0.97 | 107 | 110 | 110 |
 | `MinEssentialKnots` | 0.968 | 0.972 | 0.96 | 0.97 | 1011 | 1048 | 1040 |
-| `CountClassCoupledModified` | 0.972 | 0.972 | 0.97 | 0.97 | 103 | 106 | 106 |
+| `PercentLackOfCohesionModified` | 0.971 | 0.971 | 0.97 | 0.97 | 99 | 102 | 102 |
 | `CountPath` | 0.966 | 0.969 | 0.96 | 0.97 | 1008 | 1048 | 1040 |
 | `RatioCommentToCode` | 0.966 | 0.966 | 0.97 | 0.97 | 1119 | 1158 | 1158 |
 | `AvgCountLine` | 0.964 | 0.964 | 0.96 | 0.96 | 106 | 110 | 110 |
@@ -84,17 +86,15 @@ what is left is genuine disagreement about values.
 | `SumCyclomaticStrict` | 0.960 | 0.960 | 0.96 | 0.96 | 1112 | 1158 | 1158 |
 | `CountLineCodeDecl` | 0.957 | 0.960 | 0.95 | 0.96 | 1104 | 1158 | 1150 |
 | `SumEssential` | 0.959 | 0.959 | 0.96 | 0.96 | 1111 | 1158 | 1158 |
+| `CountOutput` | 0.953 | 0.957 | 0.95 | 0.96 | 995 | 1048 | 1040 |
 | `MaxCyclomaticModified` | 0.955 | 0.955 | 0.95 | 0.95 | 105 | 110 | 110 |
-| `CountOutput` | 0.949 | 0.953 | 0.95 | 0.95 | 991 | 1048 | 1040 |
 | `CountDeclClassMethod` | 0.945 | 0.945 | 0.95 | 0.95 | 104 | 110 | 110 |
 | `CountDeclInstanceMethod` | 0.945 | 0.945 | 0.95 | 0.95 | 104 | 110 | 110 |
 | `Knots` | 0.941 | 0.944 | 0.94 | 0.94 | 982 | 1048 | 1040 |
 | `SumCyclomaticModified` | 0.944 | 0.944 | 0.94 | 0.94 | 1093 | 1158 | 1158 |
 | `CountDeclMethodAll` | 0.943 | 0.943 | 0.94 | 0.94 | 100 | 106 | 106 |
-| `CountInput` | 0.935 | 0.938 | 0.93 | 0.94 | 976 | 1048 | 1040 |
-| `PercentLackOfCohesion` | 0.912 | 0.912 | 0.91 | 0.91 | 93 | 102 | 102 |
-| `PercentLackOfCohesionModified` | 0.912 | 0.912 | 0.91 | 0.91 | 93 | 102 | 102 |
-| `CountClassCoupled` | 0.906 | 0.906 | 0.91 | 0.91 | 96 | 106 | 106 |
+| `CountInput` | 0.937 | 0.940 | 0.93 | 0.94 | 978 | 1048 | 1040 |
+| `CountClassCoupled` | 0.915 | 0.915 | 0.92 | 0.92 | 97 | 106 | 106 |
 
 ## No Understand value on this fixture
 

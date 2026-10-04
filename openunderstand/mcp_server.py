@@ -143,15 +143,34 @@ def update(paths: list[str], source_root: str = "") -> str:
     return json.dumps({"source_root": root, **summary}, indent=2)
 
 
+def _symbol(ent):
+    """One symbol-table row: identity, and where the project declares it."""
+    parent = ent.parent()
+    row = {
+        "longname": ent.longname(),
+        "kind": ent.kindname(),
+        "type": ent.type(),
+        "parent": parent.longname() if parent else None,
+    }
+    declared = ent.refs("Definein") or ent.refs("Declarein")
+    if declared:
+        row["file"] = declared[0].file().longname()
+        row["line"] = declared[0].line()
+    return row
+
+
 def list_entities(kind: str = "", limit: int = 100) -> str:
-    """Entities in the database, optionally filtered.
+    """Entities in the database, optionally filtered: the symbol table.
+
+    Each row carries the entity's name, kind, type and parent, and the file
+    and line declaring it when the project declares it.
 
     kind: an Understand kind filter -- tokens are ANDed, "~" excludes, ","
           ors. "Class", "Method ~Static" and "Class,Interface" all work.
     """
     db = _require_db()
     ents, _ = _quiet(db.ents, kind or None)
-    rows = [{"longname": e.longname(), "kind": e.kindname()} for e in ents[:limit]]
+    rows = [_symbol(e) for e in ents[:limit]]
     return json.dumps(
         {"total": len(ents), "shown": len(rows), "entities": rows}, indent=2
     )
@@ -176,6 +195,7 @@ def entity_references(longname: str, reference_kind: str = "", limit: int = 100)
             {
                 "kind": ref.kindname(),
                 "entity": target.longname() if target else None,
+                "file": ref.file().longname(),
                 "line": ref.line(),
                 "column": ref.column(),
             }

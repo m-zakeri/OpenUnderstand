@@ -184,8 +184,8 @@ pip install "openunderstand[mcp]"
 {"mcpServers": {"openunderstand": {"command": "openunderstand-mcp"}}}
 ```
 
-Six tools (`analyze`, `open_database`, `list_entities`, `entity_references`,
-`entity_metrics`, `list_kinds`), four resources exposing the kind vocabulary
+Seven tools (`analyze`, `open_database`, `update`, `list_entities`,
+`entity_references`, `entity_metrics`, `list_kinds`), four resources exposing the kind vocabulary
 and metric names, and three prompts (`review_class`, `complexity_hotspots`,
 `trace_callers`) -- so an assistant can analyse a Java project and ask what
 calls what, without knowing the schema. See [docs/mcp.md](https://m-zakeri.github.io/OpenUnderstand/mcp/).
@@ -193,9 +193,9 @@ calls what, without knowing the schema. See [docs/mcp.md](https://m-zakeri.githu
 ## Use it from IntelliJ IDEA
 
 `idea-plugin/` builds a **Java Metrics** tool window: analyse the open project,
-sort by any metric, double-click to jump to the declaration, export CSV. It
-runs the analysis in a Python subprocess and offers to install the package into
-a private virtualenv when it cannot find one.
+sort by any metric, browse the symbol table and any entity's references,
+double-click to jump to the declaration, export CSV. It runs the analysis in a
+Python subprocess, in a private virtualenv it builds and installs itself.
 
 ```bash
 cd idea-plugin && gradle buildPlugin    # then install the zip from disk

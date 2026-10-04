@@ -12,6 +12,8 @@ resource and runs in a virtualenv the plugin builds for itself.
 | Button | Does |
 | --- | --- |
 | Analyse Project | Runs the analysis over the project root and fills the table |
+| Symbol Table | Lists every entity the project declares: name, kind, type, parent and where |
+| References | Lists every reference to or from the selected row's entity |
 | Export CSV... | Writes the table to a file, in analysis order |
 
 One column per metric `Ent.metrics()` reports -- around 70 of Understand's
@@ -19,6 +21,15 @@ names, whichever the library implements -- so the table scrolls sideways.
 Columns are sortable, and double-clicking a row opens the declaration. Classes
 and methods are listed together, so class-only metrics such as
 `CountDeclMethod` and `PercentLackOfCohesion` read 0 on every method row.
+
+Every view starts with Entity, File and Line, so double-click navigation and
+CSV export work the same on all three. References reads the selected row's
+Entity, and a references row's Entity is the entity at the other end, so
+selecting one and pressing References again walks the graph a hop at a time.
+References reuses the database the last analysis left rather than re-analysing.
+
+`scripts/idea_metrics.py --symbols <dir>` and `--references <dir> <longname>`
+print the same two views as tab-separated rows.
 
 Passing metric names as arguments to `scripts/idea_metrics.py` narrows the set;
 the plugin passes none.
