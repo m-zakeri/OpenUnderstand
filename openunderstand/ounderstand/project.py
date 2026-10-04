@@ -15,6 +15,7 @@ from openunderstand.oudb.models import (
     entity_rows,
     resolve_entity_ref,
     kind_family,
+    invocation_is_nondynamic,
 )
 from openunderstand.analysis_passes.class_properties_simple import (
     ClassPropertiesListener,
@@ -988,12 +989,18 @@ class Project:
                     # old behaviour was to write nothing, which is what left
                     # 299 methods short of a callee and CountOutput at 0.65.
                     ent = self._unresolved_external_method(name, file_ent)
-            if ent._id == scope._id:
+            # `this(...)` resolving to the constructor it sits in is a real
+            # call to Understand: a record declaring `R()` has no implicit
+            # canonical constructor, so `this(limit)` there names R.R itself.
+            explicit = ref_dict.get("constructor_invocation")
+            if ent._id == scope._id and not explicit:
                 continue
+            nondynamic = explicit and invocation_is_nondynamic(ent)
+            suffix = " Nondynamic" if nondynamic else ""
 
             for kind, (a, b) in (
-                ("Java Call", (ent, scope)),
-                ("Java Callby", (scope, ent)),
+                ("Java Call" + suffix, (ent, scope)),
+                ("Java Callby" + suffix, (scope, ent)),
             ):
                 ReferenceModel.get_or_create(
                     _kind=kind_id(kind),

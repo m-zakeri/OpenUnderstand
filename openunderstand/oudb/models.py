@@ -1191,6 +1191,20 @@ def _declared_in_final_class(entity):
     return "final" in tokens and "class" in tokens and not {"record", "enum"} & tokens
 
 
+def invocation_is_nondynamic(constructor):
+    """Whether `this(...)`/`super(...)` naming `constructor` is Call Nondynamic.
+
+    Understand labels such a call Nondynamic when the target is private or its
+    class is final (not a record or an enum) -- the rule for methods. Read off
+    jenetics: 5 of 5 such calls, and none of the 33 others. `new X(...)` is a
+    plain Call whatever X is, which is why relabel_nondynamic_calls() leaves
+    constructors alone and the call writer applies this instead.
+    """
+    if "private" in _kind_name(constructor._kind_id).lower().split():
+        return True
+    return _declared_in_final_class(constructor)
+
+
 def relabel_nondynamic_calls(file_ids=None):
     """Split Java Call into Call/Call Nondynamic once targets are known.
 

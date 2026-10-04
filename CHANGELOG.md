@@ -44,6 +44,10 @@ What is modelled now:
 * **`module-info.java`**: the module and its `requires`, `exports`, `opens`,
   `uses` and `provides` directives.
 * **Enum `values()` and `valueOf(String)`** as compiler-generated members.
+* **Cyclomatic on the new switch forms**, as Understand counts them: a
+  `case X ->` in a switch statement counts as `case X:` does, and a switch
+  expression adds nothing in either form. Arrow cases used to count 0 and the
+  labels of a colon-form switch expression 1 each.
 
 Not supported: Java 25 compact source files (a method with no class around
 it), because they would make a bare method a valid file and the metrics
@@ -64,6 +68,11 @@ every such call Nondynamic (142 of 142 on jenetics); records and enums keep the
 plain label. Interface methods are now named by what is written rather than
 always public and abstract, which had made static interface methods virtual;
 that alone took `CountDeclMethodPublic` on jenetics from 0.712 to 0.983.
+
+`this(...)` and `super(...)` follow the same rule: Nondynamic when the target
+constructor is private or its class is final, while `new X(...)` stays a plain
+Call. All 38 such calls on jenetics now carry Understand's label, and 46 of
+48 on JSON (Understand leaves the other two unresolved).
 
 ### Coupling, CountInput and cohesion across every fixture
 
