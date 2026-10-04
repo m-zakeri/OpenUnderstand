@@ -616,7 +616,10 @@ class DefineListener(JavaParserLabeledListener):
                 enum_parents,
                 synthetic,
                 type="Enum",
-                contents=source_text(ctx),
+                # No source of their own -- the enum's was stored, which made
+                # each score Cyclomatic 1 where Understand answers nothing and
+                # put the enum's SumCyclomatic at 2 against its 0.
+                contents="",
                 decl=K.METHOD,
                 span=None,
                 modifiers=["public", "static"],

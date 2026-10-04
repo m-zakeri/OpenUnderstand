@@ -548,14 +548,18 @@ class Project:
     def addSetRefs(self, d, file_ent, stream: str = ""):
 
         for type_tuple in d:
-            par = EntityModel.get(_name=type_tuple[7])
+            # get_or_none, as in addSetInitRefs: [7] is the enclosing method's
+            # simple name, empty inside an enum, and get() raised there --
+            # dropping every Set after it in the file (JSON's MyEnumField,
+            # jfreechart's Rotation and DateTickUnitType).
+            par = EntityModel.get_or_none(_name=type_tuple[7])
             scope_longname = type_tuple[11]
             simple_name = str(type_tuple[0]).rsplit(".", 1)[-1]
             resolve_scope = type_tuple[12]
             ent, h_c1 = EntityModel.get_or_create(
                 # was the reference kind Java Set, written into an entity row; the variable being set
                 _kind=kind_id("Java Unknown Variable Member"),
-                _parent=par._id,
+                _parent=par._id if par is not None else None,
                 _name=simple_name,
                 _longname=resolved_longname(
                     simple_name, resolve_scope + "." + simple_name, resolve_scope
@@ -565,7 +569,7 @@ class Project:
                 _contents="",
             )
 
-            scope, h_c2 = EntityModel.get_or_create(
+            scope, h_c2 = self._scope_at(type_tuple[4],
                 # was the reference kind Java Setby, written into an entity row; the setting scope
                 _kind=kind_id("Java Unknown Method Member"),
                 _parent=None,
@@ -594,6 +598,21 @@ class Project:
                 _scope=ent,
             )
 
+    @staticmethod
+    def _scope_at(line, **fields):
+        """The method a reference at `line` sits in, overloads told apart.
+
+        Overloads -- two constructors of ParserConfiguration -- share a long
+        name, and asking by name alone filed both constructors' writes and
+        reads under whichever row was created first: one user of each field
+        instead of two, PercentLackOfCohesion 56 against Understand's 44.
+        scope_of() picks the declaration enclosing the line.
+        """
+        found = scope_of(fields["_longname"], line)
+        if found is not None:
+            return found, False
+        return EntityModel.get_or_create(**fields)
+
     def addSetInitRefs(self, d, file_ent, stream: str = ""):
         for type_tuple in d:
             # get_or_none: [7] is the enclosing method's *simple* name, which
@@ -611,7 +630,7 @@ class Project:
                 _contents="",
             )
 
-            scope, h_c2 = EntityModel.get_or_create(
+            scope, h_c2 = self._scope_at(type_tuple[5],
                 # was the reference kind Java Setby Init, written into an entity row; the setting scope
                 _kind=kind_id("Java Unknown Method Member"),
                 _parent=None,
@@ -656,7 +675,7 @@ class Project:
                 _contents="",
             )
 
-            scope, h_c2 = EntityModel.get_or_create(
+            scope, h_c2 = self._scope_at(ref_dict["line"],
                 # was the reference kind Java Setby Partial, written into an entity row; the setting scope
                 _kind=kind_id("Java Unknown Method Member"),
                 _parent=None,
@@ -712,7 +731,7 @@ class Project:
                 _contents=stream,
             )
 
-            scope, h_c2 = EntityModel.get_or_create(
+            scope, h_c2 = self._scope_at(use["line"],
                 # The method (or class) the read sits in.
                 _kind=kind_id("Java Unknown Method Member"),
                 _parent=None,

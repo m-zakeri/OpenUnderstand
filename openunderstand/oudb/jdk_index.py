@@ -86,7 +86,10 @@ def _load() -> dict:
                 # interface.
                 "superclass": superclass,
             }
-            by_simple.setdefault(longname.rsplit(".", 1)[-1], []).append(longname)
+            if "N" not in flags:
+                # A nested type is named through its outer type or an explicit
+                # import, never by its bare simple name.
+                by_simple.setdefault(longname.rsplit(".", 1)[-1], []).append(longname)
     return {"types": types, "by_simple": by_simple}
 
 
@@ -144,7 +147,11 @@ def is_interface(longname: str) -> bool:
 def field_type(owner: str, field: str) -> str | None:
     """Declared type of a JDK type's public field -- `System.out` is a PrintStream."""
     entry = _load()["types"].get(owner)
-    return entry["fields"].get(field) if entry else None
+    declared = entry["fields"].get(field) if entry else None
+    # Primitive fields are indexed so a read can find the type declaring them
+    # (`JSlider.HORIZONTAL` is SwingConstants'), but a primitive names no type
+    # entity: answering `int` here put 162 couples to `int` on jhotdraw.
+    return declared if declared and "." in declared else None
 
 
 def members(longname: str) -> dict:
@@ -164,7 +171,7 @@ def supertypes(longname: str) -> list:
     return entry["supers"] if entry else []
 
 
-def declaring_type(longname: str, member: str) -> str | None:
+def declaring_type(longname: str, member: str, fields: bool = False) -> str | None:
     """The type in `longname`'s hierarchy that declares `member`.
 
     Understand attributes a call to the class that declares the method, not to
@@ -186,7 +193,7 @@ def declaring_type(longname: str, member: str) -> str | None:
         entry = types.get(current)
         if entry is None:
             continue
-        if member in entry["methods"]:
+        if member in entry["methods"] or (fields and member in entry["fields"]):
             return current
         pending.extend(entry["supers"])
     return None

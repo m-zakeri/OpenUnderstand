@@ -50,6 +50,7 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         #: Supertypes of the open frame's class, which are never couplings.
         self.ancestors = {"java.lang.Object"}
         self.static_members = {}
+        self.static_wildcards = []
 
     def set_file(self, filex):
         self.file = filex
@@ -173,11 +174,19 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
 
     def enterImportDeclaration(self, ctx: JavaParserLabeled.ImportDeclarationContext):
         imported_class_longname = ctx.qualifiedName().getText()
-        if ctx.STATIC() is not None and not ctx.getText().rstrip(";").endswith(".*"):
-            # `import static java.util.Objects.requireNonNull;`: a bare
-            # `requireNonNull(x)` uses a member of java.util.Objects.
-            owner, _, member = imported_class_longname.rpartition(".")
-            self.static_members[member] = owner
+        if ctx.STATIC() is not None:
+            # A static import brings members, not types. `import static
+            # ...AttributeKeys.TRANSFORM;` used to land in the type map, so a
+            # bare TRANSFORM was "resolved" as a type and coupled to the field
+            # itself; the class declaring it was never coupled at all.
+            if ctx.getText().rstrip(";").endswith(".*"):
+                self.static_wildcards.append(imported_class_longname)
+                # Static nested types come in through it as well.
+                self.wildcard_imports.append(imported_class_longname)
+            else:
+                owner, _, member = imported_class_longname.rpartition(".")
+                self.static_members[member] = owner
+            return
         if ctx.getText().rstrip(";").endswith(".*"):
             self.wildcard_imports.append(imported_class_longname)
             return
@@ -373,9 +382,18 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         receiver = ctx.expression().getText()
         if not receiver.isidentifier():
             return
-        owner = self.lookup_receiver(receiver)
+        owner = self.lookup_receiver(receiver, ctx)
         self.add(owner)
         self.add(self.field_type(owner, ctx))
+        # The type that *declares* the member read, when it is not the
+        # receiver: `JSlider.HORIZONTAL` is javax.swing.SwingConstants'.
+        member = ctx.IDENTIFIER()
+        if owner and member is not None:
+            from openunderstand.ounderstand import symbol_table
+
+            self.add(
+                symbol_table.declaring_type_anywhere(owner, member.getText(), fields=True)
+            )
 
     @staticmethod
     def field_type(owner, ctx):
@@ -396,8 +414,9 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
             return None
         return symbol_table.JDK_FIELD_TYPES.get((owner, member.getText()))
 
-    def lookup_receiver(self, name):
+    def lookup_receiver(self, name, ctx=None):
         """Long name if `name` denotes a type, else None. No guessing."""
+        from openunderstand.oudb import jdk_index
         from openunderstand.ounderstand import symbol_table
 
         if not name or name in self.type_parameters:
@@ -411,6 +430,16 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
             return in_project
         if name in symbol_table.JAVA_LANG_TYPES:
             return "java.lang." + name
+        # `Color.WHITE` behind `import java.awt.*`: a wildcard import places a
+        # JDK type -- but only once the name is shown not to be a variable,
+        # which is what a receiver usually is.
+        if ctx is not None and self.wildcard_imports and name[:1].isupper():
+            try:
+                if self.binder(ctx).name_type(name, ctx):
+                    return None
+            except Exception:
+                return None
+            return jdk_index.resolve_simple(name, tuple(self.wildcard_imports))
         return None
 
     def binder(self, ctx):
@@ -455,15 +484,9 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
             # statically imported: `requireNonNull(x)` behind `import static
             # java.util.Objects.requireNonNull` uses a member of
             # java.util.Objects, and 28 of jenetics' records couple to it.
-            # Only a type Understand can see: `import static org.junit.Assert.*`
-            # names a jar outside the analysed source, and it couples nothing.
-            owner = self.static_members.get(identifier.getText())
+            owner = self._static_owner(identifier.getText())
             if owner:
-                from openunderstand.oudb import jdk_index
-                from openunderstand.ounderstand import symbol_table
-
-                if jdk_index.known(owner) or symbol_table.is_project_type(owner):
-                    self.add(owner)
+                self.add(owner)
             return
         receiver_ctx = parent.expression()
         if receiver_ctx is None or isinstance(receiver_ctx, list):
@@ -513,6 +536,50 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
             return
         if keyname not in self.couplebyrefrences:
             self.couplebyrefrences.append(keyname)
+
+    def _static_owner(self, name):
+        """The type a bare `name` comes from through a static import, or None.
+
+        Only a type Understand can see -- `import static org.junit.Assert.*`
+        names a jar outside the analysed source, and it couples nothing -- and,
+        for a wildcard, only one that actually declares `name`.
+        """
+        from openunderstand.oudb import jdk_index
+        from openunderstand.ounderstand import symbol_table
+
+        def visible(owner):
+            return jdk_index.known(owner) or symbol_table.is_project_type(owner)
+
+        owner = self.static_members.get(name)
+        if owner:
+            return owner if visible(owner) else None
+        for owner in self.static_wildcards:
+            if not visible(owner):
+                continue
+            if symbol_table.INDEX.declares(owner, name):
+                return owner
+            entry = jdk_index._load()["types"].get(owner)
+            if entry and (name in entry["fields"] or name in entry["methods"]):
+                return owner
+        return None
+
+    def enterPrimary4(self, ctx: JavaParserLabeled.Primary4Context):
+        """A bare name read through a static import -- `FILL_COLOR.get(f)`
+        behind `import static ...AttributeKeys.*` -- uses a member of the type
+        declaring it: 51 of jhotdraw's classes couple to AttributeKeys this
+        way and nothing here saw it. A local, a parameter or a field in scope
+        shadows the import, so those are asked about first."""
+        if not self.stack or not (self.static_members or self.static_wildcards):
+            return
+        name = ctx.IDENTIFIER().getText()
+        try:
+            if self.binder(ctx).name_type(name, ctx):
+                return
+        except Exception:
+            return
+        owner = self._static_owner(name)
+        if owner:
+            self.add(owner)
 
     def enterTypeParameter(self, ctx: JavaParserLabeled.TypeParameterContext):
         """`<E>` declares a name that looks like a type but denotes none.

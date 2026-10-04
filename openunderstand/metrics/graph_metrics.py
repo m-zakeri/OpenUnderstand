@@ -612,6 +612,15 @@ def count_input(ent_model):
     }
     fan.discard(entity._id)  # a recursive call is not an input
     fan |= _fan_targets(entity._id, _use_kind_names(), entity._longname)
+    # Each lambda a method defines is one more input: on all 23 of JSON's
+    # methods holding lambdas, Understand's value exceeds callers + reads by
+    # exactly the number of lambdas they define (1, 2 or 4), and by 0 on
+    # every method holding none.
+    fan |= {
+        t._id
+        for t in _targets(entity._id, "Java Define", "method")
+        if "(lambda_expr_" in (t._longname or "")
+    }
     return len(fan)
 
 
@@ -758,6 +767,29 @@ def nested_methods(ent_model):
     if family != "type":
         return []
     return _declares(entity._id, "method")
+
+
+def nested_lambdas(entity_id):
+    """Lambdas defined inside an entity, through nested lambdas too.
+
+    Understand's Sum* for a method is the method plus its lambdas --
+    `Impl.name` holding two is SumCyclomatic 3 -- and a class's is the same
+    over every method it declares.
+    """
+    out, pending, seen = [], [entity_id], set()
+    while pending:
+        current = pending.pop()
+        if current in seen:
+            continue
+        seen.add(current)
+        for target in _targets(current, "Java Define", "method"):
+            if "lambda" in _kind_name(target._kind_id).lower().split() or (
+                (target._longname or "").endswith(")")
+                and "(lambda_expr_" in (target._longname or "")
+            ):
+                out.append(target)
+                pending.append(target._id)
+    return out
 
 
 def aggregates_over_methods(name):

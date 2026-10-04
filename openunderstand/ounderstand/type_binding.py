@@ -310,11 +310,40 @@ class TypeBinder:
                     # qualified, which every caller's resolve passes through.
                     return self._var_type(node, name)
                 if declared:
-                    return declared
+                    return self._bound_of(declared, ctx) or declared
             elif kind.startswith(_TYPE_DECLARATION):
                 declared = self._own_fields(node).get(name)
                 if declared:
                     return declared
+            node = node.parentCtx
+        return None
+
+    def _bound_of(self, written, ctx):
+        """A type parameter's bound, or None when `written` is no type
+        parameter in scope.
+
+        `<T extends ParserConfiguration> T withKeepStrings(...) { T newConfig
+        = ...; newConfig.keepStrings = v; }` sets ParserConfiguration's field;
+        typed only as `T`, the write was lost, and with it a user of the field
+        in PercentLackOfCohesion. An unbounded parameter is java.lang.Object.
+        """
+        simple = written.split("<")[0].split("[")[0]
+        if not simple.isidentifier():
+            return None
+        node = ctx
+        while node is not None:
+            for owner in (node, getattr(node, "parentCtx", None)):
+                getter = getattr(owner, "typeParameters", None)
+                declared = getter() if callable(getter) else None
+                if declared is None or isinstance(declared, list):
+                    continue
+                for parameter in declared.typeParameter():
+                    if parameter.IDENTIFIER().getText() != simple:
+                        continue
+                    bound = parameter.typeBound()
+                    if bound is not None and bound.typeType():
+                        return bound.typeType(0).getText().split("<")[0]
+                    return "Object"
             node = node.parentCtx
         return None
 

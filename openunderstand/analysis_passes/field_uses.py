@@ -89,6 +89,15 @@ class FieldUseListener(JavaParserLabeledListener):
     ):
         self.local_types = declared_types.collect(ctx)
 
+    @staticmethod
+    def _declares_length(owner):
+        """Whether `owner` (project or JDK) has a field named `length`."""
+        from openunderstand.ounderstand import symbol_table
+
+        return bool(owner) and symbol_table.declaring_type_anywhere(
+            owner, "length", fields=True
+        ) is not None and symbol_table.member_type(owner, "length") is not None
+
     def _owner(self, receiver, scope_longname):
         """Long name of the type whose member `receiver.x` names, or None."""
         from openunderstand.ounderstand import symbol_table
@@ -97,6 +106,14 @@ class FieldUseListener(JavaParserLabeledListener):
             return None
         if receiver == "this":
             return self.enclosing_type or None
+        if receiver.endswith(".this"):
+            # `DynamicArray.this.size` -- an inner class reading its outer
+            # instance's field. Split as type `DynamicArray` plus a field named
+            # `this`, it resolved to nothing, and every such read was lost
+            # (TheAlgorithms' DynamicArrayIterator: CountInput 2 against 4).
+            return symbol_table.resolve_type_name(
+                receiver[: -len(".this")], self.imports, self.wildcards, scope_longname
+            )
         head, _, field = receiver.partition(".")
         if not head.isidentifier() or (field and not field.isidentifier()):
             return None
@@ -123,6 +140,26 @@ class FieldUseListener(JavaParserLabeledListener):
             return
         scope = ".".join(parents)
         owner = self._owner(receiver.getText(), scope)
+        if identifier.getText() == "length" and not self._declares_length(owner):
+            # `x.length` with no parentheses is an array's length unless x's
+            # type has a field of that name. Understand models it as one
+            # global implicit entity, bare `length`, and reading it counts
+            # toward CountInput -- one of TheAlgorithms' commonest misses, a
+            # method short by exactly one. The kind is concrete, so
+            # merge_placeholder_entities() never folds the bare name.
+            token = identifier.symbol
+            self.relations.append(
+                {
+                    "kind": "Java Use",
+                    "scope_longname": scope,
+                    "ent_longname": "length",
+                    "ent_kind": "Java Implicit Final Variable Public Member",
+                    "name": "length",
+                    "line": token.line,
+                    "col": token.column,
+                }
+            )
+            return
         if not owner or "." not in owner:
             # Never a bare simple name: merge_placeholder_entities() would fold
             # it into whichever project entity happens to share it.

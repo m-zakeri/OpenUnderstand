@@ -1360,9 +1360,30 @@ class Ent:
         """
         base = graph_metrics.METHOD_SUMMARY[name]
         if _metric_family(self.kindname()) == "method":
-            return None if base == name else self.metric([base]).get(base)
+            if base == name:
+                return None
+            own = self.metric([base]).get(base)
+            if not name.startswith("Sum"):
+                return own
+            if not isinstance(own, (int, float)):
+                # A method with no source -- an enum's values() -- has no
+                # Cyclomatic, and Understand sums it as 0.
+                own = 0
+            # A method's Sum includes the lambdas inside it.
+            for row in graph_metrics.nested_lambdas(self._id):
+                value = Ent(**row.__dict__.get("__data__")).metric([base]).get(base)
+                if isinstance(value, (int, float)):
+                    own += value
+            return own
         values = []
-        for row in graph_metrics.nested_methods(self):
+        members = list(graph_metrics.nested_methods(self))
+        # A class's methods, plus their lambdas. A package's list already
+        # holds every lambda -- it is built from all the Define refs in its
+        # files -- so adding them again counted each twice.
+        if name.startswith("Sum") and _metric_family(self.kindname()) != "package":
+            for row in list(members):
+                members += graph_metrics.nested_lambdas(row._id)
+        for row in members:
             method = Ent(**row.__dict__.get("__data__"))
             # Only methods with a body. An interface's single abstract method
             # has no statements to average, and Understand answers 0 for every
@@ -1436,11 +1457,21 @@ class Ent:
                     ],
                 )
             metric_list = [m for m in metric_list if m not in metrics]
+        # A compiler-generated method -- an enum's values()/valueOf() -- has no
+        # source. Understand answers nothing for it, and 0 to a sum.
+        generated = (
+            _metric_family(self.kindname()) == "method"
+            and not (self.contents() or "").strip()
+            and not metric_context._LAMBDA_NAME.search(self.longname() or "")
+        )
         for item in metric_list:
             # The docstring promises None for a metric this entity has no
             # value for -- unrecognised, or not defined on its kind.
             if item not in known:
                 metrics[item] = None
+                continue
+            if generated:
+                metrics[item] = 0 if item.startswith("Sum") else None
                 continue
             if item in _BODYLESS_ZERO and bodyless:
                 metrics[item] = 0

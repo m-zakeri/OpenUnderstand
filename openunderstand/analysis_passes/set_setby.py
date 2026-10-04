@@ -127,7 +127,7 @@ class SetAndSetByListener(JavaParserLabeledListener):
             # pass stopped at the first member.
             parents = class_properties.ClassPropertiesListener.findParents(ctx)
             owner = self.owner_of_member(
-                receiver.split(".")[0].split("[")[0], ".".join(parents)
+                receiver.split(".")[0].split("[")[0], ".".join(parents), ctx
             )
             for hop in receiver.split(".")[1:]:
                 if owner is None:
@@ -157,7 +157,7 @@ class SetAndSetByListener(JavaParserLabeledListener):
         if not hasattr(member, "symbol"):
             return  # `a.foo() = ...` cannot occur, but be safe
         parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        owner = self.owner_of_member(receiver, ".".join(parents))
+        owner = self.owner_of_member(receiver, ".".join(parents), ctx)
         if owner is None:
             return  # receiver's type is unknown: no guess
         self.add_set_by_entry(
@@ -174,10 +174,28 @@ class SetAndSetByListener(JavaParserLabeledListener):
         """Simple name of `name`'s declared type: a local first, then a field."""
         return self.local_types.get(name) or self.field_types.get(name)
 
-    def owner_of_member(self, receiver, scope_longname):
+    def owner_of_member(self, receiver, scope_longname, ctx=None):
         """Long name of the class declaring the member accessed on `receiver`."""
         from openunderstand.ounderstand import symbol_table
 
+        if ctx is not None:
+            # The resolved-type table first: it knows a type parameter's bound
+            # and `var`, which this pass's own ladder does not.
+            try:
+                from openunderstand.ounderstand.type_binding import TypeBinder
+
+                if getattr(self, "_binder", None) is None:
+                    root = ctx
+                    while root.parentCtx is not None:
+                        root = root.parentCtx
+                    self._binder = TypeBinder(root)
+                written = self._binder.name_type(receiver, ctx)
+                if written:
+                    owner = self._binder._resolve(written.split("[")[0], scope_longname)
+                    if owner:
+                        return owner
+            except Exception:
+                pass
         type_name = self.declared_type(receiver)
         if not type_name:
             # `ColumnarTranspositionCipher.keyword = x` -- the receiver is a
