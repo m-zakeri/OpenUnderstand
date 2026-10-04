@@ -1166,10 +1166,40 @@ line in a <code>.txt</code> file silently repointed them all.</p>
 carrying <strong>114 custom labelled alternatives</strong> (<code>#classBodyDeclaration0</code>,
 <code>#memberDeclaration3</code>, <code>#blockStatement1</code>, ...). Those labels generate the context
 classes every pass references.</p>
-<p>It is <strong>Java 8</strong>: no records, sealed types, <code>var</code>, text blocks or <code>yield</code>.
-Upstream's current grammar handles Java 21 and is backward-compatible with
-Java 8 source, but it has only 27 labels and different ones -- adopting it means
-rewriting every listener. Treat a grammar swap as a project.</p>
+<p><strong>It parses Java 9-25, added onto the Java 8 grammar rather than swapped for
+upstream's</strong>, so a Java 8 file parses to exactly the tree it always did: 4,164
+of the 4,165 benchmark files compare identical node by node, rule index
+included, and the JSON and calculator_app databases are byte-identical before
+and after. The exception is jfreechart's <code>module-info.java</code>, which used to fail.
+A record parses as a second alternative of <code>classDeclaration</code> and a type
+pattern as a <code>localVariableDeclaration</code>, so the passes handle both largely
+unchanged; <code>CLAUDE.md</code> lists what Understand does with each construct.</p>
+<p>Four rules keep it that way, and each came from something that broke:</p>
+<ul>
+<li><strong>Add, never reshape.</strong> New syntax goes in new rules or new labelled
+  alternatives. A rule that gains a <em>second</em> reference to something
+  (<code>IDENTIFIER</code>, <code>typeList</code>, ...) turns its accessor into a list, and every
+  <code>ctx.IDENTIFIER().getText()</code> on it breaks.</li>
+<li><strong>Define every new rule at the end of the file.</strong> A rule's index is its
+  position, and <code>set_setby</code> and <code>setinit_setinitby</code> compare <code>getRuleIndex()</code>
+  against integers. Inserting rules mid-file broke <code>test_set_pass</code>.</li>
+<li><strong>Contextual keywords stay IDENTIFIER tokens</strong>, matched by text in a semantic
+  predicate, so <code>int record;</code> still parses and no token id moves
+  (<code>metrics/line_of_code.py</code> compares raw token ids 109/110). Predicates are
+  Python; <code>java8speedy/build.py</code> rewrites them for C++ and refuses any it
+  cannot. Wrap a compound one in parentheses: the Python target writes
+  <code>if not &lt;predicate&gt;:</code>.</li>
+<li><strong>A bare method must stay unparseable.</strong> <code>metrics/context.py</code> parses a
+  method's own source and wraps it in a class only when that fails. Java 25
+  compact source files would make it succeed, so they are not supported;
+  <code>tests/test_grammar_java25.py</code> guards it.</li>
+</ul>
+<p>Prove a grammar change with the tree comparison (old and new generated parser
+over every benchmark file) <em>and</em> the fingerprint: the first catches a changed
+tree, only the second caught the rule-index dependency.</p>
+<p>Upstream's current grammar targets Java 24, but it has only 27 labels and
+different ones, so adopting it means rewriting every listener. Extending this
+one is the cheaper path.</p>
 <p>Regenerate after editing a <code>.g4</code> (the runtime pin in <code>requirements.txt</code> must
 match the tool version):</p>
 <pre><code class="language-bash">java -jar antlr-4.13.2-complete.jar -Dlanguage=Python3 -o OUT grammars/JavaLexer.g4

@@ -731,6 +731,14 @@ resource and runs in a virtualenv the plugin builds for itself.</p>
 <td>Runs the analysis over the project root and fills the table</td>
 </tr>
 <tr>
+<td>Symbol Table</td>
+<td>Lists every entity the project declares: name, kind, type, parent and where</td>
+</tr>
+<tr>
+<td>References</td>
+<td>Lists every reference to or from the selected row's entity</td>
+</tr>
+<tr>
 <td>Export CSV...</td>
 <td>Writes the table to a file, in analysis order</td>
 </tr>
@@ -741,6 +749,13 @@ names, whichever the library implements -- so the table scrolls sideways.
 Columns are sortable, and double-clicking a row opens the declaration. Classes
 and methods are listed together, so class-only metrics such as
 <code>CountDeclMethod</code> and <code>PercentLackOfCohesion</code> read 0 on every method row.</p>
+<p>Every view starts with Entity, File and Line, so double-click navigation and
+CSV export work the same on all three. References reads the selected row's
+Entity, and a references row's Entity is the entity at the other end, so
+selecting one and pressing References again walks the graph a hop at a time.
+References reuses the database the last analysis left rather than re-analysing.</p>
+<p><code>scripts/idea_metrics.py --symbols &lt;dir&gt;</code> and <code>--references &lt;dir&gt; &lt;longname&gt;</code>
+print the same two views as tab-separated rows.</p>
 <p>Passing metric names as arguments to <code>scripts/idea_metrics.py</code> narrows the set;
 the plugin passes none.</p>
 <h2 id="the-interpreter">The interpreter</h2>

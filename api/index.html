@@ -1424,8 +1424,13 @@ opposite ends.</p>
   declaration position, so they are separate entities here too.</li>
 <li><strong>External types are not resolved.</strong> No JDK or third-party jars are analysed,
   so <code>java.lang.String</code> exists as an unresolved entity with no members.</li>
-<li><strong>Java 8 only.</strong> The grammar predates records, sealed types, <code>var</code>, text
-  blocks and <code>yield</code>. Files using them fail to parse and contribute nothing.</li>
+<li><strong>Java 9-25 is analysed, measured against Understand.</strong> Records, sealed
+  types and <code>permits</code>, pattern variables and record patterns, <code>var</code> (including
+  lambda parameters), switch expressions, local enums and interfaces, and
+  <code>module-info.java</code> are modelled the way Understand models them, checked on
+  jenetics' incubator module and a hand-written probe. Java 25 compact source
+  files (top-level methods) do not parse; <code>import module</code> parses but cannot be
+  checked, because Understand 7.0 itself does not parse it.</li>
 <li><strong>Coverage is partial.</strong> <a href="../parity/">Parity</a> reports exactly how partial,
   per kind, against the real tool.</li>
 </ul>

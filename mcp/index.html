@@ -762,11 +762,11 @@ stdio, so it will sit waiting for a client -- that is correct behaviour.</p>
 </tr>
 <tr>
 <td><code>list_entities(kind="", limit=100)</code></td>
-<td>Entities, optionally filtered by kind</td>
+<td>The symbol table: entities with kind, type, parent and declaring file and line, optionally filtered by kind</td>
 </tr>
 <tr>
 <td><code>entity_references(longname, reference_kind="", limit=100)</code></td>
-<td>References scoped to an entity</td>
+<td>References scoped to an entity, with file, line and column</td>
 </tr>
 <tr>
 <td><code>entity_metrics(longname, metrics=None)</code></td>
@@ -857,9 +857,9 @@ grammar</a>: tokens are ANDed, <code>~</code> excludes, <code>,</code> ors. So
   → {&quot;database&quot;: &quot;.../src/src.udb&quot;, &quot;files_analyzed&quot;: 128, &quot;entities&quot;: 3114}
 
 list_entities(kind=&quot;Class ~Unknown&quot;, limit=3)
-  → com.myapp.Server        Java Class Type Public Member
-    com.myapp.Router        Java Class Type Public Member
-    com.myapp.Handler       Java Class Type Default Member
+  → com.myapp.Server   Java Class Type Public Member   src/com/myapp/Server.java:12
+    com.myapp.Router   Java Class Type Public Member   src/com/myapp/Router.java:9
+    com.myapp.Handler  Java Class Type Default Member  src/com/myapp/Handler.java:5
 
 entity_metrics(longname=&quot;com.myapp.Server&quot;,
                metrics=[&quot;CountLine&quot;, &quot;CountDeclMethod&quot;, &quot;SumCyclomatic&quot;])
