@@ -432,6 +432,15 @@ def build(root: str) -> _DeclarationIndex:
         def enterInterfaceMethodDeclaration(self, ctx):
             self._signature(ctx)
 
+        def enterRecordComponent(self, ctx):
+            """`record R(T c)` declares an accessor `c()` returning T. An
+            explicit accessor of the same name returns the same type."""
+            parents = class_properties.ClassPropertiesListener.findParents(ctx)
+            longname = ".".join(parents + [ctx.IDENTIFIER().getText()])
+            written = ctx.typeType().getText().split("<")[0].split("[")[0]
+            if written:
+                self.returns.setdefault(longname, written)
+
         def _overload(self, ctx):
             """Record one declaration's parameter count and its position."""
             identifier = ctx.IDENTIFIER()
@@ -538,7 +547,7 @@ def build(root: str) -> _DeclarationIndex:
                 declaration["ent"],
                 declaration["ent_longname"],
                 is_type=declaration.get("decl")
-                in ("class", "interface", "enum", "annotation"),
+                in ("class", "record", "interface", "enum", "annotation"),
             )
             if declaration.get("decl") in ("interface", "annotation"):
                 index.interfaces.add(declaration["ent_longname"])
@@ -581,10 +590,16 @@ def resolve_type_name(name, imports=None, wildcards=None, scope_longname=""):
         return imports[name]
     if "." in name:
         head, _, rest = name.partition(".")
-        outer = resolve_type(head, scope_longname)
+        # `Point2D.Double`: a nested type reached through its outer one, whose
+        # name resolves like any other -- imports included. Asking the project
+        # alone left java.awt.geom.Point2D unplaced and returned the partial
+        # name as if it were a full one: 155 couples to `Point2D.Double` on
+        # jhotdraw, and the same unresolved name everywhere else it is written.
+        outer = resolve_type_name(head, imports, wildcards, scope_longname)
         if outer:
             return outer + "." + rest
-        return name
+        # A lowercase head is a package, so the name is already qualified.
+        return name if head[:1].islower() else None
     in_scope = resolve_type(name, scope_longname, local_only=True)
     if in_scope:
         return in_scope
@@ -798,7 +813,9 @@ def superclass_of(longname: str) -> str | None:
     return resolve_type_name(written, imports, wildcards, longname)
 
 
-def declaring_type_anywhere(type_longname: str, member: str) -> str | None:
+def declaring_type_anywhere(
+    type_longname: str, member: str, fields: bool = False
+) -> str | None:
     """The type declaring `member`, searching the project *and* then the JDK.
 
     `INDEX.declaring_type` stops at the project boundary and `jdk_index` knows
@@ -822,7 +839,7 @@ def declaring_type_anywhere(type_longname: str, member: str) -> str | None:
         if not current or current in seen:
             continue
         seen.add(current)
-        found = jdk_index.declaring_type(current, member)
+        found = jdk_index.declaring_type(current, member, fields=fields)
         if found:
             return found
         for parent in INDEX.supertypes.get(current, []):

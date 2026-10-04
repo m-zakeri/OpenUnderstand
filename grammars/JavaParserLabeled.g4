@@ -31,8 +31,31 @@ parser grammar JavaParserLabeled;
 
 options { tokenVocab=JavaLexer; }
 
+/* Java 9-25 additions.
+
+   This grammar was Java 8. Everything newer is *added* without touching what a
+   Java 8 file parses to: no existing alternative is reshaped, no label is
+   renamed, and no rule gains a second reference to something it already
+   references once -- that would turn ctx.IDENTIFIER() or ctx.typeList() into
+   a list and break every pass calling it. New syntax therefore lives in new
+   rules or new labelled alternatives, and every new rule is defined at the
+   end of the file (see JAVA 9-25 there) so no rule index moves.
+
+   Not supported: Java 25 compact source files (top-level methods). They make
+   a bare method a valid compilation unit, and metrics/context.py reparses a
+   method's own source expecting exactly that to fail before wrapping it.
+
+   Contextual keywords (record, sealed, permits, yield, when, module, ...) are
+   IDENTIFIER tokens matched by text through a semantic predicate. The
+   predicates are written for the Python target; java8speedy/build.py rewrites
+   them for C++. Keep them to the one shape it rewrites:
+   self._input.LT(n).text compared with ==/!=, joined by and/or, and a
+   compound one wrapped in parentheses -- the Python target writes
+   `if not <predicate>:`, so `not a or b` would test the wrong thing.
+ */
+
 compilationUnit
-    : packageDeclaration? importDeclaration* typeDeclaration* EOF
+    : packageDeclaration? importDeclaration* (typeDeclaration | moduleDeclaration)* EOF
     ;
 
 packageDeclaration
@@ -41,6 +64,7 @@ packageDeclaration
 
 importDeclaration
     : IMPORT STATIC? qualifiedName ('.' '*')? ';'
+    | IMPORT moduleKeyword qualifiedName ';' // Java 25
     ;
 
 typeDeclaration
@@ -74,10 +98,15 @@ variableModifier
     ;
 
 classDeclaration
-    : CLASS IDENTIFIER typeParameters?
+    : (sealedModifier classOrInterfaceModifier*)? CLASS IDENTIFIER typeParameters?
       (EXTENDS typeType)?
       (IMPLEMENTS typeList)?
+      permitsClause?
       classBody
+    // Java 16. A record *is* a classDeclaration, so every pass that handles a
+    // class -- scope chains, Define, Begin/End, Couple -- handles a record.
+    // Each element occurs once per alternative, so no accessor turns plural.
+    | recordKeyword IDENTIFIER typeParameters? recordHeader (IMPLEMENTS typeList)? classBody
     ;
 
 typeParameters
@@ -109,7 +138,7 @@ enumBodyDeclarations
     ;
 
 interfaceDeclaration
-    : INTERFACE IDENTIFIER typeParameters? (EXTENDS typeList)? interfaceBody
+    : (sealedModifier classOrInterfaceModifier*)? INTERFACE IDENTIFIER typeParameters? (EXTENDS typeList)? permitsClause? interfaceBody
     ;
 
 classBody
@@ -144,7 +173,10 @@ memberDeclaration
    for invalid return type after parsing.
  */
 methodDeclaration
-    : typeTypeOrVoid IDENTIFIER formalParameters ('[' ']')*
+    // The predicate only refuses `record Name(` and `record Name<`, which is a
+    // record header (Java 16) and not a method returning a type named record.
+    : {(self._input.LT(1).text != "record" or (self._input.LT(3).text != "(" and self._input.LT(3).text != "<"))}?
+      typeTypeOrVoid IDENTIFIER formalParameters ('[' ']')*
       (THROWS qualifiedNameList)?
       methodBody
     ;
@@ -169,6 +201,7 @@ genericConstructorDeclaration
 
 constructorDeclaration
     : IDENTIFIER formalParameters (THROWS qualifiedNameList)? constructorBody=block
+    | IDENTIFIER constructorBody=block // Java 16 compact canonical constructor
     ;
 
 fieldDeclaration
@@ -201,7 +234,8 @@ constantDeclarator
 // see matching of [] comment in methodDeclaratorRest
 // methodBody from Java8
 interfaceMethodDeclaration
-    : interfaceMethodModifier* (typeTypeOrVoid | typeParameters annotation* typeTypeOrVoid)
+    : {(self._input.LT(1).text != "record" or (self._input.LT(3).text != "(" and self._input.LT(3).text != "<"))}?
+      interfaceMethodModifier* (typeTypeOrVoid | typeParameters annotation* typeTypeOrVoid)
       IDENTIFIER formalParameters ('[' ']')* (THROWS qualifiedNameList)? methodBody
     ;
 
@@ -281,6 +315,7 @@ literal
     | STRING_LITERAL #literal3
     | BOOL_LITERAL #literal4
     | NULL_LITERAL #literal5
+    | TEXT_BLOCK #literal6 // Java 15
     ;
 
 integerLiteral
@@ -367,7 +402,9 @@ block
     ;
 
 blockStatement
-    : localVariableDeclaration ';' #blockStatement0
+    // `yield t;` is a yield statement (Java 14), not `t` declared with a type
+    // named yield -- which no longer exists to be declared.
+    : {self._input.LT(1).text != "yield"}? localVariableDeclaration ';' #blockStatement0
     | statement #blockStatement1
     | localTypeDeclaration #blockStatement2
     ;
@@ -378,7 +415,7 @@ localVariableDeclaration
 
 localTypeDeclaration
     : classOrInterfaceModifier*
-      (classDeclaration | interfaceDeclaration)
+      (classDeclaration | interfaceDeclaration | enumDeclaration)
     | ';'
     ;
 
@@ -398,6 +435,8 @@ statement
     | BREAK IDENTIFIER? ';' #statement12
     | CONTINUE IDENTIFIER? ';' #statement13
     | SEMI #statement14
+    | {(self._input.LT(1).text == "yield" and self._input.LT(2).text != "=")}? IDENTIFIER expression ';' #statement17 // Java 14
+    | SWITCH parExpression '{' switchRule+ '}' #statement18 // Java 14 switch statement with -> rules
     | statementExpression=expression ';' #statement15
     | identifierLabel=IDENTIFIER ':' statement #statement16
     ;
@@ -424,6 +463,7 @@ resources
 
 resource
     : variableModifier* classOrInterfaceType variableDeclaratorId '=' expression
+    | (THIS '.')? qualifiedName // Java 9: an effectively final variable
     ;
 
 /** Matches cases then statements, both of which are mandatory.
@@ -436,6 +476,7 @@ switchBlockStatementGroup
 switchLabel
     : CASE (constantExpression=expression | enumConstantName=IDENTIFIER) ':'
     | DEFAULT ':'
+    | CASE caseConstants ':' // Java 14+
     ;
 
 forControl
@@ -490,6 +531,7 @@ expression
     | expression ('<' '<' | '>' '>' '>' | '>' '>') expression #expression11
     | expression bop=('<=' | '>=' | '>' | '<') expression #expression12
     | expression bop=INSTANCEOF typeType #expression13
+    | expression bop=INSTANCEOF pattern #expression27 // Java 16
     | expression bop=('==' | '!=') expression #expression14
     | expression bop='&' expression #expression15
     | expression bop='^' expression #expression16
@@ -506,6 +548,7 @@ expression
     | expression '::' typeArguments? IDENTIFIER #expression23
     | typeType '::' (typeArguments? IDENTIFIER | NEW) #expression24
     | classType '::' typeArguments? NEW #expression25
+    | switchExpression #expression26 // Java 14
     ;
 
 // Java8
@@ -615,4 +658,103 @@ explicitGenericInvocationSuffix
 
 arguments
     : '(' expressionList? ')'
+    ;
+
+/* JAVA 9-25
+
+   Every rule below is newer than Java 8, and they are all defined here, after
+   the last Java 8 rule, on purpose: a rule's index is its position in this
+   file, and set_setby.py and setinit_setinitby.py compare getRuleIndex()
+   against integers. Defining a rule anywhere above this line renumbers every
+   rule after it.
+ */
+
+moduleKeyword
+    : {self._input.LT(1).text == "module"}? IDENTIFIER
+    ;
+
+/* Java 17. Kept out of classOrInterfaceModifier on purpose: there it would
+   compete with the return type of every method in the member-modifier loop,
+   and ANTLR defers predicates until a conflict, so it would read each method
+   body to the end before deciding. Here it sits directly before class or
+   interface, which settles it on the next token. Modifiers written before it
+   stay in the enclosing rule; modifiers after it land in this rule.
+ */
+sealedModifier
+    : {self._input.LT(1).text == "sealed"}? IDENTIFIER
+    | {(self._input.LT(1).text == "non" and self._input.LT(2).text == "-" and self._input.LT(3).text == "sealed")}? IDENTIFIER '-' IDENTIFIER
+    ;
+
+permitsClause
+    : {self._input.LT(1).text == "permits"}? IDENTIFIER typeList
+    ;
+
+recordKeyword
+    : {self._input.LT(1).text == "record"}? IDENTIFIER
+    ;
+
+recordHeader
+    : '(' (recordComponent (',' recordComponent)*)? ')'
+    ;
+
+recordComponent
+    : annotation* typeType (annotation* '...')? IDENTIFIER
+    ;
+
+moduleDeclaration
+    : annotation* ({self._input.LT(1).text == "open"}? IDENTIFIER)? moduleKeyword qualifiedName
+      '{' moduleDirective* '}'
+    ;
+
+moduleDirective
+    : {self._input.LT(1).text == "requires"}? IDENTIFIER requiresModifier* qualifiedName ';'
+    | {(self._input.LT(1).text == "exports" or self._input.LT(1).text == "opens")}? IDENTIFIER qualifiedName
+      ({self._input.LT(1).text == "to"}? IDENTIFIER qualifiedName (',' qualifiedName)*)? ';'
+    | {self._input.LT(1).text == "uses"}? IDENTIFIER qualifiedName ';'
+    | {self._input.LT(1).text == "provides"}? IDENTIFIER qualifiedName
+      {self._input.LT(1).text == "with"}? IDENTIFIER qualifiedName (',' qualifiedName)* ';'
+    ;
+
+requiresModifier
+    : {(self._input.LT(1).text == "transitive" and self._input.LT(2).text != ";")}? IDENTIFIER
+    | STATIC
+    ;
+
+// What a Java 14+ case can hold that `CASE expression` cannot: several
+// constants, `null, default`, or patterns with an optional guard.
+caseConstants
+    : expression (',' expression)+
+    | NULL_LITERAL ',' DEFAULT
+    | pattern (',' pattern)* guard?
+    ;
+
+guard
+    : {self._input.LT(1).text == "when"}? IDENTIFIER expression
+    ;
+
+// Java 14 switch as an expression (expression26): -> rules, or the Java 8
+// colon body with yield inside it. statement18 is the -> form as a statement;
+// the colon form as a statement stays statement8.
+switchExpression
+    : SWITCH parExpression '{' switchRule+ '}'
+    | SWITCH parExpression '{' switchBlockStatementGroup* switchLabel* '}'
+    ;
+
+switchRule
+    : switchRuleLabel '->' statement
+    ;
+
+switchRuleLabel
+    : CASE (expression | caseConstants)
+    | DEFAULT
+    ;
+
+// Java 16 type pattern, Java 21 record pattern, Java 22 unnamed `_`.
+// A type pattern declares a local, and Understand models it as one (Define,
+// Set Init, Typed), so it is spelled as a localVariableDeclaration: every pass
+// that already handles a local handles a pattern variable unchanged.
+pattern
+    : localVariableDeclaration
+    | typeType '(' (pattern (',' pattern)*)? ')'
+    | {self._input.LT(1).text == "_"}? IDENTIFIER
     ;

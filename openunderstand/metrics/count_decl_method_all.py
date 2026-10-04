@@ -13,10 +13,12 @@ _OBJECT_METHODS = 13
 
 def _defined_methods(entity_id):
     """Ids of the methods an entity declares, via its Define references."""
-    define = kind_id("Java Define")
+    # Define Implicit too: an enum's values()/valueOf() and a record's
+    # compiler-supplied constructor are declared methods to Understand.
+    defines = [kind_id("Java Define"), kind_id("Java Define Implicit")]
     out = set()
     for ref in ReferenceModel.select().where(
-        (ReferenceModel._kind == define) & (ReferenceModel._scope == entity_id)
+        (ReferenceModel._kind.in_(defines)) & (ReferenceModel._scope == entity_id)
     ):
         target = EntityModel.get_or_none(_id=ref._ent_id)
         if target is not None and kind_family(target._kind_id) == "method":
@@ -104,7 +106,33 @@ def count_decl_method_all(ent_model=None) -> int:
         (_kind_name(entity._kind_id) or "").lower().split()
     ):
         return len(methods)
+    accessors = _implicit_accessors(entity)
     if inherited:
         # java.lang.Object is the end of that chain, so it is already counted.
-        return len(methods) + inherited
-    return len(methods) + _OBJECT_METHODS
+        return len(methods) + inherited + accessors
+    return len(methods) + _OBJECT_METHODS + accessors
+
+
+def _implicit_accessors(entity):
+    """A record's accessors that the source does not write out.
+
+    `record Accuracy(double relative, double absolute, double value)` has
+    three methods nobody declared, and Understand counts them here though it
+    makes no entity of them -- 18 declared and inherited plus 3 is its 21.
+    A record may declare only static fields besides its components, so the
+    components are its non-static fields; an explicit accessor replaces the
+    implicit one and is already among the declared methods.
+    """
+    if "record" not in (_kind_name(entity._kind_id) or "").lower().split():
+        return 0
+    declared = {
+        EntityModel.get_by_id(m)._name for m in _defined_methods(entity._id)
+    }
+    return sum(
+        1
+        for row in EntityModel.select().where(EntityModel._parent == entity._id)
+        if kind_family(row._kind_id) == "variable"
+        and {"member"} <= set(_kind_name(row._kind_id).lower().split())
+        and "static" not in _kind_name(row._kind_id).lower().split()
+        and row._name not in declared
+    )

@@ -175,6 +175,16 @@ LINE_COMMENT:       '//' ~[\r\n]*    -> channel(HIDDEN);
 
 IDENTIFIER:         Letter LetterOrDigit*;
 
+// Java 15 text blocks. Declared after every Java 8 token so none of their
+// token type numbers move: metrics/line_of_code.py compares raw type ids.
+// A backslash always takes the next character, so \""" does not close it.
+TEXT_BLOCK:         '"""' [ \t\f]* ('\r'? '\n' | '\r') (~'\\' | '\\' .)*? '"""';
+
+// Java 9-25 contextual keywords (record, var, yield, sealed, permits, when,
+// module, ...) are deliberately not tokens. They stay IDENTIFIERs and the
+// parser recognises them by text, so `int record;` still parses and every
+// existing ctx.IDENTIFIER() call keeps returning what it did.
+
 // Fragment rules
 
 fragment ExponentPart

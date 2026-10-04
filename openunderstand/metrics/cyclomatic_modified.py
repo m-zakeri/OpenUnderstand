@@ -116,6 +116,11 @@ class CyclomaticModifiedListener(JavaParserLabeledListener):
         if ctx.SWITCH() and self.enter_method and self.enter_class:
             self.method_count_Cyclomatic += 1
 
+    # `switch (x) { case 1 -> ... }` as a statement; a switch expression is 0
+    def enterStatement18(self, ctx: JavaParserLabeled.Statement18Context):
+        if self.enter_method and self.enter_class:
+            self.method_count_Cyclomatic += 1
+
     def enterBlockStatement1(self, ctx: JavaParserLabeled.BlockStatement1Context):
         self.enter_block = True
 

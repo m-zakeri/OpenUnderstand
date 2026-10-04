@@ -99,15 +99,16 @@ def _declaration_start(ctx):
 
 
 def _body_span(ctx):
-    """(begin, end) positions of a declaration that has a braced body.
+    """(begin, end) positions of a declaration.
 
     Understand reports a Begin reference where the declaration starts -- at its
     first modifier, not at its name -- and an End reference at the matching
-    closing brace. Returns None for declarations with no body (an abstract or
-    interface method ends in `;`), which get neither reference.
+    closing brace. A declaration with no body (an abstract or interface method)
+    ends at its `;` and gets both too: all 14 of JSON's abstract methods carry
+    a Begin and an End, which this used to deny them.
     """
     stop = ctx.stop
-    if stop is None or stop.text != "}":
+    if stop is None or stop.text not in ("}", ";"):
         return None
     start = _declaration_start(ctx)
     return (start.line, start.column), (stop.line, stop.column)
@@ -240,6 +241,7 @@ class DefineListener(JavaParserLabeledListener):
         decl=None,
         modifiers=(),
         span=None,
+        implicit=False,
     ):
         if ent_name is None:
             ent_name = ent.getText()
@@ -271,12 +273,21 @@ class DefineListener(JavaParserLabeledListener):
                 "ent_longname": ent_longname,
                 "line": line,
                 "col": column,
+                "implicit": implicit,
             }
         )
 
     @staticmethod
     def _type_modifiers(ctx):
         modifiers = _enclosing_modifiers(ctx)
+        # `sealed`/`non-sealed` and any modifier written after it are inside
+        # the declaration itself (grammar: sealedModifier), not the wrapper.
+        sealed = getattr(ctx, "sealedModifier", None)
+        sealed = sealed() if callable(sealed) else None
+        if sealed is not None:
+            modifiers = modifiers + [sealed.getText()] + [
+                m.getText() for m in ctx.classOrInterfaceModifier()
+            ]
         if _is_generic(ctx):
             modifiers = modifiers + ["generic"]
         return modifiers
@@ -339,14 +350,94 @@ class DefineListener(JavaParserLabeledListener):
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
+        is_record = ctx.recordKeyword() is not None
+        modifiers = self._type_modifiers(ctx)
+        if is_record and not isinstance(ctx.parentCtx, JavaParserLabeled.TypeDeclarationContext):
+            modifiers = modifiers + ["nested"]
         self.add_define_info(
             ent=ent,
             ent_parents=ent_parents,
             type="Class",
             contents=source_text(ctx),
-            decl=K.CLASS,
+            decl=K.RECORD if is_record else K.CLASS,
             span=_body_span(ctx),
-            modifiers=self._type_modifiers(ctx),
+            modifiers=modifiers,
+        )
+        if is_record:
+            self._record_components(ctx, ent_parents)
+
+    def _record_components(self, ctx, ent_parents):
+        """What `record R(T c)` declares beyond R itself.
+
+        Understand's long names, read off its database: the field is R.c, the
+        implicit canonical constructor is R -- the *record's* long name -- and
+        its parameter is R.c again. Field and parameter stay two rows because
+        a parameter and a member never share an identity (models.py).
+
+        * the field: Define R -> R.c at the component's name, a private member;
+        * an implicit constructor: Define Implicit R -> R at the record's name,
+          and Define Implicit R -> R.c for each parameter, at the same place;
+        * a compact constructor `R { }` is declared by enterConstructorDeclaration
+          as R.R; its parameters are still R.c, Define Implicit from R.R, at
+          the record's name.
+        """
+        record_name = ctx.IDENTIFIER()
+        record_longname = ".".join(ent_parents + [record_name.getText()])
+        components = ctx.recordHeader().recordComponent()
+        for component in components:
+            self.add_define_info(
+                ent=component.IDENTIFIER(),
+                ent_parents=ent_parents + [record_name.getText()],
+                type=component.typeType().getText(),
+                contents=source_text(component),
+                decl=K.FIELD,
+                modifiers=["private"],
+            )
+        how = class_properties.record_constructor(ctx)
+        if how == "explicit":
+            return  # an ordinary constructor, declared by its own handler
+        implicit = how == "implicit"
+        if implicit:
+            self._append_record_part(
+                record_name, record_name.getText(), record_longname,
+                ent_parents[-1] if ent_parents else None,
+                record_longname, K.CONSTRUCTOR, ["public"], "Constructor",
+                implicit=True, scope_family="type",
+            )
+        constructor_longname = (
+            record_longname if implicit else f"{record_longname}.{record_name.getText()}"
+        )
+        for component in components:
+            name = component.IDENTIFIER().getText()
+            self._append_record_part(
+                record_name, name, f"{record_longname}.{name}",
+                record_name.getText(), constructor_longname, K.PARAMETER, [],
+                component.typeType().getText(),
+                implicit=True, scope_family="method",
+            )
+
+    def _append_record_part(
+        self, at, name, longname, scope, scope_longname, decl, modifiers,
+        type_text, implicit, scope_family,
+    ):
+        symbol = getattr(at, "symbol", at)
+        self.defines.append(
+            {
+                "contents": "",
+                "type": type_text,
+                "decl": decl,
+                "modifiers": list(modifiers),
+                "span": None,
+                "parent": ".".join(self.package),
+                "scope": scope,
+                "ent": name,
+                "scope_longname": scope_longname,
+                "ent_longname": longname,
+                "line": symbol.line,
+                "col": symbol.column,
+                "implicit": implicit,
+                "scope_family": scope_family,
+            }
         )
 
     def enterInterfaceDeclaration(
@@ -384,14 +475,20 @@ class DefineListener(JavaParserLabeledListener):
 
         `interfaceMethodDeclaration` is its own rule with its own modifier
         list, so without this callback no interface method was ever defined.
-        They are implicitly public, and abstract unless declared `default`.
+        Understand names them by what is *written*, not by what is implicit:
+        `public` only when it says so (10 of JSON's 14), abstract only when
+        there is no body. `static` and `default` usually sit on the enclosing
+        interfaceBodyDeclaration, not in this rule's own modifier list --
+        reading only the latter made every static interface method abstract,
+        and its calls virtual (`PathValue.of`, 16 Call Nondynamic on jenetics).
         """
         ent = ctx.IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
-        modifiers = ["public"] + _modifiers_at(ctx)
-        if "default" not in modifiers and "static" not in modifiers:
+        modifiers = list(dict.fromkeys(_modifiers_at(ctx) + _enclosing_modifiers(ctx)))
+        body = ctx.methodBody()
+        if body is None or body.block() is None:
             modifiers.append("abstract")
-        if ctx.typeParameters() is not None:
+        if ctx.typeParameters() is not None or _is_generic(ctx.parentCtx):
             modifiers.append("generic")
         self.add_define_info(
             ent=ent,
@@ -437,6 +534,13 @@ class DefineListener(JavaParserLabeledListener):
         ):
             element = element.parentCtx
         declared = element.typeType() if element is not None else None
+        # Begin at the element's first token (its modifiers included), End at
+        # its `;`, which belongs to the wrapping element rule -- as for any
+        # other body-less method.
+        span = None
+        if element is not None and element.stop is not None and element.stop.text == ";":
+            first = element.parentCtx.start if element.parentCtx is not None else element.start
+            span = ((first.line, first.column), (element.stop.line, element.stop.column))
         self.add_define_info(
             ent=ent,
             ent_parents=class_properties.ClassPropertiesListener.findParents(ctx),
@@ -445,6 +549,7 @@ class DefineListener(JavaParserLabeledListener):
             decl=K.METHOD,
             # An annotation member is implicitly public and abstract.
             modifiers=["public", "abstract"],
+            span=span,
         )
 
     def enterConstructorDeclaration(
@@ -500,17 +605,30 @@ class DefineListener(JavaParserLabeledListener):
             span=_body_span(ctx),
         )
         # values()/valueOf() are compiler-generated statics on every enum.
+        # No span: they have no source, and Understand writes no Begin or End
+        # for them -- these carried the enum's own, 8 false rows on JSON. And
+        # Define *Implicit*, with valueOf's parameter `s` -- 12 Definein
+        # Implicit on JSON's four enums that nothing produced.
+        enum_parents = ent_parents + [ent.getText()]
         for synthetic in ("values", "valueOf"):
             self.add_define_info(
                 ent,
-                ent_parents + [ent.getText()],
+                enum_parents,
                 synthetic,
                 type="Enum",
-                contents=source_text(ctx),
+                # No source of their own -- the enum's was stored, which made
+                # each score Cyclomatic 1 where Understand answers nothing and
+                # put the enum's SumCyclomatic at 2 against its 0.
+                contents="",
                 decl=K.METHOD,
-                span=_body_span(ctx),
+                span=None,
                 modifiers=["public", "static"],
+                implicit=True,
             )
+        self.add_define_info(
+            ent, enum_parents + ["valueOf"], "s", type="String",
+            decl=K.PARAMETER, implicit=True,
+        )
 
     def enterFormalParameter(self, ctx: JavaParserLabeled.FormalParameterContext):
         ent = ctx.variableDeclaratorId().IDENTIFIER()
@@ -553,6 +671,20 @@ class DefineListener(JavaParserLabeledListener):
         ent = ctx.IDENTIFIER()
         self.add_define_info(ent, ent_parents, ent_name, decl=K.LAMBDA)
         self.add_define_info(ent, ent_parents + [ent_name], decl=K.PARAMETER)
+
+    def enterLambdaParameters1(self, ctx: JavaParserLabeled.LambdaParameters1Context):
+        """`() -> ...` and `(var a, final var b) -> ...`: the lambda, declared at
+        its opening parenthesis. The parameters, if any, are formalParameters
+        and declared by enterFormalParameter, already under the lambda's scope.
+
+        Nothing declared this shape, so all 35 of JSON's `() -> {...}` lambdas
+        lacked their Define/Definein, and a lambda with `var` parameters kept
+        the placeholder kind the parameters' scope lookup gave it.
+        """
+        ent_parents, ent_name = self._lambda_scope(ctx)
+        if ent_name is None:
+            return
+        self.add_define_info(ctx.start, ent_parents, ent_name, decl=K.LAMBDA)
 
     def enterLambdaParameters2(self, ctx: JavaParserLabeled.LambdaParameters2Context):
         ent_parents, ent_name = self._lambda_scope(ctx)

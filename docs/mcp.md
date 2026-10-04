@@ -30,8 +30,8 @@ stdio, so it will sit waiting for a client -- that is correct behaviour.
 | `analyze(source_dir, database="")` | Parse a Java project and open the result |
 | `open_database(path)` | Open an existing `.udb` |
 | `update(paths, source_root="")` | Re-analyse changed files, without a full rebuild |
-| `list_entities(kind="", limit=100)` | Entities, optionally filtered by kind |
-| `entity_references(longname, reference_kind="", limit=100)` | References scoped to an entity |
+| `list_entities(kind="", limit=100)` | The symbol table: entities with kind, type, parent and declaring file and line, optionally filtered by kind |
+| `entity_references(longname, reference_kind="", limit=100)` | References scoped to an entity, with file, line and column |
 | `entity_metrics(longname, metrics=None)` | Metric values; omit `metrics` for all |
 | `list_kinds(kind_filter="", references=False)` | The kind vocabulary |
 
@@ -89,9 +89,9 @@ analyze(source_dir="~/projects/myapp/src")
   → {"database": ".../src/src.udb", "files_analyzed": 128, "entities": 3114}
 
 list_entities(kind="Class ~Unknown", limit=3)
-  → com.myapp.Server        Java Class Type Public Member
-    com.myapp.Router        Java Class Type Public Member
-    com.myapp.Handler       Java Class Type Default Member
+  → com.myapp.Server   Java Class Type Public Member   src/com/myapp/Server.java:12
+    com.myapp.Router   Java Class Type Public Member   src/com/myapp/Router.java:9
+    com.myapp.Handler  Java Class Type Default Member  src/com/myapp/Handler.java:5
 
 entity_metrics(longname="com.myapp.Server",
                metrics=["CountLine", "CountDeclMethod", "SumCyclomatic"])

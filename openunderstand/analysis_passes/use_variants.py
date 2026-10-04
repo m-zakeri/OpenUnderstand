@@ -236,7 +236,11 @@ class UseVariantListener(JavaParserLabeledListener):
         # because such an argument is never part of a declaration's type.
         bound = _type_parameter_scope(ctx)
         declared = None if bound else _declared_owner(ctx)
-        kind = "Java Typed GenericArgument" if declared else "Java Use GenericArgument"
+        kind = (
+            "Java Typed GenericArgument"
+            if declared is not None
+            else "Java Use GenericArgument"
+        )
         declared = declared or bound
         for argument in ctx.typeArgument():
             # A wildcard is an entity in its own right: Understand names it "?"
@@ -244,7 +248,23 @@ class UseVariantListener(JavaParserLabeledListener):
             # against one. Skipping any argument without a concrete type left
             # exactly those unproduced.
             if argument.getText().startswith("?"):
-                self._add(kind, "?", ctx, argument.start, suffix=declared)
+                bound_type = argument.typeType() if hasattr(argument, "typeType") else None
+                if bound_type is None:
+                    self._add(kind, "?", ctx, argument.start, suffix=declared)
+                    continue
+                # `? super Row`: Understand writes no GenericArgument at all for
+                # a *bounded* wildcard -- a plain Use of `?` and a plain Use of
+                # the bound, both from the declared entity. 220 of jenetics'
+                # 221 Uses of `?` are bounded; all 222 of its Typed
+                # GenericArguments to `?` are unbounded.
+                self._add("Java Use", "?", ctx, argument.start, suffix=declared)
+                self._add(
+                    "Java Use",
+                    _simple_type_name(bound_type),
+                    ctx,
+                    bound_type.start,
+                    suffix=declared,
+                )
                 continue
             type_ctx = argument.typeType() if hasattr(argument, "typeType") else None
             if type_ctx is None:
@@ -366,15 +386,19 @@ def _declared_owner(ctx):
             return None
         if name.startswith(("LocalVariableDeclaration", "FieldDeclaration")):
             return _first_declared_name(node)
-        if name.startswith("FormalParameter") and not name.startswith(
-            "FormalParameterList"
-        ):
-            # The *list* context shares the prefix and has no declarator id.
+        if name in ("FormalParameterContext", "LastFormalParameterContext"):
+            # Named exactly: FormalParameterList and FormalParameters share the
+            # prefix and carry no declarator id, and a generic varargs
+            # parameter -- `Function<A, B>... fs` -- walked up into the second
+            # and raised, which cost every later reference in the file.
             identifier = node.variableDeclaratorId()
             return identifier.getText().split("[")[0] if identifier else None
-        if name.startswith("MethodDeclaration"):
-            # The return type's arguments belong to the method itself.
-            return _first_declared_name(node)
+        if name.startswith(("MethodDeclaration", "InterfaceMethodDeclaration")):
+            # The return type's arguments belong to the method itself -- which
+            # findParents() already ends with, since the return type is inside
+            # the method. "" means "declared, nothing to append": returning the
+            # name here wrote every one as C.m.m.
+            return ""
         node = node.parentCtx
     return None
 

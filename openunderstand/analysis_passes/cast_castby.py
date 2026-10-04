@@ -1,4 +1,7 @@
 """Java Use Cast / Java Useby Castby: the type named in a cast expression.
+Also the plain Java Use of the type in `x instanceof T` and `x instanceof T v`,
+which is the same question -- an expression naming a type -- asked of another
+operator.
 
     (JSONObject) o        ->  Use Cast on org.json.JSONObject
     (T) array[i]          ->  Use Cast on Sorts.HeapSort.sort.T
@@ -81,9 +84,34 @@ class CastAndCastBy(JavaParserLabeledListener):
         self.imports[longname.split(".")[-1]] = longname
 
     def enterExpression5(self, ctx: JavaParserLabeled.Expression5Context):
+        self._type_use(ctx, ctx.typeType(), "Java Use Cast")
+
+    def enterExpression13(self, ctx: JavaParserLabeled.Expression13Context):
+        """`x instanceof T`: a plain Use of T, at the type.
+
+        Understand writes one on 144 of JSON's 145 instanceof expressions and
+        nothing here wrote any of them.
+        """
+        self._type_use(ctx, ctx.typeType(), "Java Use")
+
+    def enterExpression27(self, ctx: JavaParserLabeled.Expression27Context):
+        """`x instanceof T name` (Java 16): the same Use of T as without the
+        name. The variable itself is a local -- the pattern is spelled as a
+        localVariableDeclaration -- so Define, Set Init and Typed come from the
+        passes that handle locals."""
+        pattern = ctx.pattern()
+        declaration = pattern.localVariableDeclaration()
+        if declaration is not None:
+            self._type_use(ctx, declaration.typeType(), "Java Use")
+        elif pattern.typeType() is not None:
+            # `o instanceof Pair(String l, Integer r)` (Java 21): the record
+            # type is used the same way; its components are patterns of their
+            # own and declare their variables as locals.
+            self._type_use(ctx, pattern.typeType(), "Java Use")
+
+    def _type_use(self, ctx, type_ctx, kind):
         from openunderstand.ounderstand import symbol_table
 
-        type_ctx = ctx.typeType()
         if type_ctx is None or type_ctx.classOrInterfaceType() is None:
             return  # primitive, or `(int[])`
         named = type_ctx.classOrInterfaceType()
@@ -114,7 +142,7 @@ class CastAndCastBy(JavaParserLabeledListener):
         token = named.start
         self.relations.append(
             {
-                "kind": "Java Use Cast",
+                "kind": kind,
                 "scope_longname": scope,
                 "ent_longname": target,
                 "name": identifiers[-1].getText(),

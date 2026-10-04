@@ -174,6 +174,20 @@ private fun parse(output: String): List<Row> = output.lineSequence().mapNotNull 
     Row(m.groupValues[1], m.groupValues[2].toInt(), m.groupValues[3], metrics)
 }.toList()
 
+/**
+ * `--symbols` and `--references` output: a header row, then tab-separated rows.
+ * Tabs because kind names hold spaces. A cell that reads as a number is kept as
+ * an Int, so Line navigates and numeric columns sort as numbers.
+ */
+private fun parseTsv(output: String): Pair<List<String>, List<Array<Any?>>>? {
+    val lines = output.lineSequence().filter { it.isNotBlank() }.toList()
+    val header = lines.firstOrNull()?.split("\t")?.takeIf { it.firstOrNull() == "Entity" } ?: return null
+    val rows = lines.drop(1).map { line ->
+        line.split("\t").map<String, Any?> { it.toIntOrNull() ?: it }.toTypedArray()
+    }
+    return header to rows
+}
+
 /** RFC 4180: quote a field only when it contains a delimiter, quote or newline. */
 private fun cell(value: Any?): String {
     val text = value?.toString() ?: ""
@@ -222,6 +236,8 @@ class MetricsToolWindow : ToolWindowFactory {
             autoResizeMode = JBTable.AUTO_RESIZE_OFF
         }
         val run = JButton("Analyse Project")
+        val symbols = JButton("Symbol Table")
+        val references = JButton("References")
         val export = JButton("Export CSV...")
 
         table.addMouseListener(object : MouseAdapter() {
@@ -247,25 +263,49 @@ class MetricsToolWindow : ToolWindowFactory {
                 ?.file?.writeText(csv(model))
         }
 
-        run.addActionListener {
+        val buttons = listOf(run, symbols, references)
+        /** Run the script with `args` and hand its stdout to `show`, or report why not. */
+        fun launch(title: String, args: List<String>, show: (String) -> String?) {
             val root = project.basePath
             if (root == null) {
                 Messages.showErrorDialog(project, "No project directory.", "OpenUnderstand")
-                return@addActionListener
+                return
             }
-            run.isEnabled = false
-            analyse(project, root) { rows, error ->
-                run.isEnabled = true
-                if (error != null) {
-                    Messages.showErrorDialog(project, error, "OpenUnderstand")
-                } else {
-                    show(model, rows)
-                }
+            buttons.forEach { it.isEnabled = false }
+            script(project, title, listOf(root) + args) { out, failure ->
+                buttons.forEach { it.isEnabled = true }
+                val error = failure ?: show(out!!)
+                if (error != null) Messages.showErrorDialog(project, error, "OpenUnderstand")
             }
         }
 
+        run.addActionListener {
+            launch("Analysing Java sources", emptyList()) { out ->
+                val rows = parse(out)
+                if (rows.isEmpty()) "No metrics produced." else { show(model, rows); null }
+            }
+        }
+        // The symbol table and the references share one table, so selecting a
+        // reference's entity and asking again walks the graph one hop at a time.
+        val showTable = { out: String ->
+            parseTsv(out)?.let { (columns, rows) -> fill(model, columns, rows); null }
+                ?: "Unexpected output from the analyser."
+        }
+        symbols.addActionListener {
+            launch("Building the symbol table", listOf("--symbols")) { showTable(it) }
+        }
+        references.addActionListener {
+            val selected = table.selectedRow
+            if (selected < 0) {
+                Messages.showInfoMessage(project, "Select an entity in the table first.", "OpenUnderstand")
+                return@addActionListener
+            }
+            val entity = model.getValueAt(table.convertRowIndexToModel(selected), 0) as String
+            launch("Finding references to $entity", listOf("--references", entity)) { showTable(it) }
+        }
+
         val panel = JPanel(BorderLayout()).apply {
-            add(JPanel().apply { add(run); add(export) }, BorderLayout.NORTH)
+            add(JPanel().apply { add(run); add(symbols); add(references); add(export) }, BorderLayout.NORTH)
             add(JBScrollPane(table), BorderLayout.CENTER)
         }
         toolWindow.contentManager.addContent(
@@ -277,40 +317,44 @@ class MetricsToolWindow : ToolWindowFactory {
         val data = rows.map { row ->
             (listOf<Any?>(row.entity, row.file, row.line) +
                 names.map { row.metrics[it]?.toIntOrNull() ?: row.metrics[it] }).toTypedArray()
-        }.toTypedArray()
-        val columns = (listOf("Entity", "File", "Line") + names).toTypedArray()
-        // Before setDataVector: it fires an event whose listeners ask for them.
-        model.columnClasses = columns.indices.map { column ->
-            data.mapNotNull { it[column]?.javaClass }.distinct().singleOrNull() ?: Any::class.java
         }
-        model.setDataVector(data, columns)
+        fill(model, listOf("Entity", "File", "Line") + names, data)
     }
 
-    private fun analyse(project: Project, root: String, done: (List<Row>, String?) -> Unit) {
-        ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Analysing Java sources", true) {
+    /** Every view keeps Entity, File and Line first: navigation and References read them. */
+    private fun fill(model: MetricsModel, columns: List<String>, data: List<Array<Any?>>) {
+        // Before setDataVector: it fires an event whose listeners ask for them.
+        model.columnClasses = columns.indices.map { column ->
+            data.mapNotNull { it.getOrNull(column)?.javaClass }.distinct().singleOrNull() ?: Any::class.java
+        }
+        model.setDataVector(data.toTypedArray(), columns.toTypedArray())
+    }
+
+    /** Run `idea_metrics.py args` off the UI thread; `done` gets stdout or an error. */
+    private fun script(project: Project, title: String, args: List<String>,
+                       done: (String?, String?) -> Unit) {
+        ProgressManager.getInstance().run(object : Task.Backgroundable(project, title, true) {
             override fun run(indicator: ProgressIndicator) {
                 indicator.isIndeterminate = true
-                var rows = emptyList<Row>()
+                var out: String? = null
                 var error: String? = null
                 try {
                     val (python, failure) = interpreter { indicator.text = it }
                     if (python == null) {
-                        ApplicationManager.getApplication().invokeLater { done(rows, failure) }
-                        return
-                    }
-                    indicator.text = "Analysing $root"
-                    val script = unpack("/idea_metrics.py", "idea_metrics.py")!!
-                    val out = exec(python, "-W", "ignore", script.absolutePath, root)
-                    rows = parse(out.stdout)
-                    if (rows.isEmpty()) {
-                        error = "No metrics produced (exit ${out.exitCode}).\n\n" + out.stderr.take(2000)
+                        error = failure
+                    } else {
+                        indicator.text = title
+                        val script = unpack("/idea_metrics.py", "idea_metrics.py")!!
+                        val result = exec(python, "-W", "ignore", script.absolutePath, *args.toTypedArray())
+                        if (result.exitCode == 0) out = result.stdout
+                        else error = "The analyser failed (exit ${result.exitCode}).\n\n" + result.stderr.take(2000)
                     }
                 } catch (e: Exception) {
                     error = e.message ?: e.toString()
                 }
-                val result = rows
-                val message = error
-                ApplicationManager.getApplication().invokeLater { done(result, message) }
+                val o = out
+                val m = error
+                ApplicationManager.getApplication().invokeLater { done(o, m) }
             }
         })
     }

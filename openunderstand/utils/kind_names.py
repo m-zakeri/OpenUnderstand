@@ -20,6 +20,7 @@ from openunderstand.oudb.models import KindModel
 # Declaration categories the define pass distinguishes.
 PACKAGE = "package"
 CLASS = "class"
+RECORD = "record"
 ANONYMOUS_CLASS = "anonymous_class"
 INTERFACE = "interface"
 ANNOTATION = "annotation"
@@ -41,6 +42,7 @@ _VISIBILITY = ("public", "protected", "private")
 # token, which models.is_placeholder_kind() recognises.
 _UNKNOWN = {
     CLASS: "Java Unknown Class Type Member",
+    RECORD: "Java Unknown Class Type Member",
     ANONYMOUS_CLASS: "Java Unknown Class Type Member",
     INTERFACE: "Java Unknown Class Type Member",
     ANNOTATION: "Java Unknown Annotation Interface Type Member",
@@ -123,10 +125,10 @@ def candidates(decl, modifiers=(), name=""):
         return out
 
     if decl in (FIELD, CONSTANT):
-        # An interface constant is implicitly public static final.
-        if decl == CONSTANT:
-            mods |= {"public", "static", "final"}
-            vis = "Public"
+        # An interface constant is implicitly public static final, but
+        # Understand names it by what is *written*: `CsvWriter DEFAULT = ...`
+        # in an interface is `Java Variable Default Member`, and its metrics
+        # then count it as an instance variable.
         prefix = _prefix(mods, allow_abstract=False)
         out.append(" ".join(["Java", *prefix, "Variable", vis, "Member"]))
         if prefix:
@@ -145,8 +147,27 @@ def candidates(decl, modifiers=(), name=""):
                 out.append(" ".join(["Java", *prefix, "Method", vis, "Member"]))
         return out
 
+    if decl == RECORD:
+        # A nested record is implicitly static -- in a class, an interface or
+        # a method -- and a top-level one never is. Visibility is as written:
+        # a record in an interface is Default, not the implicit public. The
+        # private generic spelling differs from the rest of the vocabulary.
+        nested = "nested" in mods
+        static = ["Static"] if nested else []
+        generic = ["Generic"] if "generic" in mods else []
+        out.append(" ".join(["Java", *static, *generic, "Record Class Type", vis, "Member"]))
+        if generic:
+            out.append(" ".join(["Java", *static, "Record Class Generic Type", vis, "Member"]))
+            out.append(" ".join(["Java", *static, "Record Class Type", vis, "Member"]))
+        return out
+
     if decl in (CLASS, ENUM):
         prefix = _prefix(mods)
+        if "sealed" in mods and decl == CLASS:
+            # `[Static] Sealed [Abstract] [Generic] Class Type`, Sealed after
+            # Static and before Abstract.
+            at = 1 if prefix[:1] == ["Static"] else 0
+            out.append(" ".join(["Java", *prefix[:at], "Sealed", *prefix[at:], "Class Type", vis, "Member"]))
         body = "Enum Class Type" if decl == ENUM else "Class Type"
         out.append(" ".join(["Java", *prefix, body, vis, "Member"]))
         for drop in ("Generic", "Abstract", "Final", "Static"):
@@ -161,6 +182,14 @@ def candidates(decl, modifiers=(), name=""):
         # Interfaces have no "Member" token and cannot be final or abstract.
         body = "Annotation Interface Type" if decl == ANNOTATION else "Interface Type"
         generic = "Generic " if "generic" in mods else ""
+        if "sealed" in mods and decl == INTERFACE:
+            # The vocabulary spells these irregularly -- `SealedInterface Type
+            # Public`, `SealedGeneric Interface Type Default` -- with one
+            # spelling per visibility, so all are offered and resolve() keeps
+            # the one that exists.
+            if generic:
+                out += [f"Java Sealed Generic Interface Type {vis}", f"Java SealedGeneric Interface Type {vis}"]
+            out += [f"Java Sealed Interface Type {vis}", f"Java SealedInterface Type {vis}"]
         if generic and decl == INTERFACE:
             out.append(f"Java Generic {body} {vis}")
         out.append(f"Java {body} {vis}")

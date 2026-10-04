@@ -62,6 +62,10 @@ def max_nesting(ent_model):
     parse_entity() wraps a member in a synthetic class so it parses, and the
     wrapper adds no nesting of its own because only statements are counted.
     """
+    # Understand reports 0 for every lambda -- all 174 of jenetics', whatever
+    # their bodies hold.
+    if context._LAMBDA_NAME.search(getattr(ent_model, "_longname", "") or ""):
+        return 0
     return context.walk_entity(ent_model, MaxNesting()).max_nesting
 
 

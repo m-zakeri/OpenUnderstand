@@ -248,10 +248,42 @@ carrying **114 custom labelled alternatives** (`#classBodyDeclaration0`,
 `#memberDeclaration3`, `#blockStatement1`, ...). Those labels generate the context
 classes every pass references.
 
-It is **Java 8**: no records, sealed types, `var`, text blocks or `yield`.
-Upstream's current grammar handles Java 21 and is backward-compatible with
-Java 8 source, but it has only 27 labels and different ones -- adopting it means
-rewriting every listener. Treat a grammar swap as a project.
+**It parses Java 9-25, added onto the Java 8 grammar rather than swapped for
+upstream's**, so a Java 8 file parses to exactly the tree it always did: 4,164
+of the 4,165 benchmark files compare identical node by node, rule index
+included, and the JSON and calculator_app databases are byte-identical before
+and after. The exception is jfreechart's `module-info.java`, which used to fail.
+A record parses as a second alternative of `classDeclaration` and a type
+pattern as a `localVariableDeclaration`, so the passes handle both largely
+unchanged; `CLAUDE.md` lists what Understand does with each construct.
+
+Four rules keep it that way, and each came from something that broke:
+
+* **Add, never reshape.** New syntax goes in new rules or new labelled
+  alternatives. A rule that gains a *second* reference to something
+  (`IDENTIFIER`, `typeList`, ...) turns its accessor into a list, and every
+  `ctx.IDENTIFIER().getText()` on it breaks.
+* **Define every new rule at the end of the file.** A rule's index is its
+  position, and `set_setby` and `setinit_setinitby` compare `getRuleIndex()`
+  against integers. Inserting rules mid-file broke `test_set_pass`.
+* **Contextual keywords stay IDENTIFIER tokens**, matched by text in a semantic
+  predicate, so `int record;` still parses and no token id moves
+  (`metrics/line_of_code.py` compares raw token ids 109/110). Predicates are
+  Python; `java8speedy/build.py` rewrites them for C++ and refuses any it
+  cannot. Wrap a compound one in parentheses: the Python target writes
+  `if not <predicate>:`.
+* **A bare method must stay unparseable.** `metrics/context.py` parses a
+  method's own source and wraps it in a class only when that fails. Java 25
+  compact source files would make it succeed, so they are not supported;
+  `tests/test_grammar_java25.py` guards it.
+
+Prove a grammar change with the tree comparison (old and new generated parser
+over every benchmark file) *and* the fingerprint: the first catches a changed
+tree, only the second caught the rule-index dependency.
+
+Upstream's current grammar targets Java 24, but it has only 27 labels and
+different ones, so adopting it means rewriting every listener. Extending this
+one is the cheaper path.
 
 Regenerate after editing a `.g4` (the runtime pin in `requirements.txt` must
 match the tool version):

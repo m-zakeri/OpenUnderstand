@@ -184,8 +184,8 @@ pip install "openunderstand[mcp]"
 {"mcpServers": {"openunderstand": {"command": "openunderstand-mcp"}}}
 ```
 
-Six tools (`analyze`, `open_database`, `list_entities`, `entity_references`,
-`entity_metrics`, `list_kinds`), four resources exposing the kind vocabulary
+Seven tools (`analyze`, `open_database`, `update`, `list_entities`,
+`entity_references`, `entity_metrics`, `list_kinds`), four resources exposing the kind vocabulary
 and metric names, and three prompts (`review_class`, `complexity_hotspots`,
 `trace_callers`) -- so an assistant can analyse a Java project and ask what
 calls what, without knowing the schema. See [docs/mcp.md](https://m-zakeri.github.io/OpenUnderstand/mcp/).
@@ -193,9 +193,9 @@ calls what, without knowing the schema. See [docs/mcp.md](https://m-zakeri.githu
 ## Use it from IntelliJ IDEA
 
 `idea-plugin/` builds a **Java Metrics** tool window: analyse the open project,
-sort by any metric, double-click to jump to the declaration, export CSV. It
-runs the analysis in a Python subprocess and offers to install the package into
-a private virtualenv when it cannot find one.
+sort by any metric, browse the symbol table and any entity's references,
+double-click to jump to the declaration, export CSV. It runs the analysis in a
+Python subprocess, in a private virtualenv it builds and installs itself.
 
 ```bash
 cd idea-plugin && gradle buildPlugin    # then install the zip from disk
@@ -205,8 +205,13 @@ See [docs/idea-plugin.md](https://m-zakeri.github.io/OpenUnderstand/idea-plugin/
 
 ## What it does not do
 
-- **Java 8 only.** The grammar predates records, sealed types, `var`, text
-  blocks and `yield`.
+- **Java 9-25 is analysed, measured against Understand.** Records, sealed
+  types and `permits`, pattern variables and record patterns, `var` (including
+  lambda parameters), switch expressions, local enums and interfaces, and
+  `module-info.java` are modelled the way Understand models them, checked on
+  jenetics' incubator module and a hand-written probe. Java 25 compact source
+  files (top-level methods) do not parse; `import module` parses but cannot be
+  checked, because Understand 7.0 itself does not parse it.
 - **No external resolution.** The JDK and third-party jars are not analysed, so
   `java.lang.String` exists but has no members.
 - **Partial coverage.** 90 to 98% of Understand's references are reproduced at

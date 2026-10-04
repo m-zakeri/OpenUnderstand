@@ -22,6 +22,7 @@ RULES = [
     JavaParserLabeled.RULE_interfaceDeclaration,
     JavaParserLabeled.RULE_constructorDeclaration,
     JavaParserLabeled.RULE_annotationTypeDeclaration,
+    JavaParserLabeled.RULE_interfaceMethodDeclaration,
 ]
 
 

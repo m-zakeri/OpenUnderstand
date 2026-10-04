@@ -69,8 +69,15 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
             name, self.imports, self.wildcards, scope_longname
         )
 
-    def record(self, ctx, declared_name, type_ctx):
-        """Record `declared_name is of type_ctx`, positioned on the type."""
+    def record(
+        self, ctx, declared_name, type_ctx, kind=None, scope_kind=None,
+        scope_longname=None, type_longname=None,
+    ):
+        """Record `declared_name is of type_ctx`, positioned on the type.
+
+        kind/scope_kind/scope_longname are for a record's components, where
+        one name is three entities (see enterRecordComponent).
+        """
         if type_ctx is None or not declared_name:
             return
         # findParents() stops at the enclosing scopes, so the declared entity's
@@ -87,18 +94,27 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
         # and must be resolved before the import ladder: with `import
         # java.util.*` the lone-wildcard rule turned DynamicArray's `E` into
         # java.util.E.
-        declaring = _declaring_generic(ctx, type_name)
-        if declaring:
-            type_longname = f"{declaring}.{type_name}"
+        if type_longname is not None:
+            type_name = type_longname.rsplit(".", 1)[-1]  # inferred: `var`
         else:
-            type_longname = self.resolve_type(type_name, enclosing)
+            declaring = _declaring_generic(ctx, type_name)
+            if declaring:
+                type_longname = f"{declaring}.{type_name}"
+            else:
+                type_longname = self.resolve_type(type_name, enclosing)
         if type_longname is None:
             return
         token = type_ctx.start
+        entry = {}
+        if kind is not None:
+            entry["kind"] = kind
+        if scope_kind is not None:
+            entry["scope_kind"] = scope_kind
         self.typedBy.append(
             {
+                **entry,
                 "name": declared_name,
-                "scope_longname": f"{enclosing}.{declared_name}",
+                "scope_longname": scope_longname or f"{enclosing}.{declared_name}",
                 "type_name": type_name,
                 "type_longname": type_longname,
                 "line": token.line,
@@ -124,10 +140,55 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
     def enterLocalVariableDeclaration(
         self, ctx: JavaParserLabeled.LocalVariableDeclarationContext
     ):
+        if ctx.typeType().getText() == "var":
+            self._typed_var(ctx)
+            return
         for name in self._declared_names(
             ctx.variableDeclarators().variableDeclarator()
         ):
             self.record(ctx, name, ctx.typeType())
+
+    def _typed_var(self, ctx):
+        """`var tasks = new ArrayList<Task>()` (Java 10): Understand types the
+        variable by the initialiser's type, positioned on the variable's
+        *name* -- there is no written type to sit on."""
+        binder = self._binder_for(ctx)
+        for declarator in ctx.variableDeclarators().variableDeclarator():
+            initializer = declarator.variableInitializer()
+            expression = getattr(initializer, "expression", lambda: None)()
+            inferred = binder.type_of(expression)
+            if not inferred or "." not in inferred:
+                continue
+            identifier = declarator.variableDeclaratorId()
+            name = identifier.getText().split("[")[0]
+            self.record(ctx, name, identifier, type_longname=inferred)
+
+    def _binder_for(self, ctx):
+        if getattr(self, "_binder", None) is None:
+            from openunderstand.ounderstand.type_binding import TypeBinder
+
+            root = ctx
+            while root.parentCtx is not None:
+                root = root.parentCtx
+            self._binder = TypeBinder(root)
+        return self._binder
+
+    def enterLastFormalParameter(
+        self, ctx: JavaParserLabeled.LastFormalParameterContext
+    ):
+        """`String... columns` types columns by String, as a plain parameter."""
+        identifier = ctx.variableDeclaratorId()
+        if identifier is not None:
+            self.record(ctx, identifier.getText().split("[")[0], ctx.typeType())
+
+    def enterInterfaceMethodDeclaration(
+        self, ctx: JavaParserLabeled.InterfaceMethodDeclarationContext
+    ):
+        """An interface method is typed by its return type, as a class's is."""
+        returns = ctx.typeTypeOrVoid()
+        if returns is None or ctx.IDENTIFIER() is None:
+            return
+        self.record(ctx, ctx.IDENTIFIER().getText(), returns.typeType())
 
     def enterFormalParameter(self, ctx: JavaParserLabeled.FormalParameterContext):
         identifier = ctx.variableDeclaratorId()
@@ -153,6 +214,64 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
             return
         for qualified in caught.qualifiedName():
             self.record(ctx, identifier.getText(), qualified)
+
+    def enterRecordComponent(self, ctx: JavaParserLabeled.RecordComponentContext):
+        """`record R(T c)`: the field R.c is Typed T, and unless the record
+        declares an ordinary constructor, the parameter R.c and R itself are
+        each Typed Implicit T -- for a compact constructor too. Understand
+        writes all three at the type."""
+        name = ctx.IDENTIFIER().getText()
+        record_ctx = ctx.parentCtx.parentCtx
+        self.record(ctx, name, ctx.typeType(), scope_kind="Java Variable Private Member")
+        if class_properties.record_constructor(record_ctx) == "explicit":
+            return
+        self.record(
+            ctx, name, ctx.typeType(), kind="Java Typed Implicit",
+            scope_kind="Java Parameter",
+        )
+        parents = class_properties.ClassPropertiesListener.findParents(ctx)
+        self.record(
+            ctx, record_ctx.IDENTIFIER().getText(), ctx.typeType(),
+            kind="Java Typed Implicit",
+            scope_longname=".".join(parents),
+        )
+
+    def _typed(self, scope_longname, name, type_longname, token, kind=None, scope_kind=None):
+        """One Typed row whose type is already known."""
+        entry = {"kind": kind} if kind else {}
+        if scope_kind:
+            entry["scope_kind"] = scope_kind
+        self.typedBy.append(
+            {
+                **entry,
+                "name": name,
+                "scope_longname": scope_longname,
+                "type_name": type_longname.rsplit(".", 1)[-1],
+                "type_longname": type_longname,
+                "line": token.line,
+                "col": token.column,
+            }
+        )
+
+    def enterEnumDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
+        """Understand types an enum's constants by the enum, at each constant,
+        and its implicit members at the enum's name: values() and valueOf()
+        Typed Implicit the enum, valueOf's `s` Typed Implicit String."""
+        identifier = ctx.IDENTIFIER()
+        enum = ".".join(
+            class_properties.ClassPropertiesListener.findParents(ctx) + [identifier.getText()]
+        )
+        token = identifier.symbol
+        for member in ("values", "valueOf"):
+            self._typed(f"{enum}.{member}", member, enum, token,
+                        kind="Java Typed Implicit", scope_kind="Java Static Method Public Member")
+        self._typed(f"{enum}.valueOf.s", "s", "java.lang.String", token,
+                    kind="Java Typed Implicit", scope_kind="Java Parameter")
+        constants = ctx.enumConstants()
+        for constant in constants.enumConstant() if constants is not None else ():
+            name = constant.IDENTIFIER()
+            self._typed(f"{enum}.{name.getText()}", name.getText(), enum, name.symbol,
+                        scope_kind="Java Variable EnumConstant Public Member")
 
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
         """A method is typed by its return type."""

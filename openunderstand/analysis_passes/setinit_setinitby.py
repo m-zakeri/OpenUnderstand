@@ -27,13 +27,9 @@ class SetInitAndSetByInitListener(JavaParserLabeledListener):
         self.ss = ""
 
     def enterClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
-        name_of_file = self.file_name.split("\\")[
-            self.file_name.split("\\").count(0) - 1
-        ]
-        self.ex_name = ctx.children[1].getText()
-        long_name = name_of_file.replace(".java", "") + "." + self.ex_name
-        line = ctx.children[0].symbol.line
-        col = ctx.children[0].symbol.column
+        # IDENTIFIER, not children[1]: a record's or a sealed class's first
+        # child is a sub-rule, not the `class` keyword.
+        self.ex_name = ctx.IDENTIFIER().getText()
 
     def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
 
@@ -152,6 +148,40 @@ class SetInitAndSetByInitListener(JavaParserLabeledListener):
         self.create_object = False
         self.method_name = ""
         self.class_name = ""
+
+    def enterPattern(self, ctx: JavaParserLabeled.PatternContext):
+        """`x instanceof T name` and `case T name`: the match sets `name`.
+
+        Understand writes a Set Init at the name although nothing is written
+        after an `=`, so this does not go through exitVariableInitializer1.
+        """
+        declaration = ctx.localVariableDeclaration()
+        if declaration is None:
+            return  # a record pattern; its components are patterns themselves
+        enclosing = ".".join(
+            class_properties.ClassPropertiesListener.findParents(ctx)
+        )
+        type_text = declaration.typeType().getText()
+        for declarator in declaration.variableDeclarators().variableDeclarator():
+            token = declarator.variableDeclaratorId().IDENTIFIER().symbol
+            name = token.text
+            self.set_init_by.append(
+                (
+                    name,
+                    f"{enclosing}.{name}",
+                    self.file_name,
+                    "",
+                    type_text,
+                    token.line,
+                    token.column,
+                    self.ex_name,
+                    type_text,
+                    "",
+                    "",
+                    enclosing,
+                    f"{enclosing}.{name}",
+                )
+            )
 
     def exitPackageDeclaration(self, ctx: JavaParserLabeled.PackageDeclarationContext):
         self.package_name = ctx.children[1].getText()

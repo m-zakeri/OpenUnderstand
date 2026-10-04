@@ -199,6 +199,9 @@ class MethodCallListener(JavaParserLabeledListener):
                 ),
                 "line": keyword.symbol.line,
                 "col": keyword.symbol.column,
+                # Labelled by the writer, not by relabel_nondynamic_calls:
+                # `new X(...)` is never Nondynamic and this can be.
+                "constructor_invocation": True,
             }
         )
 

@@ -37,7 +37,7 @@ wrong produces a confusing failure:
 The rename is cosmetic. The generated translator looks every parse-tree context
 class up by name off the ``parser_cls`` argument passed in at runtime, and we
 pass the real ``gen.javaLabeled.JavaParserLabeled``. Both grammars produce the
-same 218 context classes, so the accelerator populates the very same listener-
+same context classes, so the accelerator populates the very same listener-
 enabled classes the analysis passes already walk.
 """
 
@@ -45,6 +45,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -220,9 +221,40 @@ def build_cpp_runtime(cache: Path, jobs: int) -> tuple[Path, Path]:
     return inc, lib
 
 
-def rename_grammars(work: Path) -> Path:
-    """Copy the real grammars under the names speedy-antlr-tool requires."""
-    g = work / "grammars"
+_PREDICATE = re.compile(r"\{(\(?self\._input\.LT\(\d+\)\.text[^}]*)\}\?")
+
+
+def cpp_predicates(grammar: str) -> str:
+    """Rewrite the parser's semantic predicates from Python to C++.
+
+    The predicates recognise contextual keywords by text and are written for
+    the Python target, which is the parser everyone gets. They keep to one
+    shape so this rewrite stays mechanical: ``self._input.LT(n).text`` compared
+    with ``==``/``!=`` against a string, joined by ``and``/``or``. Anything
+    else is refused rather than passed to the C++ compiler half-translated.
+    """
+
+    def one(m):
+        p = m.group(1)
+        p = re.sub(r"self\._input\.LT\((\d+)\)\.text", r"_input->LT(\1)->getText()", p)
+        p = p.replace(" and ", " && ").replace(" or ", " || ")
+        if "self" in p or re.search(r"\b(and|or|not)\b", p):
+            raise SystemExit(f"cannot translate predicate to C++: {m.group(1)}")
+        return "{" + p + "}?"
+
+    out = _PREDICATE.sub(one, grammar)
+    if re.search(r"\{[^{}]*self\.[^{}]*\}\?", out):
+        raise SystemExit("a predicate is not in the shape cpp_predicates() rewrites")
+    return out
+
+
+def rename_grammars(work: Path, lang: str = "Python3") -> Path:
+    """Copy the real grammars under the names speedy-antlr-tool requires.
+
+    The C++ copy also gets its predicates rewritten, so each language is
+    generated from its own directory.
+    """
+    g = work / "grammars" / lang
     g.mkdir(parents=True, exist_ok=True)
 
     lex = (GRAMMARS / "JavaLexer.g4").read_text()
@@ -234,6 +266,8 @@ def rename_grammars(work: Path) -> Path:
         "parser grammar JavaParserLabeled;", "parser grammar JavaLabeledParser;"
     )
     par = par.replace("tokenVocab=JavaLexer", "tokenVocab=JavaLabeledLexer")
+    if lang == "Cpp":
+        par = cpp_predicates(par)
     (g / "JavaLabeledParser.g4").write_text(par)
 
     for f, marker in (
@@ -248,7 +282,6 @@ def rename_grammars(work: Path) -> Path:
 
 
 def generate(work: Path, jar: Path):
-    g = rename_grammars(work)
     cpp = work / "cpp"
     py = work / "py"
     for d in (cpp, py):
@@ -259,6 +292,7 @@ def generate(work: Path, jar: Path):
         ("Cpp", ["-visitor", "-no-listener"], cpp),
         ("Python3", ["-no-visitor", "-no-listener"], py),
     ):
+        g = rename_grammars(work, lang)
         for name in ("JavaLabeledLexer.g4", "JavaLabeledParser.g4"):
             run(
                 [

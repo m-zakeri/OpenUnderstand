@@ -115,6 +115,19 @@ def get_method_ctx(ctx):
     return None
 
 
+def in_switch_expression(label):
+    """Whether a case label belongs to a switch expression, not a statement."""
+    node = label.parentCtx
+    while node is not None:
+        if isinstance(node, JavaParserLabeled.SwitchExpressionContext):
+            return True
+        if isinstance(node, (JavaParserLabeled.Statement8Context,
+                             JavaParserLabeled.Statement18Context)):
+            return False
+        node = node.parentCtx
+    return False
+
+
 class CyclomaticListener(JavaParserLabeledListener):
     def __init__(self):
         # repository of ctx
@@ -199,9 +212,16 @@ class CyclomaticListener(JavaParserLabeledListener):
     def enterCatchClause(self, ctx: JavaParserLabeled.CatchClauseContext):
         self.update_repository(ctx)
 
-    # case
+    # case: one per label, however many constants it lists, and only in a
+    # switch *statement*. Understand counts nothing for a switch expression,
+    # colon or arrow form alike, and counts `case X ->` in a statement exactly
+    # as it counts `case X:`.
     def enterSwitchLabel(self, ctx: JavaParserLabeled.SwitchLabelContext):
-        if ctx.children[0].getText() == "case":
+        if ctx.CASE() is not None and not in_switch_expression(ctx):
+            self.update_repository(ctx)
+
+    def enterSwitchRuleLabel(self, ctx: JavaParserLabeled.SwitchRuleLabelContext):
+        if ctx.CASE() is not None and not in_switch_expression(ctx):
             self.update_repository(ctx)
 
 

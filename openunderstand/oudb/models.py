@@ -113,6 +113,10 @@ _FAMILY_TOKENS = (
     ("typevariable", "type"),
     ("annotation", "type"),
     ("interface", "type"),
+    # Understand's own irregular spelling, `Java SealedInterface Type Public`:
+    # without it a sealed interface fell into "other" and every pass that
+    # named it as an interface created a second row.
+    ("sealedinterface", "type"),
     ("constructor", "method"),
     ("parameter", "variable"),
     ("namespace", "package"),
@@ -228,6 +232,13 @@ def _entity_kind_words(_database):
         (row, frozenset(w.lower() for w in (row._name or "").split()))
         for row in KindModel.select().where(KindModel.is_ent_kind == True)
     ]  # noqa: E712
+
+
+def _parameter_vs_member(a, b) -> bool:
+    """True when one kind is a parameter and the other a member field."""
+    ta = set(_kind_name(a).lower().split())
+    tb = set(_kind_name(b).lower().split())
+    return ("parameter" in ta and "member" in tb) or ("parameter" in tb and "member" in ta)
 
 
 def kind_family(kind) -> str:
@@ -448,6 +459,16 @@ class EntityModel(Model):
                 or row_placeholder
                 or kind_family(row._kind_id) == incoming_family
             ):
+                continue
+            if (
+                not incoming_placeholder
+                and not row_placeholder
+                and _parameter_vs_member(row._kind_id, incoming)
+            ):
+                # A record component `R(T c)` is both the field R.c and the
+                # implicit constructor's parameter R.c -- Understand's long
+                # names for the two are identical. Nowhere else can a
+                # parameter and a member share a long name (C.m.x, C.x).
                 continue
             row_site = (row._line, row._column)
             if (
@@ -1086,6 +1107,16 @@ def drop_shadowed_use_refs():
     # the day a new one is added. Measured: this drops 110 rows on JSON and 895
     # on TheAlgorithms, and not one of them is a reference Understand reports
     # as a plain Use.
+    #
+    # Typed is the exception. `x instanceof Character v` is a Use of Character
+    # *and* v Typed Character, at the same token, and Understand keeps both --
+    # 74 positions on jenetics, none on JSON or TheAlgorithms, which have no
+    # patterns. They are two facts about two entities, not one fact twice.
+    #
+    # A module's Use is kept too: `provides p.S with p.Impl` is a Use of
+    # p.Impl and a DotRef of p at the same token, and Understand keeps both.
+    # Exempting DotRef everywhere instead added 2,382 false Uses on JSON,
+    # which this project writes beside a DotRef where Understand does not.
     cursor = database.execute_sql("""
         DELETE FROM referencemodel
          WHERE _kind_id IN (SELECT _id FROM kindmodel
@@ -1096,7 +1127,13 @@ def drop_shadowed_use_refs():
                           AND other._column   = referencemodel._column
                           AND other._kind_id NOT IN
                               (SELECT _id FROM kindmodel
-                                WHERE _name IN ('Java Use', 'Java Useby')))
+                                WHERE _name IN ('Java Use', 'Java Useby',
+                                                'Java Typed', 'Java Typedby')))
+           AND NOT EXISTS (SELECT 1 FROM entitymodel m
+                            WHERE m._id IN (referencemodel._scope_id,
+                                            referencemodel._ent_id)
+                              AND m._kind_id = (SELECT _id FROM kindmodel
+                                                 WHERE _name = 'Java Module'))
         """)
     return cursor.rowcount if cursor.rowcount and cursor.rowcount > 0 else 0
 
@@ -1141,6 +1178,31 @@ def drop_duplicate_bare_call_refs():
                           AND instr(oe._longname, '.') > 0)
         """)
     return cursor.rowcount if cursor.rowcount and cursor.rowcount > 0 else 0
+
+
+def _declared_in_final_class(entity):
+    """Whether a project method's declaring class is declared `final`."""
+    if entity._parent_id is None or kind_family(entity._kind_id) != "method":
+        return False
+    owner = EntityModel.get_or_none(_id=entity._parent_id)
+    if owner is None:
+        return False
+    tokens = set(_kind_name(owner._kind_id).lower().split())
+    return "final" in tokens and "class" in tokens and not {"record", "enum"} & tokens
+
+
+def invocation_is_nondynamic(constructor):
+    """Whether `this(...)`/`super(...)` naming `constructor` is Call Nondynamic.
+
+    Understand labels such a call Nondynamic when the target is private or its
+    class is final (not a record or an enum) -- the rule for methods. Read off
+    jenetics: 5 of 5 such calls, and none of the 33 others. `new X(...)` is a
+    plain Call whatever X is, which is why relabel_nondynamic_calls() leaves
+    constructors alone and the call writer applies this instead.
+    """
+    if "private" in _kind_name(constructor._kind_id).lower().split():
+        return True
+    return _declared_in_final_class(constructor)
 
 
 def relabel_nondynamic_calls(file_ids=None):
@@ -1199,7 +1261,17 @@ def relabel_nondynamic_calls(file_ids=None):
         # precision.
         if owner and owner.rsplit(".", 1)[-1] == simple:
             return False
+        # A call to a record accessor targets the component's *field*, which
+        # is private -- and Understand still reports it as a plain Call.
+        if kind_family(entity._kind_id) == "variable":
+            return False
         if set(_kind_name(entity._kind_id).lower().split()) & _NONDYNAMIC_TOKENS:
+            return True
+        # A method of a *final class* cannot be overridden either: Understand
+        # labels 142 of 142 such calls on jenetics Nondynamic. Not a record or
+        # an enum, though both are implicitly final -- 24 of 26 record calls
+        # there are a plain Call.
+        if _declared_in_final_class(entity):
             return True
         # A JDK callee carries no modifiers here -- it is a placeholder named
         # from the receiver's type, never a declaration this project parsed.
@@ -1207,7 +1279,7 @@ def relabel_nondynamic_calls(file_ids=None):
         # java.lang.String.length, so the call cannot dispatch virtually.
         # These are 303 of TheAlgorithms' missing Call Nondynamic rows for
         # String alone, and 180 of JSON's.
-        return jdk_index.is_final(owner)
+        return jdk_index.is_final(owner) or jdk_index.cannot_dispatch(owner, simple)
 
     relabelled = 0
     # The callee is _ent on a Call and _scope on its inverse.
@@ -1227,6 +1299,55 @@ def relabel_nondynamic_calls(file_ids=None):
             ).execute()
             relabelled += len(hits)
     return relabelled
+
+
+def retarget_compact_constructor_reads():
+    """Inside a record's compact constructor a component's name is the
+    *parameter*, not the field.
+
+    `record Accuracy(double relative, ...) { public Accuracy { if
+    (Double.isNaN(relative)) ... } }` reads the parameter Accuracy.relative --
+    and the field is also Accuracy.relative, so every pass resolving the name
+    by long name landed on whichever row came first, the field. Understand
+    gives Accuracy a PercentLackOfCohesion of 100 (no method touches a field);
+    with the reads on the field it was 0.
+
+    The constructor that `Define Implicit`s a parameter is the canonical one;
+    its references to the field of that name are moved to the parameter, both
+    halves. Returns the number of rows moved.
+    """
+    flush_reference_writes()
+    database = ReferenceModel._meta.database
+    define_implicit = kind_id("Java Define Implicit")
+    pairs = database.execute_sql(
+        """
+        SELECT r._scope_id, p._id, f._id
+          FROM referencemodel r
+          JOIN entitymodel p ON p._id = r._ent_id
+          JOIN entitymodel f ON f._longname = p._longname AND f._id != p._id
+         WHERE r._kind_id = ?
+        """,
+        (define_implicit,),
+    ).fetchall()
+    moved = 0
+    for constructor, parameter, field in pairs:
+        if kind_family(EntityModel.get_by_id(constructor)._kind_id) != "method":
+            continue
+        if not _parameter_vs_member(
+            EntityModel.get_by_id(parameter)._kind_id,
+            EntityModel.get_by_id(field)._kind_id,
+        ):
+            continue
+        moved += database.execute_sql(
+            "UPDATE referencemodel SET _ent_id = ? WHERE _scope_id = ? AND _ent_id = ?",
+            (parameter, constructor, field),
+        ).rowcount
+        moved += database.execute_sql(
+            "UPDATE referencemodel SET _scope_id = ? WHERE _ent_id = ? AND _scope_id = ?"
+            " AND _kind_id != ?",
+            (parameter, constructor, field, define_implicit),
+        ).rowcount
+    return moved
 
 
 def finalise_analysis(file_ids=None):
@@ -1257,6 +1378,7 @@ def finalise_analysis(file_ids=None):
         "shadowed_use_dropped": drop_shadowed_use_refs(),
         "external_inverses_dropped": drop_external_inverse_refs(),
         "orphan_placeholders_dropped": drop_orphan_placeholders(),
+        "compact_constructor_reads": retarget_compact_constructor_reads(),
     }
 
 

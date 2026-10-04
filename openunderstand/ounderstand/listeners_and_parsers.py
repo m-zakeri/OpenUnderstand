@@ -22,6 +22,7 @@ from openunderstand.analysis_passes.method_calls import MethodCallListener
 from openunderstand.analysis_passes.overrides import OverridesListener
 from openunderstand.analysis_passes.static_imports import StaticImportListener
 from openunderstand.analysis_passes.lambdas import LambdaListener
+from openunderstand.analysis_passes import modules as module_pass
 from openunderstand.analysis_passes.field_uses import FieldUseListener
 
 from openunderstand.analysis_passes.modify_modifyby import ModifyListener
@@ -301,6 +302,32 @@ class ListenersAndParsers:
         except Exception as e:
             self.logger.error(
                 "An Error occurred in field uses in file :"
+                + file_address
+                + "\n"
+                + str(e)
+                + "\n"
+                + traceback.format_exc()
+            )
+
+    @timer_decorator()
+    def module_listener(self, tree, file_ent, file_address, p):
+        """`module-info.java`: the module and its directives (Java 9)."""
+        try:
+
+            def _build():
+                return module_pass.ModuleListener()
+
+            listener = self._stage("module_listener", _build, tree, p)
+            if listener is None or not listener.relations:
+                return
+            for relation in listener.relations:
+                if relation["ent_longname"] is module_pass.FILE:
+                    relation["ent_longname"] = file_ent._longname
+            p.addTypeRelationRefs(listener.relations, file_ent)
+            self.logger.info("modules success")
+        except Exception as e:
+            self.logger.error(
+                "An Error occurred in modules in file :"
                 + file_address
                 + "\n"
                 + str(e)
@@ -758,7 +785,7 @@ class ListenersAndParsers:
                 return
             for item in my_listener.dbHandler.classTypes:
                 imported_entity, importing_entity = p.add_imported_entity_factory(item)
-                p.add_references(imported_entity, importing_entity, item)
+                p.add_references(imported_entity, importing_entity, item, file_ent)
             self.logger.info("extend implict success ")
         except Exception as e:
             self.logger.error(
