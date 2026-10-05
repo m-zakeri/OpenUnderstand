@@ -27,7 +27,7 @@ is one kind, not five attributes.
 | `Java Abstract Generic Class Type Private Member` | -- |
 | `Java Abstract Generic Class Type Protected Member` | -- |
 | `Java Abstract Generic Class Type Public Member` | yes |
-| `Java Abstract Generic Method Default Member` | -- |
+| `Java Abstract Generic Method Default Member` | yes |
 | `Java Abstract Generic Method Protected Member` | -- |
 | `Java Abstract Generic Method Public Member` | yes |
 | `Java Abstract Method Default Member` | yes |
@@ -55,10 +55,10 @@ is one kind, not five attributes.
 | `Java Final Class Type Private Member` | yes |
 | `Java Final Class Type Protected Member` | yes |
 | `Java Final Class Type Public Member` | yes |
-| `Java Final Generic Class Type Default Member` | -- |
+| `Java Final Generic Class Type Default Member` | yes |
 | `Java Final Generic Class Type Private Member` | -- |
 | `Java Final Generic Class Type Protected Member` | -- |
-| `Java Final Generic Class Type Public Member` | -- |
+| `Java Final Generic Class Type Public Member` | yes |
 | `Java Final Generic Method Protected Member` | -- |
 | `Java Final Generic Method Public Member` | -- |
 | `Java Final Method Default Member` | yes |
@@ -78,20 +78,20 @@ is one kind, not five attributes.
 | `Java Generic Class Type Public Member` | yes |
 | `Java Generic Final Method Default Member` | -- |
 | `Java Generic Final Method Private Member` | -- |
-| `Java Generic Interface Type Default` | -- |
+| `Java Generic Interface Type Default` | yes |
 | `Java Generic Interface Type Private` | -- |
 | `Java Generic Interface Type Protected` | -- |
 | `Java Generic Interface Type Public` | yes |
-| `Java Generic Method Default Member` | -- |
+| `Java Generic Method Default Member` | yes |
 | `Java Generic Method Private Member` | yes |
 | `Java Generic Method Protected Member` | yes |
 | `Java Generic Method Public Member` | yes |
 | `Java Generic Record Class Type Default Member` | -- |
 | `Java Generic Record Class Type Private Member` | -- |
 | `Java Generic Record Class Type Protected Member` | -- |
-| `Java Generic Record Class Type Public Member` | -- |
+| `Java Generic Record Class Type Public Member` | yes |
 | `Java GenericParameter Type` | yes |
-| `Java Implicit Final Variable Public Member` | -- |
+| `Java Implicit Final Variable Public Member` | yes |
 | `Java Implicit Method Public Member` | -- |
 | `Java Interface Type Default` | yes |
 | `Java Interface Type Private` | yes |
@@ -106,15 +106,15 @@ is one kind, not five attributes.
 | `Java Method Private Member` | yes |
 | `Java Method Protected Member` | yes |
 | `Java Method Public Member` | yes |
-| `Java Module` | -- |
+| `Java Module` | yes |
 | `Java Package` | yes |
 | `Java Package Unnamed` | yes |
 | `Java Parameter` | yes |
-| `Java Record Class Type Default Member` | -- |
+| `Java Record Class Type Default Member` | yes |
 | `Java Record Class Type Private Member` | -- |
 | `Java Record Class Type Protected Member` | -- |
-| `Java Record Class Type Public Member` | -- |
-| `Java Sealed Abstract Class Type Default Member` | -- |
+| `Java Record Class Type Public Member` | yes |
+| `Java Sealed Abstract Class Type Default Member` | yes |
 | `Java Sealed Abstract Class Type Private Member` | -- |
 | `Java Sealed Abstract Class Type Protected Member` | -- |
 | `Java Sealed Abstract Class Type Public Member` | -- |
@@ -132,12 +132,12 @@ is one kind, not five attributes.
 | `Java Sealed Generic Class Type Public Member` | -- |
 | `Java Sealed Generic Interface Type Private` | -- |
 | `Java Sealed Generic Interface Type Protected` | -- |
-| `Java Sealed Generic Interface Type Public` | -- |
+| `Java Sealed Generic Interface Type Public` | yes |
 | `Java Sealed Interface Type Default` | -- |
 | `Java Sealed Interface Type Private` | -- |
 | `Java Sealed Interface Type Protected` | -- |
-| `Java SealedGeneric Interface Type Default` | -- |
-| `Java SealedInterface Type Public` | -- |
+| `Java SealedGeneric Interface Type Default` | yes |
+| `Java SealedInterface Type Public` | yes |
 | `Java Spring Column` | -- |
 | `Java Spring Column Id` | -- |
 | `Java Spring Embeddable Table` | -- |
@@ -160,7 +160,7 @@ is one kind, not five attributes.
 | `Java Static Final Class Type Protected Member` | yes |
 | `Java Static Final Class Type Public Member` | yes |
 | `Java Static Final Generic Class Type Default Member` | -- |
-| `Java Static Final Generic Class Type Private Member` | -- |
+| `Java Static Final Generic Class Type Private Member` | yes |
 | `Java Static Final Generic Class Type Protected Member` | -- |
 | `Java Static Final Generic Class Type Public Member` | -- |
 | `Java Static Final Generic Method Default Member` | -- |
@@ -183,19 +183,19 @@ is one kind, not five attributes.
 | `Java Static Generic Method Private Member` | yes |
 | `Java Static Generic Method Protected Member` | -- |
 | `Java Static Generic Method Public Member` | yes |
-| `Java Static Generic Record Class Type Default Member` | -- |
+| `Java Static Generic Record Class Type Default Member` | yes |
 | `Java Static Generic Record Class Type Protected Member` | -- |
-| `Java Static Generic Record Class Type Public Member` | -- |
+| `Java Static Generic Record Class Type Public Member` | yes |
 | `Java Static Method Default Member` | yes |
 | `Java Static Method Private Member` | yes |
 | `Java Static Method Protected Member` | yes |
 | `Java Static Method Public Main Member` | yes |
 | `Java Static Method Public Member` | yes |
-| `Java Static Record Class Generic Type Private Member` | -- |
-| `Java Static Record Class Type Default Member` | -- |
-| `Java Static Record Class Type Private Member` | -- |
+| `Java Static Record Class Generic Type Private Member` | yes |
+| `Java Static Record Class Type Default Member` | yes |
+| `Java Static Record Class Type Private Member` | yes |
 | `Java Static Record Class Type Protected Member` | -- |
-| `Java Static Record Class Type Public Member` | -- |
+| `Java Static Record Class Type Public Member` | yes |
 | `Java Static Sealed Abstract Class Type Default Member` | -- |
 | `Java Static Sealed Abstract Class Type Private Member` | -- |
 | `Java Static Sealed Abstract Class Type Protected Member` | -- |
@@ -207,7 +207,7 @@ is one kind, not five attributes.
 | `Java Static Sealed Class Type Default Member` | -- |
 | `Java Static Sealed Class Type Private Member` | -- |
 | `Java Static Sealed Class Type Protected Member` | -- |
-| `Java Static Sealed Class Type Public Member` | -- |
+| `Java Static Sealed Class Type Public Member` | yes |
 | `Java Static Sealed Generic Class Type Default Member` | -- |
 | `Java Static Sealed Generic Class Type Private Member` | -- |
 | `Java Static Sealed Generic Class Type Protected Member` | -- |
@@ -220,7 +220,7 @@ is one kind, not five attributes.
 | `Java Unknown Class Type Member` | yes |
 | `Java Unknown Method Member` | yes |
 | `Java Unknown Module` | -- |
-| `Java Unknown Package` | -- |
+| `Java Unknown Package` | yes |
 | `Java Unknown Variable Member` | yes |
 | `Java Unresolved Bean` | -- |
 | `Java Unresolved External Final Method Default Member` | -- |
@@ -241,7 +241,7 @@ is one kind, not five attributes.
 | `Java Unresolved External Static Method Public Main Member` | -- |
 | `Java Unresolved External Static Method Public Member` | -- |
 | `Java Unresolved Method` | -- |
-| `Java Unresolved Module` | -- |
+| `Java Unresolved Module` | yes |
 | `Java Unresolved Package` | -- |
 | `Java Unresolved Spring Table` | -- |
 | `Java Unresolved Type` | -- |
@@ -269,10 +269,10 @@ once in each direction, at the same file, line and column.
 | `Java Create` | `Java Createby` | yes |
 | `Java Declare` | `Java Declarein` | yes |
 | `Java Define` | `Java Definein` | yes |
-| `Java Define Implicit` | `Java Definein Implicit` | -- |
+| `Java Define Implicit` | `Java Definein Implicit` | yes |
 | `Java DotRef` | `Java DotRefby` | yes |
 | `Java End` | `Java Endby` | yes |
-| `Java Export` | `Java Exportby` | -- |
+| `Java Export` | `Java Exportby` | yes |
 | `Java Extend Couple` | `Java Extendby Coupleby` | yes |
 | `Java Extend Couple External` | `Java Extendby Coupleby External` | yes |
 | `Java Extend Couple Implicit` | `Java Extendby Coupleby Implicit` | -- |
@@ -287,14 +287,14 @@ once in each direction, at the same file, line and column.
 | `Java Mapstojava Implicit` | `Java Mapstospring Implicit` | -- |
 | `Java Modify` | `Java Modifyby` | yes |
 | `Java Modify Deref Partial` | `Java Modifyby Deref Partial` | yes |
-| `Java ModuleUse` | `Java ModuleUseby` | -- |
+| `Java ModuleUse` | `Java ModuleUseby` | yes |
 | `Java Onetomany Relation` | `Java Onetomanyby Relation` | -- |
 | `Java Onetoone Relation` | `Java Onetooneby Relation` | -- |
-| `Java Open` | `Java Openby` | -- |
+| `Java Open` | `Java Openby` | yes |
 | `Java Overrides` | `Java Overriddenby` | yes |
-| `Java Permit Couple` | `Java Permitby Coupleby` | -- |
-| `Java Provide` | `Java Provideby` | -- |
-| `Java Require` | `Java Requireby` | -- |
+| `Java Permit Couple` | `Java Permitby Coupleby` | yes |
+| `Java Provide` | `Java Provideby` | yes |
+| `Java Require` | `Java Requireby` | yes |
 | `Java Set` | `Java Setby` | yes |
 | `Java Set Deref Partial` | `Java Setby Deref Partial` | yes |
 | `Java Set Implicit` | `Java Setby Implicit` | -- |
@@ -302,7 +302,7 @@ once in each direction, at the same file, line and column.
 | `Java Throw` | `Java Throwby` | yes |
 | `Java Typed` | `Java Typedby` | yes |
 | `Java Typed GenericArgument` | `Java Typedby GenericArgument` | yes |
-| `Java Typed Implicit` | `Java Typedby Implicit` | -- |
+| `Java Typed Implicit` | `Java Typedby Implicit` | yes |
 | `Java Use` | `Java Useby` | yes |
 | `Java Use Annotation` | `Java Useby Annotation` | yes |
 | `Java Use BeanQualifier` | `Java Useby BeanQualifier` | -- |

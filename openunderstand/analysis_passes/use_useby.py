@@ -44,6 +44,10 @@ class UseAndUseByListener(JavaParserLabeledListener):
         )
         if not scope_longname:
             return
+        from openunderstand.analysis_passes.dotref_dotrefby import starts_external_chain
+
+        if ctx.parentCtx is not None and starts_external_chain(ctx.parentCtx):
+            return  # `org` heading `org.evosuite.runtime.X.y()`: the chain pass owns it
         self.useBy.append(
             {
                 "name": identifier.getText(),

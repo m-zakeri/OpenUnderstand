@@ -16,37 +16,39 @@ the file, line and column to agree.
 
 | Fixture | Entities matched | Ref precision | Ref recall |
 | --- | ---: | ---: | ---: |
-| calculator_app | 67 of 72 | 0.877 | 0.984 |
-| JSON | 4582 of 4928 | 0.827 | 0.980 |
-| testing_legacy_code | 197 of 399 | 0.550 | 0.976 |
-| jfreechart | 41265 of 44277 | 0.854 | 0.965 |
-| jvlt-1.3.2 | 7683 of 7945 | 0.822 | 0.960 |
-| TheAlgorithms | 4499 of 4626 | 0.831 | 0.959 |
-| 105_freemind | 22287 of 22975 | 0.820 | 0.946 |
-| jhotdraw-develop | 25694 of 27694 | 0.775 | 0.936 |
-| xerces2j | 32773 of 35218 | 0.865 | 0.934 |
-| ganttproject | 25325 of 26076 | 0.820 | 0.931 |
+| java25_probe | 54 of 55 | 0.783 | 1.000 |
+| JSON | 4595 of 4928 | 0.827 | 0.989 |
+| calculator_app | 67 of 72 | 0.863 | 0.984 |
+| testing_legacy_code | 197 of 399 | 0.471 | 0.982 |
+| jfreechart | 41870 of 44277 | 0.860 | 0.981 |
+| 105_freemind | 22467 of 22975 | 0.833 | 0.974 |
+| jvlt-1.3.2 | 7705 of 7945 | 0.828 | 0.972 |
+| TheAlgorithms | 4517 of 4626 | 0.832 | 0.970 |
+| ganttproject | 25460 of 26076 | 0.833 | 0.965 |
+| jhotdraw-develop | 26044 of 27694 | 0.785 | 0.959 |
+| xerces2j | 33058 of 35218 | 0.876 | 0.952 |
+| jenetics_incubator | 3743 of 4007 | 0.755 | 0.951 |
 | SalaryCalculator | 50 of 50 | 0.830 | 0.907 |
 
 ## 105_freemind
 
 | | Understand | OpenUnderstand |
 | --- | ---: | ---: |
-| Entities | 22975 | 23501 |
+| Entities | 22975 | 23678 |
 
-- Entities matched: **22287** of 22975
-- Entities with no Understand counterpart: 1214
-- References: precision **0.820**, recall **0.946** (215821 matched, 12391 missing, 47361 extra)
-- Open findings: 57
+- Entities matched: **22467** of 22975
+- Entities with no Understand counterpart: 1211
+- References: precision **0.833**, recall **0.974** (222298 matched, 5914 missing, 44599 extra)
+- Open findings: 52
 
 ### Entities by kind family
 
 | Family | Understand | OpenUnderstand | Δ |
 | --- | ---: | ---: | ---: |
-| variable | 8583 | 9118 | +535 |
-| parameter | 6680 | 6192 | -488 |
-| method | 5901 | 5900 | -1 |
-| class | 984 | 988 | +4 |
+| variable | 8583 | 9119 | +536 |
+| parameter | 6680 | 6371 | -309 |
+| method | 5901 | 5901 | +0 |
+| class | 984 | 984 | +0 |
 | constructor | 684 | 684 | +0 |
 | interface | 90 | 90 | +0 |
 | package | 53 | 53 | +0 |
@@ -56,55 +58,55 @@ the file, line and column to agree.
 
 | Kind | Understand | OpenUnderstand | Missing |
 | --- | ---: | ---: | ---: |
-| `Java Callby` | 12011 | 10984 | +1027 |
-| `Java Endby` | 7659 | 7053 | +606 |
-| `Java End` | 7659 | 7053 | +606 |
-| `Java Beginby` | 7653 | 7053 | +600 |
-| `Java Begin` | 7653 | 7053 | +600 |
-| `Java Callby Nondynamic` | 2881 | 2333 | +548 |
-| `Java Coupleby` | 4460 | 3960 | +500 |
-| `Java Useby` | 18350 | 17908 | +442 |
-| `Java DotRefby` | 1671 | 1559 | +112 |
-| `Java Typedby` | 4588 | 4518 | +70 |
+| `Java Callby` | 12011 | 11069 | +942 |
+| `Java Coupleby` | 4460 | 3975 | +485 |
+| `Java Callby Nondynamic` | 2881 | 2589 | +292 |
+| `Java DotRefby` | 1671 | 1565 | +106 |
+| `Java Setby Init` | 6980 | 6918 | +62 |
+| `Java Useby Return` | 1188 | 1133 | +55 |
+| `Java Set Init` | 6980 | 6926 | +54 |
+| `Java Use Return` | 1188 | 1136 | +52 |
+| `Java Setby` | 3473 | 3452 | +21 |
+| `Java Modify Deref Partial` | 34 | 16 | +18 |
 
 ### Open findings
 
 | Score | Severity | Finding |
 | ---: | --- | --- |
 | 21.2 | wrong-data | 1859 references written as 'Java Importby', which Understand never emits here |
-| 18.0 | missing-data | 24 reference pairs have unequal forward/inverse row counts |
-| 17.3 | wrong-data | 462 duplicate entity rows across 307 logical entities |
-| 17.0 | wrong-data | 1214 of 23501 OpenUnderstand entities have no Understand counterpart |
+| 18.1 | missing-data | 24 reference pairs have unequal forward/inverse row counts |
+| 17.3 | wrong-data | 463 duplicate entity rows across 308 logical entities |
+| 17.0 | wrong-data | 1211 of 23678 OpenUnderstand entities have no Understand counterpart |
 | 16.9 | wrong-data | 392 references written as 'Java Extend Couple Implicit External', which Understand never emits here |
+| 16.8 | wrong-data | api.py changes the method entity count by +2333 even though the database matches Understand |
 | 16.5 | wrong-data | 348 references written as 'Java Extend Couple External', which Understand never emits here |
-| 13.8 | wrong-data | CountInput disagrees with Understand on 573 of 4546 entities (87% agreement) |
-| 13.5 | wrong-data | CountLineCodeDecl disagrees with Understand on 508 of 5319 entities (90% agreement) |
-| 13.2 | missing-data | 10377 references Understand finds are absent, ignoring position (recall 95%) |
-| 13.0 | wrong-data | CountOutput disagrees with Understand on 404 of 4546 entities (91% agreement) |
-| 12.8 | wrong-data | CountStmtExe disagrees with Understand on 369 of 5319 entities (93% agreement) |
-| 12.6 | wrong-data | CountClassCoupled disagrees with Understand on 324 of 742 entities (56% agreement) |
+| 15.2 | wrong-data | api.py changes the class entity count by +1119 even though the database matches Understand |
+| 13.4 | wrong-data | CountLineCodeDecl disagrees with Understand on 486 of 5148 entities (91% agreement) |
+| 13.0 | wrong-data | CountInput disagrees with Understand on 398 of 4398 entities (91% agreement) |
+| 12.4 | missing-data | 5898 references Understand finds are absent, ignoring position (recall 97%) |
+| 12.4 | wrong-data | CountLineCodeExe disagrees with Understand on 298 of 5148 entities (94% agreement) |
 
 ## JSON
 
 | | Understand | OpenUnderstand |
 | --- | ---: | ---: |
-| Entities | 4928 | 4698 |
+| Entities | 4928 | 4703 |
 
-- Entities matched: **4582** of 4928
-- Entities with no Understand counterpart: 116
-- References: precision **0.827**, recall **0.980** (57375 matched, 1181 missing, 11968 extra)
-- Open findings: 49
+- Entities matched: **4595** of 4928
+- Entities with no Understand counterpart: 108
+- References: precision **0.827**, recall **0.989** (57892 matched, 664 missing, 12118 extra)
+- Open findings: 44
 
 ### Entities by kind family
 
 | Family | Understand | OpenUnderstand | Δ |
 | --- | ---: | ---: | ---: |
-| variable | 2402 | 2374 | -28 |
+| variable | 2402 | 2375 | -27 |
 | method | 1243 | 1243 | +0 |
-| parameter | 1057 | 769 | -288 |
+| parameter | 1057 | 773 | -284 |
 | constructor | 100 | 100 | +0 |
-| class | 99 | 109 | +10 |
-| unknown | 16 | 7 | -9 |
+| class | 99 | 99 | +0 |
+| unknown | 16 | 17 | +1 |
 | interface | 5 | 5 | +0 |
 | package | 4 | 4 | +0 |
 | annotation | 2 | 2 | +0 |
@@ -114,33 +116,33 @@ the file, line and column to agree.
 
 | Kind | Understand | OpenUnderstand | Missing |
 | --- | ---: | ---: | ---: |
-| `Java DotRefby` | 1019 | 901 | +118 |
-| `Java Useby` | 4886 | 4834 | +52 |
+| `Java DotRefby` | 1019 | 902 | +117 |
 | `Java Use Return` | 205 | 154 | +51 |
 | `Java Useby Return` | 205 | 154 | +51 |
-| `Java Callby Nondynamic` | 1043 | 999 | +44 |
-| `Java End` | 1441 | 1400 | +41 |
-| `Java Endby` | 1441 | 1400 | +41 |
-| `Java Typedby` | 1380 | 1348 | +32 |
-| `Java Define` | 4827 | 4796 | +31 |
+| `Java Callby Nondynamic` | 1043 | 1004 | +39 |
+| `Java Callby` | 4651 | 4625 | +26 |
+| `Java Set Init` | 2210 | 2189 | +21 |
 | `Java Setby Init` | 2210 | 2189 | +21 |
+| `Java Typedby` | 1380 | 1367 | +13 |
+| `Java Setby` | 593 | 586 | +7 |
+| `Java Define` | 4827 | 4823 | +4 |
 
 ### Open findings
 
 | Score | Severity | Finding |
 | ---: | --- | --- |
-| 15.8 | missing-data | 21 reference pairs have unequal forward/inverse row counts |
+| 15.9 | missing-data | 23 reference pairs have unequal forward/inverse row counts |
 | 15.5 | wrong-data | 239 duplicate entity rows across 133 logical entities |
 | 12.8 | wrong-data | 91 references written as 'Java Importby', which Understand never emits here |
-| 12.6 | wrong-data | api.py changes the method entity count by +330 even though the database matches Understand |
-| 12.5 | wrong-data | 84 references written as 'Java Extend Couple Implicit External', which Understand never emits here |
-| 11.4 | wrong-data | 116 of 4698 OpenUnderstand entities have no Understand counterpart |
-| 10.7 | wrong-data | CountInput disagrees with Understand on 138 of 1102 entities (87% agreement) |
-| 10.5 | wrong-data | 40 referencemodel._scope_id values are text, not integer |
-| 10.5 | wrong-data | 40 referencemodel._file_id values are text, not integer |
-| 10.1 | missing-data | 1175 references Understand finds are absent, ignoring position (recall 98%) |
-| 10.0 | wrong-data | CountOutput disagrees with Understand on 100 of 1102 entities (91% agreement) |
-| 10.0 | wrong-data | CountStmtExe disagrees with Understand on 99 of 1209 entities (92% agreement) |
+| 12.7 | wrong-data | 89 references written as 'Java Extend Couple Implicit External', which Understand never emits here |
+| 12.6 | wrong-data | api.py changes the method entity count by +327 even though the database matches Understand |
+| 11.2 | wrong-data | 108 of 4703 OpenUnderstand entities have no Understand counterpart |
+| 11.2 | wrong-data | api.py changes the class entity count by +170 even though the database matches Understand |
+| 9.3 | wrong-data | CountInput disagrees with Understand on 73 of 1102 entities (93% agreement) |
+| 9.3 | missing-data | 664 references Understand finds are absent, ignoring position (recall 99%) |
+| 9.1 | wrong-data | CountOutput disagrees with Understand on 64 of 1102 entities (94% agreement) |
+| 8.4 | wrong-data | CountLineCodeDecl disagrees with Understand on 47 of 1209 entities (96% agreement) |
+| 8.3 | missing-data | 333 of 4928 entities Understand finds are absent from OpenUnderstand |
 
 ## SalaryCalculator
 
@@ -151,7 +153,7 @@ the file, line and column to agree.
 - Entities matched: **50** of 50
 - Entities with no Understand counterpart: 5
 - References: precision **0.830**, recall **0.907** (352 matched, 36 missing, 72 extra)
-- Open findings: 21
+- Open findings: 20
 
 ### Entities by kind family
 
@@ -168,14 +170,14 @@ the file, line and column to agree.
 
 | Kind | Understand | OpenUnderstand | Missing |
 | --- | ---: | ---: | ---: |
-| `Java Set Init` | 9 | 5 | +4 |
 | `Java Setby Init` | 9 | 5 | +4 |
+| `Java Set Init` | 9 | 5 | +4 |
 | `Java Setby` | 7 | 4 | +3 |
-| `Java Begin` | 27 | 27 | +0 |
-| `Java Callby Nondynamic` | 16 | 16 | +0 |
+| `Java Contain` | 5 | 5 | +0 |
 | `Java Typedby` | 2 | 2 | +0 |
 | `Java Extendby Coupleby` | 3 | 3 | +0 |
 | `Java Coupleby` | 3 | 3 | +0 |
+| `Java Useby` | 17 | 17 | +0 |
 | `Java Use Return` | 11 | 11 | +0 |
 | `Java Call Nondynamic` | 16 | 16 | +0 |
 
@@ -190,33 +192,33 @@ the file, line and column to agree.
 | 4.7 | missing-data | 26 references Understand finds are absent, ignoring position (recall 93%) |
 | 4.3 | wrong-data | 5 of 55 OpenUnderstand entities have no Understand counterpart |
 | 3.9 | wrong-data | 3 references written as 'Java Call', which Understand never emits here |
-| 3.1 | wrong-data | 2 references written as 'Java Overrides', which Understand never emits here |
+| 3.1 | wrong-data | 2 references written as 'Java Overriddenby', which Understand never emits here |
 | 3.1 | wrong-data | 2 references written as 'Java Extend Couple Implicit External', which Understand never emits here |
 | 3.1 | wrong-data | 2 references written as 'Java Use Annotation', which Understand never emits here |
-| 3.1 | wrong-data | 2 references written as 'Java Overriddenby', which Understand never emits here |
+| 3.1 | wrong-data | 2 references written as 'Java Overrides', which Understand never emits here |
 | 3.0 | wrong-data | CountOutput disagrees with Understand on 3 of 22 entities (86% agreement) |
 
 ## TheAlgorithms
 
 | | Understand | OpenUnderstand |
 | --- | ---: | ---: |
-| Entities | 4626 | 4822 |
+| Entities | 4626 | 4837 |
 
-- Entities matched: **4499** of 4626
-- Entities with no Understand counterpart: 323
-- References: precision **0.831**, recall **0.959** (44088 matched, 1886 missing, 8961 extra)
-- Open findings: 55
+- Entities matched: **4517** of 4626
+- Entities with no Understand counterpart: 320
+- References: precision **0.832**, recall **0.970** (44586 matched, 1388 missing, 9033 extra)
+- Open findings: 52
 
 ### Entities by kind family
 
 | Family | Understand | OpenUnderstand | Δ |
 | --- | ---: | ---: | ---: |
-| variable | 2050 | 2020 | -30 |
+| variable | 2050 | 2024 | -26 |
 | parameter | 1150 | 1121 | -29 |
 | method | 941 | 941 | +0 |
-| class | 293 | 337 | +44 |
+| class | 293 | 298 | +5 |
 | constructor | 106 | 106 | +0 |
-| unknown | 56 | 38 | -18 |
+| unknown | 56 | 88 | +32 |
 | package | 27 | 28 | +1 |
 | interface | 3 | 3 | +0 |
 | file | 0 | 228 | +228 |
@@ -225,33 +227,33 @@ the file, line and column to agree.
 
 | Kind | Understand | OpenUnderstand | Missing |
 | --- | ---: | ---: | ---: |
-| `Java Callby Nondynamic` | 799 | 653 | +146 |
 | `Java Setby Init` | 1656 | 1523 | +133 |
+| `Java Callby Nondynamic` | 799 | 673 | +126 |
 | `Java Set Init` | 1656 | 1543 | +113 |
-| `Java Setby` | 1094 | 1014 | +80 |
-| `Java Set` | 1094 | 1014 | +80 |
-| `Java Typedby` | 572 | 494 | +78 |
-| `Java Useby GenericArgument` | 65 | 33 | +32 |
-| `Java Useby` | 6021 | 5993 | +28 |
+| `Java Set` | 1094 | 1018 | +76 |
+| `Java Setby` | 1094 | 1018 | +76 |
+| `Java Callby` | 666 | 612 | +54 |
 | `Java Use Return` | 248 | 224 | +24 |
-| `Java End` | 1343 | 1319 | +24 |
+| `Java Useby Return` | 248 | 224 | +24 |
+| `Java Typedby` | 572 | 550 | +22 |
+| `Java Coupleby` | 109 | 100 | +9 |
 
 ### Open findings
 
 | Score | Severity | Finding |
 | ---: | --- | --- |
-| 16.0 | wrong-data | 287 references written as 'Java Extend Couple Implicit External', which Understand never emits here |
+| 16.1 | wrong-data | 300 references written as 'Java Extend Couple Implicit External', which Understand never emits here |
 | 15.2 | missing-data | 23 reference pairs have unequal forward/inverse row counts |
-| 13.8 | wrong-data | 323 of 4822 OpenUnderstand entities have no Understand counterpart |
-| 13.2 | wrong-data | CountStmt disagrees with Understand on 430 of 1301 entities (67% agreement) |
-| 13.1 | wrong-data | CountStmtExe disagrees with Understand on 423 of 1301 entities (67% agreement) |
-| 12.6 | wrong-data | api.py changes the method entity count by +326 even though the database matches Understand |
+| 13.8 | wrong-data | 320 of 4837 OpenUnderstand entities have no Understand counterpart |
+| 12.6 | wrong-data | api.py changes the method entity count by +332 even though the database matches Understand |
 | 12.2 | wrong-data | 75 duplicate entity rows across 54 logical entities |
 | 11.6 | wrong-data | 59 references written as 'Java Use Annotation', which Understand never emits here |
-| 11.2 | wrong-data | CountInput disagrees with Understand on 175 of 984 entities (82% agreement) |
 | 10.7 | wrong-data | 43 references written as 'Java Use Constrains Couple', which Understand never emits here |
-| 10.7 | missing-data | 1724 references Understand finds are absent, ignoring position (recall 96%) |
-| 10.4 | wrong-data | CountOutput disagrees with Understand on 118 of 984 entities (88% agreement) |
+| 10.4 | missing-data | 1380 references Understand finds are absent, ignoring position (recall 97%) |
+| 10.2 | wrong-data | CountClassCoupled disagrees with Understand on 109 of 343 entities (68% agreement) |
+| 10.1 | wrong-data | CountOutput disagrees with Understand on 105 of 984 entities (89% agreement) |
+| 9.5 | wrong-data | CountInput disagrees with Understand on 77 of 984 entities (92% agreement) |
+| 9.1 | wrong-data | RatioCommentToCode disagrees with Understand on 64 of 1301 entities (95% agreement) |
 
 ## calculator_app
 
@@ -261,8 +263,8 @@ the file, line and column to agree.
 
 - Entities matched: **67** of 72
 - Entities with no Understand counterpart: 11
-- References: precision **0.877**, recall **0.984** (498 matched, 8 missing, 70 extra)
-- Open findings: 19
+- References: precision **0.863**, recall **0.984** (498 matched, 8 missing, 79 extra)
+- Open findings: 17
 
 ### Entities by kind family
 
@@ -279,131 +281,245 @@ the file, line and column to agree.
 
 | Kind | Understand | OpenUnderstand | Missing |
 | --- | ---: | ---: | ---: |
-| `Java Useby Return` | 4 | 1 | +3 |
 | `Java Use Return` | 4 | 1 | +3 |
+| `Java Useby Return` | 4 | 1 | +3 |
 | `Java Callby Nondynamic` | 8 | 7 | +1 |
-| `Java DotRefby` | 3 | 3 | +0 |
-| `Java Overrides` | 1 | 1 | +0 |
-| `Java Beginby` | 25 | 25 | +0 |
-| `Java Extend Couple` | 3 | 3 | +0 |
-| `Java Useby Deref Partial` | 5 | 5 | +0 |
-| `Java Overriddenby` | 1 | 1 | +0 |
 | `Java Set Init` | 15 | 15 | +0 |
+| `Java Createby` | 5 | 5 | +0 |
+| `Java Overrides` | 1 | 1 | +0 |
+| `Java Set` | 6 | 6 | +0 |
+| `Java Declare` | 24 | 24 | +0 |
+| `Java Use Deref Partial` | 5 | 5 | +0 |
+| `Java Containin` | 8 | 8 | +0 |
 
 ### Open findings
 
 | Score | Severity | Finding |
 | ---: | --- | --- |
-| 7.0 | missing-data | 10 reference pairs have unequal forward/inverse row counts |
+| 7.2 | missing-data | 11 reference pairs have unequal forward/inverse row counts |
 | 6.5 | wrong-data | 9 references written as 'Java Importby', which Understand never emits here |
 | 5.9 | wrong-data | 11 of 78 OpenUnderstand entities have no Understand counterpart |
 | 5.1 | wrong-data | 5 references written as 'Java Extend Couple Implicit External', which Understand never emits here |
-| 4.8 | wrong-data | CountStmt disagrees with Understand on 8 of 28 entities (71% agreement) |
-| 4.8 | wrong-data | api.py changes the class entity count by +8 even though the database matches Understand |
-| 4.2 | wrong-data | CountStmtExe disagrees with Understand on 6 of 28 entities (79% agreement) |
+| 4.5 | wrong-data | api.py changes the class entity count by +7 even though the database matches Understand |
 | 3.9 | wrong-data | 3 duplicate entity rows across 3 logical entities |
 | 3.1 | missing-data | 8 references Understand finds are absent, ignoring position (recall 98%) |
-| 3.0 | wrong-data | CountInput disagrees with Understand on 3 of 14 entities (79% agreement) |
+| 3.0 | wrong-data | CountStmt disagrees with Understand on 3 of 28 entities (89% agreement) |
 | 3.0 | wrong-data | CountStmtDecl disagrees with Understand on 3 of 28 entities (89% agreement) |
 | 3.0 | wrong-data | RatioCommentToCode disagrees with Understand on 3 of 28 entities (89% agreement) |
+| 3.0 | wrong-data | api.py changes the method entity count by +3 even though the database matches Understand |
+| 2.6 | missing-data | 5 of 72 entities Understand finds are absent from OpenUnderstand |
 
 ## ganttproject
 
 | | Understand | OpenUnderstand |
 | --- | ---: | ---: |
-| Entities | 26076 | 26528 |
+| Entities | 26076 | 26648 |
 
-- Entities matched: **25325** of 26076
-- Entities with no Understand counterpart: 1203
-- References: precision **0.820**, recall **0.931** (253625 matched, 18695 missing, 55754 extra)
-- Open findings: 22
+- Entities matched: **25460** of 26076
+- Entities with no Understand counterpart: 1188
+- References: precision **0.833**, recall **0.965** (262726 matched, 9594 missing, 52554 extra)
+- Open findings: 56
 
 ### Entities by kind family
 
 | Family | Understand | OpenUnderstand | Δ |
 | --- | ---: | ---: | ---: |
-| variable | 9016 | 9283 | +267 |
-| method | 7413 | 7404 | -9 |
-| parameter | 7058 | 6517 | -541 |
-| class | 1486 | 1507 | +21 |
+| variable | 9016 | 9288 | +272 |
+| method | 7413 | 7413 | +0 |
+| parameter | 7058 | 6638 | -420 |
+| class | 1486 | 1484 | -2 |
 | constructor | 756 | 756 | +0 |
 | interface | 180 | 180 | +0 |
 | package | 102 | 106 | +4 |
-| unknown | 65 | 53 | -12 |
+| unknown | 65 | 61 | -4 |
 | file | 0 | 722 | +722 |
 
 ### Largest reference gaps
 
 | Kind | Understand | OpenUnderstand | Missing |
 | --- | ---: | ---: | ---: |
-| `Java Callby` | 15157 | 13538 | +1619 |
-| `Java End` | 9775 | 8768 | +1007 |
-| `Java Endby` | 9775 | 8768 | +1007 |
-| `Java Begin` | 9703 | 8768 | +935 |
-| `Java Beginby` | 9703 | 8768 | +935 |
-| `Java Coupleby` | 6581 | 5894 | +687 |
-| `Java Typedby GenericArgument` | 1400 | 984 | +416 |
-| `Java Typedby` | 8094 | 7695 | +399 |
-| `Java DotRefby` | 2792 | 2420 | +372 |
+| `Java Callby` | 15157 | 13324 | +1833 |
+| `Java Coupleby` | 6581 | 5912 | +669 |
+| `Java DotRefby` | 2792 | 2366 | +426 |
 | `Java Overriddenby` | 2145 | 1890 | +255 |
+| `Java Callby Nondynamic` | 3398 | 3195 | +203 |
+| `Java Typedby GenericArgument` | 1400 | 1269 | +131 |
+| `Java Setby Init` | 6400 | 6314 | +86 |
+| `Java Useby Return` | 1458 | 1374 | +84 |
+| `Java Use Return` | 1458 | 1375 | +83 |
+| `Java Set Init` | 6400 | 6322 | +78 |
 
 ### Open findings
 
 | Score | Severity | Finding |
 | ---: | --- | --- |
 | 22.8 | wrong-data | 3241 references written as 'Java Importby', which Understand never emits here |
-| 22.6 | wrong-data | 3054 references written as 'Java Use Annotation', which Understand never emits here |
-| 19.2 | wrong-data | 913 duplicate entity rows across 635 logical entities |
-| 18.6 | wrong-data | 733 references written as 'Java Extend Couple Implicit External', which Understand never emits here |
-| 18.2 | missing-data | 27 reference pairs have unequal forward/inverse row counts |
-| 16.9 | wrong-data | 1203 of 26524 OpenUnderstand entities have no Understand counterpart |
+| 22.7 | wrong-data | 3090 references written as 'Java Use Annotation', which Understand never emits here |
+| 19.3 | wrong-data | 939 duplicate entity rows across 659 logical entities |
+| 18.8 | wrong-data | 778 references written as 'Java Extend Couple Implicit External', which Understand never emits here |
+| 18.3 | missing-data | 27 reference pairs have unequal forward/inverse row counts |
+| 16.9 | wrong-data | 1188 of 26648 OpenUnderstand entities have no Understand counterpart |
+| 16.9 | wrong-data | api.py changes the method entity count by +2362 even though the database matches Understand |
 | 16.1 | wrong-data | 300 references written as 'Java Extend Couple External', which Understand never emits here |
-| 15.3 | wrong-data | 229 referencemodel._scope_id values are text, not integer |
-| 15.3 | wrong-data | 229 referencemodel._file_id values are text, not integer |
-| 14.1 | missing-data | 18135 references Understand finds are absent, ignoring position (recall 93%) |
-| 9.8 | wrong-data | 60 references have the right line but the wrong column (254125 of 254185 match once the column is included) |
-| 9.5 | missing-data | 755 of 26076 entities Understand finds are absent from OpenUnderstand |
+| 13.9 | wrong-data | CountLineCodeExe disagrees with Understand on 612 of 4539 entities (87% agreement) |
+| 13.9 | wrong-data | CountLineCodeDecl disagrees with Understand on 595 of 4539 entities (87% agreement) |
+| 13.6 | wrong-data | CountInput disagrees with Understand on 512 of 3723 entities (86% agreement) |
+| 13.1 | missing-data | 9524 references Understand finds are absent, ignoring position (recall 96%) |
 
-## jfreechart
+## java25_probe
 
 | | Understand | OpenUnderstand |
 | --- | ---: | ---: |
-| Entities | 44277 | 42581 |
+| Entities | 55 | 60 |
 
-- Entities matched: **41265** of 44277
-- Entities with no Understand counterpart: 1316
-- References: precision **0.854**, recall **0.965** (528036 matched, 18930 missing, 90401 extra)
-- Open findings: 25
+- Entities matched: **54** of 55
+- Entities with no Understand counterpart: 6
+- References: precision **0.783**, recall **1.000** (306 matched, 0 missing, 85 extra)
+- Open findings: 33
 
 ### Entities by kind family
 
 | Family | Understand | OpenUnderstand | Δ |
 | --- | ---: | ---: | ---: |
-| variable | 19674 | 19059 | -615 |
-| parameter | 11972 | 9881 | -2091 |
-| method | 10496 | 10479 | -17 |
-| class | 929 | 975 | +46 |
+| variable | 15 | 14 | -1 |
+| method | 15 | 15 | +0 |
+| parameter | 12 | 12 | +0 |
+| class | 5 | 5 | +0 |
+| package | 4 | 5 | +1 |
+| interface | 2 | 2 | +0 |
+| module | 1 | 1 | +0 |
+| constructor | 1 | 1 | +0 |
+| file | 0 | 5 | +5 |
+
+### Largest reference gaps
+
+| Kind | Understand | OpenUnderstand | Missing |
+| --- | ---: | ---: | ---: |
+| `Java Define Implicit` | 6 | 6 | +0 |
+| `Java ModuleUseby` | 1 | 1 | +0 |
+| `Java ModuleUse` | 1 | 1 | +0 |
+| `Java DotRefby` | 4 | 4 | +0 |
+| `Java Use Deref Partial` | 9 | 9 | +0 |
+| `Java Definein Implicit` | 6 | 6 | +0 |
+| `Java Overriddenby` | 1 | 1 | +0 |
+| `Java Open` | 1 | 1 | +0 |
+| `Java Set Init` | 10 | 10 | +0 |
+| `Java Containin` | 4 | 4 | +0 |
+
+### Open findings
+
+| Score | Severity | Finding |
+| ---: | --- | --- |
+| 7.5 | missing-data | 15 reference pairs have unequal forward/inverse row counts |
+| 6.8 | wrong-data | 10 references written as 'Java Typed GenericArgument', which Understand never emits here |
+| 5.4 | wrong-data | api.py changes the class entity count by +11 even though the database matches Understand |
+| 5.2 | wrong-data | api.py changes the method entity count by +10 even though the database matches Understand |
+| 5.1 | wrong-data | 5 duplicate entity rows across 4 logical entities |
+| 4.7 | wrong-data | 6 of 60 OpenUnderstand entities have no Understand counterpart |
+| 4.5 | wrong-data | 4 references written as 'Java Extend Couple Implicit External', which Understand never emits here |
+| 3.9 | wrong-data | CountStmt disagrees with Understand on 5 of 20 entities (75% agreement) |
+| 3.5 | wrong-data | CountLineCodeExe disagrees with Understand on 4 of 20 entities (80% agreement) |
+| 3.5 | wrong-data | CountSemicolon disagrees with Understand on 4 of 20 entities (80% agreement) |
+| 3.5 | wrong-data | CountStmtExe disagrees with Understand on 4 of 20 entities (80% agreement) |
+| 3.1 | wrong-data | 2 references written as 'Java Create', which Understand never emits here |
+
+## jenetics_incubator
+
+| | Understand | OpenUnderstand |
+| --- | ---: | ---: |
+| Entities | 4007 | 4094 |
+
+- Entities matched: **3743** of 4007
+- Entities with no Understand counterpart: 351
+- References: precision **0.755**, recall **0.951** (31608 matched, 1642 missing, 10229 extra)
+- Open findings: 51
+
+### Entities by kind family
+
+| Family | Understand | OpenUnderstand | Δ |
+| --- | ---: | ---: | ---: |
+| parameter | 1242 | 1112 | -130 |
+| method | 1084 | 1104 | +20 |
+| variable | 996 | 1029 | +33 |
+| unknown | 232 | 224 | -8 |
+| class | 190 | 190 | +0 |
+| constructor | 179 | 178 | -1 |
+| interface | 56 | 56 | +0 |
+| package | 28 | 28 | +0 |
+| file | 0 | 173 | +173 |
+
+### Largest reference gaps
+
+| Kind | Understand | OpenUnderstand | Missing |
+| --- | ---: | ---: | ---: |
+| `Java DotRefby` | 234 | 141 | +93 |
+| `Java Callby` | 598 | 523 | +75 |
+| `Java Setby Init` | 672 | 615 | +57 |
+| `Java Set Init` | 672 | 615 | +57 |
+| `Java Typedby` | 713 | 659 | +54 |
+| `Java Extendby Coupleby` | 43 | 17 | +26 |
+| `Java Extend Couple` | 43 | 17 | +26 |
+| `Java Callby Nondynamic` | 522 | 501 | +21 |
+| `Java Useby Return` | 114 | 94 | +20 |
+| `Java Use Return` | 114 | 94 | +20 |
+
+### Open findings
+
+| Score | Severity | Finding |
+| ---: | --- | --- |
+| 16.8 | wrong-data | 388 duplicate entity rows across 237 logical entities |
+| 16.7 | wrong-data | 367 references written as 'Java Use Annotation', which Understand never emits here |
+| 15.8 | wrong-data | 272 references written as 'Java Extend Couple Implicit External', which Understand never emits here |
+| 15.4 | missing-data | 22 reference pairs have unequal forward/inverse row counts |
+| 14.6 | wrong-data | 175 references written as 'Java Importby', which Understand never emits here |
+| 14.0 | wrong-data | 351 of 4094 OpenUnderstand entities have no Understand counterpart |
+| 12.6 | wrong-data | api.py changes the class entity count by +329 even though the database matches Understand |
+| 12.3 | wrong-data | 77 references written as 'Java Extend Couple External', which Understand never emits here |
+| 11.0 | wrong-data | CountInput disagrees with Understand on 160 of 902 entities (82% agreement) |
+| 10.9 | wrong-data | SumCyclomatic disagrees with Understand on 151 of 1400 entities (89% agreement) |
+| 10.9 | wrong-data | CountLineCodeDecl disagrees with Understand on 150 of 1174 entities (87% agreement) |
+| 10.5 | missing-data | 1526 references Understand finds are absent, ignoring position (recall 95%) |
+
+## jfreechart
+
+| | Understand | OpenUnderstand |
+| --- | ---: | ---: |
+| Entities | 44277 | 43172 |
+
+- Entities matched: **41870** of 44277
+- Entities with no Understand counterpart: 1302
+- References: precision **0.860**, recall **0.981** (536274 matched, 10692 missing, 87077 extra)
+- Open findings: 59
+
+### Entities by kind family
+
+| Family | Understand | OpenUnderstand | Δ |
+| --- | ---: | ---: | ---: |
+| variable | 19674 | 19058 | -616 |
+| parameter | 11972 | 10426 | -1546 |
+| method | 10496 | 10496 | +0 |
+| class | 929 | 929 | +0 |
 | constructor | 840 | 840 | +0 |
-| unknown | 207 | 164 | -43 |
+| unknown | 207 | 240 | +33 |
 | interface | 114 | 114 | +0 |
-| package | 44 | 47 | +3 |
-| module | 1 | 0 | -1 |
+| package | 44 | 46 | +2 |
+| module | 1 | 1 | +0 |
 | file | 0 | 1022 | +1022 |
 
 ### Largest reference gaps
 
 | Kind | Understand | OpenUnderstand | Missing |
 | --- | ---: | ---: | ---: |
-| `Java Callby` | 34733 | 32859 | +1874 |
+| `Java Callby` | 34733 | 32847 | +1886 |
 | `Java Useby Return` | 2714 | 1263 | +1451 |
 | `Java Use Return` | 2714 | 1266 | +1448 |
-| `Java Endby` | 12297 | 11670 | +627 |
-| `Java End` | 12297 | 11670 | +627 |
-| `Java Begin` | 12205 | 11670 | +535 |
-| `Java Beginby` | 12205 | 11670 | +535 |
 | `Java Callby Nondynamic` | 5321 | 4820 | +501 |
-| `Java Typedby` | 12477 | 12166 | +311 |
-| `Java Typedby GenericArgument` | 860 | 607 | +253 |
+| `Java DotRefby` | 7142 | 7010 | +132 |
+| `Java Setby Init` | 16879 | 16803 | +76 |
+| `Java Set Init` | 16879 | 16804 | +75 |
+| `Java Typedby GenericArgument` | 860 | 793 | +67 |
+| `Java Setby Deref Partial` | 849 | 786 | +63 |
+| `Java Set Deref Partial` | 849 | 786 | +63 |
 
 ### Open findings
 
@@ -411,39 +527,39 @@ the file, line and column to agree.
 | ---: | --- | --- |
 | 23.9 | wrong-data | 4787 references written as 'Java Use Annotation', which Understand never emits here |
 | 23.6 | wrong-data | 4227 references written as 'Java Importby', which Understand never emits here |
-| 20.0 | wrong-data | 1178 duplicate entity rows across 837 logical entities |
+| 20.0 | wrong-data | 1184 duplicate entity rows across 837 logical entities |
 | 19.2 | wrong-data | 895 references written as 'Java Throw', which Understand never emits here |
-| 19.0 | missing-data | 26 reference pairs have unequal forward/inverse row counts |
-| 18.0 | wrong-data | 596 references written as 'Java Extend Couple Implicit External', which Understand never emits here |
-| 17.2 | wrong-data | 1316 of 42579 OpenUnderstand entities have no Understand counterpart |
+| 19.1 | missing-data | 27 reference pairs have unequal forward/inverse row counts |
+| 18.1 | wrong-data | 602 references written as 'Java Extend Couple Implicit External', which Understand never emits here |
+| 17.1 | wrong-data | 1302 of 43172 OpenUnderstand entities have no Understand counterpart |
+| 15.2 | wrong-data | api.py changes the method entity count by +1069 even though the database matches Understand |
 | 15.0 | wrong-data | 201 references written as 'Java Use Constrains Couple', which Understand never emits here |
-| 14.1 | missing-data | 18826 references Understand finds are absent, ignoring position (recall 97%) |
-| 11.5 | missing-data | 3014 of 44277 entities Understand finds are absent from OpenUnderstand |
-| 11.0 | wrong-data | 49 references written as 'Java Extend Couple External', which Understand never emits here |
-| 6.9 | missing-data | reference kind 'Java Define Implicit' is never produced (Understand emits 123) |
+| 13.6 | wrong-data | api.py changes the class entity count by +512 even though the database matches Understand |
+| 13.3 | missing-data | 10676 references Understand finds are absent, ignoring position (recall 98%) |
+| 12.4 | wrong-data | CountLineCodeDecl disagrees with Understand on 306 of 2513 entities (88% agreement) |
 
 ## jhotdraw-develop
 
 | | Understand | OpenUnderstand |
 | --- | ---: | ---: |
-| Entities | 27694 | 27221 |
+| Entities | 27694 | 27540 |
 
-- Entities matched: **25694** of 27694
-- Entities with no Understand counterpart: 1527
-- References: precision **0.775**, recall **0.936** (282775 matched, 19429 missing, 81890 extra)
-- Open findings: 63
+- Entities matched: **26044** of 27694
+- Entities with no Understand counterpart: 1496
+- References: precision **0.785**, recall **0.959** (289886 matched, 12318 missing, 79375 extra)
+- Open findings: 54
 
 ### Entities by kind family
 
 | Family | Understand | OpenUnderstand | Δ |
 | --- | ---: | ---: | ---: |
-| variable | 10514 | 10854 | +340 |
-| parameter | 8317 | 6828 | -1489 |
-| method | 6843 | 6842 | -1 |
-| class | 1027 | 1061 | +34 |
+| variable | 10514 | 10857 | +343 |
+| parameter | 8317 | 7153 | -1164 |
+| method | 6843 | 6843 | +0 |
+| class | 1027 | 1027 | +0 |
 | constructor | 791 | 791 | +0 |
 | package | 73 | 74 | +1 |
-| unknown | 72 | 43 | -29 |
+| unknown | 72 | 67 | -5 |
 | interface | 57 | 57 | +0 |
 | file | 0 | 671 | +671 |
 
@@ -451,51 +567,51 @@ the file, line and column to agree.
 
 | Kind | Understand | OpenUnderstand | Missing |
 | --- | ---: | ---: | ---: |
-| `Java Callby` | 13428 | 12366 | +1062 |
-| `Java Callby Nondynamic` | 3583 | 2935 | +648 |
-| `Java End` | 8678 | 8069 | +609 |
-| `Java Endby` | 8678 | 8069 | +609 |
-| `Java Beginby` | 8677 | 8069 | +608 |
-| `Java Begin` | 8677 | 8069 | +608 |
-| `Java Coupleby` | 4330 | 3811 | +519 |
-| `Java Useby` | 28771 | 28276 | +495 |
-| `Java DotRefby` | 2813 | 2419 | +394 |
+| `Java Callby` | 13428 | 11811 | +1617 |
+| `Java Coupleby` | 4330 | 3911 | +419 |
+| `Java DotRefby` | 2813 | 2452 | +361 |
+| `Java Callby Nondynamic` | 3583 | 3241 | +342 |
+| `Java Modifyby Deref Partial` | 248 | 16 | +232 |
 | `Java Modify Deref Partial` | 248 | 16 | +232 |
+| `Java Setby Init` | 7901 | 7753 | +148 |
+| `Java Set Init` | 7901 | 7765 | +136 |
+| `Java Useby` | 28771 | 28683 | +88 |
+| `Java Typedby GenericArgument` | 869 | 812 | +57 |
 
 ### Open findings
 
 | Score | Severity | Finding |
 | ---: | --- | --- |
-| 23.1 | wrong-data | 3611 references written as 'Java Use Annotation', which Understand never emits here |
+| 23.1 | wrong-data | 3608 references written as 'Java Use Annotation', which Understand never emits here |
 | 21.9 | wrong-data | 2322 references written as 'Java Importby', which Understand never emits here |
-| 20.9 | wrong-data | 1628 referencemodel._scope_id values are text, not integer |
-| 20.9 | wrong-data | 1628 referencemodel._file_id values are text, not integer |
-| 19.5 | wrong-data | 1001 duplicate entity rows across 612 logical entities |
-| 18.8 | missing-data | 26 reference pairs have unequal forward/inverse row counts |
+| 19.5 | wrong-data | 1002 duplicate entity rows across 613 logical entities |
+| 18.9 | missing-data | 26 reference pairs have unequal forward/inverse row counts |
 | 18.0 | wrong-data | 584 references written as 'Java Throw', which Understand never emits here |
-| 17.5 | wrong-data | 1527 of 27221 OpenUnderstand entities have no Understand counterpart |
+| 17.5 | wrong-data | 1496 of 27540 OpenUnderstand entities have no Understand counterpart |
+| 17.2 | wrong-data | 448 references written as 'Java Extend Couple Implicit External', which Understand never emits here |
 | 17.0 | wrong-data | 416 references written as 'Java Importby Demand', which Understand never emits here |
-| 16.8 | wrong-data | 380 references written as 'Java Extend Couple Implicit External', which Understand never emits here |
+| 16.6 | wrong-data | api.py changes the method entity count by +2086 even though the database matches Understand |
 | 16.2 | wrong-data | 309 references written as 'Java Extend Couple External', which Understand never emits here |
-| 14.7 | wrong-data | CountInput disagrees with Understand on 860 of 4443 entities (81% agreement) |
+| 15.3 | wrong-data | api.py changes the class entity count by +1138 even though the database matches Understand |
+| 13.9 | wrong-data | CountLineCodeDecl disagrees with Understand on 592 of 4906 entities (88% agreement) |
 
 ## jvlt-1.3.2
 
 | | Understand | OpenUnderstand |
 | --- | ---: | ---: |
-| Entities | 7945 | 8767 |
+| Entities | 7945 | 8790 |
 
-- Entities matched: **7683** of 7945
-- Entities with no Understand counterpart: 1084
-- References: precision **0.822**, recall **0.960** (86288 matched, 3586 missing, 18733 extra)
-- Open findings: 52
+- Entities matched: **7705** of 7945
+- Entities with no Understand counterpart: 1085
+- References: precision **0.828**, recall **0.972** (87368 matched, 2506 missing, 18153 extra)
+- Open findings: 45
 
 ### Entities by kind family
 
 | Family | Understand | OpenUnderstand | Δ |
 | --- | ---: | ---: | ---: |
-| variable | 3666 | 4423 | +757 |
-| parameter | 1779 | 1623 | -156 |
+| variable | 3666 | 4425 | +759 |
+| parameter | 1779 | 1644 | -135 |
 | method | 1706 | 1706 | +0 |
 | class | 405 | 405 | +0 |
 | constructor | 344 | 344 | +0 |
@@ -508,33 +624,33 @@ the file, line and column to agree.
 
 | Kind | Understand | OpenUnderstand | Missing |
 | --- | ---: | ---: | ---: |
-| `Java Callby` | 4068 | 3796 | +272 |
-| `Java Useby` | 7170 | 6913 | +257 |
+| `Java Callby` | 4068 | 3770 | +298 |
 | `Java DotRefby` | 1339 | 1103 | +236 |
-| `Java Coupleby` | 1753 | 1623 | +130 |
+| `Java Coupleby` | 1753 | 1630 | +123 |
 | `Java Use Deref Partial` | 6912 | 6834 | +78 |
 | `Java Useby Deref Partial` | 6912 | 6834 | +78 |
-| `Java Beginby` | 2456 | 2410 | +46 |
-| `Java Typedby GenericArgument` | 386 | 340 | +46 |
-| `Java End` | 2456 | 2410 | +46 |
-| `Java Begin` | 2456 | 2410 | +46 |
+| `Java Useby Return` | 371 | 341 | +30 |
+| `Java Use Return` | 371 | 341 | +30 |
+| `Java Callby Nondynamic` | 1311 | 1287 | +24 |
+| `Java Setby` | 1410 | 1390 | +20 |
+| `Java Typedby GenericArgument` | 386 | 372 | +14 |
 
 ### Open findings
 
 | Score | Severity | Finding |
 | ---: | --- | --- |
 | 19.3 | wrong-data | 937 references written as 'Java Importby', which Understand never emits here |
-| 16.7 | wrong-data | 1084 of 8767 OpenUnderstand entities have no Understand counterpart |
-| 16.4 | missing-data | 21 reference pairs have unequal forward/inverse row counts |
+| 16.7 | wrong-data | 1085 of 8790 OpenUnderstand entities have no Understand counterpart |
+| 16.6 | missing-data | 23 reference pairs have unequal forward/inverse row counts |
 | 15.6 | wrong-data | 252 references written as 'Java Use Annotation', which Understand never emits here |
-| 14.9 | wrong-data | api.py changes the method entity count by +956 even though the database matches Understand |
-| 14.5 | wrong-data | 170 references written as 'Java Extend Couple Implicit External', which Understand never emits here |
+| 14.9 | wrong-data | api.py changes the method entity count by +947 even though the database matches Understand |
+| 14.5 | wrong-data | 171 references written as 'Java Extend Couple Implicit External', which Understand never emits here |
 | 14.5 | wrong-data | 169 duplicate entity rows across 123 logical entities |
-| 13.2 | wrong-data | api.py changes the class entity count by +440 even though the database matches Understand |
+| 13.2 | wrong-data | api.py changes the class entity count by +425 even though the database matches Understand |
 | 12.9 | wrong-data | 95 references written as 'Java Extend Couple External', which Understand never emits here |
-| 12.4 | wrong-data | CountInput disagrees with Understand on 300 of 1898 entities (84% agreement) |
-| 11.7 | missing-data | 3442 references Understand finds are absent, ignoring position (recall 96%) |
-| 11.7 | wrong-data | CountStmtExe disagrees with Understand on 215 of 2327 entities (91% agreement) |
+| 12.1 | wrong-data | CountInput disagrees with Understand on 259 of 1898 entities (86% agreement) |
+| 11.2 | missing-data | 2506 references Understand finds are absent, ignoring position (recall 97%) |
+| 11.0 | wrong-data | CountLineCodeDecl disagrees with Understand on 158 of 2327 entities (93% agreement) |
 
 ## testing_legacy_code
 
@@ -544,8 +660,8 @@ the file, line and column to agree.
 
 - Entities matched: **197** of 399
 - Entities with no Understand counterpart: 36
-- References: precision **0.550**, recall **0.976** (3414 matched, 84 missing, 2796 extra)
-- Open findings: 38
+- References: precision **0.471**, recall **0.982** (3434 matched, 64 missing, 3852 extra)
+- Open findings: 35
 
 ### Entities by kind family
 
@@ -563,51 +679,51 @@ the file, line and column to agree.
 
 | Kind | Understand | OpenUnderstand | Missing |
 | --- | ---: | ---: | ---: |
-| `Java Typedby GenericArgument` | 24 | 18 | +6 |
-| `Java Typed GenericArgument` | 24 | 18 | +6 |
-| `Java Callby` | 65 | 61 | +4 |
-| `Java Beginby` | 211 | 211 | +0 |
-| `Java Use GenericArgument` | 4 | 4 | +0 |
-| `Java Coupleby` | 38 | 38 | +0 |
-| `Java Set Init` | 146 | 146 | +0 |
-| `Java Endby` | 211 | 211 | +0 |
-| `Java Begin` | 211 | 211 | +0 |
+| `Java Useby` | 126 | 94 | +32 |
+| `Java End` | 211 | 211 | +0 |
 | `Java Useby Castby` | 15 | 15 | +0 |
+| `Java Use Deref Partial` | 158 | 158 | +0 |
+| `Java Endby` | 211 | 211 | +0 |
+| `Java Typed GenericArgument` | 24 | 24 | +0 |
+| `Java Setby Init` | 146 | 146 | +0 |
+| `Java Coupleby` | 38 | 38 | +0 |
+| `Java Useby GenericArgument` | 4 | 4 | +0 |
+| `Java Useby Deref Partial` | 158 | 158 | +0 |
 
 ### Open findings
 
 | Score | Severity | Finding |
 | ---: | --- | --- |
 | 14.4 | wrong-data | 165 references written as 'Java Use Annotation', which Understand never emits here |
-| 12.9 | missing-data | 14 reference pairs have unequal forward/inverse row counts |
+| 12.9 | missing-data | 15 reference pairs have unequal forward/inverse row counts |
 | 10.3 | wrong-data | 38 references written as 'Java Importby', which Understand never emits here |
-| 8.7 | wrong-data | 21 referencemodel._scope_id values are text, not integer |
-| 8.7 | wrong-data | 21 referencemodel._file_id values are text, not integer |
+| 8.8 | wrong-data | 22 references written as 'Java Extend Couple Implicit External', which Understand never emits here |
 | 8.6 | wrong-data | 36 of 233 OpenUnderstand entities have no Understand counterpart |
-| 8.6 | wrong-data | CountInput disagrees with Understand on 52 of 86 entities (40% agreement) |
+| 8.6 | wrong-data | CountInput disagrees with Understand on 51 of 86 entities (41% agreement) |
 | 8.5 | wrong-data | CountLine disagrees with Understand on 50 of 112 entities (55% agreement) |
 | 8.1 | wrong-data | CountLineCode disagrees with Understand on 41 of 112 entities (63% agreement) |
-| 7.6 | wrong-data | 14 references written as 'Java Extend Couple Implicit External', which Understand never emits here |
 | 7.6 | missing-data | 202 of 399 entities Understand finds are absent from OpenUnderstand |
-| 6.4 | missing-data | 84 references Understand finds are absent, ignoring position (recall 98%) |
+| 6.0 | missing-data | 64 references Understand finds are absent, ignoring position (recall 98%) |
+| 5.6 | wrong-data | RatioCommentToCode disagrees with Understand on 12 of 112 entities (89% agreement) |
+| 4.8 | wrong-data | AvgCountLineCode disagrees with Understand on 8 of 26 entities (69% agreement) |
 
 ## xerces2j
 
 | | Understand | OpenUnderstand |
 | --- | ---: | ---: |
-| Entities | 35218 | 34152 |
+| Entities | 35218 | 34437 |
 
-- Entities matched: **32773** of 35218
+- Entities matched: **33058** of 35218
 - Entities with no Understand counterpart: 1379
-- References: precision **0.865**, recall **0.934** (403472 matched, 28576 missing, 62795 extra)
-- Open findings: 12
+- References: precision **0.876**, recall **0.952** (411446 matched, 20602 missing, 58119 extra)
+- Open findings: 50
 
 ### Entities by kind family
 
 | Family | Understand | OpenUnderstand | Δ |
 | --- | ---: | ---: | ---: |
-| variable | 13596 | 13259 | -337 |
-| parameter | 11203 | 9760 | -1443 |
+| variable | 13596 | 13260 | -336 |
+| parameter | 11203 | 10044 | -1159 |
 | method | 8554 | 8554 | +0 |
 | constructor | 862 | 862 | +0 |
 | class | 801 | 801 | +0 |
@@ -619,16 +735,16 @@ the file, line and column to agree.
 
 | Kind | Understand | OpenUnderstand | Missing |
 | --- | ---: | ---: | ---: |
-| `Java Callby` | 14304 | 12336 | +1968 |
-| `Java Useby` | 57121 | 55628 | +1493 |
-| `Java Callby Nondynamic` | 6530 | 5141 | +1389 |
-| `Java Begin` | 10374 | 9482 | +892 |
-| `Java End` | 10374 | 9482 | +892 |
-| `Java Beginby` | 10374 | 9482 | +892 |
-| `Java Endby` | 10374 | 9482 | +892 |
+| `Java Callby` | 14304 | 11604 | +2700 |
+| `Java Useby` | 57121 | 55922 | +1199 |
+| `Java Callby Nondynamic` | 6530 | 5798 | +732 |
 | `Java Setby Init` | 11420 | 10868 | +552 |
 | `Java Set Init` | 11420 | 10961 | +459 |
-| `Java Setby` | 9914 | 9566 | +348 |
+| `Java Useby Return` | 2113 | 1779 | +334 |
+| `Java Use Return` | 2113 | 1795 | +318 |
+| `Java Setby` | 9914 | 9625 | +289 |
+| `Java Modifyby Deref Partial` | 315 | 76 | +239 |
+| `Java Modify Deref Partial` | 315 | 76 | +239 |
 
 ### Open findings
 
@@ -636,13 +752,13 @@ the file, line and column to agree.
 | ---: | --- | --- |
 | 22.0 | wrong-data | 2460 references written as 'Java Importby', which Understand never emits here |
 | 19.0 | wrong-data | 846 duplicate entity rows across 592 logical entities |
-| 18.3 | missing-data | 19 reference pairs have unequal forward/inverse row counts |
-| 17.3 | wrong-data | 1379 of 34152 OpenUnderstand entities have no Understand counterpart |
+| 18.4 | missing-data | 20 reference pairs have unequal forward/inverse row counts |
+| 17.3 | wrong-data | 1379 of 34437 OpenUnderstand entities have no Understand counterpart |
 | 16.8 | wrong-data | 377 references written as 'Java Extend Couple Implicit External', which Understand never emits here |
-| 14.7 | missing-data | 27816 references Understand finds are absent, ignoring position (recall 94%) |
-| 11.9 | wrong-data | 68 references written as 'Java Extend Couple External', which Understand never emits here |
-| 11.2 | missing-data | 2445 of 35218 entities Understand finds are absent from OpenUnderstand |
-| 5.1 | wrong-data | 5 references written as 'Java Extendby Coupleby External', which Understand never emits here |
-| 2.6 | wrong-data | 2 entity long names are structurally malformed |
-| 2.6 | wrong-data | 2 references have the right line but the wrong column (404230 of 404232 match once the column is included) |
-| 0.3 | unimplemented | 55 of 106 reference kinds have zero rows |
+| 15.6 | wrong-data | CountLine disagrees with Understand on 1328 of 5225 entities (75% agreement) |
+| 15.5 | wrong-data | CountLineComment disagrees with Understand on 1257 of 5225 entities (76% agreement) |
+| 15.4 | wrong-data | CountLineCode disagrees with Understand on 1228 of 5225 entities (76% agreement) |
+| 15.4 | wrong-data | RatioCommentToCode disagrees with Understand on 1186 of 5225 entities (77% agreement) |
+| 15.3 | wrong-data | api.py changes the method entity count by +1134 even though the database matches Understand |
+| 14.4 | wrong-data | CountLineCodeDecl disagrees with Understand on 746 of 5225 entities (86% agreement) |
+| 14.3 | wrong-data | api.py changes the class entity count by +712 even though the database matches Understand |

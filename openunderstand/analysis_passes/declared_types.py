@@ -86,26 +86,41 @@ class DeclaredTypeCollector(JavaParserLabeledListener):
                 self.types[identifier] = name
 
 
-#: Declarations that open a scope of their own.
+#: Declarations that open a scope of their own. `ClassCreatorRest` is the
+#: `{ ... }` of `new Runnable() { ... }`: an anonymous class is as much a
+#: scope as a named one, and it is the only one with no *Declaration context
+#: to stop at.
 _NESTED_TYPE = (
     "ClassDeclaration",
     "InterfaceDeclaration",
     "EnumDeclaration",
     "AnnotationTypeDeclaration",
+    "ClassCreatorRest",
 )
 
 
 def collect(ctx) -> dict:
-    """Declared types under `ctx`, keyed by simple name."""
-    collector = DeclaredTypeCollector()
-    ParseTreeWalker().walk(collector, ctx)
-    return collector.types
+    """Declared types belonging to `ctx`, keyed by simple name.
+
+    The same walk as `collect_own`, and for the same reason. This used to
+    descend into every nested scope, so a method holding an anonymous class
+    took that class's fields as its own locals: given
+
+        StringBuilder shared = new StringBuilder();
+        Runnable r = new Runnable() { ArrayList shared = null; ... };
+
+    the method's `shared` came out an ArrayList, and every call on it landed
+    on the wrong type. `collect_own` happened to answer correctly only
+    because it walks children in reverse and the method's own declaration was
+    written last -- an ordering accident, not a scope rule.
+    """
+    return collect_own(ctx)
 
 
 def collect_own(ctx) -> dict:
-    """`collect`, but not descending into a nested type declaration.
+    """Declarations `ctx` itself makes, not those of a type nested in it.
 
-    A class body contains its nested classes, and the plain walk folded their
+    A class body contains its nested classes, and a plain walk folded their
     fields in with its own: `Outer.items` is an ArrayList and
     `Outer.Inner.items` a String, and whichever was declared last won for both.
     That is a wrong receiver type for every `this.items` in the file, and a

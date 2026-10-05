@@ -113,6 +113,36 @@ def catch_names(root):
     return names
 
 
+def type_identifiers(node):
+    """The identifier tokens naming a type, its generic arguments aside.
+
+    `classOrInterfaceType` is `IDENTIFIER ('.' IDENTIFIER)*` and the arguments
+    hang off their own child contexts, so `java.util.Map<K, V>` answers
+    [java, util, Map]. Accepts either the `typeType` wrapper or the
+    `classOrInterfaceType` itself, which is what the passes have to hand.
+    """
+    inner = getattr(node, "classOrInterfaceType", None)
+    inner = inner() if callable(inner) else None
+    if inner is None:
+        inner = node if hasattr(node, "IDENTIFIER") else None
+    if inner is None:
+        return []
+    identifiers = inner.IDENTIFIER()
+    return list(identifiers) if isinstance(identifiers, list) else []
+
+
+def type_anchor(node, default):
+    """Token a reference to this type sits on.
+
+    Understand puts a reference at the segment carrying its entity's own name,
+    so `class Q extends java.util.ArrayList<...>` reports the Extend Couple on
+    the `ArrayList` and not on the `java`. `default` is returned for a type
+    written unqualified, where the two coincide anyway.
+    """
+    identifiers = type_identifiers(node)
+    return identifiers[-1].symbol if len(identifiers) > 1 else default
+
+
 def lambda_name(ctx):
     """`(lambda_expr_N)` for a lambda expression."""
     root = ctx

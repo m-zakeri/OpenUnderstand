@@ -570,6 +570,52 @@ def resolve(simple_name: str, scope_longname: str = "") -> str | None:
     return INDEX.resolve(simple_name, scope_longname)
 
 
+def is_type_longname(longname: str) -> bool:
+    """Whether a *fully qualified* name is a type the project or the JDK has.
+
+    The question a qualified expression asks: in `java.lang.System.out`, which
+    prefix is the type? Not `resolve_type_name`, which answers for a name as
+    *written* and happily returns an unqualified name unchanged.
+    """
+    if not longname or "." not in longname:
+        return False
+    if jdk_index.known(longname):
+        return True
+    return longname in INDEX.types.get(longname.rsplit(".", 1)[-1], ())
+
+
+def qualified_owner(receiver: str) -> str | None:
+    """The type a *fully qualified* receiver lands a member access on.
+
+    `java.util.Collections.emptyList()` is a call on java.util.Collections and
+    `java.lang.System.out.println(...)` one on java.io.PrintStream, because
+    the trailing `out` is a field and the call lands on the field's type. Both
+    receivers reach the per-pass ladders as a head of `java` and a remainder
+    that is not an identifier, which every one of them reads as a chained call
+    and refuses -- so a name written out in full resolved to nothing at all.
+
+    None for anything that is not written out in full, leaving the ladder to
+    do what it already does with a simple name.
+    """
+    if not receiver or "." not in receiver:
+        return None
+    names = receiver.split(".")
+    if not all(name.isidentifier() for name in names):
+        return None
+    for end in range(len(names) - 1, 0, -1):
+        longname = ".".join(names[: end + 1])
+        if not is_type_longname(longname):
+            continue
+        rest = names[end + 1 :]
+        if not rest:
+            return longname
+        # One step past the type is a field, and the access lands on its type.
+        # Two is a chain this cannot settle, and guessing is what the ladders
+        # are forbidden to do.
+        return member_type(longname, rest[0]) if len(rest) == 1 else None
+    return None
+
+
 def resolve_type_name(name, imports=None, wildcards=None, scope_longname=""):
     """Long name for a type as written in source, or None if it cannot be placed.
 
