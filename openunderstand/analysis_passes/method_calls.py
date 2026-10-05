@@ -282,6 +282,12 @@ class MethodCallListener(JavaParserLabeledListener):
             # `"".equals(x)` -- a literal receiver, and its type is not in
             # doubt. 263 calls on JSON, every one of them on a String.
             return "java.lang.String"
+        written_in_full = symbol_table.qualified_owner(receiver)
+        if written_in_full:
+            # `java.util.Collections.emptyList()`. Below, the head is `java`
+            # and the remainder is not an identifier, so this used to fall
+            # through to the chain handler and be refused.
+            return written_in_full
         head, _, field = receiver.partition(".")
         if not head.isidentifier():
             # `roundKeys[i - 1].remainder(...)` calls a method of the array's

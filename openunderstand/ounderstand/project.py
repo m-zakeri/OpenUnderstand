@@ -150,6 +150,12 @@ def callee_of(longname, name, arguments, file_ent):
     )[0]
 
 
+#: Package roots the JDK ships besides java.* and javax.*.
+_JDK_ROOTS = ("java.", "javax.", "jdk.", "sun.", "com.sun.", "org.w3c.", "org.xml.", "org.ietf.")
+
+#: The inverse half of each kind addDotRefRefs writes.
+_INVERSE_OF = {"Java DotRef": "Java DotRefby", "Java Use": "Java Useby"}
+
 #: Use variants whose target is a type by construction, whatever it resolves to.
 _TYPE_USE_KINDS = frozenset(
     {
@@ -546,6 +552,51 @@ class Project:
                 _scope=ent,
             )
 
+        # A type written out in full carries a second reference: the package
+        # it was qualified with, as a `Java DotRef` at the start of the name.
+        # `java.util.Map<...> field` is a DotRef to java.util at the `java`
+        # and a Typed to java.util.Map at the `Map`.
+        #
+        # Created with the placeholder kind rather than `Java Package` on
+        # purpose. Identity is (long name, kind family) and Unknown matches
+        # any family, so a package this project declares is reused as-is and
+        # keeps its inverse, while `java.util` stays a placeholder --
+        # drop_external_inverse_refs() then removes the `Java DotRefby` for
+        # it, which is the same treatment every other external target gets
+        # here. Understand does write that inverse, on an external package
+        # entity this project has no counterpart for.
+        for dotref in d_type.get("dotrefs", ()):
+            package = EntityModel.get_or_create(
+                _kind=kind_id("Java Unknown Class Type Member"),
+                _parent=None,
+                _name=dotref["package_longname"].rsplit(".", 1)[-1],
+                _longname=dotref["package_longname"],
+                _value=None,
+                _type=None,
+                _contents=stream,
+            )[0]
+            scope = EntityModel.get_or_create(
+                _kind=kind_id("Java Unknown Variable Member"),
+                _parent=None,
+                _name=dotref["scope_longname"].rsplit(".", 1)[-1],
+                _longname=dotref["scope_longname"],
+                _value=None,
+                _type=None,
+                _contents=stream,
+            )[0]
+            for kind, ent_, scope_ in (
+                ("Java DotRef", package, scope),
+                ("Java DotRefby", scope, package),
+            ):
+                ReferenceModel.get_or_create(
+                    _kind=kind_id(kind),
+                    _file=file_ent,
+                    _line=dotref["line"],
+                    _column=col_1based(dotref["col"]),
+                    _ent=ent_,
+                    _scope=scope_,
+                )
+
     def addSetRefs(self, d, file_ent, stream: str = ""):
 
         for type_tuple in d:
@@ -931,6 +982,21 @@ class Project:
                 # org.json.CDL.getValue -- the only getValue the project
                 # declares -- inventing four callers for it and putting its
                 # CountInput at 5 against Understand's 2.
+                if owner and not (
+                    symbol_table.is_project_type(owner)
+                    or jdk_index.known(owner)
+                    # JDK modules outside java.*/javax.*, which the index does
+                    # not cover but Understand resolves: org.w3c.dom.Element
+                    # is 168 of jhotdraw's calls.
+                    or owner.startswith(_JDK_ROOTS)
+                ):
+                    # The receiver's type is known but lies outside the
+                    # project and the JDK -- `threadStopper.storeCurrentThreads()`
+                    # on an org.evosuite...ThreadStopper. Understand cannot see
+                    # the class either, so it calls the bare name exactly as
+                    # it does for an untyped receiver; qualifying it with a
+                    # type nobody declares matched nothing.
+                    owner = None
                 if not owner:
                     # A chained call, or a type this project neither declares
                     # nor imports -- `Configuration.defaultConfiguration()`
@@ -1619,25 +1685,6 @@ class Project:
             )
         return imported_entity
 
-    def add_import_demand(self, ents, file_path):
-        for i in ents:
-            ent, _ = EntityModel.get_or_create(
-                _kind=kind_id("Java File"),
-                _parent="None",
-                _name=i["name"],
-                _longname=i["longname"],
-                _contents=FileStream(file_path, encoding="utf-8"),
-            )
-
-            ReferenceModel.get_or_create(
-                _kind=kind_id("Java Import Demand"),
-                _file=file_path,
-                _line=i["line"],
-                _column=col_1based(i["col"]),
-                _ent=ent.get_id(),
-                _scope=file_path,
-            )
-
     def add_references(
         self, importing_ent, imported_ent, cls_data: ClassTypeData, file_ent=None
     ):
@@ -1795,7 +1842,23 @@ class Project:
                     if symbol_table.is_project_type(created)
                     else True
                 )
-                if not ref_dict.get("is_array") and "." in created and declared:
+                # And only when the type is named by a simple name. A creator
+                # written out in full carries the DotRef/Create pair and no
+                # Call: `new java.util.ArrayList<String>()` gets Create and
+                # DotRef where `new ArrayList<String>()` gets Create and Call,
+                # and the same holds for a type the project declares -- `new
+                # p.Helper()` has no Call either, so this is not about where
+                # the type lives. Settled on a fixture pairing each creator
+                # with its qualified twin; the benchmark could not show it,
+                # because 32 of the 40 rows it costs are in one subject's
+                # generated scaffolding.
+                written = (ref_dict.get("refent") or "").split("<")[0]
+                if (
+                    not ref_dict.get("is_array")
+                    and "." in created
+                    and declared
+                    and "." not in written
+                ):
                     # A constructor is method family, not type family. Built
                     # through getClassEntity() it was a *class* placeholder,
                     # so it never merged with the real declaration and
@@ -2332,27 +2395,28 @@ class Project:
                     _longname=scope_longname,
                 )[0]
             ent = EntityModel.get_or_create(
-                _kind=kind_id("Java Unknown Class Type Member"),
+                _kind=kind_id(ref_dict.get("ent_kind", "Java Unknown Class Type Member")),
                 _name=ref_dict["refent_name"],
                 _parent=None,
                 _longname=ref_dict["refent_longname"],
             )[0]
-            ReferenceModel.get_or_create(
-                _kind=kind_id("Java DotRef"),
-                _file=file_ent,
-                _line=ref_dict["line"],
-                _column=col_1based(ref_dict["col"]),
-                _ent=ent,
-                _scope=scope,
-            )
-            ReferenceModel.get_or_create(
-                _kind=kind_id("Java DotRefby"),
-                _file=file_ent,
-                _line=ref_dict["line"],
-                _column=col_1based(ref_dict["col"]),
-                _ent=scope,
-                _scope=ent,
-            )
+            # The prefix of a qualified name is the same shape with a
+            # different kind: the package and type steps of
+            # `java.lang.System.out` are Uses, and only a package standing at
+            # the head of the chain is a DotRef.
+            kind = ref_dict.get("kind", "Java DotRef")
+            for name, ent_, scope_ in (
+                (kind, ent, scope),
+                (_INVERSE_OF[kind], scope, ent),
+            ):
+                ReferenceModel.get_or_create(
+                    _kind=kind_id(name),
+                    _file=file_ent,
+                    _line=ref_dict["line"],
+                    _column=col_1based(ref_dict["col"]),
+                    _ent=ent_,
+                    _scope=scope_,
+                )
 
     def addThrows_TrowsByRefs(self, ref_dicts, file_ent, file_address, id1, id2, Throw):
         for ref_dict in ref_dicts:

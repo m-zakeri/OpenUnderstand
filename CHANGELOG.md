@@ -1,5 +1,125 @@
 # Changelog
 
+## Unreleased
+
+Fixes from two August commits that never reached `master`, recovered.
+
+Two regressions the recovery would have brought with it are fixed: a record
+component's type argument (`record Book(List<Author> authors)`) is `Typed
+GenericArgument` scoped to the component, and a field of an anonymous class
+is visible to code inside it again. Against Understand's raw output:
+
+| Fixture | Recall | Precision |
+| --- | --- | --- |
+| jhotdraw | 0.923 to 0.941 | 0.943 to 0.961 |
+| testing_legacy_code | 0.690 to 0.797 | 0.823 to 0.967 |
+| jenetics | 0.924 to 0.929 | 0.938 to 0.945 |
+| TheAlgorithms | 0.967 to 0.970 | 0.972 to 0.973 |
+| JSON | 0.961 to 0.962 | 0.969 to 0.969 |
+
+No metric moved down on JSON or jenetics; CountInput rose on both.
+
+### A qualified name into an outside library is walked segment by segment
+
+`org.evosuite.runtime.RuntimeSettings.className` names a library outside the
+analysed source. Understand writes a Use for each segment (`org`, `evosuite`,
+`runtime`, `RuntimeSettings`, `className`), or one Use of a package the file
+names elsewhere, and calls a method on such a type by its bare name. This
+project refused those chains and wrote one wrong Use at the head. Against
+Understand's raw output, testing_legacy_code went from recall 0.797 to 0.978
+and precision 0.967 to 0.992, and ganttproject from 0.946 / 0.973 to 0.951 /
+0.978. No metric moved on JSON or jenetics.
+
+### A qualified type name carries a reference at each end
+
+`java.util.Map<java.lang.String, java.lang.Integer> field` is two facts to
+Understand: a `Java DotRef` to the package `java.util` at the `java`, and a
+`Java Typed` to `java.util.Map` at the `Map`. This project wrote one `Java
+Typed` at the `java` -- the right target at the wrong end of the name -- and
+no DotRef anywhere.
+
+The rule is not visible in the benchmark. Nine of the eleven fixtures import
+their types and write them unqualified, so the two columns coincide and nothing
+looks wrong. It was settled on a hand-written fixture analysed by Understand
+itself, which puts the pair in twenty-one places: a field, a local, a
+parameter, a return type, a cast, a `new`, a `throws`, an `extends`, an
+`implements`, an `instanceof`, and every generic argument of each. **All
+twenty-one are reproduced, at the same positions, with the same scopes.**
+
+Three things that fixture settled and guessing would not have. The scope is the
+*declared entity* rather than the class -- `p.Q.field`, not `p.Q`. A type
+inside an initialiser belongs to the enclosing method instead, so
+`List<String> made = new java.util.ArrayList<>()` scopes the declaration's
+DotRef to `p.Q.go.made` and the creator's to `p.Q.go`. And
+`java.lang.String.class` parses as a type and is not one: Understand reads it
+as an expression, three `Java Use` rows walking the name and no DotRef, so
+primary5 is excluded.
+
+Measured on testing_legacy_code against the raw dump, which is the honest
+measure here because every package these names qualify with is external:
+**+176 matched references and 48 fewer wrong ones, precision 0.9024 to 0.9129
+and recall 0.6893 to 0.7131**. Against the filtered dump the same change reads
+as precision 0.606 to 0.593, because `07_diff.py` drops Understand's external
+rows and the 164 correct ones added here can only land in `ou_only`.
+
+### Two populations of Use references Understand does not write
+
+Both found by measuring testing_legacy_code, whose EvoSuite scaffolding writes
+every name fully qualified. Reference precision there was **0.550 at recall
+0.976**; these two rules took it to **0.606 with recall unmoved**, and raw-dump
+precision from 0.819 to 0.902.
+
+**A placeholder invented inside the reader is not a target.** `use_useby`
+records every bare identifier, and the write layer names an unresolvable one
+after the scope that read it: the `java` heading `java.lang.System.setProperty`
+became `...setSystemProperties.java`, a `Java Unknown Variable Member` no
+declaration pass created. Understand puts an unresolved bare-name entity there;
+this project refuses bare names as targets, so it now writes nothing. 192 rows
+on testing_legacy_code, 87 on JSON, 17 on TheAlgorithms, and not one of them a
+reference Understand reports -- no matched row lost on any fixture.
+
+**No `Java Useby` on a package that declares no type.** `org` is a real
+`Java Package` because `org.craftedsw.harddependencies` is, but nothing
+declares `package org;`. Understand points 304 `Java Use` rows at it and hangs
+no inverse on any, while all 238 it hangs on freemind's `freemind.modes`, a
+package full of classes, are there. Restricted to `Java Useby` deliberately:
+stated over every inverse kind the rule also deletes `Java Declarein`, which
+Understand *does* hang on an empty package, and calculator_app lost 16 matched
+rows to that before the kind was pinned down.
+
+### The diff refuses an incomplete dump
+
+`05_dump_und.py` writes its data files first and its manifest last, so an
+interrupted run leaves a short `refs.jsonl` beside a stale manifest from an
+earlier complete run -- and `07_diff.py` would happily score against it. That
+produced a reported precision of 0.309 on xerces2j where the true figure is
+0.865. The diff now compares each file's row count against the manifest's own
+counts and stops if they disagree.
+
+### A plain `import` is a reference, and the second import emitter is gone
+
+`import org.json.CDL;` is a `Java Importby` in Understand -- 91 of them on the
+JSON benchmark -- and this project recorded none. `static_imports.py` returned
+early on anything without `static`, and its docstring asserted Understand does
+not record a plain import. It does. Now **91 of 91, precision and recall
+1.000**, and `Java Importby Demand` goes from 13 rows with 0 correct to 12 of
+Understand's 12.
+
+`Project.add_import_demand` is deleted. It was a second emitter for the same
+thing and every line of it was wrong: 21 `Java Import Demand` rows where
+Understand writes none, a `Java File` entity for `org.junit.Assert`, the
+literal string `"None"` in an integer foreign key, a `FileStream` object in a
+text column, and a file *path* in `_scope_id` and `_file_id`. **Eight of the
+eleven benchmark fixtures failed the harness's kind-integrity check on
+`NONINT_FK` because of it; all eleven pass now.**
+
+Note that in `07_diff.py` this reads as a small precision *loss* -- 0.8280 to
+0.8274 with recall unchanged -- because Understand flags all 91 of those
+`Importby` rows `external` and the diff drops external refs, so correct new
+rows can only land in `ou_only`. Scored against the raw dump, which is the
+right measure for an external-flagged kind, it is +91 correct and -21 wrong.
+
+
 ## 0.5.0
 
 ### Java 9 to 25 are parsed and analysed

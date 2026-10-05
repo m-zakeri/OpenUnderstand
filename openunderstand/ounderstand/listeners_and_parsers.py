@@ -14,7 +14,6 @@ from openunderstand.analysis_passes.import_importby import (
     ImportListener,
     ImportedEntityListener,
 )
-from openunderstand.analysis_passes.import_demand import ImportListenerDemand
 
 from openunderstand.analysis_passes.define_definein import DefineListener
 from openunderstand.analysis_passes.use_variants import UseVariantListener
@@ -790,27 +789,6 @@ class ListenersAndParsers:
         except Exception as e:
             self.logger.error(
                 "An Error occurred in extend implict in file :"
-                + file_address
-                + "\n"
-                + str(e)
-            )
-
-    @timer_decorator()
-    def import_demand_listener(self, tree, file_ent, file_address, p):
-        try:
-
-            def _build():
-                listener = ImportListenerDemand(file_address)
-                return listener
-
-            listener = self._stage("import_demand_listener", _build, tree, p)
-            if listener is None:
-                return
-            p.add_import_demand(listener.repository, file_address)
-            self.logger.info("import demand success ")
-        except Exception as e:
-            self.logger.error(
-                "An Error occurred in import demand in file :"
                 + file_address
                 + "\n"
                 + str(e)
