@@ -731,6 +731,18 @@ class DefineListener(JavaParserLabeledListener):
         for ent in identifiers:
             self.add_define_info(ent, ent_parents + [ent_name], decl=K.PARAMETER)
 
+    def enterResource(self, ctx: JavaParserLabeled.ResourceContext):
+        """`try (InputStream in = ...)` declares a local. Nothing did, so a read
+        of it created the row under a guessed field kind -- three on JSON."""
+        identifier = ctx.variableDeclaratorId()
+        if identifier is None:
+            return
+        ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
+        self.add_define_info(
+            identifier.IDENTIFIER(), ent_parents, decl=K.LOCAL,
+            modifiers=_modifiers_at(ctx),
+        )
+
     def enterEnhancedForControl(self, ctx: JavaParserLabeled.EnhancedForControlContext):
         ent = ctx.variableDeclaratorId().IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
