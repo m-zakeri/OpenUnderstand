@@ -249,7 +249,7 @@ def kind_family(kind) -> str:
     return "other"
 
 
-def _same_parent_family(incoming_parent, row_parent_id):
+def _same_parent_family(incoming_parent, row_parent_id, incoming_kind=None):
     """Whether two parents are the same *kind* of thing -- two files, or two
     classes. A copy of a declaration in another file has that; a row that a
     call created first, parented provisionally to the *calling* file, does
@@ -263,7 +263,15 @@ def _same_parent_family(incoming_parent, row_parent_id):
     )
     if other is None or mine is None:
         return False
-    return kind_family(other._kind_id) == kind_family(mine._kind_id)
+    family = kind_family(other._kind_id)
+    if family != kind_family(mine._kind_id):
+        return False
+    # A *type* copied into another file hangs off that file; its members hang
+    # off the copied type. A member hanging off a file directly is a row a
+    # call created, parented to the calling file -- two callers are not two
+    # declarations, and treating them as copies made SymbolTable's
+    # constructor eleven rows on xerces2j.
+    return family != "file" or kind_family(incoming_kind) == "type"
 
 
 def _declared_per_site(kind):
@@ -528,7 +536,7 @@ class EntityModel(Model):
                 and isinstance(incoming_parent_id, int)
                 and row._parent_id is not None
                 and incoming_parent_id != row._parent_id
-                and _same_parent_family(incoming_parent, row._parent_id)
+                and _same_parent_family(incoming_parent, row._parent_id, incoming)
             ):
                 # The same declaration at the same position under another
                 # parent is a copy in another file: testing_legacy_code holds
