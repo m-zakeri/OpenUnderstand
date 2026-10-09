@@ -49,7 +49,12 @@ _PASS_NAMES = (
     "dotref_listener",
     "throws_listener",
     "extend_coupled_listener",
-    "variable_listener",
+    # `variable_listener` is not here. It created variable entities from the
+    # enclosing declaration's modifiers, after define_listener had declared
+    # them properly, and wrote no references: a varargs parameter got a second
+    # row named after the method's modifiers (`Static Variable Public Member`
+    # beside its `Final Parameter`), and an anonymous class's fields a row
+    # with the `(Anon_N)` segment missing.
     "callbyNonDynamic_listener",
     "cast_by_listener",
     "contain_in_listener",

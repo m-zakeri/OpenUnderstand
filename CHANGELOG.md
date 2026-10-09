@@ -38,8 +38,11 @@ covers `org.w3c.*` and `org.xml.*`. `jdk_index.txt.gz` is unchanged.
 **Entity identity.** Parameters, locals and type parameters are one entity per
 declaration site, as overloads already were: overloaded methods' parameters
 were folded together (4,674 missing), and two `for (int i ...)` loops in one
-method are two entities in Understand (3,153 over thirteen fixtures). The same
-declaration copied into another file is a separate entity.
+method are two entities in Understand (3,153 over thirteen fixtures). A type
+copied into another file under the same long name is a separate entity, with
+its members under it. `variable_listener` is retired: after the define pass
+it only added second rows for varargs parameters and anonymous-class fields,
+with kinds taken from the enclosing method's modifiers.
 
 **Smaller rules, each read off Understand's output:**
 
