@@ -249,6 +249,41 @@ def kind_family(kind) -> str:
     return "other"
 
 
+def _same_parent_family(incoming_parent, row_parent_id, incoming_kind=None):
+    """Whether two parents are the same *kind* of thing -- two files, or two
+    classes. A copy of a declaration in another file has that; a row that a
+    call created first, parented provisionally to the *calling* file, does
+    not -- splitting it from the declaration duplicated CustomClassA's
+    constructor and dropped JSON's PercentLackOfCohesion to 0.833."""
+    other = EntityModel.get_or_none(EntityModel._id == row_parent_id)
+    mine = (
+        incoming_parent
+        if hasattr(incoming_parent, "_kind_id")
+        else EntityModel.get_or_none(EntityModel._id == incoming_parent)
+    )
+    if other is None or mine is None:
+        return False
+    family = kind_family(other._kind_id)
+    if family != kind_family(mine._kind_id):
+        return False
+    # A *type* copied into another file hangs off that file; its members hang
+    # off the copied type. A member hanging off a file directly is a row a
+    # call created, parented to the calling file -- two callers are not two
+    # declarations, and treating them as copies made SymbolTable's
+    # constructor eleven rows on xerces2j.
+    return family != "file" or kind_family(incoming_kind) == "type"
+
+
+def _declared_per_site(kind):
+    """A parameter, catch parameter or type parameter is one entity per
+    declaration even when overloads give two of them one long name:
+    `CDL.toJSONArray.string` is four rows in Understand, one per overload,
+    and was one here -- 4,674 parameters over eight fixtures. Locals too: one
+    per declaration, even within one method."""
+    name = _kind_name(kind)
+    return "Parameter" in name or "Local" in name
+
+
 def is_placeholder_kind(kind) -> bool:
     """A kind meaning "something is here but I could not identify it".
 
@@ -475,12 +510,38 @@ class EntityModel(Model):
                 all(incoming_site)
                 and all(row_site)
                 and incoming_site != row_site
-                and incoming_family == "method"
+                and (
+                    incoming_family == "method"
+                    or _declared_per_site(incoming)
+                    or _declared_per_site(row._kind_id)
+                )
             ):
-                # Only methods overload. Two locals sharing a long name are the
-                # same declaration seen twice -- `main.name` declared in two
-                # blocks -- and splitting them by position produced 155 of the
-                # duplicate rows the comparison reports.
+                # A method overload, or a parameter, local or type parameter
+                # declared at another site: Understand keeps one entity per
+                # declaration. That includes a local -- two `for (int i ...)`
+                # loops in one method are two `m.i` in its database, 3,153 such
+                # over thirteen fixtures against none here. This used to say
+                # splitting locals "produced 155 duplicate rows"; those were
+                # duplicates by the harness's count, never measured against
+                # Understand.
+                continue
+            incoming_parent = fields.get("_parent")
+            incoming_parent_id = getattr(incoming_parent, "_id", incoming_parent)
+            if (
+                all(incoming_site)
+                and incoming_site == row_site
+                and not incoming_placeholder
+                and not row_placeholder
+                and incoming_family != "package"  # every file declares it
+                and isinstance(incoming_parent_id, int)
+                and row._parent_id is not None
+                and incoming_parent_id != row._parent_id
+                and _same_parent_family(incoming_parent, row._parent_id, incoming)
+            ):
+                # The same declaration at the same position under another
+                # parent is a copy in another file: testing_legacy_code holds
+                # each EvoSuite class three times under one long name, and
+                # Understand keeps three entities, one per file.
                 continue
             match = row
             if not row_placeholder:
@@ -1096,6 +1157,24 @@ def drop_external_inverse_refs():
     )
     dropped = cursor.rowcount
 
+    # The implicit array `length` is one global entity Understand reads with a
+    # Use, and like a JDK member it has no inverse: every `Useby`/`Useby
+    # Return` hung on it was ours alone. Its kind is concrete -- that is what
+    # keeps the merge from folding the bare name -- so the test above, which
+    # keys on placeholder kinds, never saw it.
+    cursor = ReferenceModel._meta.database.execute_sql(
+        f"""
+        DELETE FROM referencemodel
+         WHERE _kind_id IN (SELECT _id FROM kindmodel WHERE _name IN ({placeholders}))
+           AND _scope_id IN (SELECT e._id FROM entitymodel e
+                              JOIN kindmodel k ON k._id = e._kind_id
+                             WHERE e._longname = 'length'
+                               AND k._name LIKE '%Implicit%')
+        """,
+        inverse_names,
+    )
+    dropped += cursor.rowcount
+
     # A package that declares no type is the second population, and it is not
     # a placeholder: `org` is a real `Java Package` because
     # `org.craftedsw.harddependencies` is, but nothing declares `package org;`
@@ -1181,6 +1260,67 @@ def drop_unresolved_scoped_use_refs():
         """
     )
     return cursor.rowcount
+
+
+def relabel_return_uses():
+    """Turn a plain Use into a Use Return where the use pass marked a returned
+    value, keeping the plain row's entity.
+
+    `use_variants` knows *that* `this.f` in `return this.f;` is returned but
+    resolves `f` by name; the field pass resolves it against the receiver's
+    type. So where both wrote a row at one token, the plain row is relabelled
+    and the marker removed, with each inverse following its forward row. A
+    marker with no plain row beside it stays, unless it names a placeholder.
+    Returns the number of plain rows relabelled.
+    """
+    flush_reference_writes()
+    database = ReferenceModel._meta.database
+    database.execute_sql(
+        'CREATE INDEX IF NOT EXISTS "referencemodel__position" '
+        'ON "referencemodel" ("_file_id", "_line", "_column")'
+    )
+    ids = {
+        name: kind_id(name)
+        for name in ("Java Use", "Java Useby", "Java Use Return", "Java Useby Return")
+    }
+    same_position = """
+        other._file_id = r._file_id AND other._line = r._line
+        AND other._column = r._column"""
+    plain = database.execute_sql(f"""
+        SELECT r._id, r._kind_id FROM referencemodel r
+         WHERE r._kind_id IN (?, ?)
+           AND EXISTS (SELECT 1 FROM referencemodel other
+                        WHERE {same_position} AND other._kind_id = ?)""",
+        (ids["Java Use"], ids["Java Useby"], ids["Java Use Return"]),
+    ).fetchall()
+    if plain:
+        # The markers first, while they are still the only Return rows there.
+        database.execute_sql(f"""
+            DELETE FROM referencemodel
+             WHERE _kind_id IN (?, ?)
+               AND EXISTS (SELECT 1 FROM referencemodel other
+                            WHERE other._file_id = referencemodel._file_id
+                              AND other._line = referencemodel._line
+                              AND other._column = referencemodel._column
+                              AND other._kind_id = ?)""",
+            (ids["Java Use Return"], ids["Java Useby Return"], ids["Java Use"]),
+        )
+        relabel = {ids["Java Use"]: ids["Java Use Return"],
+                   ids["Java Useby"]: ids["Java Useby Return"]}
+        for row_id, kind in plain:
+            database.execute_sql(
+                "UPDATE referencemodel SET _kind_id = ? WHERE _id = ?",
+                (relabel[kind], row_id),
+            )
+    database.execute_sql("""
+        DELETE FROM referencemodel
+         WHERE _kind_id IN (?, ?)
+           AND (CASE WHEN _kind_id = ? THEN _ent_id ELSE _scope_id END) IN
+               (SELECT e._id FROM entitymodel e JOIN kindmodel k ON k._id = e._kind_id
+                 WHERE k._name LIKE '%Unknown%' OR k._name LIKE '%Unresolved%')""",
+        (ids["Java Use Return"], ids["Java Useby Return"], ids["Java Use Return"]),
+    )
+    return len(plain)
 
 
 def drop_shadowed_use_refs():
@@ -1377,6 +1517,10 @@ def relabel_nondynamic_calls(file_ids=None):
         # precision.
         if owner and owner.rsplit(".", 1)[-1] == simple:
             return False
+        # So is a record's implicit canonical constructor, which carries the
+        # record's own long name rather than R.R.
+        if "constructor" in _kind_name(entity._kind_id).lower().split():
+            return False
         # A call to a record accessor targets the component's *field*, which
         # is private -- and Understand still reports it as a plain Call.
         if kind_family(entity._kind_id) == "variable":
@@ -1496,6 +1640,7 @@ def finalise_analysis(file_ids=None):
         "relabelled_calls": relabel_nondynamic_calls(file_ids=file_ids),
         "duplicate_bare_calls_dropped": drop_duplicate_bare_call_refs(),
         "nonvariable_deref_dropped": drop_nonvariable_deref_refs(),
+        "return_uses_relabelled": relabel_return_uses(),
         "shadowed_use_dropped": drop_shadowed_use_refs(),
         "external_inverses_dropped": drop_external_inverse_refs(),
         "unresolved_use_dropped": drop_unresolved_scoped_use_refs(),

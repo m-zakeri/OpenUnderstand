@@ -281,3 +281,76 @@ def return_type(longname: str, member: str) -> str | None:
 
 def known(longname: str) -> bool:
     return longname in _load()["types"]
+
+
+_SIGNATURES_PATH = os.path.join(os.path.dirname(__file__), "jdk_signatures.txt.gz")
+_SIGNATURES = None
+
+
+def _signatures() -> dict:
+    """Long name -> (supertypes, {name: [erased parameter tuples]}), from the
+    table scripts/gen_jdk_signatures.py writes. Empty when it is missing."""
+    global _SIGNATURES
+    if _SIGNATURES is None:
+        table = {}
+        if os.path.exists(_SIGNATURES_PATH):
+            with gzip.open(_SIGNATURES_PATH, "rt", encoding="utf8") as handle:
+                for line in handle:
+                    parts = line.rstrip("\n").split("\t")
+                    if len(parts) == 3:
+                        parts.append("")
+                    if len(parts) != 4:
+                        continue
+                    longname, supers, methods, type_params = parts
+                    overloads, returns = {}, {}
+                    for item in methods.split("|") if methods else ():
+                        name, _, rest = item.partition("(")
+                        params, _, returned = rest.partition(")")
+                        overloads.setdefault(name, []).append(
+                            tuple(params.split(";")) if params else ()
+                        )
+                        if returned.startswith(">?"):
+                            returns.setdefault(name, returned[2:])
+                    table[longname] = (
+                        supers.split(",") if supers else [],
+                        overloads,
+                        type_params.split(",") if type_params else [],
+                        returns,
+                    )
+        _SIGNATURES = table
+    return _SIGNATURES
+
+
+def signature_type(longname: str):
+    """(supertypes, overloads) for a JDK type, org.w3c/org.xml included, or None."""
+    found = _signatures().get(longname)
+    return found[:2] if found else None
+
+
+def returned_type_parameter(longname: str, member: str):
+    """Index of the type parameter `longname.member()` returns, or None.
+
+    `Queue<E>.peek()` is 0, `Map<K, V>.get()` is 1. Only for a method the
+    type itself declares, so the index means the receiver's own arguments.
+    """
+    table = _signatures()
+    found = table.get(longname)
+    if not found:
+        return None
+    params = found[2]
+    seen, pending = set(), [longname]
+    while pending:
+        current = pending.pop(0)
+        if current in seen or current not in table:
+            continue
+        seen.add(current)
+        supers, overloads, _, returns = table[current]
+        if member in overloads:
+            # Declared here. Its variable is named as *this* type names it;
+            # the receiver's parameter of the same name is the one bound, the
+            # way List<E> passes E on to Collection<E>. A renamed one refuses.
+            returned = returns.get(member)
+            return params.index(returned) if returned in params else None
+        pending.extend(supers)
+    return None
+

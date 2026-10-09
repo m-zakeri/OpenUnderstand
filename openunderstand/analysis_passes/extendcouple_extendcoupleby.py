@@ -68,9 +68,12 @@ class ExtendCoupleAndExtendCoupleBy(JavaParserLabeledListener):
         """`<T>` with no bound implicitly extends java.lang.Object.
 
         Understand records it like a class's: Extend Couple Implicit External
-        on the parameter's line at no column, scoped to C.m.T.
+        on the parameter's line at no column, scoped to C.m.T. So it does when
+        every bound is an interface -- `<T extends Comparable<T>>` still
+        extends Object -- 257 of 257 such parameters, and for none of the 32
+        bounded by a class.
         """
-        if ctx.EXTENDS() is not None:
+        if ctx.EXTENDS() is not None and not self._interface_bounds(ctx):
             return
         parents = class_properties.ClassPropertiesListener.findParents(ctx)
         self.relations.append(
@@ -84,6 +87,56 @@ class ExtendCoupleAndExtendCoupleBy(JavaParserLabeledListener):
                 "column_is_absolute": True,
             }
         )
+
+    def _interface_bounds(self, ctx):
+        from openunderstand.oudb import jdk_index
+        from openunderstand.ounderstand import symbol_table
+
+        bound = ctx.typeBound()
+        if bound is None:
+            return False
+        parents = class_properties.ClassPropertiesListener.findParents(ctx)
+        for type_ctx in bound.typeType():
+            longname = symbol_table.resolve_type_name(
+                type_ctx.getText().split("<")[0], self.imports, self.wildcards,
+                ".".join(parents),
+            )
+            if not longname or not (
+                symbol_table.is_interface(longname) or jdk_index.is_interface(longname)
+            ):
+                return False
+        return True
+
+    def enterInterfaceDeclaration(
+        self, ctx: JavaParserLabeled.InterfaceDeclarationContext
+    ):
+        """`interface PrintableView extends View` -- an Extend Couple from the
+        interface, at the supertype's token. There was no handler at all: 0
+        rows against Understand's 201 plain and 67 External."""
+        from openunderstand.ounderstand import symbol_table
+
+        if ctx.typeList() is None:
+            return
+        scope_parents = class_properties.ClassPropertiesListener.findParents(ctx)
+        scope_longname = ".".join(scope_parents + [ctx.IDENTIFIER().getText()])
+        for type_ctx in ctx.typeList().typeType():
+            longname = symbol_table.resolve_type_name(
+                type_ctx.getText().split("<")[0], self.imports, self.wildcards,
+                scope_longname,
+            )
+            if longname is None:
+                continue
+            token = class_properties.type_anchor(type_ctx, type_ctx.start)
+            self.relations.append(
+                {
+                    "kind": _extend_kind(longname),
+                    "scope_longname": scope_longname,
+                    "ent_longname": longname,
+                    "name": longname.rsplit(".", 1)[-1],
+                    "line": token.line,
+                    "col": token.column,
+                }
+            )
 
     def enterEnumDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
         """`enum MyEnum implements JSONString` -- plus the implicit parent.
@@ -162,20 +215,17 @@ class ExtendCoupleAndExtendCoupleBy(JavaParserLabeledListener):
         )
         if longname is None:
             return  # a wrong supertype is worse than a missing one
-        in_project = (
-            symbol_table.resolve_type(written.rsplit(".", 1)[-1], scope_longname)
-            is not None
+        interface = symbol_table.is_interface(longname) or jdk_index.is_interface(
+            longname
         )
-        interface = (
-            symbol_table.is_interface(longname)
-            if in_project
-            else jdk_index.is_interface(longname)
+        kind = "Java Implement Couple" if interface else _extend_kind(longname)
+        # `new java.awt.event.MouseAdapter() {` reports on the MouseAdapter.
+        identifiers = getattr(created, "IDENTIFIER", lambda: None)()
+        token = (
+            identifiers[-1].symbol
+            if isinstance(identifiers, list) and identifiers
+            else created.start
         )
-        if interface:
-            kind = "Java Implement Couple"
-        else:
-            kind = "Java Extend Couple" if in_project else "Java Extend Couple External"
-        token = created.start
         self.relations.append(
             {
                 "kind": kind,
@@ -259,18 +309,11 @@ class ExtendCoupleAndExtendCoupleBy(JavaParserLabeledListener):
         )
         if longname is None:
             return
-        in_project = (
-            symbol_table.resolve_type(written.split("<")[0], scope_longname) is not None
-        )
         # `extends java.util.ArrayList<...>` reports on the `ArrayList`.
         token = class_properties.type_anchor(type_ctx, type_ctx.start)
         self.relations.append(
             {
-                "kind": (
-                    "Java Extend Couple"
-                    if in_project
-                    else "Java Extend Couple External"
-                ),
+                "kind": _extend_kind(longname),
                 "scope_longname": scope_longname,
                 "ent_longname": longname,
                 "name": longname.rsplit(".", 1)[-1],
@@ -278,3 +321,20 @@ class ExtendCoupleAndExtendCoupleBy(JavaParserLabeledListener):
                 "col": token.column,
             }
         )
+
+
+def _extend_kind(longname):
+    """External only for a type Understand indexes outside the project -- the
+    JDK. A project type, and a third-party one it cannot see (guava's
+    Function, junit's TestCase), are both plain Extend Couple. The kind used
+    to come from re-resolving the *simple* name, which missed every project
+    type imported from another package."""
+    from openunderstand.oudb import jdk_index
+    from openunderstand.ounderstand import symbol_table
+    from openunderstand.ounderstand.project import _JDK_ROOTS
+
+    if symbol_table.is_project_type(longname):
+        return "Java Extend Couple"
+    if jdk_index.known(longname) or longname.startswith(_JDK_ROOTS):
+        return "Java Extend Couple External"
+    return "Java Extend Couple"

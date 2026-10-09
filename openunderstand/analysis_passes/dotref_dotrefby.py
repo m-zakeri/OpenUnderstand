@@ -78,6 +78,65 @@ class DotRef_DotRefBy(JavaParserLabeledListener):
             }
         )
 
+    def enterPrimary5(self, ctx: JavaParserLabeled.Primary5Context):
+        """`Integer.class`, `Map.Entry.class`: a DotRef to the head type at
+        its token, scoped like any expression. 960 rows over eight fixtures.
+        A lowercase head is a package -- `java.lang.String.class` -- which
+        Understand walks as an expression instead, so it is left alone.
+        A literal that is itself a receiver -- `Map.class.isAssignableFrom(t)`
+        -- is a plain Use."""
+        type_ctx = ctx.typeTypeOrVoid().typeType()
+        named = type_ctx.classOrInterfaceType() if type_ctx is not None else None
+        if named is None:
+            return
+        outer = getattr(ctx.parentCtx, "parentCtx", None)
+        receiver = (
+            isinstance(outer, JavaParserLabeled.Expression1Context)
+            and outer.expression() is ctx.parentCtx
+        )
+        self._head_type(
+            ctx, named.IDENTIFIER()[0].symbol, "Java Use" if receiver else None
+        )
+
+    def enterExpression23(self, ctx: JavaParserLabeled.Expression23Context):
+        """`Objects::nonNull` -- a method reference on a type."""
+        receiver = ctx.expression()
+        if receiver.getText().isidentifier():
+            self._head_type(ctx, receiver.start)
+
+    def enterExpression24(self, ctx: JavaParserLabeled.Expression24Context):
+        """`List<String>::size` -- the typeType form; `TreeMap::new` is a
+        plain Use."""
+        named = ctx.typeType().classOrInterfaceType()
+        if named is not None:
+            self._head_type(
+                ctx,
+                named.IDENTIFIER()[0].symbol,
+                "Java Use" if ctx.NEW() is not None else None,
+            )
+
+    def _head_type(self, ctx, token, kind=None):
+        name = token.text
+        if not name[:1].isupper():
+            return
+        parents = class_properties.ClassPropertiesListener.findParents(ctx)
+        if not parents:
+            return
+        scope_longname = ".".join(parents)
+        longname = self.resolve_type(name, scope_longname)
+        if longname is None:
+            return
+        self.implement.append(
+            {
+                "scope_longname": scope_longname,
+                "refent_name": name,
+                "refent_longname": longname,
+                "line": token.line,
+                "col": token.column,
+                **({"kind": kind} if kind else {}),
+            }
+        )
+
     # ------------------------------------------- a name written out in full
 
     def _qualified_prefix(self, ctx):
@@ -226,7 +285,12 @@ class DotRef_DotRefBy(JavaParserLabeledListener):
             is_call = False
             if identifier is None:
                 call = node.methodCall()
-                identifier = call.IDENTIFIER() if call is not None else None
+                # `super(...)`/`this(...)` (methodCall1/2) carry no identifier.
+                identifier = (
+                    getattr(call, "IDENTIFIER", lambda: None)()
+                    if call is not None
+                    else None
+                )
                 if identifier is None:
                     return None
                 is_call = True

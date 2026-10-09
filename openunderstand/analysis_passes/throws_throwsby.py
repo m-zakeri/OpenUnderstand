@@ -71,9 +71,18 @@ class Throws_TrowsBy(JavaParserLabeledListener):
 
         parents = class_properties.ClassPropertiesListener.findParents(ctx)
         scope_longname = ".".join(parents + [identifier.getText()])
+        from openunderstand.analysis_passes.cast_castby import _declaring_generic
+
         for qualified in names.qualifiedName():
-            longname = symbol_table.resolve_type_name(
-                qualified.getText(), self.imports, self.wildcards, scope_longname
+            # `<E extends Exception> T get() throws E`: E is the type
+            # parameter, Try.E -- a project entity, so it has a Throwby.
+            declaring = _declaring_generic(qualified, qualified.getText())
+            longname = (
+                f"{declaring}.{qualified.getText()}"
+                if declaring
+                else symbol_table.resolve_type_name(
+                    qualified.getText(), self.imports, self.wildcards, scope_longname
+                )
             )
             if longname is None:
                 continue

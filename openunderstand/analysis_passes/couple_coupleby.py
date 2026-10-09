@@ -243,10 +243,17 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         if type(ctx.parentCtx).__name__ != "TypeTypeContext":
             return
         if type(ctx.parentCtx.parentCtx).__name__.startswith("TypeArgument"):
-            if not self._inside_creator(ctx):
+            if not (self._inside_creator(ctx) or self._inside_record_header(ctx)):
                 return
         grandparent = type(ctx.parentCtx.parentCtx).__name__
         if grandparent == "ClassDeclarationContext":
+            return
+        if grandparent == "TypeListContext" and isinstance(
+            ctx.parentCtx.parentCtx.parentCtx, JavaParserLabeled.PermitsClauseContext
+        ):
+            # `sealed interface P permits A, B` is a Permit Couple to each and
+            # nothing more: Understand couples P to none of them -- 60 pairs
+            # of jenetics' were ours alone.
             return
         if (
             grandparent == "TypeListContext"
@@ -275,6 +282,21 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
     )
 
     @classmethod
+    def _inside_record_header(cls, ctx):
+        """Whether this type argument is part of a record component's type:
+        `record Book(..., List<Author> authors)` couples Book to Author in
+        Understand, where a field's `List<Author>` does not."""
+        node = ctx.parentCtx
+        while node is not None:
+            name = type(node).__name__
+            if name == "RecordComponentContext":
+                return True
+            if not name.startswith(cls._ARGUMENT_CHAIN):
+                return False
+            node = node.parentCtx
+        return False
+
+    @classmethod
     def _inside_creator(cls, ctx):
         """Whether this type argument is written inside a `new X<...>()`."""
         node = ctx.parentCtx
@@ -297,34 +319,13 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
                 identifier = node.IDENTIFIER()
                 if identifier is None:
                     return None
+                # findParents() already names a generic method: appending
+                # the owner again made `getEnum.getEnum.E`.
                 parents = class_properties.ClassPropertiesListener.findParents(node)
-                owner = self.generic_owner(node)
-                if owner:
-                    parents = parents + [owner]
                 return ".".join(parents + [identifier.getText()])
             if type(node).__name__.startswith(("ClassBody", "Block")):
                 return None
             node = node.parentCtx
-        return None
-
-    @staticmethod
-    def generic_owner(node):
-        """Name of the method a type parameter list belongs to, if any."""
-        current = node.parentCtx
-        while current is not None:
-            name = type(current).__name__
-            if name.startswith(
-                ("GenericMethodDeclaration", "GenericConstructorDeclaration")
-            ):
-                for attribute in ("methodDeclaration", "constructorDeclaration"):
-                    inner = getattr(current, attribute, None)
-                    inner = inner() if callable(inner) else None
-                    if inner is not None and inner.IDENTIFIER() is not None:
-                        return inner.IDENTIFIER().getText()
-                return None
-            if name.startswith(("ClassBody", "ClassDeclaration")):
-                return None
-            current = current.parentCtx
         return None
 
     def record_relation(self, kind, ctx, scope_longname):
@@ -480,6 +481,7 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
             return
         parent = ctx.parentCtx
         if type(parent).__name__ != "Expression1Context":
+            self._outer_member(ctx, identifier.getText())
             # A bare `f()` is a call on `this`, which is the enclosing class or
             # one of its supertypes -- neither is a coupling. Unless it was
             # statically imported: `requireNonNull(x)` behind `import static
@@ -530,6 +532,25 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         """`(Point2D.Double) x` -- the cast type itself comes in through
         enterClassOrInterfaceType; its qualifier is coupled here."""
         written = ctx.typeType().classOrInterfaceType()
+        if written is not None:
+            self._couple_qualifiers([i.getText() for i in written.IDENTIFIER()])
+
+    def enterExpression13(self, ctx: JavaParserLabeled.Expression13Context):
+        """`x instanceof Accessor.Writable` -- an expression position, like a
+        cast: the qualifier is coupled too."""
+        written = ctx.typeType().classOrInterfaceType()
+        if written is not None:
+            self._couple_qualifiers([i.getText() for i in written.IDENTIFIER()])
+
+    def enterPattern(self, ctx: JavaParserLabeled.PatternContext):
+        """`instanceof Accessor.Writable(var g, var s)` and `instanceof
+        Accessor.Writable w`: the same, for a record or a type pattern."""
+        type_ctx = ctx.typeType() or (
+            ctx.localVariableDeclaration().typeType()
+            if ctx.localVariableDeclaration() is not None
+            else None
+        )
+        written = type_ctx.classOrInterfaceType() if type_ctx is not None else None
         if written is not None:
             self._couple_qualifiers([i.getText() for i in written.IDENTIFIER()])
 
@@ -600,7 +621,10 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         declaring it: 51 of jhotdraw's classes couple to AttributeKeys this
         way and nothing here saw it. A local, a parameter or a field in scope
         shadows the import, so those are asked about first."""
-        if not self.stack or not (self.static_members or self.static_wildcards):
+        if not self.stack:
+            return
+        self._outer_member(ctx, ctx.IDENTIFIER().getText())
+        if not (self.static_members or self.static_wildcards):
             return
         name = ctx.IDENTIFIER().getText()
         try:
@@ -611,6 +635,38 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         owner = self._static_owner(name)
         if owner:
             self.add(owner)
+
+    def _outer_member(self, ctx, name):
+        """Inside an anonymous class, a bare name the class does not declare
+        but an enclosing type does -- `k` and `n` in KSubset's Cursors -- uses
+        a member of that enclosing type, and Understand couples the anonymous
+        class to it. A named class never couples itself, so only an anonymous
+        frame asks; its locals, parameters and own fields are asked first."""
+        from openunderstand.ounderstand import symbol_table
+
+        if not self.classlongname.rsplit(".", 1)[-1].startswith("(Anon_"):
+            return
+        binder = self.binder(ctx)
+        node = ctx
+        while node is not None and not (
+            isinstance(node, JavaParserLabeled.ClassCreatorRestContext)
+            and node.classBody() is not None
+        ):
+            if type(node).__name__.startswith(
+                ("MethodDeclaration", "LambdaExpression", "Block", "CatchClause",
+                 "ForControl", "EnhancedForControl")
+            ) and name in binder._declared_in(node):
+                return
+            node = node.parentCtx
+        if node is None or name in binder._own_fields(node):
+            return
+        parts = self.classlongname.split(".")
+        for end in range(len(parts) - 1, 0, -1):
+            owner = ".".join(parts[:end])
+            if symbol_table.is_project_type(owner):
+                if symbol_table.INDEX.declares(owner, name):
+                    self.add(owner)
+                return
 
     def enterTypeParameter(self, ctx: JavaParserLabeled.TypeParameterContext):
         """`<E>` declares a name that looks like a type but denotes none.

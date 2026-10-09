@@ -17,11 +17,21 @@ from openunderstand.gen.javaLabeled.JavaParserLabeledListener import (
 )
 
 
+class _Declared(dict):
+    """`name -> declared type simple name`, as before; `.generic` also keeps
+    the written text of a parameterised one -- `Queue<Iterator<? extends T>>`
+    -- which is what binds `queue.peek()` to Iterator."""
+
+    def __init__(self):
+        super().__init__()
+        self.generic = {}
+
+
 class DeclaredTypeCollector(JavaParserLabeledListener):
     """Collects `name -> declared type simple name`."""
 
     def __init__(self):
-        self.types = {}
+        self.types = _Declared()
 
     def enterFormalParameter(self, ctx):
         self._record(ctx.typeType(), [ctx.variableDeclaratorId()])
@@ -84,6 +94,9 @@ class DeclaredTypeCollector(JavaParserLabeledListener):
             identifier = declarator.getText().split("[")[0]
             if identifier:
                 self.types[identifier] = name
+                text = type_ctx.getText()
+                if "<" in text and not text.endswith("]"):
+                    self.types.generic[identifier] = text
 
 
 #: Declarations that open a scope of their own. `ClassCreatorRest` is the

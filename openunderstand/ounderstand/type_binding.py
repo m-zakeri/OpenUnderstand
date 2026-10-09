@@ -156,6 +156,35 @@ def _written_name(ctx):
     return text or None
 
 
+class _GenericAware(dict):
+    """`{name: simple type}` plus `.generic`, the written parameterised text."""
+
+    def __init__(self):
+        super().__init__()
+        self.generic = {}
+
+    def note(self, name, type_ctx):
+        text = type_ctx.getText() if type_ctx is not None else ""
+        if "<" in text and not text.endswith("]"):
+            self.generic[name] = text
+
+
+def _type_arguments(text):
+    """Top-level arguments of `Map<K,List<V>>` -> ["K", "List<V>"]."""
+    inner = text[text.index("<") + 1 : text.rindex(">")]
+    out, depth, current = [], 0, ""
+    for char in inner:
+        depth += char == "<"
+        depth -= char == ">"
+        if char == "," and depth == 0:
+            out.append(current)
+            current = ""
+        else:
+            current += char
+    out.append(current)
+    return [part.strip() for part in out]
+
+
 class TypeBinder:
     """Types for one file's expressions. Build once per parsed file."""
 
@@ -259,7 +288,7 @@ class TypeBinder:
         key = id(type_ctx)
         if key in self._fields:
             return self._fields[key]
-        found = {}
+        found = _GenericAware()
         stack = [type_ctx]
         first = True
         while stack:
@@ -276,7 +305,21 @@ class TypeBinder:
                 ):
                     identifier = declarator.variableDeclaratorId()
                     if identifier is not None:
-                        found[identifier.getText().split("[")[0]] = written
+                        field = identifier.getText().split("[")[0]
+                        found[field] = written
+                        found.note(field, node.typeType())
+                continue
+            if name == "RecordComponentContext":
+                # `record BrentRootFinder(Limit limit)`: a component is a field.
+                # Only FieldDeclaration was read, so every `limit.accuracy()`
+                # in a record's methods had an untyped receiver.
+                found[node.IDENTIFIER().getText()] = _written_name(node.typeType())
+                found.note(node.IDENTIFIER().getText(), node.typeType())
+                continue
+            if name == "ConstDeclarationContext":
+                written = _written_name(node.typeType())
+                for declarator in node.constantDeclarator():
+                    found[declarator.IDENTIFIER().getText()] = written
                 continue
             if name.startswith(("MethodBody", "ConstructorBody")):
                 continue  # a body declares locals, not fields
@@ -299,6 +342,54 @@ class TypeBinder:
         found = declared_types.collect_own(scope_ctx)
         cached[key] = found
         return found
+
+    def generic_text(self, name, ctx):
+        """The written parameterised type of a name visible at `ctx`, or None
+        -- the same walk as name_type(), reading `.generic`."""
+        node = ctx
+        while node is not None:
+            kind = type(node).__name__
+            if kind.startswith(_SCOPE):
+                declared = self._declared_in(node)
+                if name in declared:
+                    return getattr(declared, "generic", {}).get(name)
+            elif kind.startswith(_TYPE_DECLARATION) or (
+                kind == "ClassCreatorRestContext" and node.classBody() is not None
+            ):
+                fields = self._own_fields(node)
+                if name in fields:
+                    return getattr(fields, "generic", {}).get(name)
+            node = node.parentCtx
+        return None
+
+    def _bound_argument(self, receiver, owner, member, scope):
+        """`queue.peek()` on a `Queue<Iterator<? extends T>>` is an Iterator:
+        the JDK method returns its type's own parameter, and the receiver's
+        declaration says what that parameter is."""
+        from openunderstand.oudb import jdk_index
+
+        if type(receiver).__name__ != "Expression0Context":
+            return None
+        primary = receiver.primary()
+        if type(primary).__name__ != "Primary4Context":
+            return None
+        index = jdk_index.returned_type_parameter(owner, member)
+        if index is None:
+            return None
+        text = self.generic_text(primary.IDENTIFIER().getText(), receiver)
+        if not text:
+            return None
+        arguments = _type_arguments(text)
+        if index >= len(arguments):
+            return None
+        argument = arguments[index]
+        for prefix in ("? extends ", "?extends"):
+            if argument.startswith(prefix):
+                argument = argument[len(prefix):]
+        if argument.startswith("?"):
+            return None
+        argument = argument.split("<")[0].split("[")[0]
+        return self._resolve(argument, scope) if argument else None
 
     def name_type(self, name, ctx):
         """Written type of a simple name visible at `ctx`, or None.
@@ -329,6 +420,25 @@ class TypeBinder:
                 if declared:
                     return declared
             node = node.parentCtx
+        return None
+
+    @staticmethod
+    def _inherited_field_type(name, scope):
+        """Type of a field `name` some enclosing type inherits, or None."""
+        from openunderstand.ounderstand import symbol_table
+
+        if not scope or not name[:1].islower():
+            return None
+        parts = scope.split(".")
+        for end in range(len(parts), 0, -1):
+            owner = ".".join(parts[:end])
+            if not symbol_table.is_project_type(owner):
+                continue
+            declarer = symbol_table.declaring_type_anywhere(owner, name, fields=True)
+            if declarer:
+                found = symbol_table.member_type(declarer, name)
+                if found:
+                    return found
         return None
 
     def _bound_of(self, written, ctx):
@@ -535,6 +645,10 @@ class TypeBinder:
             written = self.name_type(identifier, ctx)
             if written:
                 return self._resolve(written, scope)
+            # A field inherited by an enclosing type, innermost first.
+            inherited = self._inherited_field_type(identifier, scope)
+            if inherited:
+                return inherited
             # Not a variable in scope, so the name is a type: `Math.abs(x)`.
             return self._resolve(identifier, scope)
 
@@ -563,7 +677,9 @@ class TypeBinder:
                 member = self._call_name(call)
                 if not owner or not member:
                     return None
-                return self.return_type(owner, member)
+                return self.return_type(owner, member) or self._bound_argument(
+                    receiver, owner, member, scope
+                )
             identifier = ctx.IDENTIFIER()
             if identifier is not None and not isinstance(identifier, list):
                 if not owner:

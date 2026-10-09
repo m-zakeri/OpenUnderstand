@@ -95,6 +95,36 @@ def _declaration_start(ctx):
         if current.start is not None and current.start.tokenIndex < start.tokenIndex:
             start = current.start
         current = current.parentCtx
+    return _skipped_modifier(start)
+
+
+def _skipped_modifier(start):
+    """`default static long f()` in a *class* is not Java, and the parser
+    recovers by dropping `default` as extraneous -- so the declaration began
+    at `static`. Understand keeps the keyword and begins there (SalaryCalculator,
+    five methods). The text just before the first token is read back from the
+    input; nothing valid can sit there, so valid code is unaffected."""
+    stream = start.getInputStream() if start is not None else None
+    if stream is None or start.start < 8:
+        return start
+    before = stream.getText(max(0, start.start - 8), start.start - 1)
+    if before.rstrip() and before.rstrip().endswith("default") and (
+        len(before.rstrip()) == 7 or not before.rstrip()[-8].isalnum()
+    ):
+        offset = len(before) - len(before.rstrip()) + 7
+
+        class _Shifted:
+            line = start.line
+            column = start.column - offset
+            tokenIndex = start.tokenIndex
+            text = "default"
+
+            def getInputStream(self):
+                return stream
+
+        shifted = _Shifted()
+        shifted.start = start.start - offset
+        return shifted if shifted.column >= 0 else start
     return start
 
 
@@ -547,8 +577,11 @@ class DefineListener(JavaParserLabeledListener):
             type=declared.getText() if declared is not None else "",
             contents=source_text(ctx),
             decl=K.METHOD,
-            # An annotation member is implicitly public and abstract.
-            modifiers=["public", "abstract"],
+            # Abstract, and the visibility as written -- Understand names
+            # JSONPropertyName.value `Abstract Method Default Member`, not the
+            # implicit public, the same rule as an interface's methods.
+            modifiers=["abstract"]
+            + [m for m in _enclosing_modifiers(ctx, depth=5) if m == "public"],
             span=span,
         )
 
@@ -622,7 +655,10 @@ class DefineListener(JavaParserLabeledListener):
                 contents="",
                 decl=K.METHOD,
                 span=None,
-                modifiers=["public", "static"],
+                # Understand's kind is `Java Implicit Method Public Member`,
+                # which carries no `static`: 208 of them were written as
+                # Static Method Public Member.
+                modifiers=["implicit", "public"],
                 implicit=True,
             )
         self.add_define_info(
@@ -695,6 +731,18 @@ class DefineListener(JavaParserLabeledListener):
         for ent in identifiers:
             self.add_define_info(ent, ent_parents + [ent_name], decl=K.PARAMETER)
 
+    def enterResource(self, ctx: JavaParserLabeled.ResourceContext):
+        """`try (InputStream in = ...)` declares a local. Nothing did, so a read
+        of it created the row under a guessed field kind -- three on JSON."""
+        identifier = ctx.variableDeclaratorId()
+        if identifier is None:
+            return
+        ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
+        self.add_define_info(
+            identifier.IDENTIFIER(), ent_parents, decl=K.LOCAL,
+            modifiers=_modifiers_at(ctx),
+        )
+
     def enterEnhancedForControl(self, ctx: JavaParserLabeled.EnhancedForControlContext):
         ent = ctx.variableDeclaratorId().IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
@@ -721,6 +769,12 @@ class DefineListener(JavaParserLabeledListener):
             type="Constant",
             contents=source_text(ctx),
             decl=K.CONSTANT,
+            # As written, on the interfaceBodyDeclaration three rules up:
+            # `public static final String S` in an interface is Understand's
+            # Static Final Variable Public Member, a bare `CsvWriter D` its
+            # Variable Default Member. None were passed, so freemind's 325
+            # constants all came out Default.
+            modifiers=_enclosing_modifiers(ctx, depth=4),
         )
 
     def enterLastFormalParameter(

@@ -48,101 +48,70 @@ class SetInitAndSetByInitListener(JavaParserLabeledListener):
     def exitVariableInitializer1(
         self, ctx: JavaParserLabeled.VariableInitializer1Context
     ):
+        """One `Java Set Init` per initialised declaration.
+
+        Everything the writer reads comes from the declarator and from
+        findParents(). The long names this used to build by climbing to a
+        method or class rule *by index* are kept only as best-effort extras:
+        inside an interface -- a default method, a constant, an anonymous class
+        in either -- the climb ran off the root, the bare except swallowed it,
+        and 66 of jenetics' initialisers had no Set Init at all.
+        """
+        declarator = ctx.parentCtx
+        identifier = declarator.children[0] if declarator.children else None
+        if identifier is None:
+            self._reset()
+            return
+        # variableDeclarator: a variableDeclaratorId rule; constantDeclarator
+        # (an interface constant): the IDENTIFIER token itself.
+        token = getattr(identifier, "symbol", None)
+        if token is None:
+            first = identifier.children[0] if identifier.children else None
+            token = getattr(first, "symbol", None)
+        if token is None:
+            self._reset()
+            return
+        declared = token.text
+        name_of_file = self.file_name.split("\\")[
+            self.file_name.split("\\").count(0) - 1
+        ]
+        short_name = long_name = declared
         try:
-            name_of_file = self.file_name.split("\\")[
-                self.file_name.split("\\").count(0) - 1
-            ]
             node = ctx
             while node.getRuleIndex() not in (20, 7, 25):
                 node = node.parentCtx
-            if node.getRuleIndex() == 20:
-                self.stream = node.parentCtx.parentCtx.getText()
-                set_init_short_name = ctx.parentCtx.children[0].getText()
-                self.ss = node.children[0].getText()
-                set_init_long_name = (
-                    self.package_name
-                    + "."
-                    + node.children[0].getText()
-                    + "."
-                    + self.ex_name
-                    + "."
-                    + ctx.parentCtx.children[0].getText()
-                )
-            elif node.getRuleIndex() == 25:
-                self.stream = node.parentCtx.parentCtx.getText()
-                set_init_short_name = ctx.parentCtx.children[0].getText()
-                self.ss = node.children[0].getText()
-                set_init_long_name = (
-                    self.package_name
-                    + "."
-                    + node.children[0].getText()
-                    + "."
-                    + self.ex_name
-                    + "."
-                    + ctx.parentCtx.children[0].getText()
-                )
-            else:
-                node1 = ctx
-                while node1.getRuleIndex() != 26:
-                    node1 = node1.parentCtx
-                node2 = ctx
-                while node2.getRuleIndex() != 0:
-                    node2 = node2.parentCtx
-                self.stream = node.parentCtx.parentCtx.getText()
-                self.ss = node2.children[0].children[1].children[2].getText()
-                set_init_short_name = (
-                    node1.children[0].getText()
-                    + "."
-                    + ctx.parentCtx.children[0].getText()
-                )
-                set_init_long_name = (
-                    self.package_name
-                    + "."
-                    + self.ex_name
-                    + "."
-                    + ctx.parentCtx.children[0].getText()
-                )
-            set_init_type = ctx.parentCtx.children[0].getText()
-            line = ctx.parentCtx.children[0].children[0].symbol.line
-            column = ctx.parentCtx.children[0].children[0].symbol.column
-            if self.call_function:
-                set_init_value = self.method_name
-            elif self.create_object:
-                set_init_value = self.class_name
-            else:
-                set_init_value = ctx.getText()
-            sss = self.ss + "." + self.ex_name
-            # The long names above walk to a parent by rule index and take
-            # children[0], which is a *type* name as often as the enclosing
-            # class: `JSONArray ja = ...` in CDL.rowToJSONArray was recorded as
-            # org.json.JSONArray.rowToJSONArray.ja. findParents() answers what
-            # the index-chasing was approximating, and the positions were
-            # already right, so this is the whole defect -- 51 of 310
-            # references matched Understand on JSON.
-            parents = class_properties.ClassPropertiesListener.findParents(ctx)
-            enclosing = ".".join(parents)
-            declared = ctx.parentCtx.children[0].getText()
-            self.set_init_by.append(
-                (
-                    set_init_short_name,
-                    set_init_long_name,
-                    name_of_file,
-                    set_init_value,
-                    set_init_type,
-                    line,
-                    column,
-                    self.ex_name,
-                    self.ent_type,
-                    self.stream,
-                    sss,
-                    enclosing,
-                    f"{enclosing}.{declared}",
-                )
+            self.stream = node.parentCtx.parentCtx.getText()
+            self.ss = node.children[0].getText()
+        except AttributeError:
+            self.stream = self.ss = ""
+        if self.call_function:
+            value = self.method_name
+        elif self.create_object:
+            value = self.class_name
+        else:
+            value = ctx.getText()
+        parents = class_properties.ClassPropertiesListener.findParents(ctx)
+        enclosing = ".".join(parents)
+        self.set_init_by.append(
+            (
+                short_name,
+                long_name,
+                name_of_file,
+                value,
+                declared,
+                token.line,
+                token.column,
+                self.ex_name,
+                self.ent_type,
+                self.stream,
+                self.ss + "." + self.ex_name,
+                enclosing,
+                f"{enclosing}.{declared}",
             )
+        )
+        self._reset()
 
-        except:
-            x = 0
-
+    def _reset(self):
         self.enterd_initialization = False
         self.call_function = False
         self.create_object = False
