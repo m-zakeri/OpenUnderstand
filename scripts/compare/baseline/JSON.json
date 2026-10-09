@@ -1,20 +1,20 @@
 {
   "digested_rows": {
-    "entities": 5478,
+    "entities": 5565,
     "kinds": 343,
-    "references": 70509
+    "references": 70576
   },
   "digests": {
-    "entities": "cebf2323cb2bafa4f8a27aa83f374da8099556d6e86c6c7ff53b7435fed3778e",
+    "entities": "e8788232a059af2d0bc141a6d9de14046a95e2335f1c665fe22a102e24150976",
     "kinds": "bae23209d69549c8b4860f7fd18b906aced5d9b518768f1691e6db42a137e9b9",
-    "references": "ceeeea796b546eb85be4372dae189b2c7c472e80b2249651d5b9dfed5482a8f5"
+    "references": "3c914734f2bf95b43b9518b145b0d4d6fcef0c0247d060d3090c3d8650473ed0"
   },
-  "fingerprint": "d22db0126d914eec2f70a331f7283892c29893c2221febf45bac1c7f39a60b4f",
+  "fingerprint": "3b701c2c2105a256a8d5e914eabc909d5c30693fd325d147ded0019c3acc70d3",
   "kind_histograms": {
     "entitymodel": {
       "16": {
         "kind": "Java Abstract Method Default Member",
-        "n": 3
+        "n": 4
       }
     },
     "referencemodel": {
@@ -25,11 +25,11 @@
     }
   },
   "row_counts": {
-    "entitymodel": 5478,
+    "entitymodel": 5565,
     "kindmodel": 343,
     "metricmodel": 0,
     "projectmodel": 1,
-    "referencemodel": 70509
+    "referencemodel": 70576
   },
   "tables": [
     "entitymodel",

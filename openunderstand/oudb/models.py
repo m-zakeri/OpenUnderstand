@@ -249,6 +249,23 @@ def kind_family(kind) -> str:
     return "other"
 
 
+def _same_parent_family(incoming_parent, row_parent_id):
+    """Whether two parents are the same *kind* of thing -- two files, or two
+    classes. A copy of a declaration in another file has that; a row that a
+    call created first, parented provisionally to the *calling* file, does
+    not -- splitting it from the declaration duplicated CustomClassA's
+    constructor and dropped JSON's PercentLackOfCohesion to 0.833."""
+    other = EntityModel.get_or_none(EntityModel._id == row_parent_id)
+    mine = (
+        incoming_parent
+        if hasattr(incoming_parent, "_kind_id")
+        else EntityModel.get_or_none(EntityModel._id == incoming_parent)
+    )
+    if other is None or mine is None:
+        return False
+    return kind_family(other._kind_id) == kind_family(mine._kind_id)
+
+
 def _declared_per_site(kind):
     """A parameter, catch parameter or type parameter is one entity per
     declaration even when overloads give two of them one long name:
@@ -511,6 +528,7 @@ class EntityModel(Model):
                 and isinstance(incoming_parent_id, int)
                 and row._parent_id is not None
                 and incoming_parent_id != row._parent_id
+                and _same_parent_family(incoming_parent, row._parent_id)
             ):
                 # The same declaration at the same position under another
                 # parent is a copy in another file: testing_legacy_code holds

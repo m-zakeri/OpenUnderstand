@@ -1,15 +1,15 @@
 {
   "digested_rows": {
-    "entities": 5244,
+    "entities": 5338,
     "kinds": 343,
-    "references": 42569
+    "references": 42787
   },
   "digests": {
-    "entities": "738f46e58859808d087924ec9157fa2759ee88c5c66344e3e542a4455608fe7c",
+    "entities": "f26ce6ddf9df6c186c89fedf41318f9f8ab5cba5f1a944463ce4bc197a35cd22",
     "kinds": "bae23209d69549c8b4860f7fd18b906aced5d9b518768f1691e6db42a137e9b9",
-    "references": "e4ea49f0f44fc7163cb5cad000ec500b6483f135d8d0997bc9afb2d74f086f3a"
+    "references": "79fbe76084f5ae45c739af3771c7d37dc393215dca55f35bc57d04bbfa20efe7"
   },
-  "fingerprint": "834da6ac4287f899e87ed857c2f18e002fd4e8256cc83362f059f3199e249c77",
+  "fingerprint": "4ed99821e164e14480bd7c1c198f7b9ef63dad8a55f760b8964642a2a607ac14",
   "kind_histograms": {
     "entitymodel": {
       "9": {
@@ -25,11 +25,11 @@
     }
   },
   "row_counts": {
-    "entitymodel": 5244,
+    "entitymodel": 5338,
     "kindmodel": 343,
     "metricmodel": 0,
     "projectmodel": 1,
-    "referencemodel": 42569
+    "referencemodel": 42787
   },
   "tables": [
     "entitymodel",

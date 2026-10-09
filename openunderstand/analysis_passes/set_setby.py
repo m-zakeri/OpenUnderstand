@@ -26,6 +26,7 @@ class SetAndSetByListener(JavaParserLabeledListener):
         self.initializer_identifier_number = 0
         self.number_of_primary_4 = 0
         self.file_name = basename(file_name)
+        self.file_path = file_name
         self.package_name = ""
         self.setBy = []
         self.entered_expression = False
@@ -43,6 +44,8 @@ class SetAndSetByListener(JavaParserLabeledListener):
         self.field_types = {}
         #: Same for the parameters and locals of the method being walked.
         self.local_types = {}
+        #: The enclosing classes' field tables, innermost last.
+        self._field_stack = []
 
     # ---- declared types, for resolving `receiver.field = ...` -------------
     #
@@ -77,6 +80,19 @@ class SetAndSetByListener(JavaParserLabeledListener):
             self.local_types,
             ctx.typeType(),
             ctx.variableDeclarators().variableDeclarator(),
+        )
+
+    def enterEnhancedForControl(
+        self, ctx: JavaParserLabeled.EnhancedForControlContext
+    ):
+        """`for (Point each : points) { each.x = 1; }`"""
+        self._record_type(self.local_types, ctx.typeType(), [ctx.variableDeclaratorId()])
+
+    def enterResource(self, ctx: JavaParserLabeled.ResourceContext):
+        """`try (Scanner s = in) { s.x = ...; }` -- a resource names its type
+        through classOrInterfaceType, not typeType."""
+        self._record_type(
+            self.local_types, ctx.classOrInterfaceType(), [ctx.variableDeclaratorId()]
         )
 
     def enterFieldDeclaration(self, ctx: JavaParserLabeled.FieldDeclarationContext):
@@ -197,14 +213,14 @@ class SetAndSetByListener(JavaParserLabeledListener):
             except Exception:
                 pass
         type_name = self.declared_type(receiver)
-        if not type_name:
-            # `ColumnarTranspositionCipher.keyword = x` -- the receiver is a
-            # *type*, so the field is a static one on that type. Understand
-            # reports these as an ordinary Java Set and this pass produced
-            # none of them.
-            return symbol_table.resolve_type(receiver, scope_longname)
-        # An array's element type is what carries the member.
-        return symbol_table.resolve_type(type_name.split("[")[0], scope_longname)
+        # `ColumnarTranspositionCipher.keyword = x` -- with no declared type
+        # the receiver is a *type*, so the field is a static one on it. Either
+        # way the name resolves as this file sees it, imports first: `Point`
+        # behind `import java.awt.Point` was looked up in the project alone.
+        written = (type_name or receiver).split("[")[0]
+        return symbol_table.resolve_in_file(
+            written, self.file_path, scope_longname
+        ) or symbol_table.resolve_type(written, scope_longname)
 
     def add_set_by_entry(
         self,
@@ -282,6 +298,15 @@ class SetAndSetByListener(JavaParserLabeledListener):
         # IDENTIFIER, not children[1]: a record's or a sealed class's first
         # child is a sub-rule, and children[0].symbol raised on every one.
         self.ex_name = ctx.IDENTIFIER().getText()
+        # Each class has its own fields. One flat table for the file let
+        # `Outer.Inner.shared` (a String) overwrite `Outer.shared` (a Point)
+        # for every `this.shared.y = ...` written after it.
+        self._field_stack.append(self.field_types)
+        self.field_types = {}
+
+    def exitClassDeclaration(self, ctx: JavaParserLabeled.ClassDeclarationContext):
+        if self._field_stack:
+            self.field_types = self._field_stack.pop()
 
     def enterExpression21(self, ctx: JavaParserLabeled.Expression21Context):
         self.entered_expression = True
