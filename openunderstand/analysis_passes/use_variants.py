@@ -127,16 +127,24 @@ class UseVariantListener(JavaParserLabeledListener):
             and parent.expression(0) is ctx
         ):
             return
+        if isinstance(parent, JavaParserLabeled.Expression6Context) or (
+            isinstance(parent, JavaParserLabeled.Expression7Context)
+            and parent.prefix.text in ("++", "--")
+        ):
+            return  # `a.f++`: the modify pass writes Modify Deref Partial on `a`
         self._add("Java Use Deref Partial", text, ctx, receiver.start)
 
     def enterStatement10(self, ctx: JavaParserLabeled.Statement10Context):
+        """`return x;` -- and the value a returned expression ends in:
+        `this.f`'s `f`, both arms of `c ? a : b`, `!x`, `(x)`. Only a bare
+        identifier was handled, which left 2,257 of these as plain Use.
+        Where another pass resolved the name at that token,
+        `models.relabel_return_uses()` keeps its entity and this row goes."""
         expression = ctx.expression()
         if expression is None:
             return
-        text = expression.getText()
-        if not text.isidentifier():
-            return
-        self._add("Java Use Return", text, ctx, expression.start)
+        for token in _returned_tokens(expression):
+            self._add("Java Use Return", token.text, ctx, token)
 
     def enterAnnotation(self, ctx: JavaParserLabeled.AnnotationContext):
         """`@Override` is used *by the thing it annotates*, not by its class.
@@ -276,7 +284,8 @@ class UseVariantListener(JavaParserLabeledListener):
                 )
                 continue
             type_ctx = argument.typeType() if hasattr(argument, "typeType") else None
-            if type_ctx is None:
+            if type_ctx is None or type_ctx.primitiveType() is not None:
+                # `AttributeKey<double[]>`: a primitive names no entity.
                 continue
             argument_name = _simple_type_name(type_ctx)
             self._add(
@@ -285,8 +294,12 @@ class UseVariantListener(JavaParserLabeledListener):
                 ctx,
                 type_ctx.start,
                 suffix=declared,
-                # The bound of a type parameter naming that parameter.
+                # The bound of a type parameter naming that parameter -- or
+                # the type a single-type import names, which wins over any
+                # other `Key` (freemind's TranscodingHints.Key, which the
+                # writer's lookup by simple name took for RenderingHints.Key).
                 ent_longname=bool(bound and argument_name == bound.rsplit(".", 1)[-1])
+                or self.imports.get(argument_name)
                 or None,
             )
 
@@ -294,28 +307,17 @@ class UseVariantListener(JavaParserLabeledListener):
 def _type_parameter_scope(ctx):
     """Scope suffix when this sits inside a type parameter's bound, else None.
 
-    `<T extends Comparable<T>>` on a *method* is a further trap: typeParameters
-    is a sibling of the methodDeclaration under the genericMethodDeclaration
-    wrapper, so findParents() walking up from the bound reaches the class and
-    never sees the method name. The result is the method's own name has to be
-    fetched back down off the wrapper -- `find.T`, not `T`.
+    findParents() already names a generic method -- `<A> R m()` gives C.m --
+    so the parameter's own name is all this adds; appending the method again
+    made `getEnum.getEnum.E`.
     """
     node = ctx.parentCtx
-    parameter = None
     while node is not None:
-        name = type(node).__name__
-        if name == "TypeParameterContext" and parameter is None:
+        if type(node).__name__ == "TypeParameterContext":
             identifier = node.IDENTIFIER()
-            if identifier is not None:
-                parameter = identifier.getText()
-        elif parameter and name.startswith("Generic") and "Method" in name:
-            for attribute in ("methodDeclaration", "interfaceMethodDeclaration"):
-                declaration = getattr(node, attribute, None)
-                declaration = declaration() if callable(declaration) else None
-                if declaration is not None and declaration.IDENTIFIER() is not None:
-                    return f"{declaration.IDENTIFIER().getText()}.{parameter}"
+            return identifier.getText() if identifier is not None else None
         node = node.parentCtx
-    return parameter
+    return None
 
 
 def _annotated_name(ctx):
@@ -328,6 +330,11 @@ def _annotated_name(ctx):
     node = ctx.parentCtx
     while node is not None:
         name = type(node).__name__
+        if name in ("FormalParameterContext", "LastFormalParameterContext"):
+            # `handleGetObject(@NotNull String key)`: scoped to the parameter,
+            # m.key, as an annotation on a local is to the local.
+            identifier = node.variableDeclaratorId()
+            return identifier.getText().split("[")[0] if identifier else None
         if name.startswith("ClassBodyDeclaration"):
             member = getattr(node, "memberDeclaration", None)
             member = member() if callable(member) else None
@@ -351,6 +358,22 @@ def _annotated_name(ctx):
                     if inner is not None:
                         return _first_declared_name(inner)
             return None
+        if name.startswith("InterfaceBodyDeclaration"):
+            # `@JSONPropertyName("x") float getSomeFloat();` in an interface:
+            # scoped to the method, as in a class. This had no branch, so the
+            # walk went on up to the interface itself.
+            member = node.interfaceMemberDeclaration()
+            inner = member.getChild(0) if member is not None else None
+            if isinstance(inner, JavaParserLabeled.ConstDeclarationContext):
+                declarators = inner.constantDeclarator()
+                return declarators[0].IDENTIFIER().getText() if declarators else None
+            for attribute in ("interfaceMethodDeclaration", "methodDeclaration"):
+                nested = getattr(inner, attribute, None)
+                nested = nested() if callable(nested) else None
+                if nested is not None:
+                    inner = nested
+                    break
+            return _first_declared_name(inner) if inner is not None else None
         if name.startswith("LocalVariableDeclaration"):
             return _first_declared_name(node)
         if name.startswith("TypeDeclaration"):
@@ -391,6 +414,16 @@ def _declared_owner(ctx):
     node = ctx.parentCtx
     while node is not None:
         name = type(node).__name__
+        if name in ("EnhancedForControlContext", "ResourceContext"):
+            # `for (Entry<?, ?> e : ...)`, `try (Stream<String> lines = ...)`:
+            # declarations like a local's, Typed and scoped to the variable.
+            # Their initialiser is an Expression and returned None below.
+            identifier = node.variableDeclaratorId()
+            return identifier.getText().split("[")[0] if identifier else None
+        if name == "CreatedName0Context" and _anonymous_creator(node.parentCtx):
+            # `new Iterator<Integer>() {...}` declares a class: Typed, scoped
+            # to the enclosing method. 240 rows written as Use.
+            return _ENCLOSING
         if name.startswith(
             ("Creator", "CreatedName", "Expression", "MethodCall", "Block")
         ):
@@ -419,6 +452,13 @@ def _declared_owner(ctx):
             # Others.Graph.Vertex.Vertex.
             return _ENCLOSING
         if name.startswith(("LocalVariableDeclaration", "FieldDeclaration")):
+            if type(node.parentCtx).__name__ == "PatternContext" and isinstance(
+                node.parentCtx.parentCtx, JavaParserLabeled.Expression27Context
+            ):
+                # `x instanceof Class<?> cls` is a Use, scoped to the method,
+                # though the grammar spells the pattern as a local declaration.
+                # A `case Foo<?> f ->` pattern stays Typed.
+                return None
             return _first_declared_name(node)
         if name in ("FormalParameterContext", "LastFormalParameterContext"):
             # Named exactly: FormalParameterList and FormalParameters share the
@@ -435,6 +475,33 @@ def _declared_owner(ctx):
             return ""
         node = node.parentCtx
     return None
+
+
+def _returned_tokens(expression):
+    """Identifier tokens whose value a returned expression yields."""
+    if isinstance(expression, JavaParserLabeled.Expression0Context):
+        primary = expression.primary()
+        if isinstance(primary, JavaParserLabeled.Primary0Context):
+            yield from _returned_tokens(primary.expression())
+        elif isinstance(primary, JavaParserLabeled.Primary4Context):
+            yield primary.IDENTIFIER().symbol
+    elif isinstance(expression, JavaParserLabeled.Expression1Context):
+        if expression.IDENTIFIER() is not None:
+            yield expression.IDENTIFIER().symbol
+    elif isinstance(expression, JavaParserLabeled.Expression20Context):
+        yield from _returned_tokens(expression.expression(1))
+        yield from _returned_tokens(expression.expression(2))
+    elif (
+        isinstance(expression, JavaParserLabeled.Expression8Context)
+        and expression.prefix.text == "!"
+    ):
+        yield from _returned_tokens(expression.expression())
+
+
+def _anonymous_creator(creator):
+    rest = getattr(creator, "classCreatorRest", None)
+    rest = rest() if callable(rest) else None
+    return rest is not None and rest.classBody() is not None
 
 
 def _first_declared_name(node):

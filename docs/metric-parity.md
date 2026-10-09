@@ -21,8 +21,8 @@ comparison keyed on the name says nothing.
 
 | | macro | micro |
 | --- | ---: | ---: |
-| F1 | **0.984** | **0.985** |
-| F1 over pairs Understand answers | **0.983** | **0.985** |
+| F1 | **0.986** | **0.985** |
+| F1 over pairs Understand answers | **0.985** | **0.985** |
 
 The two rows used to be far apart, because `Ent.metric()` answered 0
 for every entity while Understand answers only for the kinds a metric
@@ -37,8 +37,10 @@ what is left is genuine disagreement about values.
 | `CountClassBase` | 1.000 | 1.000 | 1.00 | 1.00 | 106 | 106 | 106 |
 | `CountClassDerived` | 1.000 | 1.000 | 1.00 | 1.00 | 106 | 106 | 106 |
 | `CountDeclClass` | 1.000 | 1.000 | 1.00 | 1.00 | 4 | 4 | 4 |
+| `CountDeclClassMethod` | 1.000 | 1.000 | 1.00 | 1.00 | 110 | 110 | 110 |
 | `CountDeclClassVariable` | 1.000 | 1.000 | 1.00 | 1.00 | 110 | 110 | 110 |
 | `CountDeclFile` | 1.000 | 1.000 | 1.00 | 1.00 | 4 | 4 | 4 |
+| `CountDeclInstanceMethod` | 1.000 | 1.000 | 1.00 | 1.00 | 110 | 110 | 110 |
 | `CountDeclInstanceVariable` | 1.000 | 1.000 | 1.00 | 1.00 | 110 | 110 | 110 |
 | `CountDeclMethod` | 1.000 | 1.000 | 1.00 | 1.00 | 110 | 110 | 110 |
 | `CountDeclMethodPrivate` | 1.000 | 1.000 | 1.00 | 1.00 | 110 | 110 | 110 |
@@ -66,6 +68,7 @@ what is left is genuine disagreement about values.
 | `MaxCyclomatic` | 0.991 | 0.991 | 0.99 | 0.99 | 109 | 110 | 110 |
 | `MaxCyclomaticStrict` | 0.991 | 0.991 | 0.99 | 0.99 | 109 | 110 | 110 |
 | `CountPathLog` | 0.990 | 0.990 | 0.99 | 0.99 | 1030 | 1040 | 1040 |
+| `PercentLackOfCohesionModified` | 0.990 | 0.990 | 0.99 | 0.99 | 101 | 102 | 102 |
 | `CyclomaticModified` | 0.988 | 0.988 | 0.99 | 0.99 | 1027 | 1040 | 1040 |
 | `CountLineComment` | 0.986 | 0.986 | 0.99 | 0.99 | 1134 | 1150 | 1150 |
 | `AvgCyclomatic` | 0.982 | 0.982 | 0.98 | 0.98 | 108 | 110 | 110 |
@@ -83,15 +86,12 @@ what is left is genuine disagreement about values.
 | `AvgCountLineCode` | 0.973 | 0.973 | 0.97 | 0.97 | 107 | 110 | 110 |
 | `AvgCyclomaticModified` | 0.973 | 0.973 | 0.97 | 0.97 | 107 | 110 | 110 |
 | `MinEssentialKnots` | 0.972 | 0.972 | 0.97 | 0.97 | 1011 | 1040 | 1040 |
-| `PercentLackOfCohesionModified` | 0.971 | 0.971 | 0.97 | 0.97 | 99 | 102 | 102 |
 | `CountPath` | 0.969 | 0.969 | 0.97 | 0.97 | 1008 | 1040 | 1040 |
-| `CountInput` | 0.968 | 0.968 | 0.97 | 0.97 | 1007 | 1040 | 1040 |
+| `CountInput` | 0.967 | 0.967 | 0.97 | 0.97 | 1006 | 1040 | 1040 |
 | `RatioCommentToCode` | 0.968 | 0.965 | 0.97 | 0.96 | 1117 | 1150 | 1158 |
 | `MaxCyclomaticModified` | 0.964 | 0.964 | 0.96 | 0.96 | 106 | 110 | 110 |
 | `CountLineCodeDecl` | 0.960 | 0.960 | 0.96 | 0.96 | 1104 | 1150 | 1150 |
-| `CountOutput` | 0.957 | 0.957 | 0.96 | 0.96 | 995 | 1040 | 1040 |
-| `CountDeclClassMethod` | 0.945 | 0.945 | 0.95 | 0.95 | 104 | 110 | 110 |
-| `CountDeclInstanceMethod` | 0.945 | 0.945 | 0.95 | 0.95 | 104 | 110 | 110 |
+| `CountOutput` | 0.958 | 0.958 | 0.96 | 0.96 | 996 | 1040 | 1040 |
 | `Knots` | 0.944 | 0.944 | 0.94 | 0.94 | 982 | 1040 | 1040 |
 | `CountDeclMethodAll` | 0.943 | 0.943 | 0.94 | 0.94 | 100 | 106 | 106 |
 | `CountClassCoupled` | 0.915 | 0.915 | 0.92 | 0.92 | 97 | 106 | 106 |

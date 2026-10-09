@@ -99,7 +99,10 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
         if type_longname is not None:
             type_name = type_longname.rsplit(".", 1)[-1]  # inferred: `var`
         else:
-            declaring = _declaring_generic(ctx, type_name)
+            # From the type itself, not the declaration: `default <T> T at()`
+            # in an interface carries its `<T>` on the method node, which a
+            # walk starting at the method's parent never visits.
+            declaring = _declaring_generic(type_ctx, type_name)
             if declaring:
                 type_longname = f"{declaring}.{type_name}"
             else:
@@ -149,10 +152,13 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
         for itself rather than hung off the Typed pass, which sees only some
         of them.
 
-        Only a name written out in full. `Outer.Inner` also has two
-        identifiers and its prefix is a type, not a package; refusing it is
-        cheaper than being wrong about which, and `resolve_type` returning the
-        written name unchanged is what tells the two apart.
+        `Outer.Inner` is a DotRef too, to the *type* `Outer`, at the same
+        head token: `Map.Entry<K, V> e` is DotRef java.util.Map at the `Map`.
+        Every written qualifier gets one, so `org.apache.xerces.util.URI.
+        MalformedURIException` is a DotRef to the package and another to URI,
+        both at the `org`. The package counts only when it was written out.
+        This was refused once as "cheaper than being wrong"; it was 4,112
+        missing rows over eight fixtures.
         """
         # `java.lang.String.class` parses as a type too, and Understand reads
         # it as an expression instead: three `Java Use` rows walking the name,
@@ -175,7 +181,7 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
         for name in ctx.qualifiedName() or ():
             self._qualified_dotref(list(name.IDENTIFIER()), name)
 
-    def _qualified_dotref(self, identifiers, ctx):
+    def _qualified_dotref(self, identifiers, ctx, declared=None):
         if len(identifiers) < 2:
             return
         parents = class_properties.ClassPropertiesListener.findParents(ctx)
@@ -183,16 +189,25 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
             return
         enclosing = ".".join(parents)
         written = ".".join(i.getText() for i in identifiers)
-        if self.resolve_type(written, enclosing) != written:
+        resolved = self.resolve_type(written, enclosing)
+        if not resolved or not (
+            resolved == written or resolved.endswith("." + written)
+        ):
             return
-        self.dotrefs.append(
-            {
-                "package_longname": written.rsplit(".", 1)[0],
-                "scope_longname": self._declaration_scope(ctx, enclosing),
-                "line": identifiers[0].symbol.line,
-                "col": identifiers[0].symbol.column,
-            }
+        scope = (
+            f"{enclosing}.{declared}"
+            if declared
+            else self._declaration_scope(ctx, enclosing)
         )
+        for qualifier in _written_qualifiers(resolved, len(identifiers)):
+            self.dotrefs.append(
+                {
+                    "package_longname": qualifier,
+                    "scope_longname": scope,
+                    "line": identifiers[0].symbol.line,
+                    "col": identifiers[0].symbol.column,
+                }
+            )
 
     @staticmethod
     def _declaration_scope(ctx, enclosing):
@@ -286,6 +301,11 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
         if identifier is not None:
             self.record(ctx, identifier.getText().split("[")[0], ctx.typeType())
 
+    def enterConstDeclaration(self, ctx: JavaParserLabeled.ConstDeclarationContext):
+        """`CsvWriter DEFAULT = ...` in an interface is Typed like a field."""
+        for declarator in ctx.constantDeclarator():
+            self.record(ctx, declarator.IDENTIFIER().getText(), ctx.typeType())
+
     def enterInterfaceMethodDeclaration(
         self, ctx: JavaParserLabeled.InterfaceMethodDeclarationContext
     ):
@@ -319,6 +339,9 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
             return
         for qualified in caught.qualifiedName():
             self.record(ctx, identifier.getText(), qualified)
+            self._qualified_dotref(
+                list(qualified.IDENTIFIER()), qualified, identifier.getText()
+            )
 
     def enterRecordComponent(self, ctx: JavaParserLabeled.RecordComponentContext):
         """`record R(T c)`: the field R.c is Typed T, and unless the record
@@ -384,3 +407,24 @@ class TypedAndTypedByListener(JavaParserLabeledListener):
         if returns is None:
             return
         self.record(ctx, ctx.IDENTIFIER().getText(), returns.typeType())
+
+
+def _written_qualifiers(resolved, written_segments):
+    """Long names of what qualifies a type in its written form: each written
+    outer type, and the package when the name was written out in full."""
+    from openunderstand.ounderstand import symbol_table
+
+    segments = resolved.split(".")
+    prefixes = [".".join(segments[:i]) for i in range(1, len(segments))]
+    first_written = len(segments) - written_segments
+    out = []
+    for i, prefix in enumerate(prefixes):
+        if i < first_written:
+            continue
+        is_type = symbol_table.is_type_longname(prefix)
+        if is_type:
+            out.append(prefix)
+        elif i + 1 == len(prefixes) or symbol_table.is_type_longname(prefixes[i + 1]):
+            out.append(prefix)  # the package: the last prefix that is no type
+    return out
+

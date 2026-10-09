@@ -33,8 +33,10 @@ class ModifyListener(JavaParserLabeledListener):
         self.record(ctx.expression())
 
     def enterExpression7(self, ctx: JavaParserLabeled.Expression7Context):
-        """Prefix `++i` / `--i`."""
-        self.record(ctx.expression())
+        """Prefix `++i` / `--i`. The same alternative carries unary `-x` and
+        `+x`, which modify nothing: 328 rows Understand does not have."""
+        if ctx.prefix.text in ("++", "--"):
+            self.record(ctx.expression())
 
     def enterExpression21(self, ctx: JavaParserLabeled.Expression21Context):
         """`x += 1` and friends. Plain `x = 1` is a Java Set, not a Modify."""
@@ -72,6 +74,28 @@ class ModifyListener(JavaParserLabeledListener):
             if target.getText().startswith("this.") and len(parents) > 1
             else scope_longname
         )
+        ent_longname = None
+        if (
+            kind == "Java Modify"
+            and isinstance(target, JavaParserLabeled.Expression1Context)
+            and target.IDENTIFIER() is not None
+            and target.expression().getText() != "this"
+        ):
+            # `loc.x += 3` modifies java.awt.Point.x, the field of the
+            # receiver's type; resolving the bare `x` in the method found any
+            # local called x, or invented `show.x`. The receiver itself is a
+            # Modify Deref Partial at its own token, as `a[i] += 1` is.
+            ent_longname = _receiver_field(target, token.text)
+            if ent_longname is None:
+                return
+            receiver = target.expression()
+            if receiver.getText().isidentifier():
+                self._append("Java Modify Deref Partial", receiver.start,
+                             scope_longname, scope_longname,
+                             _inherited_receiver(receiver, parents))
+        self._append(kind, token, scope_longname, resolve_scope, ent_longname)
+
+    def _append(self, kind, token, scope_longname, resolve_scope, ent_longname=None):
         self.modify.append(
             {
                 "kind": kind,
@@ -81,5 +105,45 @@ class ModifyListener(JavaParserLabeledListener):
                 "name": token.text,
                 "scope_longname": scope_longname,
                 "resolve_scope": resolve_scope,
+                "ent_longname": ent_longname,
             }
         )
+
+
+def _inherited_receiver(receiver, parents):
+    """Long name of a receiver that is a field some enclosing type inherits
+    -- `fCurrentEntity` in XML11EntityScanner is XMLEntityScanner's -- or None
+    for a local, a parameter or an own field, which the writer resolves by
+    name. 126 of xerces' receivers resolved to nothing."""
+    from openunderstand.analysis_passes.dotref_dotrefby import _binder
+    from openunderstand.ounderstand import symbol_table
+
+    name = receiver.getText()
+    if _binder(receiver).name_type(name, receiver):
+        return None
+    for end in range(len(parents), 0, -1):
+        owner = ".".join(parents[:end])
+        if not symbol_table.is_project_type(owner):
+            continue
+        if symbol_table.INDEX.field_types.get((owner, name)):
+            return None
+        declarer = symbol_table.declaring_type_anywhere(owner, name, fields=True)
+        if declarer and declarer != owner:
+            return f"{declarer}.{name}"
+    return None
+
+
+def _receiver_field(target, name):
+    """Long name of the field `recv.name` modifies, or None if the receiver's
+    type is unknown -- a wrong target is worse than none."""
+    from openunderstand.analysis_passes.dotref_dotrefby import _binder
+    from openunderstand.ounderstand import symbol_table
+
+    try:
+        owner = _binder(target).type_of(target.expression())
+    except Exception:
+        owner = None
+    if not owner or "." not in owner:
+        return None
+    declarer = symbol_table.declaring_type_anywhere(owner, name, fields=True)
+    return f"{declarer or owner}.{name}"

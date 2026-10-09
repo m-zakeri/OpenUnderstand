@@ -101,6 +101,26 @@ def callable_target(row):
     return row
 
 
+def _visible_owner(owner):
+    """Whether Understand can see a type a call lands on: the project, the
+    JDK index, or a JDK module outside java.*/javax.* the index does not
+    cover (org.w3c.dom.Element is 168 of jhotdraw's calls)."""
+    return (
+        symbol_table.is_project_type(owner)
+        or jdk_index.known(owner)
+        or owner.startswith(_JDK_ROOTS)
+    )
+
+
+def _enclosing_types(scope_longname):
+    """Project types enclosing a scope, innermost first."""
+    parts = scope_longname.split(".")
+    for end in range(len(parts), 0, -1):
+        prefix = ".".join(parts[:end])
+        if symbol_table.is_project_type(prefix):
+            yield prefix
+
+
 def callee_of(longname, name, arguments, file_ent):
     """The method entity a call names, picking the overload by argument count.
 
@@ -179,6 +199,21 @@ def synthetic_scope(longname):
     method reported their method's 13 semicolons where Understand reports 0.
     """
     return (longname or "").rsplit(".", 1)[-1].startswith("(")
+
+
+def _declared_in_file(row, file_ent, depth=8):
+    """Whether `row`'s parent chain reaches `file_ent`."""
+    current = row
+    for _ in range(depth):
+        parent_id = getattr(current, "_parent_id", None)
+        if parent_id is None:
+            return False
+        if parent_id == file_ent._id:
+            return True
+        current = EntityModel.get_or_none(EntityModel._id == parent_id)
+        if current is None:
+            return False
+    return False
 
 
 def scope_of(longname, line=None):
@@ -982,14 +1017,7 @@ class Project:
                 # org.json.CDL.getValue -- the only getValue the project
                 # declares -- inventing four callers for it and putting its
                 # CountInput at 5 against Understand's 2.
-                if owner and not (
-                    symbol_table.is_project_type(owner)
-                    or jdk_index.known(owner)
-                    # JDK modules outside java.*/javax.*, which the index does
-                    # not cover but Understand resolves: org.w3c.dom.Element
-                    # is 168 of jhotdraw's calls.
-                    or owner.startswith(_JDK_ROOTS)
-                ):
+                if owner and not _visible_owner(owner):
                     # The receiver's type is known but lies outside the
                     # project and the JDK -- `threadStopper.storeCurrentThreads()`
                     # on an org.evosuite...ThreadStopper. Understand cannot see
@@ -1022,10 +1050,16 @@ class Project:
                 # No receiver, but the name was statically imported, so the
                 # call lands on the type that exported it rather than on the
                 # enclosing class: `import static Sorts.SortUtils.less` makes a
-                # bare `less(a, b)` a call to Sorts.SortUtils.less.
-                ent = callee_of(
-                    f"{owner}.{name}", name, ref_dict.get("arguments"), file_ent
-                )
+                # bare `less(a, b)` a call to Sorts.SortUtils.less. From a
+                # library outside the project and the JDK it is the bare name,
+                # as for a receiver: Understand has 0 calls to org.junit.*
+                # against our 11,174 qualified ones.
+                if _visible_owner(owner):
+                    ent = callee_of(
+                        f"{owner}.{name}", name, ref_dict.get("arguments"), file_ent
+                    )
+                else:
+                    ent = self._unresolved_external_method(name, file_ent)
             else:
                 # No receiver: a call on the enclosing class.
                 ent = None
@@ -1036,6 +1070,19 @@ class Project:
                     ent = callable_target(
                         EntityModel.get_or_none(EntityModel._longname == own)
                     )
+                if ent is None:
+                    # Inherited: `getRange()` in LogAxis is ValueAxis.getRange,
+                    # `removeAll()` in a JToolBar is java.awt.Container's. The
+                    # enclosing classes, innermost first, each up its own
+                    # supertype chain into the JDK -- 7,749 calls written bare.
+                    for cls in _enclosing_types(ref_dict["scope_longname"]):
+                        declarer = symbol_table.declaring_type_anywhere(cls, name)
+                        if declarer:
+                            ent = callee_of(
+                                f"{declarer}.{name}", name,
+                                ref_dict.get("arguments"), file_ent,
+                            )
+                            break
                 if ent is None:
                     # The declaration may be in another file, which this pass
                     # cannot see. The project-wide index built before the
@@ -1055,13 +1102,14 @@ class Project:
                     # old behaviour was to write nothing, which is what left
                     # 299 methods short of a callee and CountOutput at 0.65.
                     ent = self._unresolved_external_method(name, file_ent)
-            # `this(...)` resolving to the constructor it sits in is a real
-            # call to Understand: a record declaring `R()` has no implicit
-            # canonical constructor, so `this(limit)` there names R.R itself.
+            # A call to the method it sits in is a real call to Understand --
+            # recursion, and `this(limit)` naming R.R in a record declaring
+            # `R()`. Skipping them lost 975 rows; the fan metrics drop the
+            # self-edge themselves.
             explicit = ref_dict.get("constructor_invocation")
-            if ent._id == scope._id and not explicit:
-                continue
-            nondynamic = explicit and invocation_is_nondynamic(ent)
+            nondynamic = (
+                explicit and invocation_is_nondynamic(ent)
+            ) or ref_dict.get("super_dispatch")
             suffix = " Nondynamic" if nondynamic else ""
 
             for kind, (a, b) in (
@@ -1382,7 +1430,8 @@ class Project:
                 _kind=kind_id("Java Unknown Variable Member"),
                 _parent=None,
                 _name=name,
-                _longname=resolved_longname(
+                _longname=ref_dict.get("ent_longname")
+                or resolved_longname(
                     name, resolve_scope + "." + name, resolve_scope
                 ),
                 _contents="",
@@ -1854,6 +1903,33 @@ class Project:
                 # generated scaffolding.
                 written = (ref_dict.get("refent") or "").split("<")[0]
                 if (
+                    not declared
+                    and "." not in written
+                    and created in symbol_table.INDEX.records
+                ):
+                    # `new Subset(a)` on a record declaring no constructor
+                    # calls its implicit canonical one, which Understand names
+                    # with the record's own long name: 42 calls on jenetics.
+                    constructor, _ = EntityModel.get_or_create(
+                        _kind=kind_id("Java Method Constructor Member Public"),
+                        _name=simple,
+                        _parent=file_ent,
+                        _longname=created,
+                        _contents="",
+                    )
+                    for kind, (a, b) in (
+                        ("Java Call", (constructor, scope)),
+                        ("Java Callby", (scope, constructor)),
+                    ):
+                        ReferenceModel.get_or_create(
+                            _kind=kind_id(kind),
+                            _file=file_ent,
+                            _line=ref_dict["line"],
+                            _column=col_1based(ref_dict["col"]),
+                            _ent=a,
+                            _scope=b,
+                        )
+                if (
                     not ref_dict.get("is_array")
                     and "." in created
                     and declared
@@ -1927,6 +2003,13 @@ class Project:
         its real kind. When it does not, an Unknown kind is used, which
         EntityModel.get_or_create treats as a placeholder and upgrades in place.
         """
+        rows = entity_rows(longname)
+        if len(rows) > 1:
+            # A class declared in several files under one long name: the
+            # member belongs to the copy in *this* file.
+            for row in rows:
+                if _declared_in_file(row, file_ent):
+                    return row
         existing = EntityModel.get_or_none(EntityModel._longname == longname)
         if existing is not None:
             return existing
@@ -2577,6 +2660,26 @@ class Project:
         """
         for relation in relations:
             scope = scope_of(relation["scope_longname"], relation.get("line"))
+            site = relation.get("scope_site")
+            if site is not None:
+                # One overload in particular, by its declaration position --
+                # the row the define pass fills in, as callee_of() does.
+                scope = next(
+                    (
+                        row
+                        for row in entity_rows(relation["scope_longname"])
+                        if (row._line, row._column) == tuple(site)
+                    ),
+                    None,
+                ) or EntityModel.get_or_create(
+                    _kind=kind_id("Java Unknown Method Member"),
+                    _name=relation["scope_longname"].rsplit(".", 1)[-1],
+                    _parent=None,
+                    _longname=relation["scope_longname"],
+                    _contents="",
+                    _line=site[0],
+                    _column=site[1],
+                )[0]
             wanted = relation.get("scope_kind")
             if (
                 scope is not None

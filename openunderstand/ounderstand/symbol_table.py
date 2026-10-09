@@ -38,6 +38,12 @@ class _DeclarationIndex:
         self.field_types: dict[tuple[str, str], str] = {}
         self.file_imports: dict[str, tuple[dict, list]] = {}
         self.interfaces: set[str] = set()
+        #: Records, whose implicit canonical constructor carries the record's
+        #: own long name.
+        self.records: set[str] = set()
+        #: Type long name -> the file declaring it, whose imports resolve
+        #: what its members' declarations name.
+        self.type_files: dict[str, str] = {}
         self.overloads: dict[str, list] = {}
         self.superclasses: dict[str, tuple] = {}
         self.files = 0
@@ -87,9 +93,36 @@ class _DeclarationIndex:
 
     def resolve(self, simple_name: str, scope_longname: str = "") -> str | None:
         """Long name for a simple name, or None when it is ambiguous."""
-        return self._closest(
-            self.by_simple_name.get(simple_name), simple_name, scope_longname
-        )
+        candidates = self.by_simple_name.get(simple_name)
+        if not candidates:
+            return None
+        scope = scope_longname
+        while scope:
+            # Lexically visible first, innermost out -- and at each enclosing
+            # *type*, what it inherits: `return basicSalary;` in Manager is
+            # employee.basicSalary, declared in the superclass.
+            if scope + "." + simple_name in candidates:
+                return scope + "." + simple_name
+            if scope in self.types.get(scope.rsplit(".", 1)[-1], ()):
+                inherited = self.declaring_type(scope, simple_name)
+                if inherited:
+                    return f"{inherited}.{simple_name}"
+            scope = scope.rsplit(".", 1)[0] if "." in scope else ""
+        # A local or parameter of some *other* method is never visible here.
+        # The package fallback below took `Manager.setBasicSalary.basicSalary`
+        # for a read in Manager.getBasicSalary, because it was the only
+        # candidate under "salarycalculator.Manager".
+        visible = {c for c in candidates if not self._inside_member(c)}
+        return self._closest(visible, simple_name, scope_longname)
+
+    def _inside_member(self, longname: str) -> bool:
+        """Whether `longname` is declared inside a method or other member."""
+        owner = longname.rsplit(".", 1)[0] if "." in longname else ""
+        if not owner:
+            return False
+        if owner in self.types.get(owner.rsplit(".", 1)[-1], ()):
+            return False
+        return owner in self.by_simple_name.get(owner.rsplit(".", 1)[-1], ())
 
     def resolve_type(
         self, simple_name: str, scope_longname: str = "", local_only: bool = False
@@ -163,7 +196,9 @@ class _DeclarationIndex:
                 for declared, abstract, generic in self.methods.get(
                     f"{resolved}.{member}", ()
                 ):
-                    if declared == parameters and not (abstract and generic):
+                    if parameters_fit(declared, parameters) and not (
+                        abstract and generic
+                    ):
                         return resolved
                 found = search(resolved)
                 if found:
@@ -262,6 +297,49 @@ class _OverridableBySimpleName(dict):
 
 
 JDK_OVERRIDABLE_BY_SIMPLE_NAME = _OverridableBySimpleName()
+
+
+_PRIMITIVE_NAMES = frozenset(
+    ("boolean", "byte", "char", "short", "int", "long", "float", "double")
+)
+
+
+def _erased(written: str) -> str:
+    """`java.util.List<Offset>` -> `List`; `Canvas.Rectangle` -> `Rectangle`;
+    arrays and varargs keep their brackets."""
+    import re
+
+    while "<" in written:
+        written = re.sub(r"<[^<>]*>", "", written)
+    written = written.replace("...", "[]")
+    base, dims = re.match(r"([^\[]*)((?:\[\])*)$", written).groups()
+    return base.rsplit(".", 1)[-1] + dims
+
+
+def parameters_fit(declared: tuple, written: tuple) -> bool:
+    """Whether an override's parameters match the declaration above it.
+
+    Compared erased, by last segment: `paint(Rectangle)` overrides
+    `paint(Canvas.Rectangle)` -- the same type, qualified on one side -- and
+    the textual comparison this replaced missed all five of ganttproject's
+    Painter overloads. A type variable of the declaring type takes any
+    reference type but an array: `compare(Date, ...)` overrides
+    `ComparatorBy<T>.compare(T, ...)` in Understand's database.
+    """
+    import re
+
+    if len(declared) != len(written):
+        return False
+    for theirs, ours in zip(declared, written):
+        theirs, ours = _erased(theirs), _erased(ours)
+        if theirs == ours:
+            continue
+        if re.fullmatch(r"[A-Z][A-Z0-9]*", theirs) and not (
+            ours.endswith("]") or ours in _PRIMITIVE_NAMES
+        ):
+            continue
+        return False
+    return True
 
 
 def parameter_types(ctx) -> tuple:
@@ -551,6 +629,12 @@ def build(root: str) -> _DeclarationIndex:
             )
             if declaration.get("decl") in ("interface", "annotation"):
                 index.interfaces.add(declaration["ent_longname"])
+            if declaration.get("decl") == "record":
+                index.records.add(declaration["ent_longname"])
+            if declaration.get("decl") in (
+                "class", "record", "interface", "enum", "annotation"
+            ):
+                index.type_files[declaration["ent_longname"]] = path
 
     # A file that has gone, or a build of a different root, must not keep
     # paying rent.
@@ -683,12 +767,22 @@ def member_type(owner: str, field: str) -> str | None:
     """
     if not owner or not field:
         return None
-    written = INDEX.field_types.get((owner, field))
-    if written:
-        # Resolved against the declaring type's own scope, which is the
-        # package the field was declared in.
-        return resolve_type_name(written, None, None, owner) or None
-    return jdk_index.field_type(owner, field)
+    # The type that declares it, which may be a supertype: `fAttrChecker`
+    # in a xerces traverser is XSDAbstractTraverser's. Only the owner's own
+    # table was read, so every call on an inherited field went bare -- 1,442
+    # on xerces alone.
+    declarer = declaring_type_anywhere(owner, field, fields=True) or owner
+    for candidate in dict.fromkeys((owner, declarer)):
+        written = INDEX.field_types.get((candidate, field))
+        if written:
+            # Resolved as the declaring file sees it: its own imports, then
+            # its package. Without the imports `NamespaceContext` in xerces
+            # became javax.xml.namespace's.
+            imports, wildcards = INDEX.file_imports.get(
+                INDEX.type_files.get(candidate), (None, None)
+            )
+            return resolve_type_name(written, imports, wildcards, candidate) or None
+    return jdk_index.field_type(declarer, field) or jdk_index.field_type(owner, field)
 
 
 def return_type(owner: str, member: str, scope_longname: str = "") -> str | None:

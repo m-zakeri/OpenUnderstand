@@ -136,6 +136,9 @@ def candidates(decl, modifiers=(), name=""):
         return out
 
     if decl == METHOD:
+        if "implicit" in mods:
+            # An enum's values()/valueOf(): `Java Implicit Method Public Member`.
+            return [f"Java Implicit Method {vis} Member"]
         prefix = _prefix(mods)
         if name == "main" and "static" in mods and "public" in mods:
             out.append("Java Static Method Public Main Member")
