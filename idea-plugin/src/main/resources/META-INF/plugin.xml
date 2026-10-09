@@ -15,6 +15,27 @@
     ]]></description>
 
     <change-notes><![CDATA[
+    <b>0.5.0</b>
+    <ul>
+      <li><b>References agree with Understand at 0.9 or better everywhere.</b>
+          On thirteen Java projects, every reference kind, every entity kind
+          and every project scores precision, recall and F1 of at least 0.9
+          against SciTools Understand. Before, 19 reference kinds were below
+          that, among them calls (0.80 on the JSON benchmark, now 0.997).</li>
+      <li>Calls on inherited methods and fields, on statically imported
+          members, and on elements of generic JDK containers
+          (<code>queue.peek().next()</code>) now resolve, so the
+          <b>References</b> view and the coupling and fan metrics see them.</li>
+      <li>Overloaded methods keep their own parameters and locals, so the
+          <b>Symbol Table</b> lists one entry per declaration, as Understand
+          does.</li>
+      <li>Metric macro F1 on the JSON benchmark 0.984 to 0.986, no metric below
+          0.9.</li>
+      <li>Ships analyser 0.6.0. The bundled virtualenv is keyed on the analyser
+          version, so the first <b>Analyse Project</b> after updating builds a
+          fresh one.</li>
+    </ul>
+
     <b>0.4.0</b>
     <ul>
       <li><b>Java 9 to 25.</b> Records, sealed types and <code>permits</code>,
