@@ -75,8 +75,10 @@ vocabulary first removes the guess.
 Each names the tools it needs, so the model does not have to rediscover the
 sequence. They also tell it what the numbers do *not* mean -- `trace_callers`
 says an empty result means "none found", not "none exist": this analysis
-reproduces 90 to 98% of Understand's references at the exact position, so an
-empty result is usually but not always complete.
+reproduces 97.7 to 100% of Understand's references at the exact position,
+depending on the project, so an empty result is usually but not always
+complete. What it misses is mostly calls through lambdas whose parameter types
+Understand infers and this project does not.
 
 `kind` and `reference_kind` take [Understand's filter
 grammar](api.md#filter-strings): tokens are ANDed, `~` excludes, `,` ors. So
