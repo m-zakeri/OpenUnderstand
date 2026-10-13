@@ -309,7 +309,8 @@ def current_database() -> str:
 def metric_names() -> str:
     """Metric names this database can answer, one per line.
 
-    Names not listed here return None; names listed but unimplemented raise.
+    A name not listed here is absent from the result rather than an error, so
+    a misspelt name looks exactly like a metric with no value.
     """
     db = _STATE["db"]
     if db is None:
@@ -389,9 +390,12 @@ def trace_callers(longname: str) -> str:
         f"Trace the callers of `{longname}`.\n\n"
         'entity_references with reference_kind="Callby" gives the direct '
         "callers; repeat on each to go up a level or two.\n\n"
-        "Present it as a tree. Note that this analysis resolves roughly half "
-        "of Understand's references, so treat an empty result as 'none found' "
-        "rather than 'none exist'."
+        "Present it as a tree. This analysis reproduces about 99% of "
+        "Understand's references, so an empty result usually means none exist. "
+        "What it can miss: a call made through a lambda whose parameter types "
+        "are only inferred, and a call to an overloaded JDK method whose "
+        "argument types it could not work out -- so say 'none found' rather "
+        "than 'none exist' when the answer matters."
     )
 
 

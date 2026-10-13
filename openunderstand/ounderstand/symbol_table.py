@@ -966,16 +966,7 @@ _WIDENING = {
     "long": {"float", "double"},
     "float": {"double"},
 }
-_BOXES = {
-    "boolean": "java.lang.Boolean",
-    "byte": "java.lang.Byte",
-    "char": "java.lang.Character",
-    "short": "java.lang.Short",
-    "int": "java.lang.Integer",
-    "long": "java.lang.Long",
-    "float": "java.lang.Float",
-    "double": "java.lang.Double",
-}
+_BOXES = {primitive: box for box, primitive in jdk_index.UNBOXED.items()}
 #: Every box except Boolean and Character is a java.lang.Number.
 _NOT_A_NUMBER = {"java.lang.Boolean", "java.lang.Character"}
 _PRIMITIVES = frozenset(_BOXES) | {"void"}

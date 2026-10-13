@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.6.0
+## 0.7.0
 
 ### Every metric at or above 0.9 on every fixture
 
@@ -70,6 +70,16 @@ switch expression is executable after `return`, not after a declaration. The
 (222 of jenetics' 232 class averages, against 180 without), for files and
 packages too.
 
+**MCP server.** The `trace_callers` prompt told the model this analysis
+resolves about half of Understand's references; it is about 99%. The
+`metric_names` resource said unimplemented names raise; nothing raises, an
+unknown name is absent.
+
+**Fingerprint baselines** re-cut for calculator_app, JSON, TheAlgorithms and
+jenetics_incubator, since every change above moves the output.
+
+## 0.6.0
+
 ### Every fixture, kind and entity at or above 0.9 against Understand
 
 On one build of all thirteen fixtures, scored against Understand's raw output
@@ -102,7 +112,7 @@ nothing; a static one hides and is reported. xerces2j recall 0.72 to 0.95.
 index. It holds every public and protected JDK method by erased parameter
 types, each type's type parameters, and which of them a method returns, and it
 covers `org.w3c.*` and `org.xml.*`. `jdk_index.txt.gz` was regenerated from
-the same JDK: see "Every metric at or above 0.9" below.
+the same JDK, leaving out bridge and synthetic members from the counts.
 
 **Entity identity.** Parameters, locals and type parameters are one entity per
 declaration site, as overloads already were: overloaded methods' parameters
