@@ -15,6 +15,26 @@
     ]]></description>
 
     <change-notes><![CDATA[
+    <b>0.6.0</b>
+    <ul>
+      <li><b>Every metric agrees with Understand at 0.9 or better on every
+          project measured.</b> Across thirteen Java projects, all 62 metrics
+          the tool window can show score F1 0.9 or more against SciTools
+          Understand. Class coupling (<code>CountClassCoupled</code>) was the
+          last one under: 0.76 to 0.83 on the larger projects, now 0.90 to
+          0.97.</li>
+      <li>Coupling counts what Understand counts: anonymous classes using the
+          enclosing method's variables, nested types a class inherits, records'
+          bounds and overridden methods, <code>var</code> locals and method
+          references.</li>
+      <li>Line counts are right for lambdas and for <code>return switch</code>
+          expressions, and class averages count enums' implicit
+          <code>values()</code>/<code>valueOf()</code>.</li>
+      <li>Ships analyser 0.7.0. The bundled virtualenv is keyed on the analyser
+          version, so the first <b>Analyse Project</b> after updating builds a
+          fresh one.</li>
+    </ul>
+
     <b>0.5.0</b>
     <ul>
       <li><b>References agree with Understand at 0.9 or better everywhere.</b>
