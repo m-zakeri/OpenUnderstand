@@ -1058,9 +1058,13 @@ class Project:
                         owner, name,
                         arity=len(arguments) if arguments is not None else None,
                     ) or owner
-                    ent = callee_of(
-                        f"{owner}.{name}", name, ref_dict.get("arguments"), file_ent
-                    )
+                    if jdk_index.needs_unboxing(owner, name, arguments):
+                        # Understand does not unbox to pick a JDK overload.
+                        ent = self._unresolved_external_method(name, file_ent)
+                    else:
+                        ent = callee_of(
+                            f"{owner}.{name}", name, ref_dict.get("arguments"), file_ent
+                        )
             elif owner:
                 # No receiver, but the name was statically imported, so the
                 # call lands on the type that exported it rather than on the

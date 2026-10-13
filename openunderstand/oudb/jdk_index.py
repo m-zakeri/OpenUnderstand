@@ -378,3 +378,36 @@ def returned_type_parameter(longname: str, member: str):
         pending.extend(supers)
     return None
 
+
+
+_UNBOXED = {
+    "java.lang.Boolean": "boolean", "java.lang.Byte": "byte",
+    "java.lang.Character": "char", "java.lang.Short": "short",
+    "java.lang.Integer": "int", "java.lang.Long": "long",
+    "java.lang.Float": "float", "java.lang.Double": "double",
+}
+
+
+def needs_unboxing(longname: str, member: str, arguments) -> bool:
+    """Whether every `member` overload taking this many arguments would need a
+    boxed argument unboxed -- `setEnabled((Boolean) x)` against
+    `setEnabled(boolean)`. Understand does not unbox when it picks a JDK
+    overload, and leaves such a call a bare, unresolved name: 15 of
+    ganttproject's and jhotdraw's calls, each a couple it does not have."""
+    if not arguments:
+        return False
+    found = _signatures().get(longname)
+    overloads = [
+        p for p in ((found[1].get(member) or []) if found else [])
+        if len(p) == len(arguments)
+    ]
+    if not overloads:
+        return False
+
+    def blocked(params):
+        return any(
+            arg in _UNBOXED and param == _UNBOXED[arg]
+            for arg, param in zip(arguments, params)
+        )
+
+    return all(blocked(p) for p in overloads)

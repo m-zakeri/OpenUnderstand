@@ -98,28 +98,42 @@ Honestly measured, not claimed. Every release is compared against a licensed
 SciTools Understand install on the same source, entity by entity, reference by
 reference, metric by metric.
 
-Current agreement, over eleven Java systems and 174,260 Understand entities:
+Current agreement, over thirteen Java systems: 2,370,698 of Understand's
+references and 178,077 of its entities.
 
-| | pooled | range across subjects |
-| --- | ---: | :--- |
-| Entities recovered -- recall | 0.935 | 0.49 -- 1.00 |
-| -- precision | 0.943 | 0.84 -- 0.97 |
-| References at the exact position -- recall | | 0.90 -- 0.98 |
-| -- precision | | 0.62 -- 0.88 |
+| | precision | recall | F1 |
+| --- | ---: | ---: | ---: |
+| References, pooled | 0.989 | 0.990 | 0.990 |
+| References, lowest subject | 0.979 | 0.977 | 0.981 |
+| Entities, pooled | 1.000 | 1.000 | 1.000 |
+
+Every subject, every one of 77 reference kinds and every one of 120 entity
+kinds scores at least 0.9 on precision, recall and F1, pooled and one subject
+at a time. Entities match on kind and long name: 178,075 of Understand's
+178,077 are found, with 8 extra.
+
+Metrics are compared the same way: an entity's metric is a hit when it equals
+Understand's value. All 62 metrics both tools compute score F1 0.9 or better
+on every subject. Per subject, macro F1 runs 0.986 (jenetics) to 1.000
+(calculator_app); org.json is 0.991. The lowest single metric is class coupling
+(`CountClassCoupled`), at 0.900 on jenetics and 0.907 on ganttproject and
+jhotdraw.
 
 Three of the subjects, for comparison with earlier releases:
 
 | | calculator_app | org.json | TheAlgorithms |
 | --- | ---: | ---: | ---: |
-| Java files | 8 | 85 | 228 |
-| Reference recall / precision | 0.98 / 0.86 | 0.97 / 0.84 | 0.96 / 0.83 |
+| Understand references | 586 | 70,518 | 53,793 |
+| Reference precision / recall | 1.000 / 1.000 | 0.997 / 0.998 | 0.979 / 0.986 |
+| Metric macro F1 | 1.000 | 0.991 | 0.992 |
 
-Both sides are scoped the same way: Understand indexes the whole Java library
-whether or not a JDK is added to the project, and its dump keeps only entities
-declared under the fixture root, so this project's placeholders for those same
-names -- `java.lang.String`, `java.util.ArrayList` -- are excluded too.
-Counting ours while its counterparts were dropped understated entity precision
-by 5 to 14 points depending on the subject.
+Understand's own rows are kept, including its references into the JDK: a call
+to `java.lang.String.trim` is part of the answer. Both sides are scoped the
+same way. Entities nothing in the project declares (JDK and library types,
+placeholders) are set aside on our side unless Understand's dump names them
+too. Seven files Understand 7.0 misparses (`case null, default ->`, a type
+annotation after type parameters, `import module`) are set aside on both
+sides.
 
 [docs/parity.md](https://m-zakeri.github.io/OpenUnderstand/parity/) has the per-kind breakdown.
 
@@ -212,11 +226,17 @@ See [docs/idea-plugin.md](https://m-zakeri.github.io/OpenUnderstand/idea-plugin/
   jenetics' incubator module and a hand-written probe. Java 25 compact source
   files (top-level methods) do not parse; `import module` parses but cannot be
   checked, because Understand 7.0 itself does not parse it.
-- **No external resolution.** The JDK and third-party jars are not analysed, so
-  `java.lang.String` exists but has no members.
-- **Partial coverage.** 90 to 98% of Understand's references are reproduced at
-  the exact position, at 62 to 88% precision. 46 of the 49 public API methods
-  are implemented.
+- **No external analysis.** The JDK and third-party jars are not parsed. JDK
+  types and members appear only where the project uses them, resolved from a
+  generated index of the JDK's public signatures (GraalVM 21.0.2, the JDK
+  Understand analyses against). A third-party class is a name and nothing
+  more.
+- **Close, not identical.** 97.7 to 100% of Understand's references are
+  reproduced at the exact position, at 97.9 to 100% precision, depending on the
+  subject. Class coupling is the weakest metric, at 0.900 to 1.000. Understand
+  infers the types of implicit lambda parameters (`(a, b) -> ...`) and this
+  project does not, which accounts for most of what is left. 46 of the 49
+  public API methods are implemented.
 - **Silence, not refusal, on what is missing.** The three unimplemented methods
   -- `Db.close`, `Db.lookup_uniquename`, `Violation.add_fixit_hint` -- return
   `None`. Querying a reference kind no pass emits returns an empty list, which

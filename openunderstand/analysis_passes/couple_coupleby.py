@@ -555,6 +555,23 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         )
         if in_project:
             return in_project
+        if name[:1].isupper():
+            # A nested type the class inherits: `IconSize.NO_ICON` in a
+            # subclass of GPAction, which declares IconSize (8 ganttproject
+            # classes). Only once `name` is shown not to be a variable.
+            inherited = symbol_table.resolve_type_name(
+                name, self.Imports, self.wildcard_imports, self.classlongname
+            )
+            if inherited and symbol_table.is_project_type(inherited) and "." in inherited:
+                owner = inherited.rsplit(".", 1)[0]
+                if symbol_table.is_project_type(owner) and owner in symbol_table.ancestors(
+                    self.classlongname
+                ):
+                    try:
+                        if ctx is None or not self.binder(ctx).name_type(name, ctx):
+                            return inherited
+                    except Exception:
+                        return inherited
         if name in symbol_table.JAVA_LANG_TYPES:
             return "java.lang." + name
         # `Color.WHITE` behind `import java.awt.*`: a wildcard import places a
@@ -652,7 +669,17 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         member = identifier.getText()
         arguments = ctx.expressionList()
         arity = len(arguments.expression()) if arguments is not None else 0
-        self.add(symbol_table.declaring_type_anywhere(owner, member, arity=arity))
+        declarer = symbol_table.declaring_type_anywhere(owner, member, arity=arity)
+        if declarer and arguments is not None:
+            from openunderstand.ounderstand import type_binding
+
+            types = tuple(
+                type_binding.argument_type(self.binder(ctx), a)
+                for a in arguments.expression()
+            )
+            if jdk_index.needs_unboxing(declarer, member, types):
+                return  # an unresolved call to Understand: no member used
+        self.add(declarer)
 
     def enterCreatedName0(self, ctx: JavaParserLabeled.CreatedName0Context):
         """`new JSONTokener(...)` -- createdName is not a classOrInterfaceType.

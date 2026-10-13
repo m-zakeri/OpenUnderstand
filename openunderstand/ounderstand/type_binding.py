@@ -750,10 +750,13 @@ class TypeBinder:
                 member = self._call_name(call)
                 if not owner or not member:
                     return None
+                # Substitution first: it answers only for a method returning
+                # its type's own parameter, where return_type() falls back to
+                # the parameter's bound.
                 return (
-                    self.return_type(owner, member)
+                    self._project_argument(receiver, owner, member, scope)
+                    or self.return_type(owner, member)
                     or self._bound_argument(receiver, owner, member, scope)
-                    or self._project_argument(receiver, owner, member, scope)
                 )
             identifier = ctx.IDENTIFIER()
             if identifier is not None and not isinstance(identifier, list):
