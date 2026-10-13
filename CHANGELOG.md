@@ -2,6 +2,74 @@
 
 ## 0.6.0
 
+### Every metric at or above 0.9 on every fixture
+
+All 62 metrics the licensed scorer checks and all 45 the offline one checks are
+at or above 0.9 on all thirteen fixtures, on one build, with references and
+entities still at or above 0.9 everywhere. The metrics that were under 0.9 were
+`CountClassCoupled` on ganttproject (0.795), jenetics (0.755), jhotdraw (0.826)
+and xerces2j (0.895), `CountClassCoupledModified` on ganttproject and jenetics,
+`CountInput` on jenetics (0.899), and the line metrics on java25_probe. Now,
+licensed / offline: `CountClassCoupled` ganttproject 0.907 / 0.920, jenetics
+0.900 / 0.911, jhotdraw 0.907 / 0.910, JSON 0.953 / 0.950; `CountInput` on
+jenetics 0.906 / 0.913.
+
+**Coupling.**
+
+* An anonymous class reading a captured local or parameter couples to the class
+  around it (the nearest one, anonymous or not); one that extends the class
+  around it does not couple to it, since that is its base.
+* Only the first type of a multi-catch couples.
+* A generic record couples to its type parameters' bounds and to
+  `java.lang.Object`; a record's overriding method couples the overridden
+  method's declarer.
+* An annotation on a nested type belongs to that type, not to the class around
+  it.
+* A local record, enum or class declared in a method is what its name means
+  inside that method.
+* A `var` local couples its inferred type; `Type::m` couples `Type` and the
+  member's declarer (a value receiver, `System.out::println`, couples nothing).
+* A dotted name on an imported library class (`Engine.Setup`) is kept as
+  written.
+
+**Type resolution.**
+
+* A JDK method is looked up by arity: `repaint()` is `java.awt.Component`'s,
+  not `JComponent`'s.
+* Supertypes resolve with their own file's imports.
+* A nested type a class inherits is in scope before `java.lang`, as in javac
+  (`Priority` in `TaskImpl` is `Task.Priority`).
+* A method returning its class's type parameter returns the receiver's
+  argument (`values.at(i)` on an `Indexed<? extends Accessor>`) or, failing
+  that, the parameter's bound.
+* A varargs parameter is a parameter.
+
+**Rules that follow Understand where javac would not.**
+
+* A boxed argument is not unboxed to pick a JDK overload: `setEnabled((Boolean)
+  x)` is an unresolved call.
+* A method return type written `Logger` in a file that also writes
+  `org.slf4j.Logger` in full is that type, ahead of the import.
+* Inside a record, a nested type it only inherits stays unresolved.
+
+**JDK index regenerated** (GraalVM 21.0.2). A method whose every overload is a
+bridge or synthetic is dropped: javac adds public copies of
+`AbstractStringBuilder`'s methods to `StringBuilder`, and Understand reports
+`sb.length()` against `java.lang.AbstractStringBuilder`. 80 types lose
+bridge-only names; nothing else changes.
+
+**Grammar.** `case ServerResult.OK<T> ok ->` parsed as the comparison `a < T >
+ok`. `switchRuleLabel` now tries the pattern first. Over all 4,363 benchmark
+files only the two using a generic type pattern parse differently; the lexer,
+listener and token files are byte-identical. The C++ accelerator was rebuilt.
+
+**Line metrics.** A lambda's first line is declarative when it starts a local
+declaration and executable when the statement holding it is. `};` closing a
+switch expression is executable after `return`, not after a declaration. The
+`Avg*` line metrics count an enum's implicit `values()`/`valueOf()` as 0 lines
+(222 of jenetics' 232 class averages, against 180 without), for files and
+packages too.
+
 ### Every fixture, kind and entity at or above 0.9 against Understand
 
 On one build of all thirteen fixtures, scored against Understand's raw output
@@ -33,7 +101,8 @@ nothing; a static one hides and is reported. xerces2j recall 0.72 to 0.95.
 `scripts/gen_jdk_signatures.py` from the same GraalVM 21.0.2 JDK as the JDK
 index. It holds every public and protected JDK method by erased parameter
 types, each type's type parameters, and which of them a method returns, and it
-covers `org.w3c.*` and `org.xml.*`. `jdk_index.txt.gz` is unchanged.
+covers `org.w3c.*` and `org.xml.*`. `jdk_index.txt.gz` was regenerated from
+the same JDK: see "Every metric at or above 0.9" below.
 
 **Entity identity.** Parameters, locals and type parameters are one entity per
 declaration site, as overloads already were: overloaded methods' parameters

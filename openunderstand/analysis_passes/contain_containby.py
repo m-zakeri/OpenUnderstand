@@ -65,6 +65,24 @@ class ContainAndContainBy(JavaParserLabeledListener):
 
         scope_longname = ".".join(scope_parents + [name])
         if not self.packageInfo:
+            # No `package` line: Understand still writes the Contain, from
+            # `(Unnamed_Package)` -- 9 on TheAlgorithms, which this skipped.
+            self.contain.append(
+                {
+                    "package_name": "(Unnamed_Package)",
+                    "package_longname": "(Unnamed_Package)",
+                    "unnamed_package": True,
+                    "name": name,
+                    "longname": scope_longname,
+                    "kind": kind,
+                    "modifiers": class_properties.ClassPropertiesListener
+                    .findClassOrInterfaceModifiers(ctx),
+                    "parent": None,
+                    "content": ctx.getText(),
+                    "line": line,
+                    "col": col,
+                }
+            )
             return
         packageName = self.packageInfo[0]["name"]
         packageLongName = self.packageInfo[0]["longname"]

@@ -171,7 +171,9 @@ def supertypes(longname: str) -> list:
     return entry["supers"] if entry else []
 
 
-def declaring_type(longname: str, member: str, fields: bool = False) -> str | None:
+def declaring_type(
+    longname: str, member: str, fields: bool = False, arity: int | None = None
+) -> str | None:
     """The type in `longname`'s hierarchy that declares `member`.
 
     Understand attributes a call to the class that declares the method, not to
@@ -193,10 +195,32 @@ def declaring_type(longname: str, member: str, fields: bool = False) -> str | No
         entry = types.get(current)
         if entry is None:
             continue
-        if member in entry["methods"] or (fields and member in entry["fields"]):
+        if member in entry["methods"] and _has_arity(current, member, arity):
+            return current
+        if fields and member in entry["fields"]:
             return current
         pending.extend(entry["supers"])
     return None
+
+
+def _has_arity(longname: str, member: str, arity: int | None) -> bool:
+    """Whether `longname` declares a `member` overload taking `arity` arguments.
+
+    The index keeps one entry per name, so `component.repaint()` on a
+    JComponent stopped there although JComponent declares only the
+    four-argument and Rectangle overloads; the no-argument one is
+    java.awt.Component's, and Understand couples that (25 of jhotdraw's
+    classes). Without signatures, or without an arity, any overload counts."""
+    if arity is None:
+        return True
+    found = _signatures().get(longname)
+    overloads = found[1].get(member) if found else None
+    if not overloads:
+        return True
+    return any(
+        len(params) == arity or (params and params[-1].endswith("[]") and arity >= len(params) - 1)
+        for params in overloads
+    )
 
 
 def inherited_members(longname: str) -> int:
@@ -354,3 +378,36 @@ def returned_type_parameter(longname: str, member: str):
         pending.extend(supers)
     return None
 
+
+
+_UNBOXED = {
+    "java.lang.Boolean": "boolean", "java.lang.Byte": "byte",
+    "java.lang.Character": "char", "java.lang.Short": "short",
+    "java.lang.Integer": "int", "java.lang.Long": "long",
+    "java.lang.Float": "float", "java.lang.Double": "double",
+}
+
+
+def needs_unboxing(longname: str, member: str, arguments) -> bool:
+    """Whether every `member` overload taking this many arguments would need a
+    boxed argument unboxed -- `setEnabled((Boolean) x)` against
+    `setEnabled(boolean)`. Understand does not unbox when it picks a JDK
+    overload, and leaves such a call a bare, unresolved name: 15 of
+    ganttproject's and jhotdraw's calls, each a couple it does not have."""
+    if not arguments:
+        return False
+    found = _signatures().get(longname)
+    overloads = [
+        p for p in ((found[1].get(member) or []) if found else [])
+        if len(p) == len(arguments)
+    ]
+    if not overloads:
+        return False
+
+    def blocked(params):
+        return any(
+            arg in _UNBOXED and param == _UNBOXED[arg]
+            for arg, param in zip(arguments, params)
+        )
+
+    return all(blocked(p) for p in overloads)

@@ -35,6 +35,16 @@ class _DeclarationIndex:
         self.supertypes: dict[str, list[str]] = {}
         self.methods: dict[str, list[tuple[tuple[str, ...], bool, bool]]] = {}
         self.return_types: dict[str, str] = {}
+        #: Method long name -> its return type as written, type arguments and
+        #: all, so `Carried<Size> size()` can say what `.of(x)` gives.
+        self.generic_returns: dict[str, str] = {}
+        #: Generic type long name -> its type parameter names, in order.
+        self.type_parameters: dict[str, list[str]] = {}
+        #: File -> {simple name: long name} for types it writes fully
+        #: qualified in a type position (`LoggerApi<org.slf4j.Logger>`).
+        self.qualified_in_file: dict[str, dict[str, str]] = {}
+        #: Generic type long name -> {parameter: first bound as written}.
+        self.type_bounds: dict[str, dict[str, str]] = {}
         self.field_types: dict[tuple[str, str], str] = {}
         self.file_imports: dict[str, tuple[dict, list]] = {}
         self.interfaces: set[str] = set()
@@ -82,7 +92,10 @@ class _DeclarationIndex:
             scope = scope.rsplit(".", 1)[0] if "." in scope else ""
         package = scope_longname.rsplit(".", 1)[0] if scope_longname else ""
         if package:
-            local = [c for c in candidates if c.startswith(package + ".")]
+            # The package's own types, not a sibling class's nested ones:
+            # `Double` in jhotdraw is java.lang.Double, never Insets2D.Double,
+            # which Java does not make visible without an import.
+            local = [c for c in candidates if c == package + "." + simple_name]
             if len(local) == 1:
                 return local[0]
         if local_only:
@@ -419,10 +432,38 @@ def build(root: str) -> _DeclarationIndex:
             self.superclasses = {}
             self.methods = {}
             self.returns = {}
+            self.generic_returns = {}
+            self.type_parameters = {}
+            self.type_bounds = {}
             self.fields = {}
             self.imports = {}
+            self.qualified = {}
             self.wildcards = []
             self.overloads = {}
+
+        def enterTypeParameters(self, ctx):
+            declaration = ctx.parentCtx
+            if not type(declaration).__name__.startswith(
+                ("ClassDeclaration", "InterfaceDeclaration")
+            ):
+                return
+            identifier = declaration.IDENTIFIER()
+            if identifier is None or isinstance(identifier, list):
+                return
+            parents = class_properties.ClassPropertiesListener.findParents(declaration)
+            longname = ".".join(parents + [identifier.getText()])
+            self.type_parameters[longname] = [
+                p.IDENTIFIER().getText() for p in ctx.typeParameter()
+            ]
+            bounds = {}
+            for p in ctx.typeParameter():
+                bound = p.typeBound() if callable(getattr(p, "typeBound", None)) else None
+                if bound is not None and bound.typeType():
+                    first = bound.typeType()
+                    first = first[0] if isinstance(first, list) else first
+                    bounds[p.IDENTIFIER().getText()] = first.getText().split("<")[0]
+            if bounds:
+                self.type_bounds[longname] = bounds
 
         def enterClassDeclaration(self, ctx):
             parents = class_properties.ClassPropertiesListener.findParents(ctx)
@@ -465,6 +506,11 @@ def build(root: str) -> _DeclarationIndex:
             )
 
         # ------------------------------------------------------- signatures
+
+        def enterClassOrInterfaceType(self, ctx):
+            parts = [i.getText() for i in ctx.IDENTIFIER()]
+            if len(parts) > 2 and parts[0][:1].islower() and parts[-1][:1].isupper():
+                self.qualified.setdefault(parts[-1], ".".join(parts))
 
         def enterImportDeclaration(self, ctx):
             longname = ctx.qualifiedName().getText()
@@ -559,6 +605,9 @@ def build(root: str) -> _DeclarationIndex:
             declared = getattr(ctx, "typeTypeOrVoid", None)
             declared = declared() if callable(declared) else None
             written = declared.getText() if declared is not None else None
+            if written and "[" not in written:
+                previous = self.generic_returns.get(longname, written)
+                self.generic_returns[longname] = written if previous == written else ""
             if written:
                 written = written.split("<")[0].split("[")[0]
             if written and written not in ("void", ""):
@@ -594,6 +643,12 @@ def build(root: str) -> _DeclarationIndex:
                 for name, written in supertypes.superclasses.items()
             },
             "return_types": {k: v for k, v in supertypes.returns.items() if v},
+            "generic_returns": {
+                k: v for k, v in supertypes.generic_returns.items() if v
+            },
+            "type_parameters": dict(supertypes.type_parameters),
+            "qualified": dict(supertypes.qualified),
+            "type_bounds": dict(supertypes.type_bounds),
             "field_types": dict(supertypes.fields),
             "imports": (supertypes.imports, supertypes.wildcards),
             "defines": listener.defines,
@@ -618,6 +673,11 @@ def build(root: str) -> _DeclarationIndex:
         index.overloads.update(facts["overloads"])
         index.superclasses.update(facts["superclasses"])
         index.return_types.update(facts["return_types"])
+        index.generic_returns.update(facts.get("generic_returns", {}))
+        index.type_parameters.update(facts.get("type_parameters", {}))
+        if facts.get("qualified"):
+            index.qualified_in_file[path] = facts["qualified"]
+        index.type_bounds.update(facts.get("type_bounds", {}))
         index.field_types.update(facts["field_types"])
         index.file_imports[path] = facts["imports"]
         for declaration in facts["defines"]:
@@ -733,14 +793,48 @@ def resolve_type_name(name, imports=None, wildcards=None, scope_longname=""):
     in_scope = resolve_type(name, scope_longname, local_only=True)
     if in_scope:
         return in_scope
+    inherited = _inherited_member_type(name, scope_longname)
+    if inherited:
+        return inherited
     if name in JAVA_LANG_TYPES:
         return "java.lang." + name
     if wildcards and len(wildcards) == 1 and name[:1].isupper():
-        return wildcards[0] + "." + name
+        guess = wildcards[0] + "." + name
+        # Into a library outside the project nothing can check the guess, so
+        # it stands. Into the JDK the index can, and a type it does not list
+        # is no type there: `java.awt.XlsWriterImpl` and `java.util.Trie` were
+        # invented this way, each a wrong couple.
+        if guess.startswith(("java.", "javax.")) and not jdk_index.known(guess):
+            return None
+        return guess
     from_jdk = jdk_index.resolve_simple(name, tuple(wildcards or ()))
     if from_jdk:
         return from_jdk
     return resolve_type(name, scope_longname)
+
+
+_INHERITING = set()
+
+
+def _inherited_member_type(name, scope_longname):
+    """A nested type the asking class inherits, as javac scopes it: `Priority`
+    in TaskImpl is Task.Priority, declared by the interface it implements.
+    Several project types are called Priority, so nothing later settles it."""
+    if not scope_longname or name[:1].islower():
+        return None
+    parts = scope_longname.split(".")
+    for end in range(len(parts), 0, -1):
+        owner = ".".join(parts[:end])
+        if owner in _INHERITING or not is_project_type(owner):
+            continue
+        _INHERITING.add(owner)
+        try:
+            for ancestor in ancestors(owner):
+                if is_project_type(f"{ancestor}.{name}"):
+                    return f"{ancestor}.{name}"
+        finally:
+            _INHERITING.discard(owner)
+    return None
 
 
 def resolve_in_file(name: str, file_path: str, scope_longname: str = "") -> str | None:
@@ -801,7 +895,61 @@ def return_type(owner: str, member: str, scope_longname: str = "") -> str | None
     written = INDEX.return_types.get(f"{declaring}.{member}")
     if not written:
         return None
-    return resolve_type_name(written, None, None, scope_longname or declaring)
+    if written in INDEX.type_parameters.get(declaring, ()):
+        # `TreeTableClass getTreeTable()` with `TreeTableClass extends
+        # GPTreeTableBase`: nothing says what it is bound to here, so it is
+        # its bound, as Java erases it -- and calls on it then reach the
+        # class declaring them (11 of ganttproject's GPTreeTableBase couples).
+        written = INDEX.type_bounds.get(declaring, {}).get(written)
+        if not written:
+            return None
+    # As the declaring file sees it: `List<Node> getSelecteds()` names the
+    # java.util.List its own file imports. Without the imports a call chained
+    # on any project method returning an imported type stopped there -- 110
+    # of freemind's unresolved receivers.
+    path = INDEX.type_files.get(declaring)
+    imports, wildcards = INDEX.file_imports.get(path, (None, None))
+    # Understand's quirk, read off ganttproject: a return type written
+    # `Logger` in a file that also writes `org.slf4j.Logger` in full is that
+    # one, ahead of `import java.util.logging.Logger` -- so every call on
+    # GPLogger.getLogger(...) is to an unresolved `log`, and 13 classes do
+    # not couple java.util.logging.Logger. Fields still take the import.
+    qualified = INDEX.qualified_in_file.get(path, {}).get(written)
+    if qualified:
+        return qualified
+    return resolve_type_name(
+        written, imports, wildcards, scope_longname or declaring
+    )
+
+
+def substituted_return(owner: str, member: str, receiver_text: str):
+    """What `owner.member(...)` returns, written, when the method returns one
+    of its type's own parameters and `receiver_text` -- the receiver's type
+    as written, `Indexed<? extends Accessor>` -- says what that parameter is.
+
+    `values.at(i).get()` on an Indexed<? extends Accessor> calls
+    Accessor.get; read off the declaration alone `at` returns `T`, which
+    names nothing. None when it does not apply."""
+    declaring = INDEX.declaring_type(owner, member) or owner
+    written = INDEX.generic_returns.get(f"{declaring}.{member}")
+    parameters = INDEX.type_parameters.get(declaring) or []
+    if not written or written not in parameters or "<" not in (receiver_text or ""):
+        return None
+    if declaring != owner:
+        return None  # the receiver's arguments are its own type's, not the declarer's
+    from openunderstand.ounderstand.type_binding import _type_arguments
+
+    arguments = _type_arguments(receiver_text)
+    index = parameters.index(written)
+    if index >= len(arguments):
+        return None
+    argument = arguments[index].strip()
+    for prefix in ("? extends ", "?extends"):
+        if argument.startswith(prefix):
+            argument = argument[len(prefix):]
+    if argument.startswith("?"):
+        return None
+    return argument or None
 
 
 def declaring_type(type_longname: str, member: str) -> str | None:
@@ -954,7 +1102,7 @@ def superclass_of(longname: str) -> str | None:
 
 
 def declaring_type_anywhere(
-    type_longname: str, member: str, fields: bool = False
+    type_longname: str, member: str, fields: bool = False, arity: int | None = None
 ) -> str | None:
     """The type declaring `member`, searching the project *and* then the JDK.
 
@@ -979,17 +1127,28 @@ def declaring_type_anywhere(
         if not current or current in seen:
             continue
         seen.add(current)
-        found = jdk_index.declaring_type(current, member, fields=fields)
+        found = jdk_index.declaring_type(current, member, fields=fields, arity=arity)
         if found:
             return found
         for parent in INDEX.supertypes.get(current, []):
-            resolved = resolve_type_name(parent, None, None, current)
+            resolved = _resolve_supertype(parent, current)
             if resolved:
                 pending.append(resolved)
     # Only once the whole chain is exhausted. Object is every type's ancestor,
     # so consulting it inside the walk would answer for `equals` before
     # java.lang.Enum got the chance to.
     return "java.lang.Object" if jdk_index.declares_on_object(member) else None
+
+
+def _resolve_supertype(written: str, subtype: str) -> str | None:
+    """A written `extends`/`implements` name as `subtype`'s own file sees it.
+
+    Without the file's imports `implements Node` in xerces' NodeImpl never
+    reached org.w3c.dom.Node, so 19 of its subclasses coupled to an ancestor."""
+    imports, wildcards = INDEX.file_imports.get(
+        INDEX.type_files.get(subtype), (None, None)
+    )
+    return resolve_type_name(written, imports, wildcards, subtype)
 
 
 def ancestors(longname: str) -> set:
@@ -1004,7 +1163,7 @@ def ancestors(longname: str) -> set:
     while pending:
         current = pending.pop()
         for parent in INDEX.supertypes.get(current, []):
-            resolved = resolve_type_name(parent, None, None, current)
+            resolved = _resolve_supertype(parent, current)
             if resolved and resolved not in found:
                 found.add(resolved)
                 pending.append(resolved)

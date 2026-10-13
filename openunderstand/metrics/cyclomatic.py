@@ -109,6 +109,10 @@ def get_method_ctx(ctx):
             "GenericMethodDeclarationContext",
             "ConstructorDeclarationContext",
             "GenericConstructorDeclarationContext",
+            # A lambda is a scope of its own: a decision inside one counted
+            # for the method around it (ClientBodyPublisher 3 against 2).
+            "LambdaExpressionContext",
+            "InterfaceMethodDeclarationContext",
         ]:
             return current
         current = current.parentCtx
@@ -184,6 +188,15 @@ class CyclomaticListener(JavaParserLabeledListener):
         self.repository.append(ctx)
         self.project_cyclomatic += 2
 
+    def enterInterfaceMethodDeclaration(
+        self, ctx: JavaParserLabeled.InterfaceMethodDeclarationContext
+    ):
+        """A `default` or `static` interface method with a body is a scope."""
+        body = ctx.methodBody()
+        if body is not None and body.block() is not None:
+            self.repository.append(ctx)
+            self.project_cyclomatic += 1
+
     def enterLambdaExpression(self, ctx: JavaParserLabeled.LambdaExpressionContext):
         self.repository.append(ctx)
         self.project_cyclomatic += 1
@@ -240,9 +253,45 @@ def cyclomatic(ent_model):
         listener = context.walk_file(ent_model, CyclomaticListener())
         return listener.project_cyclomatic
 
-    listener = context.walk_entity(ent_model, CyclomaticListener())
+    return _own_count(context.walk_entity(ent_model, CyclomaticListener()))
+
+
+def _own_count(listener):
+    """The count of the entity's own declaration -- the first one walked that
+    is not the parse wrapper. Taking the *largest* count let an anonymous
+    class's method speak for the method holding it: KSubset.iterator is 1 to
+    Understand and was 4. A method with no branches still has complexity 1."""
     counts = Counter(listener.repository)
-    # The walked source holds one declaration; a nested lambda or anonymous
-    # class adds its own entry, and the outer one is the entity asked about.
-    # A method with no branches still has complexity 1.
+    for ctx in dict.fromkeys(listener.repository):
+        if context.declared_name(ctx) != context._WRAPPER:
+            return counts[ctx]
     return max(counts.values(), default=1)
+
+
+class CyclomaticModifiedListener(CyclomaticListener):
+    """Cyclomatic, with a whole `switch` counted as one decision rather than
+    one per case. The separate listener this replaces crashed on any method
+    that misparsed, never counted inside a constructor, and counted a `try`
+    once instead of once per `catch` -- SalaryCalculator's three *Modified
+    metrics went 0.75-0.87 to 1.000 on this."""
+
+    def enterSwitchLabel(self, ctx):
+        pass
+
+    def enterSwitchRuleLabel(self, ctx):
+        pass
+
+    def enterStatement8(self, ctx):
+        self.update_repository(ctx)
+
+    def enterStatement18(self, ctx):
+        self.update_repository(ctx)
+
+
+def cyclomatic_modified(ent_model=None):
+    """CyclomaticModified: as Cyclomatic, a switch counting once."""
+    if ent_model is None:
+        return None
+    if context.is_file(ent_model):
+        return context.walk_file(ent_model, CyclomaticModifiedListener()).project_cyclomatic
+    return _own_count(context.walk_entity(ent_model, CyclomaticModifiedListener()))

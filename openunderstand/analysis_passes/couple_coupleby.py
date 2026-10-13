@@ -17,7 +17,43 @@ import re
 
 from openunderstand.analysis_passes import class_properties
 
+#: Nodes that declare locals or parameters: type_binding._SCOPE (which this
+#: module cannot import at load time), plus loop headers and parameter lists.
+_LOCAL_SCOPES = (
+    "MethodDeclaration", "ConstructorDeclaration", "GenericMethodDeclaration",
+    "GenericConstructorDeclaration", "InterfaceMethodDeclaration",
+    "LambdaExpression", "Block", "CatchClause", "Statement3", "Statement6",
+    "Statement7", "ForControl", "EnhancedForControl", "FormalParameters",
+)
+
 _QUALIFIED_NAME = re.compile(r"[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*")
+
+
+_TYPE_DECLARATIONS = (
+    "ClassDeclarationContext", "InterfaceDeclarationContext",
+    "EnumDeclarationContext", "AnnotationTypeDeclarationContext",
+)
+
+
+def _annotates_type(annotation):
+    """Whether `annotation` sits in the modifiers of a type declaration."""
+    node = annotation.parentCtx
+    while node is not None and type(node).__name__ in (
+        "ClassOrInterfaceModifierContext", "ModifierContext",
+        "InterfaceMethodModifierContext",
+    ):
+        node = node.parentCtx
+    if node is None:
+        return False
+    # The declaration is a sibling of the modifiers, possibly wrapped in a
+    # member-declaration alternative.
+    for child in node.children or ():
+        if type(child).__name__ in _TYPE_DECLARATIONS:
+            return True
+        inner = getattr(child, "children", None) or ()
+        if inner and type(inner[0]).__name__ in _TYPE_DECLARATIONS:
+            return True
+    return False
 
 
 class CoupleAndCoupleBy(JavaParserLabeledListener):
@@ -51,6 +87,9 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         self.ancestors = {"java.lang.Object"}
         self.static_members = {}
         self.static_wildcards = []
+        #: One {simple name: long name} per open block, for the local types
+        #: (`record Book(...)` inside a method) declared in it so far.
+        self.local_types = []
 
     def set_file(self, filex):
         self.file = filex
@@ -111,6 +150,17 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         if name is None:
             return
         self.push_scope(ctx, "Class", name=name, body=ctx.classBody())
+        # Its supertype is the type it is created from, and a base is never a
+        # couple: `new TaskImpl(...) { }` inside TaskImpl couples nothing to
+        # TaskImpl, though the members it reads are TaskImpl's.
+        created = getattr(ctx.parentCtx, "createdName", None)
+        created = created() if callable(created) else None
+        if created is not None and getattr(created, "IDENTIFIER", None):
+            from openunderstand.ounderstand import symbol_table
+
+            base = self.lookup(".".join(i.getText() for i in created.IDENTIFIER()))
+            if base:
+                self.ancestors |= {base} | symbol_table.ancestors(base)
 
     def exitEnumDeclaration(self, ctx: JavaParserLabeled.EnumDeclarationContext):
         self.pop_scope()
@@ -157,6 +207,11 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
             ancestors = set()
         else:
             ancestors = symbol_table.ancestors(scope_longname) | {"java.lang.Object"}
+        if isinstance(ctx.parentCtx, JavaParserLabeled.LocalTypeDeclarationContext) and (
+            self.local_types
+        ):
+            self.local_types[-1][name] = scope_longname
+        self.dic["record"] = record
         self.stack.append((self.dic, [], ancestors))
         self.couplebyrefrences = self.stack[-1][1]
         self.ancestors = ancestors
@@ -243,6 +298,8 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         if type(ctx.parentCtx).__name__ != "TypeTypeContext":
             return
         if type(ctx.parentCtx.parentCtx).__name__.startswith("TypeArgument"):
+            # Not even a wildcard's bound: JSON's `Class<? extends Annotation>`
+            # parameter couples nothing.
             if not (self._inside_creator(ctx) or self._inside_record_header(ctx)):
                 return
         grandparent = type(ctx.parentCtx.parentCtx).__name__
@@ -262,12 +319,25 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         ):
             self.record_relation("Java Implement Couple", ctx, self.classlongname)
             if ctx.parentCtx.parentCtx.parentCtx.recordKeyword() is not None:
-                # A record couples to the interfaces it implements as well.
+                # A record couples to the interfaces it implements as well,
+                # qualifier included: PayloadEvent `implements Fsm.Event<SY>`
+                # couples Fsm.
                 self.add(self.resolve_type_longname(ctx))
+                self._couple_qualifiers([i.getText() for i in ctx.IDENTIFIER()])
             return
         bound = self.constrained_parameter(ctx)
         if bound is not None:
             self.record_relation("Java Use Constrains Couple", ctx, bound)
+            parameter = ctx.parentCtx
+            while parameter is not None and not isinstance(
+                parameter, JavaParserLabeled.TypeParameterContext
+            ):
+                parameter = parameter.parentCtx
+            if parameter is not None and self._record_parameter(parameter):
+                # A record also couples to its own parameters' bounds, which
+                # are what its components erase to: Fsm.Transition -> State.
+                self.add(self.resolve_type_longname(ctx))
+                self._couple_qualifiers([i.getText() for i in ctx.IDENTIFIER()])
             return
 
         self.add(self.resolve_type_longname(ctx))
@@ -356,11 +426,10 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         if ctx.qualifiedName() is None:
             return
         keyname = self.lookup(ctx.qualifiedName().getText())
-        if keyname and not self.stack:
-            # Annotating a top-level type: the frame does not exist yet.
-            # ponytail: an annotation on a *member* type still lands on the
-            # enclosing type, which has a frame open. Understand attributes it
-            # to the member; no case of that in the JSON fixture.
+        if keyname and (not self.stack or _annotates_type(ctx)):
+            # Annotating a type: its frame does not exist yet. A member type's
+            # belongs to it, not to the class around it -- `@FunctionalInterface
+            # interface Delta` inside Fsm couples Fsm.Delta.
             self.pending_annotations.append(keyname)
         else:
             self.add(keyname)
@@ -383,10 +452,35 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
             return
         receiver = ctx.expression().getText()
         if not receiver.isidentifier():
+            # `GPCalendar.DayMask.WORKING`: a qualified nested type is a
+            # receiver too, once it is shown to be a type Understand can see.
+            parts = receiver.split(".")
+            if len(parts) < 2 or not all(p.isidentifier() for p in parts):
+                return
+            from openunderstand.oudb import jdk_index
+            from openunderstand.ounderstand import symbol_table
+
+            owner = self.lookup(receiver)
+            if not owner or not (
+                jdk_index.known(owner) or symbol_table.is_project_type(owner)
+            ):
+                return
+            self.add(owner)
+            member = ctx.IDENTIFIER()
+            if member is not None:
+                self.add(
+                    symbol_table.declaring_type_anywhere(
+                        owner, member.getText(), fields=True
+                    )
+                )
             return
         owner = self.lookup_receiver(receiver, ctx)
         self.add(owner)
-        self.add(self.field_type(owner, ctx))
+        # Not the field's own type: `JLayeredPane.POPUP_LAYER` does not couple
+        # java.lang.Integer, nor `System.in` java.io.InputStream. Understand
+        # couples a field's type only when a member of it is used, which the
+        # call hook already sees -- `System.out.println` still yields
+        # PrintStream. Adding it here was 52 of TheAlgorithms' 61 extras.
         # The type that *declares* the member read, when it is not the
         # receiver: `JSlider.HORIZONTAL` is javax.swing.SwingConstants'.
         member = ctx.IDENTIFIER()
@@ -423,13 +517,61 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
 
         if not name or name in self.type_parameters:
             return None
+        for scope in reversed(self.local_types):
+            # `Color.RED` on an enum declared in the method: Impl couples
+            # Impl.locals.Color. A local variable of that name would shadow
+            # it, so ask the binder first.
+            if name in scope:
+                try:
+                    if ctx is not None and self.binder(ctx).name_type(name, ctx):
+                        return None
+                except Exception:
+                    pass
+                return scope[name]
         if name in self.Imports:
-            return self.Imports[name]
+            # An imported library class used as a receiver couples, seen or
+            # not: ganttproject's `Lists.newArrayList()` and `Preconditions.
+            # checkNotNull()` are some 200 of Understand's couples there --
+            # unless the file also writes it out in full in an expression.
+            # Understand then walks `org.evosuite.runtime.sandbox.Sandbox.x()`
+            # as unresolved segments, and the bare `Sandbox` receiver names
+            # that unresolved entity, not a coupled class (testing_legacy_code's
+            # scaffolding, 8 classes).
+            imported = self.Imports[name]
+            if not (
+                jdk_index.known(imported)
+                or symbol_table.is_project_type(imported)
+            ) and self._written_in_full(imported):
+                return None
+            return imported
         # Scoped: `Node` is declared in several packages, and without the
-        # asking class it binds to whichever was indexed first.
-        in_project = symbol_table.resolve_type(name, self.classlongname)
+        # asking class it binds to whichever was indexed first. Only what Java
+        # makes visible -- the enclosing scopes and the asking package. The
+        # project-wide "only type of that name" fallback turned `Color.YELLOW`
+        # behind `import java.awt.*` into ganttproject's Style.Color, 29
+        # wrong couples.
+        in_project = symbol_table.resolve_type(
+            name, self.classlongname, local_only=True
+        )
         if in_project:
             return in_project
+        if name[:1].isupper():
+            # A nested type the class inherits: `IconSize.NO_ICON` in a
+            # subclass of GPAction, which declares IconSize (8 ganttproject
+            # classes). Only once `name` is shown not to be a variable.
+            inherited = symbol_table.resolve_type_name(
+                name, self.Imports, self.wildcard_imports, self.classlongname
+            )
+            if inherited and symbol_table.is_project_type(inherited) and "." in inherited:
+                owner = inherited.rsplit(".", 1)[0]
+                if symbol_table.is_project_type(owner) and owner in symbol_table.ancestors(
+                    self.classlongname
+                ):
+                    try:
+                        if ctx is None or not self.binder(ctx).name_type(name, ctx):
+                            return inherited
+                    except Exception:
+                        return inherited
         if name in symbol_table.JAVA_LANG_TYPES:
             return "java.lang." + name
         # `Color.WHITE` behind `import java.awt.*`: a wildcard import places a
@@ -443,6 +585,20 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
                 return None
             return jdk_index.resolve_simple(name, tuple(self.wildcard_imports))
         return None
+
+    def _written_in_full(self, longname):
+        """Whether the file uses `longname.` in code, beyond its import line."""
+        if not hasattr(self, "_source_lines"):
+            try:
+                with open(self.file, encoding="utf-8", errors="replace") as handle:
+                    self._source_lines = handle.read().splitlines()
+            except (OSError, TypeError):
+                self._source_lines = []
+        needle = longname + "."
+        return any(
+            needle in line and not line.lstrip().startswith("import ")
+            for line in self._source_lines
+        )
 
     def binder(self, ctx):
         """The resolved-type table for this file, built from the tree's root."""
@@ -511,7 +667,19 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
             return
 
         member = identifier.getText()
-        self.add(symbol_table.declaring_type_anywhere(owner, member))
+        arguments = ctx.expressionList()
+        arity = len(arguments.expression()) if arguments is not None else 0
+        declarer = symbol_table.declaring_type_anywhere(owner, member, arity=arity)
+        if declarer and arguments is not None:
+            from openunderstand.ounderstand import type_binding
+
+            types = tuple(
+                type_binding.argument_type(self.binder(ctx), a)
+                for a in arguments.expression()
+            )
+            if jdk_index.needs_unboxing(declarer, member, types):
+                return  # an unresolved call to Understand: no member used
+        self.add(declarer)
 
     def enterCreatedName0(self, ctx: JavaParserLabeled.CreatedName0Context):
         """`new JSONTokener(...)` -- createdName is not a classOrInterfaceType.
@@ -576,9 +744,14 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
                 self.add(owner)
 
     def enterCatchType(self, ctx: JavaParserLabeled.CatchTypeContext):
-        """`catch (JSONException e)` -- catchType holds qualifiedNames."""
-        for qualified_name in ctx.qualifiedName():
-            self.add(self.lookup(qualified_name.getText()))
+        """`catch (JSONException e)` -- catchType holds qualifiedNames.
+
+        Only the first of a multi-catch couples: `catch (InterruptedException
+        | ExecutionException ex)` is Typed both but couples InterruptedException
+        alone in Understand -- 22 of jhotdraw's classes."""
+        names = ctx.qualifiedName()
+        if names:
+            self.add(self.lookup(names[0].getText()))
 
     def add(self, keyname):
         """Record one coupled type, applying the exclusions Understand applies."""
@@ -637,35 +810,82 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
             self.add(owner)
 
     def _outer_member(self, ctx, name):
-        """Inside an anonymous class, a bare name the class does not declare
-        but an enclosing type does -- `k` and `n` in KSubset's Cursors -- uses
-        a member of that enclosing type, and Understand couples the anonymous
-        class to it. A named class never couples itself, so only an anonymous
-        frame asks; its locals, parameters and own fields are asked first."""
+        """Inside a nested or anonymous class, a bare name the class does not
+        declare -- nor inherit -- but an enclosing type does uses a member of
+        that enclosing type, and Understand couples the inner class to it:
+        `k` and `n` in KSubset's Cursors, `conditionList` in freemind's
+        FilterComposerDialog.DeleteConditionAction (209 of 218 nested classes
+        there). When the enclosing type only *inherits* the member, the type
+        declaring it is coupled instead -- `setVisible` in a JDialog's inner
+        listener is java.awt.Dialog's. Locals, parameters and the class's own
+        fields are asked first; a top-level class has no enclosing type."""
         from openunderstand.ounderstand import symbol_table
 
-        if not self.classlongname.rsplit(".", 1)[-1].startswith("(Anon_"):
+        frame = self.classlongname
+        anonymous = frame.rsplit(".", 1)[-1].startswith("(Anon_")
+        parts = frame.split(".")
+        outers = [
+            ".".join(parts[:end])
+            for end in range(len(parts) - 1, 0, -1)
+            if symbol_table.is_project_type(".".join(parts[:end]))
+        ]
+        if not outers:
             return
         binder = self.binder(ctx)
+        # A call names a method: `size()` in a class with a field `size` is
+        # still the inherited method (IndexedType's anonymous iterator).
+        call = isinstance(ctx, JavaParserLabeled.MethodCall0Context)
         node = ctx
         while node is not None and not (
-            isinstance(node, JavaParserLabeled.ClassCreatorRestContext)
-            and node.classBody() is not None
+            (
+                isinstance(node, JavaParserLabeled.ClassCreatorRestContext)
+                and node.classBody() is not None
+            )
+            or type(node).__name__.startswith(
+                ("ClassDeclaration", "InterfaceDeclaration", "EnumDeclaration")
+            )
         ):
-            if type(node).__name__.startswith(
-                ("MethodDeclaration", "LambdaExpression", "Block", "CatchClause",
-                 "ForControl", "EnhancedForControl")
-            ) and name in binder._declared_in(node):
+            if not call and type(node).__name__.startswith(_LOCAL_SCOPES) and name in (
+                binder._declared_in(node)
+            ):
                 return
             node = node.parentCtx
-        if node is None or name in binder._own_fields(node):
+        if node is None or (not call and name in binder._own_fields(node)):
             return
-        parts = self.classlongname.split(".")
-        for end in range(len(parts) - 1, 0, -1):
-            owner = ".".join(parts[:end])
-            if symbol_table.is_project_type(owner):
-                if symbol_table.INDEX.declares(owner, name):
-                    self.add(owner)
+        # A local or parameter of the method holding the class, captured:
+        # Understand couples the class to the type enclosing that method --
+        # 248 of ganttproject's anonymous classes, every one that reads one.
+        outer = None if call else node.parentCtx
+        while outer is not None and not type(outer).__name__.startswith(
+            ("ClassBody", "InterfaceBody", "EnumBody")
+        ):
+            if type(outer).__name__.startswith(_LOCAL_SCOPES) and name in (
+                binder._declared_in(outer)
+            ):
+                # The class directly around this one, anonymous or not.
+                if len(self.stack) >= 2:
+                    self.add(self.stack[-2][0]["scope_longname"])
+                return
+            outer = outer.parentCtx
+        if not anonymous and symbol_table.declaring_type_anywhere(
+            frame, name, fields=True
+        ):
+            return  # the nested class's own member, or one it inherits
+        for owner in outers:
+            if symbol_table.is_project_type(f"{owner}.{name}"):
+                return  # a sibling nested *type*, not a member of the outer
+            if symbol_table.INDEX.declares(owner, name):
+                self.add(owner)
+                return
+            arity = None
+            if isinstance(ctx, JavaParserLabeled.MethodCall0Context):
+                listed = ctx.expressionList()
+                arity = len(listed.expression()) if listed is not None else 0
+            declarer = symbol_table.declaring_type_anywhere(
+                owner, name, fields=arity is None, arity=arity
+            )
+            if declarer and declarer != "java.lang.Object":
+                self.add(declarer)
                 return
 
     def enterTypeParameter(self, ctx: JavaParserLabeled.TypeParameterContext):
@@ -682,8 +902,37 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         # the declaring type to java.lang.Object for it: 31 of jenetics' 69
         # records, every one generic or holding a generic method. A class never
         # shows it because Object is an ancestor, which add() excludes.
-        if ctx.EXTENDS() is None:
+        if ctx.EXTENDS() is None or self._record_parameter(ctx):
+            # A record's own parameter couples Object even when bounded:
+            # Transition<ST extends State, SI extends Signal> carries it.
             self.add("java.lang.Object")
+
+    def _record_parameter(self, ctx):
+        """Whether `ctx` is a type parameter of the open frame's record, or of
+        one of its generic methods: Fsm couples Signal for its static
+        `<ST extends State, SI extends Signal> transitions(...)`."""
+        declaration = getattr(ctx.parentCtx, "parentCtx", None)
+        if isinstance(declaration, JavaParserLabeled.ClassDeclarationContext):
+            return (
+                declaration.recordKeyword() is not None
+                and self.dic.get("scope_name") == declaration.IDENTIFIER().getText()
+            )
+        if type(declaration).__name__.startswith("GenericMethodDeclaration"):
+            node = declaration.parentCtx
+            while node is not None and not isinstance(
+                node, JavaParserLabeled.ClassDeclarationContext
+            ):
+                if type(node).__name__.startswith(
+                    ("InterfaceDeclaration", "EnumDeclaration", "ClassCreatorRest")
+                ):
+                    return False
+                node = node.parentCtx
+            return (
+                node is not None
+                and node.recordKeyword() is not None
+                and self.dic.get("scope_name") == node.IDENTIFIER().getText()
+            )
+        return False
 
     def enterQualifiedNameList(self, ctx: JavaParserLabeled.QualifiedNameListContext):
         """A `throws` clause couples the class to the exception types.
@@ -706,12 +955,105 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
         """
         return self.lookup(".".join(i.getText() for i in ctx.IDENTIFIER()))
 
+    def enterExpression23(self, ctx: JavaParserLabeled.Expression23Context):
+        """`Objects::nonNull`, `Method::getName`: a method reference on a
+        type couples the type and the member's declarer. On a value it
+        couples nothing -- Understand leaves `System.out::println` a bare,
+        unresolved `println` (PrintStream on three jenetics snippets)."""
+        if not self.stack or ctx.IDENTIFIER() is None:
+            return
+        from openunderstand.ounderstand import symbol_table
+
+        receiver = ctx.expression()
+        text = receiver.getText()
+        member = ctx.IDENTIFIER().getText()
+        if text.isidentifier():
+            owner = self.lookup_receiver(text, ctx)
+        else:
+            # `Map.Entry::getKey`: a qualified type, once shown to be one.
+            from openunderstand.oudb import jdk_index
+
+            parts = text.split(".")
+            owner = self.lookup(text) if all(p.isidentifier() for p in parts) else None
+            if owner and not (jdk_index.known(owner) or symbol_table.is_project_type(owner)):
+                owner = None
+            if owner:
+                self._couple_qualifiers(parts)
+        if owner:
+            self.add(owner)
+            self.add(symbol_table.declaring_type_anywhere(owner, member))
+
+    def enterMethodDeclaration(self, ctx: JavaParserLabeled.MethodDeclarationContext):
+        """A record's method that overrides one couples the overridden one's
+        declarer: ClientError.status() is Response's. A class shows nothing
+        here only because that declarer is an ancestor, which add() drops."""
+        if not self.stack or not self.dic.get("record") or ctx.IDENTIFIER() is None:
+            return
+        from openunderstand.ounderstand import symbol_table
+
+        name = ctx.IDENTIFIER().getText()
+        for written in symbol_table.INDEX.supertypes.get(self.classlongname, []):
+            parent = symbol_table._resolve_supertype(written, self.classlongname)
+            declarer = symbol_table.declaring_type_anywhere(parent, name) if parent else None
+            if declarer and declarer != "java.lang.Object":
+                self.add(declarer)
+
+    def enterLocalVariableDeclaration(
+        self, ctx: JavaParserLabeled.LocalVariableDeclarationContext
+    ):
+        """`final var element = path().element()` is Typed Path.Element, and
+        Understand couples the inferred type as it does a written one."""
+        if not self.stack or ctx.typeType() is None or ctx.typeType().getText() != "var":
+            return
+        declarators = ctx.variableDeclarators()
+        for declarator in (declarators.variableDeclarator() if declarators else []):
+            name = declarator.variableDeclaratorId().getText()
+            try:
+                self.add(self.binder(declarator).name_type(name, declarator))
+            except Exception:
+                continue
+
+    def enterBlock(self, ctx: JavaParserLabeled.BlockContext):
+        self.local_types.append({})
+
+    def exitBlock(self, ctx: JavaParserLabeled.BlockContext):
+        if self.local_types:
+            self.local_types.pop()
+
     def lookup(self, name):
         """Resolve a type name the way javac would, in declaration order."""
         from openunderstand.ounderstand import symbol_table
 
         if not name or name in self.type_parameters:
             return None
-        return symbol_table.resolve_type_name(
+        # A local type shadows everything else in scope: `Book` in a method
+        # declaring `record Book(...)` is that record, and the class couples
+        # to it -- not to java.awt.print.Book through a wildcard import.
+        head, _, rest = name.partition(".")
+        for scope in reversed(self.local_types):
+            if head in scope:
+                return scope[head] + ("." + rest if rest else "")
+        if rest and head in self.Imports:
+            from openunderstand.oudb import jdk_index
+
+            imported = self.Imports[head]
+            if not (jdk_index.known(imported) or symbol_table.is_project_type(imported)):
+                # `Engine.Setup` behind `import io.jenetics.engine.Engine`, a
+                # library Understand cannot see: it keeps the name as written.
+                return name
+        found = symbol_table.resolve_type_name(
             name, self.Imports, self.wildcard_imports, self.classlongname
         )
+        if found and not rest and self.dic.get("record") and name not in self.Imports:
+            # Inside a record, a nested type it only *inherits* -- `Root` in
+            # BrentRootFinder, declared by the RootFinder it implements -- is
+            # left unresolved by Understand, and coupled under the bare name.
+            owner = found.rsplit(".", 1)[0]
+            frames = {f[0].get("scope_longname") for f in self.stack}
+            if (
+                symbol_table.is_project_type(owner)
+                and owner not in frames
+                and owner in symbol_table.ancestors(self.classlongname)
+            ):
+                return name
+        return found

@@ -496,6 +496,16 @@ class EntityModel(Model):
             ):
                 continue
             if (
+                incoming_placeholder
+                and "variable" in _kind_name(incoming).lower().split()
+                and kind_family(row._kind_id) == "package"
+            ):
+                # The bare `org` of `org.evosuite.runtime...` is an unresolved
+                # *variable* in Understand, read as a global; folded into the
+                # project's package `org` it stopped counting -- one short on
+                # every scaffolding method of testing_legacy_code.
+                continue
+            if (
                 not incoming_placeholder
                 and not row_placeholder
                 and _parameter_vs_member(row._kind_id, incoming)
