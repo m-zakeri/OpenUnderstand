@@ -48,7 +48,7 @@ from openunderstand.metrics.count_stmt_exe import statement_counter_exe
 from openunderstand.metrics.cyclomatic import cyclomatic
 from openunderstand.metrics.cyclomatic_strict import cyclomatic_strict
 from openunderstand.metrics.essential import essential
-from openunderstand.metrics.cyclomatic_modified import cyclomatic_modified
+from openunderstand.metrics.cyclomatic import cyclomatic_modified
 from openunderstand.metrics import knots
 from openunderstand.metrics.knots import knot
 
@@ -264,6 +264,17 @@ for lexeme in file.lexer():
 #: "no checks configured, therefore none violated" is the honest answer, and it
 #: is the one Understand gives for an unconfigured project. Returning None left
 #: all four absent on every entity.
+#: What a record's implicit canonical constructor reports: an empty method.
+_IMPLICIT_ONE = {
+    "Cyclomatic", "CyclomaticModified", "CyclomaticStrict",
+    "SumCyclomatic", "SumCyclomaticModified", "SumCyclomaticStrict",
+}
+_IMPLICIT_ZERO = {
+    "CountStmt", "CountStmtDecl", "CountStmtExe", "CountSemicolon",
+    "CountLine", "CountLineBlank", "CountLineCode", "CountLineCodeDecl",
+    "CountLineCodeExe", "CountLineComment", "MaxNesting",
+}
+
 _CODE_CHECK_METRICS = {
     "CountCCViol": 0,
     "CountCCViolType": 0,
@@ -566,7 +577,9 @@ def _metric_family(kindname):
         return "file"
     if "Method" in words or "Constructor" in words:
         return "method"
-    if words & {"Class", "Interface", "Annotation", "Enum"}:
+    # `SealedInterface` is one token in Understand's vocabulary -- `Java
+    # SealedInterface Type Public` -- so every sealed interface answered None.
+    if words & {"Class", "Interface", "Annotation", "Enum", "SealedInterface"}:
         return "class"
     if "GenericParameter" in words:
         # A type parameter (`<E extends Enum>`) gets the class metric set --
@@ -1158,7 +1171,18 @@ class Ent:
         Only certain entities are supported, such as files and defined
         functions. Entities with no contents will return empty string.
         """
-        return str(self._contents)
+        text = str(self._contents)
+        if (
+            text
+            and not text.endswith("\n")
+            and (self.kindname() or "").startswith("Java File")
+        ):
+            # A file's last line counts even when it is not terminated: 7 of
+            # calculator_app's 8 files end in `}` with no newline, and each
+            # file and package was one line short. A *class* ending there
+            # drops it, which its own text already gives.
+            text += "\n"
+        return text
 
     def depends(self):  # real signature unknown; restored from __doc__
         """
@@ -1390,10 +1414,23 @@ class Ent:
             # one of JSONString's aggregates rather than the 7 lines of its
             # declaration; an enum's synthetic `values` has no source at all
             # and counts the same way, which is what makes MyEnum 0 and not 1.
-            if not (method.contents() or "").strip():
+            sourceless = not (method.contents() or "").strip()
+            # ...but a record's implicit canonical constructor counts, as an
+            # empty method: a record with no constructor of its own is
+            # Avg/Max/SumCyclomatic 1 to Understand, and was 0 here.
+            implicit = sourceless and "constructor" in (method.kindname() or "").lower()
+            if sourceless and name.startswith("AvgCountLine") and "implicit" in (
+                method.kindname() or ""
+            ).lower():
+                # An enum's implicit values()/valueOf() averages in as 0 lines:
+                # that rule reproduces 222 of jenetics' 232 class averages, and
+                # leaving them out 180.
+                values.append(0)
+                continue
+            if sourceless and not implicit:
                 continue
             try:
-                if metric_context.declares_without_body(method):
+                if not implicit and metric_context.declares_without_body(method):
                     continue
                 value = method.metric([base]).get(base)
             except Exception:
@@ -1459,9 +1496,17 @@ class Ent:
             metric_list = [m for m in metric_list if m not in metrics]
         # A compiler-generated method -- an enum's values()/valueOf() -- has no
         # source. Understand answers nothing for it, and 0 to a sum.
+        # A record's implicit canonical constructor has no source either, but
+        # Understand values it like any method -- CountOutput 1, Cyclomatic 1
+        # -- so a constructor is not "generated" here: 38 of jenetics' were.
+        sourceless = _metric_family(self.kindname()) == "method" and not (
+            self.contents() or ""
+        ).strip()
+        constructor = "constructor" in (self.kindname() or "").lower()
+        implicit_constructor = sourceless and constructor
         generated = (
-            _metric_family(self.kindname()) == "method"
-            and not (self.contents() or "").strip()
+            sourceless
+            and not constructor
             and not metric_context._LAMBDA_NAME.search(self.longname() or "")
         )
         for item in metric_list:
@@ -1470,8 +1515,24 @@ class Ent:
             if item not in known:
                 metrics[item] = None
                 continue
+            if implicit_constructor:
+                # A record's implicit canonical constructor: an empty method
+                # to Understand -- Cyclomatic 1, no statements, no lines.
+                if item in _IMPLICIT_ONE:
+                    metrics[item] = 1
+                    continue
+                if item in _IMPLICIT_ZERO:
+                    metrics[item] = 0
+                    continue
             if generated:
-                metrics[item] = 0 if item.startswith("Sum") else None
+                # An enum's values()/valueOf() answer only the coding-standard
+                # metrics and a ratio, all zero; nothing else.
+                metrics[item] = (
+                    0 if item.startswith("Sum")
+                    else "0.00" if item == "RatioCommentToCode"
+                    else _CODE_CHECK_METRICS[item] if item in _CODE_CHECK_METRICS
+                    else None
+                )
                 continue
             if item in _BODYLESS_ZERO and bodyless:
                 metrics[item] = 0
@@ -1708,16 +1769,17 @@ class Ent:
                 # Understand reports this to two decimal places as a string.
                 # Returning a full-precision float meant a value that was
                 # arithmetically right still compared unequal.
-                counts = metric_context.line_counts(self.contents())
-                metrics.update(
-                    {
-                        "RatioCommentToCode": (
-                            f"{counts['comment'] / counts['code']:.2f}"
-                            if counts["code"]
-                            else "0.00"
-                        )
-                    }
-                )
+                if graph_metrics.container_members(self) is not None:
+                    # A package has no text: its ratio is the rolled-up comment
+                    # lines over the rolled-up code lines, where this answered
+                    # "0.00" for every one (40 of xerces2j's 45).
+                    rolled = self.metric(["CountLineComment", "CountLineCode"])
+                    comment = rolled.get("CountLineComment") or 0
+                    code = rolled.get("CountLineCode") or 0
+                else:
+                    counts = metric_context.line_counts(self.contents())
+                    comment, code = counts["comment"], counts["code"]
+                metrics.update({"RatioCommentToCode": _ratio(comment, code)})
         _remember_metrics(self, metric_list, metrics)
         metrics.update(stored)
         return metrics
@@ -2243,3 +2305,16 @@ class Violation(object):
 __loader__ = None  # (!) real value is '<_frozen_importlib_external.ExtensionFileLoader object at 0x000001CE33FC3130>'
 
 __spec__ = None  # (!) real value is "ModuleSpec(name='ounderstand', loader=<_frozen_importlib_external.ExtensionFileLoader object at 0x000001CE33FC3130>, origin='D:\\\\program files\\\\SciTools\\\\bin\\\\pc-win64\\\\Python\\\\ounderstand.pyd')"
+
+
+
+def _ratio(comment, code):
+    """Two decimals, half rounded up as Understand rounds: 1/8 is "0.13",
+    where Python's banker's `f"{0.125:.2f}"` gave "0.12" (51 on xerces2j)."""
+    from decimal import Decimal, ROUND_HALF_UP
+
+    if not code:
+        return "0.00"
+    value = Decimal(comment) / Decimal(code)
+    return str(value.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+

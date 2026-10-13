@@ -36,6 +36,10 @@ class DeclaredTypeCollector(JavaParserLabeledListener):
     def enterFormalParameter(self, ctx):
         self._record(ctx.typeType(), [ctx.variableDeclaratorId()])
 
+    # `T... xs` is a parameter too: missing it, a bare `transitions` in
+    # `of(Transition... transitions)` was taken for Fsm's method of that name.
+    enterLastFormalParameter = enterFormalParameter
+
     def enterLocalVariableDeclaration(self, ctx):
         self._record(ctx.typeType(), ctx.variableDeclarators().variableDeclarator())
 
@@ -144,6 +148,7 @@ def collect_own(ctx) -> dict:
     # match handed the plural context to a handler that reads typeType().
     handlers = {
         "FormalParameterContext": collector.enterFormalParameter,
+        "LastFormalParameterContext": collector.enterLastFormalParameter,
         "LocalVariableDeclarationContext": collector.enterLocalVariableDeclaration,
         "FieldDeclarationContext": collector.enterFieldDeclaration,
         "ResourceContext": collector.enterResource,

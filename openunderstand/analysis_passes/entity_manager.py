@@ -461,8 +461,10 @@ class PackageEntityManager:
         else:
             package_ent, success = EntityModel.get_or_create(
                 _kind=kind_id("Java Package Unnamed"),
-                _name="Unnamed Package",
-                _longname="Unnamed Package",
+                # Understand's name, and the one Project.getUnnamedPackageEntity
+                # uses: two spellings made two unnamed packages.
+                _name="(Unnamed_Package)",
+                _longname="(Unnamed_Package)",
                 _parent=self.file_ent,
                 _contents=self.contents,
             )

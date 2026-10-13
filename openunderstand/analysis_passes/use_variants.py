@@ -180,6 +180,42 @@ class UseVariantListener(JavaParserLabeledListener):
             ent_longname=resolved,
         )
 
+    def enterExpression23(self, ctx: JavaParserLabeled.Expression23Context):
+        """`Type::m` and `this::m` use the method named. Understand writes a
+        `Java Use` of it at the name -- `Property::path`, `this::get` -- and
+        it counts toward the method's CountInput (about 24 on jenetics). A
+        receiver that is an *expression*, `System.out::println`, is left
+        alone: Understand names only the bare method there."""
+        from openunderstand.ounderstand import symbol_table
+
+        receiver, identifier = ctx.expression(), ctx.IDENTIFIER()
+        if receiver is None or identifier is None:
+            return
+        name = identifier.getText()
+        written = receiver.getText()
+        parents = class_properties.ClassPropertiesListener.findParents(ctx)
+        scope = ".".join(parents)
+        owner = None
+        if written == "this":
+            for end in range(len(parents), 0, -1):
+                candidate = ".".join(parents[:end])
+                if symbol_table.is_project_type(candidate):
+                    owner = candidate
+                    break
+        elif written.isidentifier() and written[:1].isupper():
+            owner = symbol_table.resolve_type_name(
+                written, self.imports, self.wildcards, scope
+            )
+        if not owner:
+            return
+        declarer = symbol_table.declaring_type_anywhere(owner, name)
+        if not declarer or not symbol_table.is_project_type(declarer):
+            return  # a JDK method's Use has no project row to count on
+        self._add(
+            "Java Use", name, ctx, identifier.symbol,
+            ent_longname=f"{declarer}.{name}",
+        )
+
     def enterPrimary5(self, ctx: JavaParserLabeled.Primary5Context):
         """`int.class` and `Integer.class` read java.lang.Class.
 

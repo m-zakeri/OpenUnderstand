@@ -148,6 +148,10 @@ def parse_entity_source(source):
         source,
         f"class {_WRAPPER} {source}",
         f"class {_WRAPPER} {{\n{source}\n}}",
+        # An interface's `default` method: illegal in a class, so the class
+        # wrapper parsed it by error recovery into a broken tree and
+        # Path.compareTo counted 13/6/11 against Understand's 10/5/9.
+        f"interface {_WRAPPER} {{\n{source}\n}}",
     )
     if _LAMBDA_TEXT.match(source):
         # A lambda's text is an expression, which none of the above accepts.
@@ -363,12 +367,32 @@ _DECLARATIVE = (
     # so it was the declarative statement validForBase was short by -- and its
     # *line* still belongs to the loop, which _add_signature_lines skips.
     "EnhancedForControlContext",
+    # At file and package level `package` and `import` are declarative
+    # statements: calculator_app's packages were short by exactly their count.
+    "PackageDeclarationContext",
+    "ImportDeclarationContext",
 )
 # Every `statement` alternative except a bare block (#statement0), an empty
 # statement (#statement14) and a label (#statement16), which do nothing.
+# 17 is `yield`, 18 an arrow switch *statement*: both execute, and neither
+# was counted (ErrorPropagatingPipedInputStream.checkError 8 against 9).
 _EXECUTABLE = tuple(
-    f"Statement{n}Context" for n in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15)
+    f"Statement{n}Context"
+    for n in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 17, 18)
 )
+
+
+def _in_switch_expression(rule):
+    """Whether a switch rule belongs to a switch expression."""
+    node = rule.parentCtx
+    while node is not None:
+        if isinstance(node, JavaParserLabeled.SwitchExpressionContext):
+            return True
+        if isinstance(node, (JavaParserLabeled.Statement8Context,
+                             JavaParserLabeled.Statement18Context)):
+            return False
+        node = node.parentCtx
+    return False
 
 
 def _initialiser_invokes(ctx):
@@ -390,7 +414,11 @@ def _initialiser_invokes(ctx):
     while stack:
         node = stack.pop()
         name = type(node).__name__
-        if name.startswith(("ArrayInitializer", "ArrayCreatorRest")):
+        # A lambda's or a switch expression's calls are not the initialiser's:
+        # `cmp = (s, t) -> s.compareTo(t)` only declares. An array *literal*
+        # is declarative, but a dimension is evaluated: `new int[c.size()]`
+        # executes (CursorSnippets.loop 2 against 3).
+        if name.startswith(("ArrayInitializer", "LambdaExpression", "SwitchExpression")):
             continue
         if name.startswith("MethodCall"):
             return True
@@ -399,7 +427,6 @@ def _initialiser_invokes(ctx):
             rest = rest() if callable(rest) else None
             if rest is None:
                 return True  # new T(...) -- object creation executes
-            continue  # new T[]{...} -- array creation is declarative
         stack.extend(
             c
             for c in (getattr(node, "children", None) or ())
@@ -420,9 +447,41 @@ class _StatementClassifier:
         #: Depth inside `new Runnable() { ... }` bodies. What they declare
         #: belongs to the anonymous class, which is an entity of its own.
         self.anonymous = 0
+        #: Lines closing a switch *expression* -- `};` -- which execute
+        #: nothing (java25_probe's Impl.arms is 5 executable lines, not 6).
+        self.switch_closes = set()
 
     def visit(self, ctx):
         name = type(ctx).__name__
+        if name == "SwitchExpressionContext" and ctx.stop is not None:
+            # Only where it ends a declaration: `int r = switch ... };` is the
+            # declaration's `;` line, but `return switch ... };` executes
+            # (java25_probe's Impl.shape is 6 executable lines).
+            node = ctx.parentCtx
+            while node is not None and not isinstance(
+                node, (JavaParserLabeled.BlockStatementContext,
+                       JavaParserLabeled.StatementContext)
+            ):
+                if isinstance(node, (JavaParserLabeled.VariableDeclaratorContext,)):
+                    self.switch_closes.add(ctx.stop.line)
+                    break
+                node = node.parentCtx
+        if (
+            name == "Statement15Context"
+            and isinstance(ctx.parentCtx, JavaParserLabeled.SwitchRuleContext)
+            and _in_switch_expression(ctx.parentCtx)
+        ) or (
+            name == "InterfaceDeclarationContext" and declared_name(ctx) == _WRAPPER
+        ):
+            # An expression arm of a switch *expression* -- `case A -> f(a);`
+            # inside `return switch (x) {...};` -- is part of that expression,
+            # not a statement of its own. In a switch *statement* it is one
+            # (DefaultClient.toHttpRequest counts 10). And the interface
+            # wrapper parse_entity adds is no declaration.
+            for child in getattr(ctx, "children", None) or ():
+                if hasattr(child, "getRuleIndex"):
+                    self.visit(child)
+            return
         if name == "ClassDeclarationContext" and declared_name(ctx) == _WRAPPER:
             # The wrapper parse_entity() adds is not part of the entity.
             for child in getattr(ctx, "children", None) or ():
@@ -456,7 +515,11 @@ class _StatementClassifier:
             # at CountStmtDecl 3 and CountLineCodeDecl 1 -- but its lines belong
             # to the anonymous class, which is an entity in its own right and
             # reports 0 declarative lines for them.
-            if not in_for and not self.anonymous:
+            # A *local* declared in there still counts for the method holding
+            # the class: AbstractSelectionAction(JComponent) is 2 to Understand
+            # with `String n = ...` inside an anonymous propertyChange.
+            local = name == "LocalVariableDeclarationContext"
+            if not in_for and (not self.anonymous or local):
                 if name in _DECLARATION_STATEMENTS:
                     self._add_declaration_lines(ctx)
                 else:
@@ -611,8 +674,15 @@ class _StatementClassifier:
             return
         first = _signature_start(ctx)
         last = ctx.start.line
+        header_end = _header_end(ctx)
         parameters = getattr(ctx, "formalParameters", None)
-        if parameters is not None:
+        if header_end is not None:
+            # Through the last line before the body: a `throws` clause, an
+            # `extends`/`implements` or a record header on later lines is
+            # still the declaration -- HTMLBuilder.endDocument is 2 to
+            # Understand with `throws SAXException` on its own line.
+            last = header_end
+        elif parameters is not None:
             try:
                 params = parameters()
             except TypeError:
@@ -626,6 +696,36 @@ class _StatementClassifier:
         ):
             last = ctx.stop.line
         target.update(range(first, last + 1))
+
+
+_BODIES = (
+    "ClassBodyContext",
+    "InterfaceBodyContext",
+    "EnumBodyContext",
+    "MethodBodyContext",
+    "ConstructorBodyContext",
+    "AnnotationTypeBodyContext",
+)
+
+
+def _header_end(ctx):
+    """Last line of a declaration's header: the end of whatever precedes its
+    body, or None when it has no body child to measure against."""
+    children = [c for c in (getattr(ctx, "children", None) or ())]
+    for index, child in enumerate(children):
+        name = type(child).__name__
+        if name in _BODIES or name.startswith(_BODIES):
+            if index == 0:
+                return None
+            body_line = getattr(getattr(child, "start", None), "line", None)
+            span = _child_span(children[index - 1])
+            if span is None:
+                return None
+            # A body-less method (`;`) ends the header on its own line.
+            if name == "MethodBodyContext" and child.block() is None:
+                return child.stop.line if child.stop is not None else span[1]
+            return span[1] if body_line is None else min(max(span[1], ctx.start.line), body_line)
+    return None
 
 
 #: Declarations whose lines split into declarative and executable halves.
@@ -761,9 +861,49 @@ def statement_counts(ent_model) -> dict:
     returned dict is shared and must not be mutated.
     """
     source = ent_model.contents() or ""
-    if _LAMBDA_NAME.search(getattr(ent_model, "_longname", "") or ""):
-        return _lambda_statement_counts(source)
-    return _statement_counts(source)
+    longname = getattr(ent_model, "_longname", "") or ""
+    if _LAMBDA_NAME.search(longname):
+        counts = _lambda_statement_counts(source)
+        first = _first_line_in_parent(ent_model, source)
+        if first is None:
+            return counts
+        # The line a lambda starts on is shared with the statement holding it,
+        # and Understand classifies it as that statement does: `Greeter g = ()
+        # -> ...` is a declarative line, `xs.forEach(_ -> { })` an executable
+        # one, though neither lambda declares or executes anything of its own.
+        decl, exe = first
+        own = _lambda_first_line(source)
+        return dict(
+            counts,
+            line_decl=counts["line_decl"] + (decl and not own[0]),
+            line_exe=counts["line_exe"] + (exe and not own[1]),
+        )
+    counts = _statement_counts(source)
+    if "(Anon_" in longname:
+        # An anonymous class and everything in it is executable to Understand:
+        # its signature and annotation lines move into Exe and Decl is 0 --
+        # WeekendCalendarImpl's (Anon_1) is Decl 0 / Exe 12 there, 7 / 5 here.
+        return dict(
+            counts,
+            line_decl=0,
+            line_exe=_statement_counts_union(source),
+        )
+    return counts
+
+
+@lru_cache(maxsize=256)
+def _statement_counts_union(source: str) -> int:
+    """Executable lines when every declarative line counts as executable."""
+    tree, text = parse_entity_source(source)
+    classifier = _StatementClassifier()
+    classifier.visit(tree)
+    code = {number for number, has_code, _ in _scan_lines(text) if has_code}
+    closing = {
+        number
+        for number, raw in enumerate(text.split("\n")[:-1], 1)
+        if raw.strip() in ("}", "{")
+    }
+    return len(((classifier.exe_lines | classifier.decl_lines) & code) - closing)
 
 
 #: Keyed on the name, not the kind: 30 of JSON's lambdas carry a method kind.
@@ -809,7 +949,7 @@ def _lambda_statement_counts(source: str) -> dict:
     closing = {
         number
         for number, raw in enumerate(source.split("\n")[:-1], 1)
-        if raw.strip() == "}"
+        if raw.strip() in ("}", "{")
     }
     return {
         "stmt": classifier.statements,
@@ -818,6 +958,77 @@ def _lambda_statement_counts(source: str) -> dict:
         "line_decl": len(classifier.decl_lines & code),
         "line_exe": len((classifier.exe_lines & code) - closing),
     }
+
+
+def _first_line_in_parent(ent_model, source):
+    """(declarative, executable) for the parent's line a lambda starts on, or
+    None when the lambda's text cannot be placed in its parent's."""
+    parent = getattr(ent_model, "parent", None)
+    try:
+        parent = parent() if callable(parent) else getattr(ent_model, "_parent", None)
+    except Exception:
+        parent = None
+    outer = (getattr(parent, "_contents", None) or "") if parent else ""
+    text = source.rstrip("\n")
+    if not text or not outer:
+        return None
+    positions, at = [], outer.find(text)
+    while at != -1:
+        positions.append(at)
+        at = outer.find(text, at + 1)
+    if not positions:
+        return None
+    # Two identical lambdas in one method: take the one at the right line.
+    want = (ent_model._line or 0) - (parent._line or 0)
+    at = min(positions, key=lambda p: abs(outer[:p].count("\n") - want))
+    line = outer[:at].count("\n") + 1
+    starts, exe = _statement_lines(outer)
+    return line in starts, line in exe
+
+
+def _lambda_first_line(source):
+    """Whether the lambda's own classification already counts its line 1."""
+    from openunderstand.utils import antler_parser
+    from antlr4 import InputStream
+
+    try:
+        tree = antler_parser.parse(
+            InputStream(source), "lambdaExpression", prefer_cpp=False
+        )
+    except Exception:
+        return False, False
+    classifier = _StatementClassifier()
+    classifier.visit(tree)
+    body = tree.lambdaBody()
+    if isinstance(body, JavaParserLabeled.LambdaBody0Context) and body.start is not None:
+        classifier.exe_lines.update(range(body.start.line, body.stop.line + 1))
+    closing = source.split("\n")[0].strip() in ("}", "{")
+    return 1 in classifier.decl_lines, 1 in classifier.exe_lines and not closing
+
+
+@lru_cache(maxsize=256)
+def _statement_lines(source: str):
+    """The declarative and executable code lines of `source`, numbered in it."""
+    tree, text = parse_entity_source(source)
+    classifier = _StatementClassifier()
+    classifier.visit(tree)
+    at = text.find(source)
+    shift = text[:at].count("\n") if at > 0 else 0
+    code = {number for number, has_code, _ in _scan_lines(text) if has_code}
+    # Only the line a local declaration *starts* on: `.orElse(a -> true);`
+    # closes one, and Understand gives that lambda no declarative line.
+    starts, stack = set(), [tree]
+    while stack:
+        node = stack.pop()
+        if isinstance(node, JavaParserLabeled.LocalVariableDeclarationContext) and (
+            node.start is not None
+        ):
+            starts.add(node.start.line)
+        stack.extend(c for c in (getattr(node, "children", None) or ()) if hasattr(c, "getRuleIndex"))
+    return (
+        frozenset(n - shift for n in starts & classifier.decl_lines),
+        frozenset(n - shift for n in classifier.exe_lines & code),
+    )
 
 
 @lru_cache(maxsize=256)
@@ -838,14 +1049,29 @@ def _statement_counts(source: str) -> dict:
     closing = {
         number
         for number, raw in enumerate(text.split("\n")[:-1], 1)
-        if raw.strip() == "}"
+        # A brace alone on its line, either way: an Allman-style `{` opens a
+        # block and executes nothing -- 97 of 97 such methods on xerces2j.
+        if raw.strip() in ("}", "{")
     }
     return {
         "stmt": classifier.statements,
         "stmt_decl": classifier.decl_statements,
         "stmt_exe": classifier.exe_statements,
         "line_decl": len(classifier.decl_lines & code),
-        "line_exe": len((classifier.exe_lines & code) - closing),
+        "line_exe": len(
+            (classifier.exe_lines & code)
+            - closing
+            - _bare_closes(text, classifier.switch_closes)
+        ),
+    }
+
+
+def _bare_closes(text, lines):
+    """Of `lines`, those holding nothing but a closing `}` plus `;`/`)`."""
+    rows = text.split("\n")
+    return {
+        n for n in lines
+        if 0 < n <= len(rows) and rows[n - 1].strip().rstrip(";)").strip() == "}"
     }
 
 

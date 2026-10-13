@@ -171,7 +171,9 @@ def supertypes(longname: str) -> list:
     return entry["supers"] if entry else []
 
 
-def declaring_type(longname: str, member: str, fields: bool = False) -> str | None:
+def declaring_type(
+    longname: str, member: str, fields: bool = False, arity: int | None = None
+) -> str | None:
     """The type in `longname`'s hierarchy that declares `member`.
 
     Understand attributes a call to the class that declares the method, not to
@@ -193,10 +195,32 @@ def declaring_type(longname: str, member: str, fields: bool = False) -> str | No
         entry = types.get(current)
         if entry is None:
             continue
-        if member in entry["methods"] or (fields and member in entry["fields"]):
+        if member in entry["methods"] and _has_arity(current, member, arity):
+            return current
+        if fields and member in entry["fields"]:
             return current
         pending.extend(entry["supers"])
     return None
+
+
+def _has_arity(longname: str, member: str, arity: int | None) -> bool:
+    """Whether `longname` declares a `member` overload taking `arity` arguments.
+
+    The index keeps one entry per name, so `component.repaint()` on a
+    JComponent stopped there although JComponent declares only the
+    four-argument and Rectangle overloads; the no-argument one is
+    java.awt.Component's, and Understand couples that (25 of jhotdraw's
+    classes). Without signatures, or without an arity, any overload counts."""
+    if arity is None:
+        return True
+    found = _signatures().get(longname)
+    overloads = found[1].get(member) if found else None
+    if not overloads:
+        return True
+    return any(
+        len(params) == arity or (params and params[-1].endswith("[]") and arity >= len(params) - 1)
+        for params in overloads
+    )
 
 
 def inherited_members(longname: str) -> int:

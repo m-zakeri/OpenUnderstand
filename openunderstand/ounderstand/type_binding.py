@@ -391,6 +391,68 @@ class TypeBinder:
         argument = argument.split("<")[0].split("[")[0]
         return self._resolve(argument, scope) if argument else None
 
+    def _project_argument(self, receiver, owner, member, scope):
+        """`_bound_argument` for a project type: `values.at(i)` on an
+        `Indexed<? extends Accessor>` is an Accessor, and `size().of(c)` on
+        the `Carried<Size>` that size() is declared to return is a Size."""
+        from openunderstand.ounderstand import symbol_table
+
+        text, origin = self.written_type(receiver, scope)
+        written = symbol_table.substituted_return(owner, member, text)
+        if not written:
+            return None
+        base = written.split("<")[0].split("[")[0]
+        if origin:
+            # Written in another file: resolve it the way that file does.
+            imports, wildcards = symbol_table.INDEX.file_imports.get(
+                symbol_table.INDEX.type_files.get(origin), (None, None)
+            )
+            found = symbol_table.resolve_type_name(base, imports, wildcards, origin)
+            if found:
+                return found
+        return self._resolve(base, scope)
+
+    def written_type(self, ctx, scope):
+        """(A receiver's type as written, type arguments kept, the type whose
+        file wrote it -- None for this file) or (None, None): a variable's
+        declaration, or the declared return of the call giving it."""
+        from openunderstand.ounderstand import symbol_table
+
+        name = type(ctx).__name__
+        if name == "Expression0Context":
+            primary = ctx.primary()
+            if type(primary).__name__ == "Primary4Context":
+                return self.generic_text(primary.IDENTIFIER().getText(), ctx), None
+            return None, None
+        call = getattr(ctx, "methodCall", None)
+        call = call() if callable(call) else None
+        member = self._call_name(call) if call is not None else None
+        if not member:
+            return None, None
+        if name == "Expression1Context":
+            receiver = ctx.expression()
+            if isinstance(receiver, list):
+                receiver = receiver[0] if receiver else None
+            owner = self.type_of(receiver)
+        elif name == "Expression3Context":
+            owner = None
+            parts = (scope or "").split(".")
+            for end in range(len(parts), 0, -1):
+                candidate = ".".join(parts[:end])
+                if symbol_table.is_project_type(candidate):
+                    owner = symbol_table.declaring_type_anywhere(candidate, member)
+                    if owner:
+                        break
+        else:
+            return None, None
+        if not owner:
+            return None, None
+        declaring = symbol_table.INDEX.declaring_type(owner, member) or owner
+        return (
+            symbol_table.INDEX.generic_returns.get(f"{declaring}.{member}"),
+            declaring,
+        )
+
     def name_type(self, name, ctx):
         """Written type of a simple name visible at `ctx`, or None.
 
@@ -427,7 +489,9 @@ class TypeBinder:
         """Type of a field `name` some enclosing type inherits, or None."""
         from openunderstand.ounderstand import symbol_table
 
-        if not scope or not name[:1].islower():
+        # A field name starts lower-case or with `_` (jvlt's `_content_pane`);
+        # `"_".islower()` is False, which dropped every one of those.
+        if not scope or name[:1].isupper():
             return None
         parts = scope.split(".")
         for end in range(len(parts), 0, -1):
@@ -664,8 +728,17 @@ class TypeBinder:
             member = self._call_name(call)
             if not member:
                 return None
-            owner = symbol_table.INDEX.declaring_type(scope, member) or scope
-            return self.return_type(owner, member)
+            # Up the enclosing classes and into the JDK: `getRootPane().x()`
+            # in a JDialog subclass is javax.swing.JDialog's getRootPane.
+            owner = None
+            parts = (scope or "").split(".")
+            for end in range(len(parts), 0, -1):
+                candidate = ".".join(parts[:end])
+                if symbol_table.is_project_type(candidate):
+                    owner = symbol_table.declaring_type_anywhere(candidate, member)
+                    if owner:
+                        break
+            return self.return_type(owner or scope, member)
         if name == "Expression1Context":  # a.b, a.f(), a.this, a.new
             receiver = ctx.expression()
             if isinstance(receiver, list):
@@ -677,8 +750,10 @@ class TypeBinder:
                 member = self._call_name(call)
                 if not owner or not member:
                     return None
-                return self.return_type(owner, member) or self._bound_argument(
-                    receiver, owner, member, scope
+                return (
+                    self.return_type(owner, member)
+                    or self._bound_argument(receiver, owner, member, scope)
+                    or self._project_argument(receiver, owner, member, scope)
                 )
             identifier = ctx.IDENTIFIER()
             if identifier is not None and not isinstance(identifier, list):

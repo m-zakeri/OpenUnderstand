@@ -105,7 +105,45 @@ def count_decl_method_all(ent_model=None) -> int:
     if {"interface", "annotation"} & set(
         (_kind_name(entity._kind_id) or "").lower().split()
     ):
-        return len(methods)
+        # ...but it does inherit its super-interfaces' members, JDK ones
+        # included: jhotdraw's Tool is 22 in Understand, its own methods plus
+        # MouseListener's, KeyListener's and MouseMotionListener's. Object's
+        # 13 stay out, as above.
+        return len(methods) + _jdk_interface_members(entity._id)
+    return _class_total(entity, methods, inherited)
+
+
+def _jdk_interface_members(entity_id):
+    """Members of every JDK interface above a project interface, each once."""
+    from openunderstand.oudb import jdk_index
+
+    total, seen, pending = 0, set(), [entity_id]
+    jdk = []
+    while pending:
+        current = pending.pop()
+        if current in seen:
+            continue
+        seen.add(current)
+        row = EntityModel.get_or_none(_id=current)
+        longname = (row._longname or "") if row is not None else ""
+        if jdk_index.known(longname):
+            jdk.append(longname)
+            continue
+        pending.extend(_superclasses(current))
+    done = set()
+    while jdk:
+        longname = jdk.pop()
+        if longname in done or longname == "java.lang.Object":
+            continue
+        done.add(longname)
+        total += jdk_index.member_count(longname)
+        jdk.extend(
+            s for s in jdk_index.supertypes(longname) if jdk_index.is_interface(s)
+        )
+    return total
+
+
+def _class_total(entity, methods, inherited):
     accessors = _implicit_accessors(entity)
     if inherited:
         # java.lang.Object is the end of that chain, so it is already counted.

@@ -744,8 +744,11 @@ switchRule
     : switchRuleLabel '->' statement
     ;
 
+// caseConstants first: `case ServerResult.OK<T> ok ->` also reads as the
+// comparison chain `a < T > ok`, which is never valid Java, and ANTLR settles
+// an ambiguity on the first alternative.
 switchRuleLabel
-    : CASE (expression | caseConstants)
+    : CASE (caseConstants | expression)
     | DEFAULT
     ;
 

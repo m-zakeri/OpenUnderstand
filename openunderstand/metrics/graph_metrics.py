@@ -240,8 +240,8 @@ def max_inheritance_tree(ent_model):
     JSONException extends java.lang.RuntimeException and Understand still
     reports 1, and StringBuilderWriter extends java.io.Writer for the same 1 --
     which is what the bare `Java Extend Couple` kind means, the External and
-    Implicit variants being the JDK ones. An interface or annotation has no
-    inheritance tree at all and is 0.
+    Implicit variants being the JDK ones. An interface counts its `extends`
+    chain instead (see _interface_depth).
 
     This replaces a reparse that counted `extends` clauses in the entity's own
     file and then added one unconditionally, so every class was at least 2.
@@ -250,7 +250,7 @@ def max_inheritance_tree(ent_model):
     if entity is None:
         return 0
     if {"interface", "annotation"} & _visibility(entity):
-        return 0
+        return _interface_depth(entity._id, {entity._id})
     depth, seen, current = 1, {entity._id}, entity
     while True:
         parents = _targets(current._id, "Java Extend Couple")
@@ -260,6 +260,20 @@ def max_inheritance_tree(ent_model):
         current = parents[0]
         seen.add(current._id)
         depth += 1
+
+
+def _interface_depth(entity_id, seen):
+    """An interface's depth: the longest chain of `extends`, project or JDK,
+    with no +1 for Object. `WMLAElement extends WMLElement extends
+    org.w3c.dom.Element` is 2 -- 157 of 157 interfaces on xerces2j, 57 of 57 on
+    jhotdraw, where this returned 0 for every one."""
+    best = 0
+    for kind in ("Java Extend Couple", "Java Extend Couple External"):
+        for parent in _targets(entity_id, kind):
+            if parent._id in seen:
+                continue
+            best = max(best, 1 + _interface_depth(parent._id, seen | {parent._id}))
+    return best
 
 
 def count_decl_file(ent_model):
@@ -390,10 +404,21 @@ def count_class_coupled(ent_model, exclude_standard=False):
     return len(coupled)
 
 
+#: What Understand counts as the standard library for the Modified coupling
+#: metric -- the JDK's own roots, the same set the call writer treats as JDK.
+_STANDARD_ROOTS = (
+    "java.", "javax.", "org.w3c.", "org.xml.", "org.ietf.", "jdk.", "sun.", "com.sun.",
+)
+
+
 def _is_standard(entity):
-    """A type from the standard library rather than this project."""
-    longname = entity._longname or ""
-    return longname.startswith(("java.", "javax.")) or "." not in longname
+    """A type from the standard library rather than this project.
+
+    An unresolved bare name is *not* standard: Understand keeps it, and
+    counting it as standard (as this did) cost xerces2j 151 classes.
+    org.w3c/org.xml are standard, though they are not java.*/javax.*.
+    """
+    return (entity._longname or "").startswith(_STANDARD_ROOTS)
 
 
 def count_decl_class_method(ent_model):
@@ -413,6 +438,30 @@ def count_decl_class_variable(ent_model):
         "static" in _visibility(v) and "local" not in _visibility(v)
         for v in _declares(entity._id, "variable")
     )
+
+
+def _expression_arm_semicolons(source):
+    """`;`s that end an expression arm, `case A -> f();`, in either kind of
+    switch: Understand counts none of them (DefaultClient.toHttpRequest is 4
+    against the 8 a text count gives)."""
+    from openunderstand.gen.javaLabeled.JavaParserLabeled import JavaParserLabeled
+    from openunderstand.metrics import context as metric_context
+
+    try:
+        tree = metric_context.parse_entity(source)
+    except Exception:
+        return 0
+    stack, arms = [tree], 0
+    while stack:
+        node = stack.pop()
+        if isinstance(node, JavaParserLabeled.SwitchRuleContext) and isinstance(
+            node.statement(), JavaParserLabeled.Statement15Context
+        ):
+            arms += 1
+        stack.extend(
+            c for c in (getattr(node, "children", None) or ()) if hasattr(c, "getRuleIndex")
+        )
+    return arms
 
 
 def count_semicolon(ent_model):
@@ -441,6 +490,8 @@ def count_semicolon(ent_model):
         else:
             total += c == ";"
             i += 1
+    if "->" in source:
+        total -= _expression_arm_semicolons(source)
     return total
 
 
@@ -498,13 +549,27 @@ def _fan_targets(entity_id, ref_kinds, owner_longname):
                 ).lower().split() or _placeholder_member(target):
                     out.add(target._id)
                 continue
+            if (target._longname or "") == "?":
+                continue  # a wildcard type argument is no variable read
             if "Parameter" in (_kind_name(target._kind_id) or ""):
                 out.add(target._id)
-            elif not (
-                owner_longname and (target._longname or "").startswith(tuple(prefixes))
-            ):
+            elif not (owner_longname and _is_local(target._longname, prefixes)):
                 out.add(target._id)
     return out
+
+
+def _is_local(longname, prefixes):
+    """A local of the asker or of a method enclosing it -- but a field of an
+    anonymous class declared there is a field: `KSubset.iterator.(Anon_4).
+    finished` sits under `KSubset.iterator.` and is read by the anonymous
+    class's own methods as state, which made 14 of jenetics' CountInput low."""
+    longname = longname or ""
+    for prefix in prefixes:
+        if longname.startswith(prefix):
+            rest = longname[len(prefix):]
+            if not (rest.startswith("(Anon_") and rest.count(".") == 1):
+                return True
+    return False
 
 
 def _field_targets(entity_id, ref_kinds, owner_longname):
@@ -522,7 +587,7 @@ def _field_targets(entity_id, ref_kinds, owner_longname):
                 continue
             if "Parameter" in (_kind_name(target._kind_id) or ""):
                 continue
-            if owner_longname and (target._longname or "").startswith(tuple(prefixes)):
+            if owner_longname and _is_local(target._longname, prefixes):
                 continue  # a local
             out.add(target._id)
     return out
@@ -555,6 +620,17 @@ def count_output(ent_model):
     fan |= _field_targets(
         entity._id, _kinds_like("Java Set", "Java Modify"), entity._longname
     )
+    # An *array* parameter written by element is an output: `arr[i] = x` in
+    # SelectionSort.swap. An object's `node.left = x` is not -- the field is
+    # what gets counted. Read off Understand's own refs: 903 methods match
+    # with it on TheAlgorithms against 882 without, none lost.
+    for kind_name_ in ("Java Set Deref Partial", "Java Modify Deref Partial"):
+        for target in _targets(entity._id, kind_name_):
+            if (
+                "Parameter" in (_kind_name(target._kind_id) or "")
+                and (target._type or "").endswith("]")
+            ):
+                fan.add(target._id)
     kind = _kind_name(entity._kind_id) or ""
     declared = (entity._type or "").strip()
     # A lambda earns the same 1 a non-void return does, and declares no type to
@@ -660,16 +736,22 @@ def container_members(ent_model):
     entity = _entity(ent_model)
     if entity is None or kind_family(entity._kind_id) != "package":
         return None
-    contain = KindModel.get_or_none(_name="Java Contain")
-    if contain is None:
-        return []
-    file_ids = {
-        ref._file_id
-        for ref in ReferenceModel.select().where(
-            (ReferenceModel._kind == contain._id)
-            & (ReferenceModel._scope == entity._id)
-        )
-    }
+    file_ids = set()
+    # A Contain row comes from a file declaring a type in the package; the
+    # package's own Definein rows also reach a file that declares none --
+    # `package-info.java`, 13 lines short on org.jhotdraw.action and 180 on
+    # jenetics' statemachine package.
+    for name in ("Java Contain", "Java Definein"):
+        kind = KindModel.get_or_none(_name=name)
+        if kind is None:
+            continue
+        file_ids |= {
+            ref._file_id
+            for ref in ReferenceModel.select().where(
+                (ReferenceModel._kind == kind._id)
+                & (ReferenceModel._scope == entity._id)
+            )
+        }
     return [f for f in (EntityModel.get_or_none(_id=i) for i in file_ids) if f]
 
 
@@ -722,12 +804,16 @@ def container_methods(ent_model):
     files = container_members(ent_model)
     if not files:
         return []
-    define = KindModel.get_or_none(_name="Java Define")
-    if define is None:
+    kinds = [
+        k._id for k in (
+            KindModel.get_or_none(_name=n) for n in ("Java Define", "Java Define Implicit")
+        ) if k is not None
+    ]
+    if not kinds:
         return []
     file_ids = {f._id for f in files}
     methods = {}
-    for ref in ReferenceModel.select().where(ReferenceModel._kind == define._id):
+    for ref in ReferenceModel.select().where(ReferenceModel._kind.in_(kinds)):
         if ref._file_id not in file_ids:
             continue
         target = EntityModel.get_or_none(_id=ref._ent_id)
@@ -753,12 +839,18 @@ def nested_methods(ent_model):
     if family == "package":
         return container_methods(ent_model)
     if family == "file":
-        define = KindModel.get_or_none(_name="Java Define")
-        if define is None:
+        # Implicit ones too: a record's canonical constructor and an enum's
+        # values()/valueOf() are averaged in as 0 lines, as for a class.
+        kinds = [
+            k._id for k in (
+                KindModel.get_or_none(_name=n) for n in ("Java Define", "Java Define Implicit")
+            ) if k is not None
+        ]
+        if not kinds:
             return []
         methods = {}
         for ref in ReferenceModel.select().where(
-            (ReferenceModel._kind == define._id) & (ReferenceModel._file == entity._id)
+            (ReferenceModel._kind.in_(kinds)) & (ReferenceModel._file == entity._id)
         ):
             target = EntityModel.get_or_none(_id=ref._ent_id)
             if target is not None and kind_family(target._kind_id) == "method":
@@ -770,26 +862,24 @@ def nested_methods(ent_model):
 
 
 def nested_lambdas(entity_id):
-    """Lambdas defined inside an entity, through nested lambdas too.
+    """Lambdas defined directly inside an entity.
 
     Understand's Sum* for a method is the method plus its lambdas --
     `Impl.name` holding two is SumCyclomatic 3 -- and a class's is the same
     over every method it declares.
     """
-    out, pending, seen = [], [entity_id], set()
-    while pending:
-        current = pending.pop()
-        if current in seen:
-            continue
-        seen.add(current)
-        for target in _targets(current, "Java Define", "method"):
-            if "lambda" in _kind_name(target._kind_id).lower().split() or (
-                (target._longname or "").endswith(")")
-                and "(lambda_expr_" in (target._longname or "")
-            ):
-                out.append(target)
-                pending.append(target._id)
-    return out
+    # Direct children only: a lambda nested in a lambda is already in its
+    # parent's own count. Recursing put Model.Model at 4 against 2 and
+    # Fsm.Fsm at 16 against 13.
+    return [
+        target
+        for target in _targets(entity_id, "Java Define", "method")
+        if "lambda" in _kind_name(target._kind_id).lower().split()
+        or (
+            (target._longname or "").endswith(")")
+            and "(lambda_expr_" in (target._longname or "")
+        )
+    ]
 
 
 def aggregates_over_methods(name):
@@ -847,10 +937,14 @@ def percent_lack_of_cohesion(ent_model, modified=False):
     if "enum" in _visibility(entity):
         return None
     methods = _declares(entity._id, "method")
+    # Constants are not state, so `static final` is left out -- but a mutable
+    # static field is, as Understand counts it: SalaryCalculator's `employee`
+    # has only those, and dropping every static answered 0 against its 83.
     fields = [
         v
         for v in _declares(entity._id, "variable")
-        if not {"local", "parameter", "static"} & _visibility(v)
+        if not {"local", "parameter"} & _visibility(v)
+        and not {"static", "final"} <= _visibility(v)
     ]
     if not methods or not fields:
         # Undefined for a class with no methods or no fields; Understand

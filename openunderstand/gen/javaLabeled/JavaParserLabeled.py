@@ -699,7 +699,7 @@ def serializedATN():
         1717,1,0,0,0,1720,1721,5,64,0,0,1721,1723,1,0,0,0,1722,1695,1,0,
         0,0,1722,1705,1,0,0,0,1723,233,1,0,0,0,1724,1725,3,236,118,0,1725,
         1726,5,104,0,0,1726,1727,3,136,68,0,1727,235,1,0,0,0,1728,1731,5,
-        6,0,0,1729,1732,3,166,83,0,1730,1732,3,228,114,0,1731,1729,1,0,0,
+        6,0,0,1729,1732,3,228,114,0,1730,1732,3,166,83,0,1731,1729,1,0,0,
         0,1731,1730,1,0,0,0,1732,1735,1,0,0,0,1733,1735,5,12,0,0,1734,1728,
         1,0,0,0,1734,1733,1,0,0,0,1735,237,1,0,0,0,1736,1754,3,132,66,0,
         1737,1738,3,198,99,0,1738,1747,5,61,0,0,1739,1744,3,238,119,0,1740,
@@ -13511,12 +13511,12 @@ class JavaParserLabeled ( Parser ):
         def CASE(self):
             return self.getToken(JavaParserLabeled.CASE, 0)
 
-        def expression(self):
-            return self.getTypedRuleContext(JavaParserLabeled.ExpressionContext,0)
-
-
         def caseConstants(self):
             return self.getTypedRuleContext(JavaParserLabeled.CaseConstantsContext,0)
+
+
+        def expression(self):
+            return self.getTypedRuleContext(JavaParserLabeled.ExpressionContext,0)
 
 
         def DEFAULT(self):
@@ -13553,12 +13553,12 @@ class JavaParserLabeled ( Parser ):
                 la_ = self._interp.adaptivePredict(self._input,216,self._ctx)
                 if la_ == 1:
                     self.state = 1729
-                    self.expression(0)
+                    self.caseConstants()
                     pass
 
                 elif la_ == 2:
                     self.state = 1730
-                    self.caseConstants()
+                    self.expression(0)
                     pass
 
 

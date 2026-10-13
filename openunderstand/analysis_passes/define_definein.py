@@ -19,6 +19,19 @@ _MODIFIER_ACCESSORS = (
 )
 
 
+def _parameter_type(ctx, varargs=False):
+    """A parameter's declared type as written, with its array brackets --
+    `int[] arr`, `int arr[]` and `T... values` all end in `[]`. CountOutput
+    needs to tell an array written by element from an object."""
+    type_ctx = ctx.typeType()
+    if type_ctx is None:
+        return None
+    text = type_ctx.getText()
+    identifier = ctx.variableDeclaratorId()
+    dims = identifier.getText().count("[") if identifier is not None else 0
+    return text + "[]" * dims + ("[]" if varargs else "")
+
+
 def _modifiers_at(ctx):
     """Modifier keywords attached directly to `ctx`, lowercased.
 
@@ -145,13 +158,27 @@ def _body_span(ctx):
 
 
 def source_text(ctx):
-    """The declaration's original source, whitespace and all.
+    """The declaration's original source, as Understand counts its lines.
 
     `ctx.getText()` concatenates token text, so a method comes back as
     `publicvoidmain(String[]args){...}` -- which is not Java and cannot be
     reparsed. Every metric that works by reparsing `ent.contents()`
     (Cyclomatic, CountStmt, CountLineCode, MaxNesting, ...) was therefore
     returning 0. The input stream still holds the real characters.
+
+    What surrounds the declaration is decided here, each rule read off
+    Understand's line counts (xerces2j, jhotdraw, ganttproject, jenetics):
+
+    * every `/** */` block stacked above it counts, a `//` line between them
+      does not, and neither does a blank line between the last block and the
+      declaration (_doc_blocks);
+    * an interface whose first member is a body-less method keeps no Javadoc
+      -- 118 of 118 such interfaces on xerces2j -- while one whose first member
+      is a field, or that is empty, keeps it;
+    * a file-header `/** */` above `package` counts toward the file's first
+      type (49 of 49 jhotdraw classes);
+    * whatever trails the last token on its line -- `} // class NodeImpl`, a
+      stray space -- belongs to that line (_line_end).
     """
     start, stop = _declaration_start(ctx), ctx.stop
     if start is None or stop is None:
@@ -160,11 +187,20 @@ def source_text(ctx):
     if stream is None:
         return ctx.getText()
     try:
-        return stream.getText(
-            _doc_comment_start(stream, start.start), _line_end(stream, stop.stop)
-        )
+        text = stream.strdata
+    except AttributeError:
+        text = None
+    try:
+        body = stream.getText(start.start, _line_end(stream, stop.stop))
     except Exception:
         return ctx.getText()
+    if text is None or _javadoc_dropped(ctx):
+        return body
+    blocks = [text[a:b] for a, b in _doc_blocks(text, start.start)]
+    header = _file_header(text, ctx)
+    if header:
+        blocks.insert(0, header)
+    return "".join(block + "\n" for block in blocks) + body
 
 
 def _line_end(stream, stop):
@@ -175,12 +211,28 @@ def _line_end(stream, stop):
     than its brace-to-brace span. Carrying the terminator in the entity's own
     text makes that fall out of a plain count instead of needing a special
     case -- every entity in calculator_app matches once it does.
+
+    Spaces, tabs and a trailing comment after the last token are part of that
+    line: `} // cloneNode(boolean):Node` was dropped whole, one line short on
+    about 1,950 of xerces2j's entities. Real code after it (`});`) is not --
+    Understand leaves that line out too.
     """
     try:
         text = stream.strdata
     except AttributeError:
         return stop
     i = stop + 1
+    while i < len(text) and text[i] in " \t":
+        i += 1
+    if text.startswith("//", i):
+        while i < len(text) and text[i] not in "\r\n":
+            i += 1
+    elif text.startswith("/*", i):
+        close = text.find("*/", i + 2)
+        if close != -1 and "\n" not in text[i:close]:
+            i = close + 2
+            while i < len(text) and text[i] in " \t":
+                i += 1
     while i < len(text) and text[i] == "\r":
         i += 1
     if i < len(text) and text[i] == "\n":
@@ -188,34 +240,85 @@ def _line_end(stream, stop):
     return stop
 
 
-def _doc_comment_start(stream, begin):
-    """Extend a declaration's start back over its Javadoc block.
+def _comment_opening(text, close):
+    """Where the block comment ending at `close` (the `*` of `*/`) opens.
 
-    Understand counts a `/** ... */` block above a declaration as part of it,
-    and a `//` comment above it as not. Both halves are measured: `Main.main`
-    is preceded by a `//` line and Understand reports CountLine 13 -- its
-    declaration through its closing brace -- while org.json's members are
-    preceded by Javadoc and Understand's line counts include it.
-
-    Only whitespace may separate the block from the declaration, so one
-    documenting something else is not swallowed.
-    """
-    try:
-        text = stream.strdata
-    except AttributeError:
-        return begin
-
-    i = begin - 1
-    while i >= 0 and text[i] in " \t\r\n":
-        i -= 1
-    if i < 1 or text[i - 1 : i + 1] != "*/":
-        return begin
-
-    opening = text.rfind("/*", 0, i)
-    # `/*` alone is an ordinary block comment; only `/**` is documentation.
-    if opening == -1 or not text.startswith("/**", opening):
-        return begin
+    The first `/*` after the previous comment's end, not the last `/*` before
+    `*/`: a Javadoc mentioning `<code>/*</code>` was cut at that mention, and
+    StreamPosTokenizer.slashStarComments counted 3 lines where Understand has
+    15."""
+    previous = text.rfind("*/", 0, close)
+    opening = text.find("/*", previous + 2 if previous != -1 else 0, close)
     return opening
+
+
+def _doc_blocks(text, begin):
+    """(start, end) of each `/** */` block stacked above `begin`, top first."""
+    blocks = []
+    i = begin - 1
+    while True:
+        while i >= 0 and text[i] in " \t\r\n":
+            i -= 1
+        if i >= 1 and text[i - 1 : i + 1] == "*/":
+            opening = _comment_opening(text, i - 1)
+            if opening == -1:
+                break
+            if not text.startswith("/**", opening):
+                break  # `/*` alone is an ordinary block comment
+            blocks.append((opening, i + 1))
+            i = opening - 1
+            continue
+        line_start = text.rfind("\n", 0, i + 1) + 1
+        if text[line_start : i + 1].lstrip().startswith("//") and blocks:
+            i = line_start - 1  # a `//` line between two blocks: skipped
+            continue
+        break
+    return list(reversed(blocks))
+
+
+def _javadoc_dropped(ctx):
+    """An interface whose first member is a body-less method: Understand
+    counts none of its Javadoc."""
+    if not isinstance(ctx, JavaParserLabeled.InterfaceDeclarationContext):
+        return False
+    body = ctx.interfaceBody()
+    members = body.interfaceBodyDeclaration() if body is not None else []
+    for member in members:
+        declaration = member.interfaceMemberDeclaration()
+        if declaration is None:
+            continue
+        inner = declaration.getChild(0)
+        method = getattr(inner, "interfaceMethodDeclaration", None)
+        method = method() if callable(method) else inner
+        if isinstance(method, JavaParserLabeled.InterfaceMethodDeclarationContext):
+            return method.methodBody().block() is None
+        return False
+    return False
+
+
+def _file_header(text, ctx):
+    """A `/** */` header above `package`, for the file's first top-level type."""
+    if not isinstance(ctx.parentCtx, JavaParserLabeled.TypeDeclarationContext):
+        return None
+    unit = ctx.parentCtx.parentCtx
+    first = next(iter(unit.typeDeclaration() or []), None)
+    if first is not ctx.parentCtx:
+        return None
+    stripped = text.lstrip()
+    if not stripped.startswith("/**"):
+        return None
+    opening = len(text) - len(stripped)
+    close = text.find("*/", opening)
+    if close == -1:
+        return None
+    package = unit.packageDeclaration()
+    if package is not None and package.start is not None and close > package.start.start:
+        return None
+    if _doc_blocks(text, ctx.start.start) and (opening, close + 2) == _doc_blocks(
+        text, ctx.start.start
+    )[0]:
+        return None  # the header *is* the type's own Javadoc
+    return text[opening : close + 2]
 
 
 def _is_generic(ctx):
@@ -670,7 +773,8 @@ class DefineListener(JavaParserLabeledListener):
         ent = ctx.variableDeclaratorId().IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
         self.add_define_info(
-            ent, ent_parents, decl=K.PARAMETER, modifiers=_modifiers_at(ctx)
+            ent, ent_parents, decl=K.PARAMETER, modifiers=_modifiers_at(ctx),
+            type=_parameter_type(ctx),
         )
 
     @staticmethod
@@ -783,5 +887,6 @@ class DefineListener(JavaParserLabeledListener):
         ent = ctx.variableDeclaratorId().IDENTIFIER()
         ent_parents = class_properties.ClassPropertiesListener.findParents(ctx)
         self.add_define_info(
-            ent, ent_parents, decl=K.PARAMETER, modifiers=_modifiers_at(ctx)
+            ent, ent_parents, decl=K.PARAMETER, modifiers=_modifiers_at(ctx),
+            type=_parameter_type(ctx, varargs=True),
         )

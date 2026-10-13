@@ -2,6 +2,8 @@ from openunderstand.ounderstand.project import Project
 from openunderstand.ounderstand.listeners_and_parsers import ListenersAndParsers
 from openunderstand.oudb.models import ReferenceModel, flush_reference_writes
 import os
+
+from openunderstand.ounderstand import project as project_module
 from fnmatch import fnmatch
 
 
@@ -140,6 +142,7 @@ def write_file(file_address, payload):
         },
     )
     file_ent = p.getFileEntity(path=file_address, name=os.path.basename(file_address))
+    project_module.CURRENT_FILE["ent"] = file_ent
     # Before any pass writes, as the sequential path does. An entity's parent
     # is set by whoever creates it first, so the package entities have to exist
     # in the same order or 199 of JSON's methods hang off the wrong one.
@@ -153,7 +156,20 @@ def write_file(file_address, payload):
     lap.modify_listener(
         entity_generator=None, parse_tree=None, file_address=file_address, p=p
     )
+    _settle_package_parents(lap, file_address, None)
     flush_reference_writes()
+
+
+def _settle_package_parents(lap, file_address, parse_tree):
+    """Re-assert each package's parent after every pass has written.
+
+    The entity generator owns that rule -- a package belongs to the package
+    above it -- and applies it whenever it is built. A pass writing after it
+    can re-parent `p.q` to the file it was reading, and the retired
+    `variable_listener`, which happened to build a generator late in the
+    order, was what used to put it back. Done here on purpose instead.
+    """
+    lap.entity_gen(file_address=file_address, parse_tree=parse_tree)
 
 
 def _collect_then_write(file_address):
@@ -166,6 +182,7 @@ def _process_file(file_address):
     tree, parse_tree, file_ent = lap.parser(file_address=file_address, p=p)
     if tree is None and parse_tree is None and file_ent is None:
         return
+    project_module.CURRENT_FILE["ent"] = file_ent
     entity_generator = lap.entity_gen(file_address=file_address, parse_tree=parse_tree)
     listeners = _passes(lap)
     # Two phases, not one. Each pass used to build a listener, walk the tree
@@ -196,6 +213,7 @@ def _process_file(file_address):
         file_address=file_address,
         p=p,
     )
+    _settle_package_parents(lap, file_address, parse_tree)
     lap.phase = ListenersAndParsers.BOTH
     # One batched insert per file rather than one statement per reference.
     flush_reference_writes()

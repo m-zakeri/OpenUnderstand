@@ -201,6 +201,10 @@ def synthetic_scope(longname):
     return (longname or "").rsplit(".", 1)[-1].startswith("(")
 
 
+#: The file being written, set by parsing_process for each file's writes.
+CURRENT_FILE = {"ent": None}
+
+
 def _declared_in_file(row, file_ent, depth=8):
     """Whether `row`'s parent chain reaches `file_ent`."""
     current = row
@@ -239,6 +243,13 @@ def scope_of(longname, line=None):
     rows = entity_rows(longname)
     if not rows:
         return None
+    if len(rows) > 1 and CURRENT_FILE["ent"] is not None:
+        # A type copied into several files under one long name: a reference
+        # in this file is to this file's copy. Without it every caller in
+        # testing_legacy_code's second and third copies landed on the first.
+        local = [r for r in rows if _declared_in_file(r, CURRENT_FILE["ent"])]
+        if local:
+            rows = local
     named = [r for r in rows if kind_family(r._kind_id) != "variable"] or rows
     if len(named) == 1 or line is None:
         return named[0]
@@ -1042,7 +1053,11 @@ class Project:
                     # The class that declares the method, inside the project or
                     # in the JDK: Understand reports `sb.append(x)` against
                     # java.lang.AbstractStringBuilder, not StringBuilder.
-                    owner = symbol_table.declaring_type_anywhere(owner, name) or owner
+                    arguments = ref_dict.get("arguments")
+                    owner = symbol_table.declaring_type_anywhere(
+                        owner, name,
+                        arity=len(arguments) if arguments is not None else None,
+                    ) or owner
                     ent = callee_of(
                         f"{owner}.{name}", name, ref_dict.get("arguments"), file_ent
                     )
@@ -1501,7 +1516,15 @@ class Project:
 
     def add_contain_in(self, ref_dicts, file_ent, file_address):
         for ref_dict in ref_dicts:
-            scope = EntityModel.get_or_create(
+            # The copy of the type declared in *this* file: testing_legacy_code
+            # holds each EvoSuite class in three files under one long name,
+            # and all three Contain rows pointed at the first copy.
+            in_file = [
+                row for row in entity_rows(ref_dict["longname"])
+                if kind_family(row._kind_id) == "type"
+                and _declared_in_file(row, file_ent)
+            ]
+            scope = in_file[0] if in_file else EntityModel.get_or_create(
                 _kind=self.findKindWithKeywords(
                     ref_dict["kind"], ref_dict["modifiers"]
                 ),
@@ -1515,9 +1538,7 @@ class Project:
             # "Package" and made it the container of every class in the
             # project, so not one of the 22 Contain references on JSON matched
             # Understand, which names the package: org.json.
-            ent = self.getImplementEntity(
-                ref_dict["package_longname"], file_address, file_ent
-            )
+            ent = self._package_row(ref_dict)
             contain = ReferenceModel.get_or_create(
                 _kind=kind_id("Java Contain"),
                 _file=file_ent,
@@ -1535,6 +1556,26 @@ class Project:
                 _scope=scope,
                 _ent=ent,
             )
+
+    @staticmethod
+    def _package_row(ref_dict):
+        """The package itself, by its own kind. It was resolved through
+        getImplementEntity, which matches by *simple* name, so a class named
+        like its package -- `A_Star` in package `A_Star` -- took the Contain
+        rows and the real package declared no classes (5 of TheAlgorithms')."""
+        longname = ref_dict["package_longname"]
+        unnamed = ref_dict.get("unnamed_package")
+        family = "package"
+        for row in entity_rows(longname):
+            if kind_family(row._kind_id) == family:
+                return row
+        return EntityModel.get_or_create(
+            _kind=kind_id("Java Package Unnamed" if unnamed else "Java Package"),
+            _name=longname.rsplit(".", 1)[-1],
+            _longname=longname,
+            _parent=None,
+            _contents="",
+        )[0]
 
     def get_parent(self, parent_file_path) -> EntityModel:
         return EntityModel.get_or_none(_longname=parent_file_path)
