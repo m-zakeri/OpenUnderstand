@@ -314,7 +314,8 @@ def _flatten(parse_tree):
         children = node.children or ()
         for i in range(len(children) - 1, -1, -1):
             child = children[i]
-            if child.__class__ is not _TerminalNodeImpl:
+            # isinstance, not `is`: ErrorNodeImpl is a terminal with no children.
+            if not isinstance(child, _TerminalNodeImpl):
                 stack.append((child, True))
     _FLAT_TREE, _FLAT_EVENTS = parse_tree, events
     return events

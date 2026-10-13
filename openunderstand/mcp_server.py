@@ -66,6 +66,13 @@ def analyze(source_dir: str, database: str = "") -> str:
     out_dir = os.path.abspath(os.path.expanduser(database or source_dir))
     os.makedirs(out_dir, exist_ok=True)
     name = os.path.basename(source_dir.rstrip("/")) + ".udb"
+    # create_db reuses an existing file and inserts every reference again, so
+    # re-analysing grew the database (618, 651, 667 rows on calculator_app).
+    for suffix in ("", "-wal", "-shm"):
+        try:
+            os.remove(os.path.join(out_dir, name + suffix))
+        except FileNotFoundError:
+            pass
 
     def run():
         create_db(dbname=name, project_dir=source_dir, db_path=out_dir)

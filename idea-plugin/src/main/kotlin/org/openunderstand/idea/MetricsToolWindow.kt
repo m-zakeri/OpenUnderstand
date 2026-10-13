@@ -5,6 +5,8 @@ import com.intellij.execution.process.ProcessOutput
 import com.intellij.execution.util.ExecUtil
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PathManager
+import com.intellij.openapi.fileChooser.FileChooser
+import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.fileChooser.FileChooserFactory
 import com.intellij.openapi.fileChooser.FileSaverDescriptor
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
@@ -180,8 +182,9 @@ private fun parse(output: String): List<Row> = output.lineSequence().mapNotNull 
  * an Int, so Line navigates and numeric columns sort as numbers.
  */
 private fun parseTsv(output: String): Pair<List<String>, List<Array<Any?>>>? {
-    val lines = output.lineSequence().filter { it.isNotBlank() }.toList()
-    val header = lines.firstOrNull()?.split("\t")?.takeIf { it.firstOrNull() == "Entity" } ?: return null
+    // Skip anything printed ahead of the header row (a stray library print).
+    val lines = output.lineSequence().filter { it.isNotBlank() }.dropWhile { !it.startsWith("Entity\t") }.toList()
+    val header = lines.firstOrNull()?.split("\t") ?: return null
     val rows = lines.drop(1).map { line ->
         line.split("\t").map<String, Any?> { it.toIntOrNull() ?: it }.toTypedArray()
     }
@@ -235,10 +238,12 @@ class MetricsToolWindow : ToolWindowFactory {
             autoCreateRowSorter = true
             autoResizeMode = JBTable.AUTO_RESIZE_OFF
         }
+        var view = "metrics"  // names the file Export CSV proposes
         val run = JButton("Analyse Project")
         val symbols = JButton("Symbol Table")
         val references = JButton("References")
         val export = JButton("Export CSV...")
+        val exportAll = JButton("Export All...")
 
         table.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
@@ -255,15 +260,15 @@ class MetricsToolWindow : ToolWindowFactory {
                 Messages.showInfoMessage(project, "Nothing to export yet.", "OpenUnderstand")
                 return@addActionListener
             }
-            val descriptor = FileSaverDescriptor("Export Metrics", "Save the table as CSV", "csv")
+            val descriptor = FileSaverDescriptor("Export CSV", "Save the table shown as CSV", "csv")
             FileChooserFactory.getInstance().createSaveFileDialog(descriptor, project)
                 // Path overload, not the deprecated VirtualFile one -- untilBuild
                 // is open, so a deprecated call is a future verifier failure.
-                .save(null as java.nio.file.Path?, "metrics.csv")
+                .save(null as java.nio.file.Path?, "$view.csv")
                 ?.file?.writeText(csv(model))
         }
 
-        val buttons = listOf(run, symbols, references)
+        val buttons = listOf(run, symbols, references, exportAll)
         /** Run the script with `args` and hand its stdout to `show`, or report why not. */
         fun launch(title: String, args: List<String>, show: (String) -> String?) {
             val root = project.basePath
@@ -272,27 +277,45 @@ class MetricsToolWindow : ToolWindowFactory {
                 return
             }
             buttons.forEach { it.isEnabled = false }
-            script(project, title, listOf(root) + args) { out, failure ->
+            // The script wants `--flag <dir> [more]`, or `<dir> [metrics]` with no flag.
+            val argv = if (args.firstOrNull()?.startsWith("--") == true)
+                listOf(args[0], root) + args.drop(1) else listOf(root) + args
+            script(project, title, argv) { out, failure ->
                 buttons.forEach { it.isEnabled = true }
                 val error = failure ?: show(out!!)
                 if (error != null) Messages.showErrorDialog(project, error, "OpenUnderstand")
             }
         }
 
+        // metrics.csv, symbols.csv and references.csv for the whole project; the
+        // script does the work so the files match what the other buttons show.
+        exportAll.addActionListener {
+            val root = project.basePath ?: return@addActionListener
+            val dir = FileChooser.chooseFile(FileChooserDescriptorFactory.createSingleFolderDescriptor(), project, null)
+                ?: return@addActionListener
+            buttons.forEach { it.isEnabled = false }
+            script(project, "Exporting CSV files", listOf("--export-all", root, dir.path)) { out, failure ->
+                buttons.forEach { it.isEnabled = true }
+                if (failure != null) Messages.showErrorDialog(project, failure, "OpenUnderstand")
+                else Messages.showInfoMessage(project, "Wrote metrics.csv, symbols.csv and references.csv to ${out?.trim()}", "OpenUnderstand")
+            }
+        }
+
         run.addActionListener {
             launch("Analysing Java sources", emptyList()) { out ->
                 val rows = parse(out)
-                if (rows.isEmpty()) "No metrics produced." else { show(model, rows); null }
+                if (rows.isEmpty()) "No metrics produced." else { show(model, rows); view = "metrics"; null }
             }
         }
         // The symbol table and the references share one table, so selecting a
         // reference's entity and asking again walks the graph one hop at a time.
-        val showTable = { out: String ->
-            parseTsv(out)?.let { (columns, rows) -> fill(model, columns, rows); null }
-                ?: "Unexpected output from the analyser."
+        val showTable = { out: String, name: String ->
+            val table = parseTsv(out)
+            if (table == null) "Unexpected output from the analyser:\n\n" + out.take(1000)
+            else { fill(model, table.first, table.second); view = name; null }
         }
         symbols.addActionListener {
-            launch("Building the symbol table", listOf("--symbols")) { showTable(it) }
+            launch("Building the symbol table", listOf("--symbols")) { showTable(it, "symbols") }
         }
         references.addActionListener {
             val selected = table.selectedRow
@@ -301,11 +324,11 @@ class MetricsToolWindow : ToolWindowFactory {
                 return@addActionListener
             }
             val entity = model.getValueAt(table.convertRowIndexToModel(selected), 0) as String
-            launch("Finding references to $entity", listOf("--references", entity)) { showTable(it) }
+            launch("Finding references to $entity", listOf("--references", entity)) { showTable(it, "references") }
         }
 
         val panel = JPanel(BorderLayout()).apply {
-            add(JPanel().apply { add(run); add(symbols); add(references); add(export) }, BorderLayout.NORTH)
+            add(JPanel().apply { add(run); add(symbols); add(references); add(export); add(exportAll) }, BorderLayout.NORTH)
             add(JBScrollPane(table), BorderLayout.CENTER)
         }
         toolWindow.contentManager.addContent(
