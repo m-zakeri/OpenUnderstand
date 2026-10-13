@@ -35,6 +35,12 @@ _TYPE_DECLARATIONS = (
 )
 
 
+def _arity(call):
+    """How many arguments a methodCall0 passes."""
+    listed = call.expressionList()
+    return len(listed.expression()) if listed is not None else 0
+
+
 def _annotates_type(annotation):
     """Whether `annotation` sits in the modifiers of a type declaration."""
     node = annotation.parentCtx
@@ -668,8 +674,9 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
 
         member = identifier.getText()
         arguments = ctx.expressionList()
-        arity = len(arguments.expression()) if arguments is not None else 0
-        declarer = symbol_table.declaring_type_anywhere(owner, member, arity=arity)
+        declarer = symbol_table.declaring_type_anywhere(
+            owner, member, arity=_arity(ctx)
+        )
         if declarer and arguments is not None:
             from openunderstand.ounderstand import type_binding
 
@@ -877,10 +884,7 @@ class CoupleAndCoupleBy(JavaParserLabeledListener):
             if symbol_table.INDEX.declares(owner, name):
                 self.add(owner)
                 return
-            arity = None
-            if isinstance(ctx, JavaParserLabeled.MethodCall0Context):
-                listed = ctx.expressionList()
-                arity = len(listed.expression()) if listed is not None else 0
+            arity = _arity(ctx) if call else None
             declarer = symbol_table.declaring_type_anywhere(
                 owner, name, fields=arity is None, arity=arity
             )

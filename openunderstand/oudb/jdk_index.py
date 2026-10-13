@@ -380,7 +380,8 @@ def returned_type_parameter(longname: str, member: str):
 
 
 
-_UNBOXED = {
+#: Box -> its primitive. symbol_table derives the other direction from it.
+UNBOXED = {
     "java.lang.Boolean": "boolean", "java.lang.Byte": "byte",
     "java.lang.Character": "char", "java.lang.Short": "short",
     "java.lang.Integer": "int", "java.lang.Long": "long",
@@ -406,7 +407,7 @@ def needs_unboxing(longname: str, member: str, arguments) -> bool:
 
     def blocked(params):
         return any(
-            arg in _UNBOXED and param == _UNBOXED[arg]
+            arg in UNBOXED and param == UNBOXED[arg]
             for arg, param in zip(arguments, params)
         )
 

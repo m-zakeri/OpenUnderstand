@@ -916,35 +916,10 @@ def _lambda_statement_counts(source: str) -> dict:
     of its own: Understand puts a 16-line block lambda at CountStmt 7 -- its two
     locals, three calls, a return and the nested lambda's two statements -- and
     an expression lambda at 0 statements and 1 executable line.
-
-    Its text is no compilation unit or member, so it is parsed with the
-    grammar's own lambdaExpression rule rather than parse_entity()'s wrappers.
     """
-    from openunderstand.utils import antler_parser
-    from antlr4 import InputStream
-    from antlr4.error.ErrorListener import ErrorListener
-
-    class _Failed(ErrorListener):
-        failed = False
-
-        def syntaxError(self, *_args):
-            self.failed = True
-
-    detector = _Failed()
-    try:
-        tree = antler_parser.parse(
-            InputStream(source), "lambdaExpression", prefer_cpp=False,
-            err_listener=detector,
-        )
-    except Exception:
-        tree = None
-    if tree is None or detector.failed:
+    classifier = _lambda_classifier(source)
+    if classifier is None:
         return _statement_counts(source)
-    classifier = _StatementClassifier()
-    classifier.visit(tree)
-    body = tree.lambdaBody()
-    if isinstance(body, JavaParserLabeled.LambdaBody0Context) and body.start is not None:
-        classifier.exe_lines.update(range(body.start.line, body.stop.line + 1))
     code = {number for number, has_code, _ in _scan_lines(source) if has_code}
     closing = {
         number
@@ -986,22 +961,47 @@ def _first_line_in_parent(ent_model, source):
     return line in starts, line in exe
 
 
-def _lambda_first_line(source):
-    """Whether the lambda's own classification already counts its line 1."""
+@lru_cache(maxsize=256)
+def _lambda_classifier(source):
+    """A lambda's lines classified as its body would be inside a method, or
+    None when the text does not parse as a lambda. Shared and read-only.
+
+    Its text is no compilation unit or member, so it is parsed with the
+    grammar's own lambdaExpression rule rather than parse_entity()'s wrappers.
+    An expression body is one executable span."""
     from openunderstand.utils import antler_parser
     from antlr4 import InputStream
+    from antlr4.error.ErrorListener import ErrorListener
 
+    class _Failed(ErrorListener):
+        failed = False
+
+        def syntaxError(self, *_args):
+            self.failed = True
+
+    detector = _Failed()
     try:
         tree = antler_parser.parse(
-            InputStream(source), "lambdaExpression", prefer_cpp=False
+            InputStream(source), "lambdaExpression", prefer_cpp=False,
+            err_listener=detector,
         )
     except Exception:
-        return False, False
+        return None
+    if tree is None or detector.failed:
+        return None
     classifier = _StatementClassifier()
     classifier.visit(tree)
     body = tree.lambdaBody()
     if isinstance(body, JavaParserLabeled.LambdaBody0Context) and body.start is not None:
         classifier.exe_lines.update(range(body.start.line, body.stop.line + 1))
+    return classifier
+
+
+def _lambda_first_line(source):
+    """Whether the lambda's own classification already counts its line 1."""
+    classifier = _lambda_classifier(source)
+    if classifier is None:
+        return False, False
     closing = source.split("\n")[0].strip() in ("}", "{")
     return 1 in classifier.decl_lines, 1 in classifier.exe_lines and not closing
 

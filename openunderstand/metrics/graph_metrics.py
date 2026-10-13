@@ -804,6 +804,14 @@ def container_methods(ent_model):
     files = container_members(ent_model)
     if not files:
         return []
+    return _methods_defined_in({f._id for f in files})
+
+
+def _methods_defined_in(file_ids):
+    """Methods a Define or Define Implicit row in these files declares.
+
+    Implicit ones too: a record's canonical constructor and an enum's
+    values()/valueOf() are averaged in as 0 lines, as for a class."""
     kinds = [
         k._id for k in (
             KindModel.get_or_none(_name=n) for n in ("Java Define", "Java Define Implicit")
@@ -811,7 +819,6 @@ def container_methods(ent_model):
     ]
     if not kinds:
         return []
-    file_ids = {f._id for f in files}
     methods = {}
     for ref in ReferenceModel.select().where(ReferenceModel._kind.in_(kinds)):
         if ref._file_id not in file_ids:
@@ -839,23 +846,7 @@ def nested_methods(ent_model):
     if family == "package":
         return container_methods(ent_model)
     if family == "file":
-        # Implicit ones too: a record's canonical constructor and an enum's
-        # values()/valueOf() are averaged in as 0 lines, as for a class.
-        kinds = [
-            k._id for k in (
-                KindModel.get_or_none(_name=n) for n in ("Java Define", "Java Define Implicit")
-            ) if k is not None
-        ]
-        if not kinds:
-            return []
-        methods = {}
-        for ref in ReferenceModel.select().where(
-            (ReferenceModel._kind.in_(kinds)) & (ReferenceModel._file == entity._id)
-        ):
-            target = EntityModel.get_or_none(_id=ref._ent_id)
-            if target is not None and kind_family(target._kind_id) == "method":
-                methods[target._id] = target
-        return list(methods.values())
+        return _methods_defined_in({entity._id})
     if family != "type":
         return []
     return _declares(entity._id, "method")
