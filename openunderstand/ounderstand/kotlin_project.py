@@ -24,21 +24,25 @@ neither gets **no reference**: a wrong target is worse than a missing one.
 
 **Calls and uses** come last, once every file's declarations are in the database.
 ``kotlin_symbols`` resolves each occurrence the expression walker found against
-the facts of the whole project, and this writes ``Call``/``Callby`` to a
+the facts of the whole project -- and against the Kotlin standard library
+(``oudb/kotlin_index``), the project's Java classes and the JDK -- and this writes ``Call``/``Callby`` to a
 function or constructor, ``Create``/``Createby`` to a constructed class,
 ``Use``/``Useby`` for a read, ``Set``/``Setby`` for a plain assignment and
 ``Modify``/``Modifyby`` for ``+=`` and ``++``, at the name, scoped to the
-function, property or class whose code it is. Only project declarations are
-targets and only a single fitting candidate is accepted (see ``kotlin_symbols``);
-the rest writes nothing. ``relabel_nondynamic_calls`` later splits ``Call`` into
+function, property or class whose code it is. A target in the standard
+library or the JDK is a placeholder entity named by its long name (``kotlin.io.println``,
+``java.lang.System.currentTimeMillis``), as the Java passes name the JDK's, and its
+inverse is dropped like every external one; a Java project method is its real row.
+Only a single fitting candidate is accepted (see ``kotlin_symbols``); the rest
+writes nothing. ``relabel_nondynamic_calls`` later splits ``Call`` into
 ``Call Nondynamic`` from the callee's kind, as for Java.
 
 The facts of every file are cached against its mtime and size, because resolving a
 file needs the declarations of the others: an update re-reads only what changed.
 
 Not written: overrides, extends/implements, type arguments, ``Set Init``, infix
-and operator calls, anything inside an anonymous object, and calls to Java or
-library callees. A file that does not parse is skipped and reported.
+and operator calls, a Java getter read as a property, and anything inside an
+anonymous object. A file that does not parse is skipped and reported.
 """
 
 from __future__ import annotations
@@ -252,6 +256,72 @@ _POSITIONAL = {
 }
 
 
+def _placeholder(kind: str, longname: str):
+    """An external callable or variable named by its long name, as the Java passes name the JDK's."""
+    return EntityModel.get_or_create(
+        _kind=kind_id(kind),
+        _name=longname.rsplit(".", 1)[-1],
+        _parent=None,
+        _longname=longname,
+        _value=None,
+        _type=None,
+        _contents="",
+    )[0]
+
+
+def _java_method_row(owner: str, name: str, nargs: int):
+    """The Java method row a call with ``nargs`` arguments names, or ``None`` when not unique."""
+    from openunderstand.ounderstand import symbol_table
+
+    longname = f"{owner}.{name}"
+    rows = [r for r in entity_rows(longname) if kind_family(r._kind_id) == "method"]
+    if len(rows) == 1:
+        return rows[0]
+    site = symbol_table.overload_site(longname, [None] * nargs)
+    for row in rows:
+        if site is not None and (row._line, row._column) == site:
+            return row
+    return None
+
+
+def _java_variable_row(owner: str, name: str):
+    rows = [r for r in entity_rows(f"{owner}.{name}") if kind_family(r._kind_id) == "variable"]
+    return rows[0] if len(rows) == 1 else None
+
+
+def _targets(outcome, index):
+    """The (label, entity row) pairs an outcome from the resolver writes, mode aside."""
+    kind = outcome[0]
+    if kind == "call":
+        kf, rec = outcome[1]
+        if getattr(kf, "library", False):
+            return [("call", _placeholder("Java Unknown Method Member", rec["key"][0]))]
+        return [("call", _row_at(*rec["key"]))]
+    if kind == "var":
+        kf, rec = outcome[1]
+        if getattr(kf, "library", False):
+            return [("var", _placeholder("Java Unknown Variable Member", rec["key"][0]))]
+        return [("var", _row_at(*rec["key"]))]
+    if kind == "create":
+        kf, rec = index.classes[outcome[1]]
+        if getattr(kf, "library", False):
+            return [("create", _library_entity(outcome[1]))]
+        return [("create", _row_at(*rec["key"]))]
+    if kind == "jcall":
+        return [("call", _java_method_row(outcome[1], outcome[2], outcome[3]))]
+    if kind == "jcreate":
+        return [("create", _project_type(outcome[1]))]
+    if kind == "jvar":
+        return [("var", _java_variable_row(outcome[1], outcome[2]))]
+    if kind == "jdkcall":
+        return [("call", _placeholder("Java Unknown Method Member", f"{outcome[1]}.{outcome[2]}"))]
+    if kind == "jdkvar":
+        return [("var", _placeholder("Java Unknown Variable Member", f"{outcome[1]}.{outcome[2]}"))]
+    if kind == "libcreate":
+        return [("create", _library_entity(outcome[1]))]
+    return []
+
+
 def _write_references(kfile, file_ent, resolver):
     index = resolver.ix
     for occ in kfile.occurrences:
@@ -261,29 +331,20 @@ def _write_references(kfile, file_ent, resolver):
         scope = _row_at(*occ["o"])
         if scope is None:
             continue
-        for kind, target in outcome:
-            if kind == "call":
-                key, label = target[1]["key"], "call"
-            elif kind == "create":
-                entry = index.classes.get(target)
-                if entry is None:
+        for item in outcome:
+            for label, row in _targets(item, index):
+                if row is None:
                     continue
-                key, label = entry[1]["key"], "create"
-            else:
-                key, label = target[1]["key"], occ["m"]
-            row = _row_at(*key)
-            if row is None:
-                continue
-            forward, inverse = _POSITIONAL[label]
-            for name, owner, ent in ((forward, scope, row), (inverse, row, scope)):
-                ReferenceModel.get_or_create(
-                    _kind=kind_id(name),
-                    _file=file_ent,
-                    _line=occ["l"],
-                    _column=col_1based(occ["c"]),
-                    _ent=ent,
-                    _scope=owner,
-                )
+                forward, inverse = _POSITIONAL[occ["m"] if label == "var" else label]
+                for name, owner, ent in ((forward, scope, row), (inverse, row, scope)):
+                    ReferenceModel.get_or_create(
+                        _kind=kind_id(name),
+                        _file=file_ent,
+                        _line=occ["l"],
+                        _column=col_1based(occ["c"]),
+                        _ent=ent,
+                        _scope=owner,
+                    )
 
 
 def analyse(paths, root: str | None = None) -> kotlin_parser.Summary:

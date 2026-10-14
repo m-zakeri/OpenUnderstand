@@ -133,7 +133,7 @@ def library_files() -> tuple:
         file_of(package).callables.append(
             {
                 "key": (longname, 0, serial), "name": name, "owner": owner, "ctor": kind == "c",
-                "params": [(c.lower() == "d", c.lower() == "v", c.isupper()) for c in params],
+                "params": [(c in "dD", c in "vV", c in "RDV") for c in params],
                 "receiver": receiver or None, "ret": ret or None, "ret_init": None, "local": False,
                 "scope": (), "vis": ["public"], "tparams": (),
             }
