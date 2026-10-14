@@ -14,7 +14,8 @@ resource and runs in a virtualenv the plugin builds for itself.
 | Analyse Project | Runs the analysis over the project root and fills the table |
 | Symbol Table | Lists every entity the project declares: name, kind, type, parent and where |
 | References | Lists every reference to or from the selected row's entity |
-| Export CSV... | Writes the table to a file, in analysis order |
+| Export CSV... | Writes the table shown to a file, in analysis order; proposes `metrics.csv`, `symbols.csv` or `references.csv` to match |
+| Export All... | Asks for a folder and writes all three CSV files for the whole project |
 
 One column per metric `Ent.metrics()` reports -- around 70 of Understand's
 names, whichever the library implements -- so the table scrolls sideways.

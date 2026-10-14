@@ -11,14 +11,16 @@ builds a virtualenv of its own under the IDE's system directory and installs the
 wheel it ships with. All it needs on the machine is `python3`.
 
 **Export CSV...** writes the table to a file, in analysis order rather than the
-column you sorted by.
+column you sorted by. The proposed file name follows the table shown.
+**Export All...** writes `metrics.csv`, `symbols.csv` and `references.csv` for the
+whole project into a folder you pick.
 
 ## Build and install
 
 ```bash
 gradle runIde                      # sandbox IDE with the plugin loaded
 gradle runIde -PrunProject=/a/java/project   # ... with that project open
-gradle buildPlugin                 # build/distributions/openunderstand-idea-0.1.1.zip
+gradle buildPlugin                 # build/distributions/openunderstand-idea-<version>.zip
 ```
 
 Install the zip with Settings → Plugins → ⚙ → Install Plugin from Disk.
