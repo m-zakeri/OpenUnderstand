@@ -15,6 +15,16 @@
     ]]></description>
 
     <change-notes><![CDATA[
+    <b>0.6.1</b>
+    <ul>
+      <li><b>Export All...</b> writes metrics.csv, symbols.csv and
+          references.csv for the whole project in one step.</li>
+      <li>Export CSV... now proposes a file name matching the table shown
+          (metrics, symbols or references).</li>
+      <li>Fixed: a stray line printed by the analyser ahead of the table no
+          longer breaks the Symbol Table and References views, and an
+          unexpected output now shows the analyser's text in the error.</li>
+    </ul>
     <b>0.6.0</b>
     <ul>
       <li><b>Every metric agrees with Understand at 0.9 or better on every
