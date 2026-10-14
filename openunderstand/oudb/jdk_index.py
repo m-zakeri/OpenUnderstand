@@ -307,6 +307,28 @@ def known(longname: str) -> bool:
     return longname in _load()["types"]
 
 
+def declares_field(longname: str, field: str) -> str | None:
+    """The type in `longname`'s hierarchy that declares the public field `field`, or None.
+
+    `declaring_type(..., fields=True)` also answers for a method of that name; this
+    asks about fields alone, which a Kotlin property read needs.
+    """
+    types = _load()["types"]
+    seen, pending = set(), [longname]
+    while pending:
+        current = pending.pop(0)
+        if current in seen:
+            continue
+        seen.add(current)
+        entry = types.get(current)
+        if entry is None:
+            continue
+        if field in entry["fields"]:
+            return current
+        pending.extend(entry["supers"])
+    return None
+
+
 _SIGNATURES_PATH = os.path.join(os.path.dirname(__file__), "jdk_signatures.txt.gz")
 _SIGNATURES = None
 

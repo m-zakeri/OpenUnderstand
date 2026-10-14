@@ -361,7 +361,7 @@ class _Collector:
         self.out.variables.append(
             {"key": key, "name": _name(first(entry, "simpleIdentifier"))[0],
              "owner": ".".join(scope), "kind": "property", "declared": scope[-1],
-             "init": None, "scope": tuple(scope)}
+             "init": None, "scope": tuple(scope), "vis": ["public"], "receiver": None}
         )
         body = first(entry, "classBody")
         if body is not None:
