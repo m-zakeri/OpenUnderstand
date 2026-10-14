@@ -32,9 +32,25 @@ argument position)``; the resolver drops the free names in a lambda whose callee
 takes a receiver and keeps the rest. A lambda also hides what it declares: its
 parameters and locals are shadows, never entities.
 
+**Operators and infix calls** are calls too: ``a to b`` and ``a shl 2`` call the infix
+function, ``a + b`` calls ``plus`` (and ``- * / % .. ..<`` likewise), ``a < b`` calls
+``compareTo``, ``x in c`` calls ``c.contains(x)``, ``-a``/``+a``/``!a`` and ``a++`` call
+``unaryMinus``/``unaryPlus``/``not``/``inc``, ``a[i]`` calls ``get`` (``set`` when
+assigned), ``a += b`` tries ``plusAssign`` then ``plus``, and ``f(x)`` on a value calls
+``invoke``. Each is an occurrence marked ``op``, positioned at the operator, so the
+resolver can leave the intrinsic ones (``Int + Int``) alone.
+
+**Destructuring and loops** desugar the same way: ``val (a, b) = e`` calls ``e.component1()``
+and ``component2()`` (anchored on the opening parenthesis, since an entry's name is where
+that variable is defined), and ``for (x in c)`` calls ``c.iterator()`` and then ``hasNext()``
+and ``next()`` on the result, anchored on ``in``. Each destructured or loop variable is
+typed by that call, so what is done with it resolves. A loop's ``occurrence["loop"]`` names
+its iterable, so the resolver can leave a loop over a range, array or string alone.
+
 Not walked: anonymous objects and anonymous functions, callable references
-(``::f``), annotations, types. Not resolved: infix and operator calls, indexing,
-``invoke``, destructuring ``componentN``, and property delegates' ``getValue``.
+(``::f``), annotations, types. Not resolved: ``==`` (``equals``), the name-based and
+bracketed destructuring forms, a lambda parameter's destructuring, and property
+delegates' ``getValue``.
 """
 
 from __future__ import annotations
@@ -44,6 +60,7 @@ from antlr4.tree.Tree import TerminalNode
 from openunderstand.analysis_passes.kotlin_tree import (
     children,
     first,
+    has_equals,
     name_of,
     name_pos,
     rule,
@@ -60,6 +77,14 @@ _SKIPPED = {
     "typeParameters",
     "typeConstraints",
 }
+_UNARY = {"-": "unaryMinus", "+": "unaryPlus", "!": "not", "++": "inc", "--": "dec"}
+_BINARY = {
+    "+": "plus", "-": "minus", "*": "times", "/": "div", "%": "rem",
+    "..": "rangeTo", "..<": "rangeUntil",
+    "<": "compareTo", ">": "compareTo", "<=": "compareTo", ">=": "compareTo",
+}
+_AUGMENTED = {"+=": ("plusAssign", "plus"), "-=": ("minusAssign", "minus"), "*=": ("timesAssign", "times"),
+              "/=": ("divAssign", "div"), "%=": ("remAssign", "rem")}
 _LITERALS = {
     "BooleanLiteral": "kotlin.Boolean",
     "CharacterLiteral": "kotlin.Char",
@@ -116,7 +141,8 @@ class ExprWalker:
         self.last = None  # the occurrence a following `++` may turn into a modify
 
     # -- recording ---------------------------------------------------------
-    def occurrence(self, kind, name, line, col, receiver=None, nargs=0, mode="use", binding=None):
+    def occurrence(self, kind, name, line, col, receiver=None, nargs=0, mode="use", binding=None,
+                   op=False, alt=None):
         occ = {
             "id": len(self.c.out.occurrences),
             "o": self.owner,
@@ -131,6 +157,12 @@ class ExprWalker:
             "s": self.scope,
             "lam": tuple(self.lambdas),
             "init": False,
+            "op": op,      # written as an operator or infix call, not by name
+            "alt": alt,    # the name to try if this one finds nothing (`plusAssign`, then `plus`)
+            "args": [],    # a descriptor per argument (None: unknown, ("lambda",): a lambda)
+            "named": False,  # a named or spread argument: the arguments' order says nothing
+            "sym": False,    # an operator written as a symbol (see op_call)
+            "loop": None,    # for `iterator`/`hasNext`/`next`: the loop's iterable
         }
         self.c.out.occurrences.append(occ)
         return occ
@@ -171,8 +203,14 @@ class ExprWalker:
         if operator is None or len(kids) < 3:
             return self.walk(kids[0]) if len(kids) == 1 else self.generic(ctx)
         left, right = kids[0], kids[-1]
-        self.walk(right)
-        self.walk(left, operator)
+        assigned = self.walk(right)
+        target = self.walk(left, operator)
+        if operator == "modify":
+            for c in kids:
+                if rule(c) == "assignmentAndOperator":
+                    names = _AUGMENTED.get(c.getText().strip())
+                    if names:
+                        self.op_call(target, names[0], 1, c.start, alt=names[1], args=(assigned,))
         return None
 
     def generic(self, ctx):
@@ -180,13 +218,97 @@ class ExprWalker:
             self.walk(child)
         return None
 
+    def op_call(self, receiver, name, nargs, token, alt=None, args=(), symbol=True, loop=None):
+        """A call the syntax implies (an operator, an index, an infix name): returns its descriptor.
+
+        ``symbol`` is true for an operator written as a symbol (``+``, ``[]``, ``in``) and
+        false for a named infix function (``a to b``): the resolver leaves a symbolic
+        operator on a primitive alone, but ``1 to 2`` is a real call.
+        """
+        receiver = receiver if receiver is not None else UNKNOWN
+        occ = self.occurrence(
+            "call", name, token.line, token.column, receiver=receiver, nargs=nargs, op=True, alt=alt
+        )
+        occ["args"] = list(args)
+        occ["sym"] = symbol
+        occ["loop"] = loop       # the iterable of the `for` this call belongs to, if any
+        return ("call", receiver, name, nargs, occ["id"])
+
     def r_prefixUnaryExpression(self, ctx, mode):
         kids = list(ctx.children or [])
         operand = kids[-1]
-        for c in kids[:-1]:
-            if rule(c) == "unaryPrefix" and c.getText().strip() in ("++", "--"):
-                return self.walk(operand, "modify")
-        return self.walk(operand, mode)
+        prefixes = [c for c in kids[:-1] if rule(c) == "unaryPrefix"]
+        increments = any(c.getText().strip() in ("++", "--") for c in prefixes)
+        desc = self.walk(operand, "modify" if increments else mode)
+        for c in reversed(prefixes):          # the one nearest the operand applies first
+            text = c.getText().strip()
+            name = _UNARY.get(text)
+            if name:
+                desc = self.op_call(desc, name, 0, c.start)
+        return desc
+
+    def _binary(self, ctx, mode):
+        kids = self._operands(ctx)
+        if len(kids) == 1:
+            return self.walk(kids[0], mode)
+        current = self.walk(kids[0])
+        i = 1
+        while i + 1 < len(kids):
+            op = kids[i]
+            right = self.walk(kids[i + 1])
+            name = _BINARY.get(op.getText().strip())
+            token = op.start if not isinstance(op, TerminalNode) else op.symbol
+            current = self.op_call(current, name, 1, token, args=(right,)) if name else None
+            i += 2
+        return current
+
+    r_additiveExpression = _binary
+    r_multiplicativeExpression = _binary
+    r_rangeExpression = _binary
+    r_comparison = _binary
+
+    @staticmethod
+    def _operands(ctx):
+        return [c for c in ctx.children or [] if not (isinstance(c, TerminalNode) and not c.symbol.text.strip())]
+
+    def r_infixFunctionCall(self, ctx, mode):
+        """``a to b``: operands with a function name between them."""
+        kids = self._operands(ctx)
+        if len(kids) == 1:
+            return self.walk(kids[0], mode)
+        current = self.walk(kids[0])
+        i = 1
+        while i + 1 < len(kids):
+            name, line, col = name_pos(kids[i])
+            right = self.walk(kids[i + 1])
+            token = kids[i].start
+            current = self.op_call(current, name, 1, token, args=(right,), symbol=False)
+            i += 2
+        return current
+
+    def r_infixOperation(self, ctx, mode):
+        """``x in c`` calls ``c.contains(x)``; ``x is T`` calls nothing."""
+        kids = self._operands(ctx)
+        if len(kids) == 1:
+            return self.walk(kids[0], mode)
+        current = self.walk(kids[0])
+        i = 1
+        while i < len(kids):
+            if rule(kids[i]) == "inOperator" and i + 1 < len(kids):
+                container = self.walk(kids[i + 1])
+                current = self.op_call(container, "contains", 1, kids[i].start, args=(current,))
+                i += 2
+            else:                                   # `is` / `!is` and its type
+                current = None
+                i += 2
+        return current
+
+    def r_rangeTest(self, ctx, mode):
+        """``when (x) { in a..b -> }``: ``(a..b).contains(x)``."""
+        operator = first(ctx, "inOperator")
+        container = self.walk(first(ctx, "expression"))
+        self.op_call(container, "contains", 1, operator.start)
+        return None
 
     def r_asExpression(self, ctx, mode):
         kids = [c for c in ctx.children or [] if rule(c) is not None]
@@ -225,7 +347,7 @@ class ExprWalker:
         token = keyword.symbol if isinstance(keyword, TerminalNode) else ctx.start
         occ = self.occurrence("call", "<" + token.text + ">", token.line, token.column)
         occ["init"] = True
-        occ["a"] = self.arguments_of(first(ctx, "valueArguments"))
+        occ["a"], occ["args"] = self.arguments_of(first(ctx, "valueArguments"))
         return None
 
     def header_call(self, user_type, arguments):
@@ -235,14 +357,14 @@ class ExprWalker:
         name, line, col = names[-1]
         occ = self.occurrence("call", ".".join(n for n, _, _ in names), line, col)
         occ["init"] = True
-        occ["a"] = self.arguments_of(arguments)
+        occ["a"], occ["args"] = self.arguments_of(arguments)
 
     def arguments_of(self, value_arguments):
-        count = 0
+        described = []
         for argument in children(value_arguments, "valueArgument") if value_arguments is not None else []:
-            self.walk(first(argument, "expression"))
-            count += 1
-        return count
+            expression = first(argument, "expression")
+            described.append(self.walk(expression))
+        return len(described), described
 
     def r_block(self, ctx, mode):
         outer = self.env
@@ -265,23 +387,52 @@ class ExprWalker:
             for ident in _identifiers(head):
                 self.env.names[ident] = ("shadow",)
         else:
-            self.c.local(ctx, self.scope, self.env, descriptor)
+            self.c.local(ctx, self.scope, self.env, descriptor, self.components(head, descriptor))
         accessors = first(ctx, "propertyAccessors")
         if accessors is not None:
             self.generic(accessors)
         return None
 
+    def components(self, holder, value):
+        """``componentN`` calls for ``val (a, b) = value``: one per entry, or ``None`` for none.
+
+        Only the positional form with parentheses and no ``= name`` entries is the ordinary
+        destructuring; the name-based and bracketed forms are newer and left alone.
+        """
+        multi = first(holder, "multiVariableDeclaration")
+        if multi is None or value is None or not multi.getText().startswith("("):
+            return None
+        entries = children(multi, "destructuringEntry")
+        if any(has_equals(e) for e in entries):
+            return None
+        out = []
+        # at the opening parenthesis, not on an entry's name: the name is where that variable is
+        # defined, and one position carries one kind of reference
+        for position, entry in enumerate(entries, 1):
+            out.append(self.op_call(value, f"component{position}", 0, multi.start, symbol=False))
+        return out
+
     def r_forStatement(self, ctx, mode):
         outer = self.env
         self.env = outer.child()
+        iterable = None
         for c in ctx.children or []:
             if rule(c) == "expression":
-                self.walk(c)
+                iterable = self.walk(c)
+        element, entries = None, None
+        if iterable is not None:
+            # `for (x in c)` is c.iterator(), then hasNext() and next() on what that returns
+            keyword = next((c.symbol for c in ctx.children or [] if isinstance(c, TerminalNode) and c.getText() == "in"), ctx.start)
+            iterator = self.op_call(iterable, "iterator", 0, keyword, loop=iterable)
+            self.op_call(iterator, "hasNext", 0, keyword, loop=iterable)
+            following = self.op_call(iterator, "next", 0, keyword, loop=iterable)
+            element = ("element", iterable, following)
+            entries = self.components(ctx, element)
         if self.lambda_depth > 0:
             for name in _identifiers_in(ctx, ("variableDeclaration", "multiVariableDeclaration")):
                 self.env.names[name] = ("shadow",)
         else:
-            self.c.for_variables(ctx, self.scope, self.env)
+            self.c.for_variables(ctx, self.scope, self.env, element, entries)
         for c in ctx.children or []:
             if rule(c) == "controlStructureBody":
                 self.walk(c)
@@ -406,14 +557,28 @@ class ExprWalker:
                 self.last = occ
                 current = ("member", current, name)
             elif sr == "callSuffix":     # invoke: `f(x)(y)`
-                self.arguments(s, None)
-                current = None
+                current, index = self.call(current if current is not None else UNKNOWN, "invoke",
+                                           s.start.line, s.start.column, suffixes, index)
+                self.c.out.occurrences[current[4]]["op"] = True
+                continue
             elif sr == "indexingSuffix":
-                self.generic(s)
-                current = None
+                indices = [self.walk(e) for e in children(s, "expression")]
+                count = len(indices)
+                how = final_mode if last_one else "use"
+                if how == "use":
+                    current = self.op_call(current, "get", count, s.start, args=indices)
+                elif how == "set":
+                    self.op_call(current, "set", count + 1, s.start, args=[*indices, None])
+                    current = None
+                else:                     # `a[i] += x` reads and writes
+                    current = self.op_call(current, "get", count, s.start, args=indices)
+                    self.op_call(current[1], "set", count + 1, s.start, args=[*indices, None])
             elif sr == "postfixUnaryOperator":
-                if s.getText().strip() in ("++", "--") and self.last is not None:
-                    self.last["m"] = "modify"
+                text = s.getText().strip()
+                if text in ("++", "--"):
+                    if self.last is not None:
+                        self.last["m"] = "modify"
+                    current = self.op_call(current, "inc" if text == "++" else "dec", 0, s.start)
             index += 1
         return current
 
@@ -445,11 +610,15 @@ class ExprWalker:
         if args is not None:
             for argument in children(args, "valueArgument"):
                 expression = first(argument, "expression")
+                named = any(rule(c) == "simpleIdentifier" for c in argument.children or [])
+                spread = any(isinstance(c, TerminalNode) and c.getText() == "*" for c in argument.children or [])
                 if occ is not None and _is_lambda(expression):
-                    named = any(rule(c) == "simpleIdentifier" for c in argument.children or [])
                     self.pending_lambda = (occ["id"], -2 if named else base + count)
-                self.walk(expression)
+                described = self.walk(expression)
                 self.pending_lambda = None
+                if occ is not None:
+                    occ["args"].append(("lambda",) if _is_lambda(expression) else described)
+                    occ["named"] = occ["named"] or named or spread
                 count += 1
         for c in call_suffix.children or []:
             if rule(c) in ("annotatedLambda", "labeledLambda"):
@@ -458,6 +627,8 @@ class ExprWalker:
                     self.pending_lambda = (occ["id"], -1)
                 self.walk(lam)
                 self.pending_lambda = None
+                if occ is not None:
+                    occ["args"].append(("lambda",))
                 count += 1
         return count
 

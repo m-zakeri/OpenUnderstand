@@ -45,7 +45,7 @@ _DECL = {"C": "class", "I": "interface", "E": "enum", "A": "annotation"}
 
 @lru_cache(maxsize=1)
 def _load() -> dict:
-    data = {"types": {}, "supers": {}, "aliases": {}, "functions": [], "properties": []}
+    data = {"types": {}, "supers": {}, "aliases": {}, "functions": [], "properties": [], "data": {}}
     if not os.path.exists(_PATH):
         return data
     with gzip.open(_PATH, "rt", encoding="utf8") as handle:
@@ -55,8 +55,10 @@ def _load() -> dict:
             parts = line.rstrip("\n").split("\t")
             if parts[0] == "@A" and len(parts) >= 3:
                 data["aliases"][parts[1]] = parts[2]
+            elif parts[0] == "@D" and len(parts) >= 3:
+                data["data"][parts[1]] = parts[2].split(",")
             elif parts[0] == "@F" and len(parts) >= 7:
-                data["functions"].append(tuple(parts[1:7]))
+                data["functions"].append(tuple(parts[1:7]) + ((parts[7] if len(parts) > 7 else ""),))
             elif parts[0] == "@V" and len(parts) >= 5:
                 data["properties"].append(tuple(parts[1:5]))
             elif len(parts) >= 2 and not parts[0].startswith("@"):
@@ -118,11 +120,11 @@ def library_files() -> tuple:
         record = {
             "name": fq.rpartition(".")[2], "decl": _DECL.get(kind, "class"), "object": False,
             "companion": None, "supers": list(data["supers"].get(fq, [])), "scope": (),
-            "key": (fq, 0, 0), "vis": ["public"],
+            "key": (fq, 0, 0), "vis": ["public"], "data": list(data["data"].get(fq, [])),
         }
         file_of(package).classes[fq] = record
     serial = 0
-    for kind, where, name, receiver, params, ret in data["functions"]:
+    for kind, where, name, receiver, params, ret, ptypes in data["functions"]:
         serial += 1
         package, owner = (where[1:], None) if where.startswith("=") else ("", where)
         if owner:
@@ -136,6 +138,7 @@ def library_files() -> tuple:
                 "params": [(c in "dD", c in "vV", c in "RDV") for c in params],
                 "receiver": receiver or None, "ret": ret or None, "ret_init": None, "local": False,
                 "scope": (), "vis": ["public"], "tparams": (),
+                "ptypes": tuple((t or None) for t in ptypes.split(",")) if params else (),
             }
         )
     for where, name, receiver, declared in data["properties"]:

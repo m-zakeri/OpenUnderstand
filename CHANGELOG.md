@@ -18,9 +18,12 @@
   `Set`, `Modify`), only where exactly one declaration fits. That now includes the
   Kotlin standard library (through a generated index of its functions, properties and
   supertypes), the project's Java classes and the JDK; library targets are
-  placeholder entities named by their long name. Overloads that differ by argument
-  type, infix and operator calls, and libraries without an index (kotlinx, third
-  party) are not resolved. There is no Understand oracle to measure any of it against. A Java-only project's database is
+  placeholder entities named by their long name. Infix and operator calls are calls too: `a to b`, `a + b`, `a[i]`,
+  `x in c`, `-a`, `a++`, `a += b` and `f(x)` on a value (a symbolic operator on a
+  primitive or an array writes nothing, since the compiler inlines it), and argument
+  types now choose between overloads where they are known. Destructuring (`val (a, b) = p`, a data class's `componentN` included) and `for`
+  loops (`iterator`, `hasNext`, `next`) are calls too. Not resolved: Java
+  overloads by argument type, `==`, and libraries without an index (kotlinx, third party). There is no Understand oracle to measure any of it against. A Java-only project's database is
   unchanged (fingerprint identical). The wheels grow by about 3 MB.
 
 ## IDEA plugin 0.6.1

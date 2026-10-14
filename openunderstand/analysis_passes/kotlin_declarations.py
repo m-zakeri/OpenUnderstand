@@ -103,12 +103,13 @@ class _Collector:
         )
 
     def callable_fact(self, key, name, owner, ctor, params, receiver, ret, ret_init, local, scope,
-                      vis=None, tparams=()):
+                      vis=None, tparams=(), ptypes=()):
         self.out.callables.append(
             {
                 "key": key, "name": name, "owner": owner, "ctor": ctor, "params": params,
                 "receiver": receiver, "ret": ret, "ret_init": ret_init, "local": local,
                 "scope": tuple(scope), "vis": vis, "tparams": tuple(tparams),
+                "ptypes": tuple(ptypes),    # one per parameter: a class name, "<fn>" or None (unknown)
             }
         )
 
@@ -120,6 +121,19 @@ class _Collector:
     @staticmethod
     def owner_of(scope, top_level):
         return None if top_level else ".".join(scope)
+
+    @staticmethod
+    def data_components(cls_ctx, mods) -> list:
+        """A data class's ``componentN`` order: its primary constructor's ``val``/``var`` parameters."""
+        if "data" not in mods:
+            return []
+        pc = first(cls_ctx, "primaryConstructor")
+        params = first(pc, "classParameters") if pc is not None else None
+        return [
+            _name(first(cp, "simpleIdentifier"))[0]
+            for cp in (children(params, "classParameter") if params is not None else [])
+            if has_token(cp, "val") or has_token(cp, "var")
+        ]
 
     def supertypes(self, cls_ctx) -> list:
         specs = first(cls_ctx, "delegationSpecifiers")
@@ -322,7 +336,7 @@ class _Collector:
         self.out.classes[longname] = {
             "name": _name(ident)[0], "decl": decl, "object": False, "companion": None,
             "supers": self.supertypes(ctx), "scope": tuple(inner), "key": (longname, line, col),
-            "vis": self.visibility(mods),
+            "vis": self.visibility(mods), "data": self.data_components(ctx, mods),
         }
         self.type_parameters(ctx, inner)
         self.primary_constructor(ctx, inner, decl)
@@ -451,7 +465,7 @@ class _Collector:
             span=False,
         )
         env = Env()
-        fact_params, defaults = [], []
+        fact_params, defaults, ptypes = [], [], []
         for cp in children(params, "classParameter") if params is not None else []:
             pmods = self.mods(first(cp, "modifiers"))
             ident = first(cp, "simpleIdentifier")
@@ -475,13 +489,14 @@ class _Collector:
                 self.variable_fact(key, name, ctor_key[0], "param", type_ctx, scope=scope)
                 env.names[name] = ("local", key)
             fact_params.append((default is not None, "vararg" in pmods, _fn_receiver(type_ctx)))
+            ptypes.append(_param_type(type_ctx))
             if default is not None:
                 defaults.append((ctor_key, default))   # a default value runs in the constructor
         self.class_envs[tuple(scope)] = env
         self.primary_keys[tuple(scope)] = ctor_key
         self.callable_fact(
             ctor_key, cname, ".".join(scope), True, fact_params, None, None, None, False, scope,
-            vis=self.visibility(mods),
+            vis=self.visibility(mods), ptypes=ptypes,
         )
         for key, default in defaults:
             self.walker(key, scope, Env(env)).walk(default)
@@ -512,6 +527,7 @@ class _Collector:
         self.callable_fact(
             key, cname, ".".join(scope), True, [(i["default"], i["vararg"], i["fnrecv"]) for i in infos],
             None, None, None, False, inner, vis=self.visibility(mods),
+            ptypes=[i["ptype"] for i in infos],
         )
         walker = self.walker(key, inner, env)
         for info in infos:
@@ -575,6 +591,7 @@ class _Collector:
             name_of(receiver) if receiver is not None else None,
             name_of(ret) if ret is not None else None, ret_init, env is not None, inner,
             vis=self.visibility(mods), tparams=self.type_parameter_names(ctx),
+            ptypes=[i["ptype"] for i in infos],
         )
         return key
 
@@ -602,7 +619,8 @@ class _Collector:
             default = first(fp, "expression")
             infos.append(
                 {"key": key, "name": name, "default": default is not None, "default_ctx": default,
-                 "vararg": "vararg" in mods, "fnrecv": _fn_receiver(type_ctx)}
+                 "vararg": "vararg" in mods, "fnrecv": _fn_receiver(type_ctx),
+                 "ptype": _param_type(type_ctx)}
             )
         return infos
 
@@ -669,22 +687,29 @@ class _Collector:
         return [first(e, "variableDeclaration") for e in children(multi, "destructuringEntry")] if multi is not None else []
 
     # -- locals (called by the expression walker) ---------------------------
-    def local(self, ctx, scope, env, init):
+    def local(self, ctx, scope, env, init, entry_inits=None):
+        """Declare a local (or each entry of ``val (a, b) = e``, typed by its ``componentN`` call)."""
         head = first(ctx, "propertyDeclarationHead")
         mods = ("final",) if has_token(head, "val") else ()
         variables = self.variables(head)
-        for variable in variables:
-            key = self.local_variable(
-                variable, scope, ctx, mods, init if len(variables) == 1 else None
-            )
+        for position, variable in enumerate(variables):
+            if len(variables) == 1:
+                value = init
+            else:
+                value = entry_inits[position] if entry_inits and position < len(entry_inits) else None
+            key = self.local_variable(variable, scope, ctx, mods, value)
             env.names[_name(first(variable, "simpleIdentifier"))[0]] = ("local", key)
 
-    def for_variables(self, ctx, scope, env):
-        found = [(v, ctx) for v in children(ctx, "variableDeclaration")]
+    def for_variables(self, ctx, scope, env, element=None, entry_inits=None):
+        """Declare a ``for`` loop's variables; ``element`` types a single one, ``entry_inits`` each
+        entry of ``for ((a, b) in ...)``."""
+        found = [(v, ctx, element) for v in children(ctx, "variableDeclaration")]
         for multi in children(ctx, "multiVariableDeclaration"):
-            found += [(first(e, "variableDeclaration"), ctx) for e in children(multi, "destructuringEntry")]
-        for variable, owner_ctx in found:
-            key = self.local_variable(variable, scope, owner_ctx, (), None)
+            for position, e in enumerate(children(multi, "destructuringEntry")):
+                value = entry_inits[position] if entry_inits and position < len(entry_inits) else None
+                found.append((first(e, "variableDeclaration"), ctx, value))
+        for variable, owner_ctx, value in found:
+            key = self.local_variable(variable, scope, owner_ctx, (), value)
             env.names[_name(first(variable, "simpleIdentifier"))[0]] = ("local", key)
 
     def local_variable(self, variable, scope, ctx, mods, init):
@@ -705,6 +730,15 @@ class _Collector:
             init=init if type_ctx is None else None, scope=scope,
         )
         return key
+
+
+def _param_type(type_ctx):
+    """A parameter's type for overload applicability: a class name, ``"<fn>"`` or ``None``."""
+    if type_ctx is None:
+        return None
+    if find(type_ctx, "functionType") is not None and name_of(type_ctx) is None:
+        return "<fn>"
+    return name_of(type_ctx)
 
 
 def _fn_receiver(type_ctx) -> bool:

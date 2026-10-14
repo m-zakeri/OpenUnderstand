@@ -52,6 +52,11 @@ def has_token(ctx, text: str) -> bool:
     return any(isinstance(c, TerminalNode) and c.getText() == text for c in ctx.children or [])
 
 
+def has_equals(entry) -> bool:
+    """Whether a destructuring entry is the name-based ``(val a = name)`` form."""
+    return any(isinstance(c, TerminalNode) and c.getText() == "=" for c in entry.children or [])
+
+
 def source_text(ctx) -> str:
     start, stop = ctx.start, ctx.stop
     if stop is None:

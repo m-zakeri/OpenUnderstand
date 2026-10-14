@@ -35,6 +35,8 @@ as a Kotlin property, and a receiver the project cannot type.
 
 from __future__ import annotations
 
+import re
+
 from openunderstand.oudb import jdk_index, kotlin_index
 from openunderstand.ounderstand import symbol_table
 
@@ -71,6 +73,22 @@ KOTLIN_FOR = {
     "java.util.Map": "kotlin.collections.MutableMap",
     "java.util.Map.Entry": "kotlin.collections.MutableMap.MutableEntry",
 }
+
+#: Types whose operators the compiler inlines: `Int + Int` is arithmetic, not a call anyone
+#: reads, and Java's analysis records none either. An operator or infix call whose
+#: declaration belongs to one of these writes no reference.
+INTRINSIC_OWNERS = frozenset(
+    "kotlin." + n for n in "Int Long Short Byte Double Float Char Boolean UInt ULong UShort UByte String".split()
+)
+_ARRAYS = re.compile(r"kotlin\.[A-Za-z]*Array")
+
+#: What a `for` loop over these does not call: the compiler loops over a range, an array or a
+#: string directly, without an iterator object.
+LOOP_INTRINSIC = frozenset(
+    "kotlin.ranges." + n for n in
+    "IntRange LongRange CharRange UIntRange ULongRange IntProgression LongProgression "
+    "CharProgression UIntProgression ULongProgression".split()
+) | {"kotlin.String", "kotlin.CharSequence"}
 
 AMBIGUOUS = object()   # a level declares the name but no single declaration fits
 OPAQUE = ("opaque",)   # a supertype this cannot see into
@@ -116,6 +134,13 @@ def _arity_ok(rec, nargs: int) -> bool:
 def _java_arity_ok(written: tuple, nargs: int) -> bool:
     variadic = bool(written) and written[-1].endswith("...")
     return len(written) == nargs or (variadic and nargs >= len(written) - 1)
+
+
+def _ckey(candidate):
+    """Identity of a candidate declaration. A library function is one placeholder entity named
+    by its long name however many overloads it has, so its overloads are not ambiguous."""
+    kf, rec = candidate
+    return rec["key"][0] if getattr(kf, "library", False) else rec["key"]
 
 
 def _contains(desc, marker) -> bool:
@@ -179,6 +204,8 @@ class Resolver:
         self._busy: set = set()
         self._hierarchy: dict = {}
         self._receivers: dict = {}
+        self._ctx = None            # the call being resolved: its arguments, for applicability
+        self._ptypes: dict = {}
 
     # -- types -------------------------------------------------------------
     def _java(self, longname: str) -> bool:
@@ -263,18 +290,85 @@ class Resolver:
                 chain.append(name)
         return chain
 
+    # -- which candidates the arguments allow ----------------------------------
+    def _arg_types(self):
+        """The types of the call's arguments: a type, ``"lambda"`` or ``None`` (unknown)."""
+        ctx = self._ctx
+        if ctx is None:
+            return []
+        if ctx["types"] is None:
+            ctx["types"] = []          # guards against re-entry while the types are worked out
+            occ, kf = ctx["occ"], ctx["kf"]
+            out = []
+            for desc in occ["args"]:
+                if desc is not None and desc[0] == "lambda":
+                    out.append("lambda")
+                    continue
+                t = self.type_of(desc, kf, occ["s"], occ["o"]) if desc is not None else None
+                out.append(t if t is not None and t[0] in ("class", "java", "lib") else None)
+            ctx["types"] = out
+        return ctx["types"]
+
+    def _param_accepts(self, kf2, rec, index, argument) -> bool:
+        ptypes = rec.get("ptypes") or ()
+        params = rec["params"]
+        if index < len(ptypes):
+            pt = ptypes[index]
+        elif params and params[-1][1] and ptypes:
+            pt = ptypes[-1]
+        else:
+            return True
+        if argument is None or argument == "lambda" or pt is None or pt == "*" or pt in rec.get("tparams", ()):
+            return True
+        if pt == "<fn>":
+            return False               # a value of a known class where a function is wanted
+        key = (rec["key"], index)
+        if key not in self._ptypes:
+            self._ptypes[key] = self.type_name(pt, kf2, rec["scope"])
+        target = self._ptypes[key]
+        if target is None:
+            return True
+        if target in self.hierarchy(argument):
+            return True
+        # an integer literal adapts to Long, Short and Byte; a lenient reading keeps Int too
+        return argument == ("class", "kotlin.Int") and target[1] in ("kotlin.Long", "kotlin.Short", "kotlin.Byte")
+
+    def _fits(self, candidate, nargs) -> bool:
+        """Arity, and the arguments' types where both sides are known."""
+        kf2, rec = candidate
+        if not _arity_ok(rec, nargs):
+            return False
+        ctx = self._ctx
+        if ctx is None or ctx["occ"]["named"] or not rec.get("ptypes"):
+            return True
+        return all(self._param_accepts(kf2, rec, i, a) for i, a in enumerate(self._arg_types()))
+
+    def _unknown_arguments(self) -> bool:
+        return self._ctx is not None and any(a is None for a in self._arg_types())
+
     # -- one hierarchy level -------------------------------------------------
     def _fun_level(self, t, name, nargs):
         kind, ln = t
         if kind == "class":
             recs = self.ix.members_funs.get(ln, {}).get(name, [])
-            return [("fun", r) for r in recs if _arity_ok(r[1], nargs)]
+            fits = [("fun", r) for r in recs if self._fits(r, nargs)]
+            if not recs and nargs == 0 and name.startswith("component") and name[9:].isdigit():
+                return self._data_component(ln, int(name[9:]))
+            return fits
         if kind == "java":
             return self._java_funs(ln, name, nargs)
         if kind == "lib" and jdk_index.known(ln):
             declaring = jdk_index.declaring_type(ln, name, arity=nargs)
             return [("jdkfun", declaring, name)] if declaring else []
         return []
+
+    def _data_component(self, ln, position):
+        """A data class's synthesised ``componentN``: it returns its Nth primary-constructor property."""
+        data = self.ix.classes[ln][1].get("data") or []
+        if not 1 <= position <= len(data):
+            return []
+        props = self.ix.members_vars.get(ln, {}).get(data[position - 1], [])
+        return [("dataprop", props[0])] if len(props) == 1 else []
 
     def _java_funs(self, ln, name, nargs):
         entries = symbol_table.INDEX.methods.get(f"{ln}.{name}") or []
@@ -300,7 +394,9 @@ class Resolver:
     @staticmethod
     def hit_key(hit):
         if hit[0] in ("fun", "var"):
-            return hit[1][1]["key"]
+            return _ckey(hit[1])
+        if hit[0] == "dataprop":
+            return ("dataprop", hit[1][1]["key"])
         return hit
 
     def find(self, t, level):
@@ -311,7 +407,8 @@ class Resolver:
         behind an unseen supertype is ambiguous: the unseen type might declare it too.
         """
         unseen = False
-        for position, ty in enumerate(self.hierarchy(t)):
+        levels = self.hierarchy(t)
+        for position, ty in enumerate(levels):
             if ty == OPAQUE:
                 unseen = True
                 continue
@@ -319,8 +416,30 @@ class Resolver:
             if hits:
                 if len({self.hit_key(h) for h in hits}) != 1:
                     return AMBIGUOUS
-                return AMBIGUOUS if (unseen and position > 0) else hits[0]
+                if unseen and position > 0:
+                    return AMBIGUOUS
+                if self._unknown_arguments() and hits[0][0] == "fun" and self._shadowed_differently(
+                    hits[0], levels[position + 1:], level
+                ):
+                    return AMBIGUOUS
+                return hits[0]
         return OPAQUE if unseen else None
+
+    def _shadowed_differently(self, hit, later_levels, level) -> bool:
+        """Whether a farther level declares a *different* overload the arguments might select.
+
+        An override repeats its parameter types; a different signature further up is a
+        distinct overload, and with an argument whose type is unknown the nearer one may
+        be the wrong pick (``Job.plus(Job)`` against ``CoroutineContext.plus(CoroutineContext)``).
+        """
+        mine = hit[1][1].get("ptypes")
+        for ty in later_levels:
+            if ty == OPAQUE:
+                continue
+            for other in level(ty):
+                if other[0] == "fun" and other[1][1].get("ptypes") != mine:
+                    return True
+        return False
 
     def static_roots(self, ln):
         """Where ``Name.member`` looks for a class used as a receiver: the object itself, or its companion."""
@@ -393,7 +512,7 @@ class Resolver:
             return self.expand(symbol_table.return_type(hit[1], hit[2]))
         if kind == "jdkfun":
             return self.expand(jdk_index.return_type(hit[1], hit[2]))
-        if kind == "var":
+        if kind in ("var", "dataprop"):
             return self.var_type(*hit[1])
         if kind == "jvar":
             return self.expand(symbol_table.member_type(hit[1], hit[2]))
@@ -410,6 +529,9 @@ class Resolver:
             return self.expand(desc[1])
         if kind == "cast":
             return self.type_name(desc[1], kf, scope)
+        if kind == "element":
+            _, iterable, following = desc
+            return self.element_type(iterable, kf, scope, owner) or self.type_of(following, kf, scope, owner)
         if kind == "this":
             return self.this_type(kf, scope, owner)
         if kind == "super":
@@ -445,6 +567,26 @@ class Resolver:
         if kind == "call":
             call = self.call_target(desc[4], kf)
             return self.hit_type(call) if isinstance(call, tuple) else None
+        return None
+
+    def element_type(self, desc, kf, scope, owner):
+        """What a loop over ``desc`` yields, where the type system's missing type arguments cannot say.
+
+        A map yields its entries, ``withIndex()`` an ``IndexedValue``, ``zip`` a ``Pair`` --
+        the cases that make ``for ((k, v) in map)`` and ``for ((i, x) in list.withIndex())``
+        the usual destructuring loops. Anything else is left to ``next()``'s declared type.
+        """
+        if desc[0] == "call" and desc[2] in ("withIndex", "zip"):
+            hit = self.call_target(desc[4], kf)
+            if hit is not None and hit[0] == "fun" and getattr(hit[1][0], "library", False):
+                return ("class", "kotlin.collections.IndexedValue" if desc[2] == "withIndex" else "kotlin.Pair")
+        rt = self.type_of(desc, kf, scope, owner)
+        if rt is not None and rt[0] in ("class", "lib", "java"):
+            hierarchy = self.hierarchy(rt)
+            if ("class", "kotlin.collections.Map") in hierarchy:
+                if ("class", "kotlin.collections.MutableMap") in hierarchy:
+                    return ("class", "kotlin.collections.MutableMap.MutableEntry")
+                return ("class", "kotlin.collections.Map.Entry")
         return None
 
     def this_type(self, kf, scope, owner):
@@ -485,21 +627,30 @@ class Resolver:
     @staticmethod
     def _choose(candidates):
         """One distinct declaration out of these, ``AMBIGUOUS`` for several, ``None`` for none."""
-        distinct = {c[1]["key"] for c in candidates}
+        distinct = {_ckey(c) for c in candidates}
         if not distinct:
             return None
         if len(distinct) > 1:
             # a fixed-arity overload beats a vararg one taking the same arguments
             fixed = [c for c in candidates if not any(p[1] for p in c[1]["params"])]
-            if len({c[1]["key"] for c in fixed}) == 1 and len(fixed) < len(candidates):
-                return ("fun", fixed[0])
+            if len({_ckey(c) for c in fixed}) == 1 and len(fixed) < len(candidates):
+                return ("fun", Resolver._merged(fixed))
             return AMBIGUOUS
-        return ("fun", candidates[0])
+        return ("fun", Resolver._merged(candidates))
+
+    @staticmethod
+    def _merged(candidates):
+        """One declaration standing for same-named overloads; its type is unknown if they disagree."""
+        first = candidates[0]
+        if len(candidates) > 1 and getattr(first[0], "library", False) and \
+                len({(c[1]["ret"], c[1]["ret_init"]) for c in candidates}) > 1:
+            return (first[0], {**first[1], "ret": None, "ret_init": None})
+        return first
 
     def top_level_hit(self, name, nargs, kf):
         for tier in self.tiers(name, kf):
             found = [c for pkg, orig in tier for c in self._top_funs_at(pkg, orig)
-                     if c[1]["receiver"] is None and _arity_ok(c[1], nargs)]
+                     if c[1]["receiver"] is None and self._fits(c, nargs)]
             hit = self._choose(found)
             if hit is not None:
                 return hit
@@ -512,7 +663,7 @@ class Resolver:
             found = []
             for pkg, orig in tier:
                 for kf2, rec in self.ix.top_funs.get((pkg, orig), []):
-                    if rec["receiver"] is None or not _arity_ok(rec, nargs):
+                    if rec["receiver"] is None or not self._fits((kf2, rec), nargs):
                         continue
                     if self._extension_applies(kf2, rec, applies):
                         found.append((kf2, rec))
@@ -544,22 +695,49 @@ class Resolver:
         return result
 
     def _resolve_call(self, occ, kf):
-        name, nargs, scope, owner = occ["n"], occ["a"], occ["s"], occ["o"]
-        if occ.get("init"):
-            return self._resolve_init(occ, kf)
-        recv = occ["r"]
+        saved, self._ctx = self._ctx, {"occ": occ, "kf": kf, "types": None}
+        try:
+            if occ.get("init"):
+                return self._resolve_init(occ, kf)
+            result = self._resolve_named(occ, kf, occ["n"])
+            if not isinstance(result, tuple) and occ.get("alt"):
+                result = self._resolve_named(occ, kf, occ["alt"])     # `+=`: plusAssign, else plus
+            if not isinstance(result, tuple) and occ["r"] is None and not occ.get("op"):
+                result = self._invoke_on_value(occ, kf)               # `f(x)` where f is an object
+            return result
+        finally:
+            self._ctx = saved
+
+    def _resolve_named(self, occ, kf, name):
+        nargs, scope, owner, recv = occ["a"], occ["s"], occ["o"], occ["r"]
         if recv is None:
             binding = occ["b"]
             if binding is not None:
                 if binding[0] == "fun":
                     cands = [self.ix.callables[k] for k in binding[1] if k in self.ix.callables]
-                    return self._choose([c for c in cands if _arity_ok(c[1], nargs)])
+                    return self._choose([c for c in cands if self._fits(c, nargs)])
                 return None
             return self.free_call(name, nargs, kf, scope, owner)
         rt = self.type_of(recv, kf, scope, owner)
         if rt is None:
             return None
         return self.qualified_call(rt, name, nargs, kf)
+
+    def _invoke_on_value(self, occ, kf):
+        """``f(x)`` where ``f`` is a variable or property whose type declares ``invoke``."""
+        name, nargs = occ["n"], occ["a"]
+        binding = occ["b"]
+        if binding is not None:
+            if binding[0] != "local" or binding[1] not in self.ix.variables:
+                return None
+            rt = self.var_type(*self.ix.variables[binding[1]])
+        else:
+            hit = self.free_var(name, kf, occ["s"], occ["o"])
+            rt = self.hit_type(hit) if isinstance(hit, tuple) else None
+        if rt is None:
+            return None
+        hit = self.find_member(rt, lambda t: self._fun_level(t, "invoke", nargs))
+        return hit if isinstance(hit, tuple) else None
 
     def constructor(self, t, nargs, exclude=None):
         kind, target = t
@@ -568,8 +746,8 @@ class Resolver:
         if kind == "lib":
             return ("libctor", target)
         ctors = [c for c in self.ix.ctors.get(target, []) if c[1]["key"] != exclude]
-        fits = [c for c in ctors if _arity_ok(c[1], nargs)]
-        if len({c[1]["key"] for c in fits}) == 1:
+        fits = [c for c in ctors if self._fits(c, nargs)]
+        if len({_ckey(c) for c in fits}) == 1:
             return ("ctor_call", target, fits[0])
         return ("ctor", target)   # the class is known, which of its constructors is not
 
@@ -659,7 +837,7 @@ class Resolver:
                 return hit
         for tier in self.tiers(name, kf):
             found = [c for pkg, orig in tier for c in self._top_vars_at(pkg, orig) if c[1]["receiver"] is None]
-            distinct = {c[1]["key"] for c in found}
+            distinct = {_ckey(c) for c in found}
             if len(distinct) == 1:
                 return ("var", found[0])
             if distinct:
@@ -685,6 +863,29 @@ class Resolver:
         """Whether the occurrence sits in a lambda whose implicit receiver may own the name."""
         return any(self.receiver_lambda(call_id, pos, kf) for call_id, pos in occ["lam"])
 
+    def _loop_intrinsic(self, occ, kf) -> bool:
+        """Whether this ``for`` loops over a range, array or string, with no iterator to call."""
+        rt = self.type_of(occ["loop"], kf, occ["s"], occ["o"])
+        return rt is not None and rt[0] in ("class", "lib") and \
+            (rt[1] in LOOP_INTRINSIC or bool(_ARRAYS.fullmatch(rt[1])))
+
+    def _primitive_receiver(self, occ, kf) -> bool:
+        """Whether the operator's receiver is a primitive or an array: ``1..n`` is inlined
+        whichever declaration (a member, or an extension on Comparable) the name finds."""
+        if occ["r"] is None:
+            return False
+        rt = self.type_of(occ["r"], kf, occ["s"], occ["o"])
+        return rt is not None and rt[0] in ("class", "lib") and \
+            (rt[1] in INTRINSIC_OWNERS or bool(_ARRAYS.fullmatch(rt[1])))
+
+    @staticmethod
+    def _intrinsic(rec) -> bool:
+        """Whether an operator's declaration is a primitive's or an array's, which the compiler inlines."""
+        for owner in (rec["owner"], rec["receiver"]):
+            if owner and (owner in INTRINSIC_OWNERS or _ARRAYS.fullmatch(owner)):
+                return True
+        return False
+
     def resolve(self, occ, kf):
         """The declarations an occurrence refers to, as a list of tagged tuples, or ``[]``.
 
@@ -699,12 +900,20 @@ class Resolver:
         if occ["r"] is not None and _contains(occ["r"], "this") and self.blocked(occ, kf):
             return []
         if occ["t"] == "call":
+            if occ.get("loop") is not None and self._loop_intrinsic(occ, kf):
+                return []
             target = self.call_target(occ["id"], kf)
             if target is None:
                 return []
             init = occ.get("init")   # a delegation call creates nothing: the object exists
             kind = target[0]
+            if kind == "dataprop":
+                return [("var", target[1])]       # componentN of a data class reads that property
             if kind == "fun":
+                if occ.get("op") and (
+                    self._intrinsic(target[1][1]) or (occ.get("sym") and self._primitive_receiver(occ, kf))
+                ):
+                    return []
                 return [("call", target[1])]
             if kind == "ctor":
                 return [] if init else [("create", target[1])]
