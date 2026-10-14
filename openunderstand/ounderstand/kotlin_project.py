@@ -41,8 +41,7 @@ The facts of every file are cached against its mtime and size, because resolving
 file needs the declarations of the others: an update re-reads only what changed.
 
 Not written: overrides, extends/implements, type arguments, ``Set Init``, infix
-and operator calls, a Java getter read as a property, and anything inside an
-anonymous object. A file that does not parse is skipped and reported.
+and operator calls, and a Java getter read as a property. A file that does not parse is skipped and reported.
 """
 
 from __future__ import annotations
@@ -170,6 +169,13 @@ def _library_entity(longname: str):
     )[0]
 
 
+def _package_row(longname: str):
+    for row in entity_rows(longname):
+        if "Package" in _kind_name(row._kind_id):
+            return row
+    return None
+
+
 def _project_type(longname: str):
     for row in entity_rows(longname):
         # a class, or a type parameter in scope (its family is "other")
@@ -209,6 +215,35 @@ def _write_typed(kfile, file_ent):
                 _ent=ent,
                 _scope=scope,
             )
+        if t.get("start") is not None:
+            _write_type_qualifiers(kfile, file_ent, t, owner)
+
+
+def _write_super_qualifiers(kfile, file_ent):
+    for t in kfile.qualifiers:
+        owner = _row_at(*t["owner"])
+        if owner is not None:
+            _write_type_qualifiers(kfile, file_ent, t, owner)
+
+
+def _write_type_qualifiers(kfile, file_ent, t, owner):
+    """``a.b.C x`` reads ``a.b`` and ``Outer.Inner x`` reads ``Outer``: a ``Java DotRef`` on each
+    qualifier that names an entity, at the first segment, as Java's qualified types do. A project
+    package or class has its inverse; a library one is external and loses it afterwards."""
+    parts = t["name"].split(".")
+    for i in range(len(parts) - 1, 0, -1):
+        prefix = ".".join(parts[:i])
+        package = _package_row(prefix)
+        target = package or resolve_type(prefix, kfile, t["enclosing"])
+        if target is None:
+            continue
+        for kind, scope, ent in (("Java DotRef", owner, target), ("Java DotRefby", target, owner)):
+            ReferenceModel.get_or_create(
+                _kind=kind_id(kind), _file=file_ent, _line=t["start"][0],
+                _column=col_1based(t["start"][1]), _ent=ent, _scope=scope,
+            )
+        if package is not None:
+            break
 
 
 #: path -> ((mtime_ns, size), KFile). Facts are pure data, so they survive an update.
@@ -251,6 +286,7 @@ _POSITIONAL = {
     "call": ("Java Call", "Java Callby"),
     "create": ("Java Create", "Java Createby"),
     "use": ("Java Use", "Java Useby"),
+    "dotref": ("Java DotRef", "Java DotRefby"),
     "set": ("Java Set", "Java Setby"),
     "modify": ("Java Modify", "Java Modifyby"),
 }
@@ -292,6 +328,11 @@ def _java_variable_row(owner: str, name: str):
 def _targets(outcome, index):
     """The (label, entity row) pairs an outcome from the resolver writes, mode aside."""
     kind = outcome[0]
+    if kind in ("ref", "dotref"):          # a reference reads the declaration; it does not call it
+        label = "use" if kind == "ref" else "dotref"
+        return [(label, row) for _, row in _targets(outcome[1], index)]
+    if kind == "package":
+        return [("var", _package_row(outcome[1]))]
     if kind == "call":
         kf, rec = outcome[1]
         if getattr(kf, "library", False):
@@ -347,6 +388,62 @@ def _write_references(kfile, file_ent, resolver):
                     )
 
 
+def _imported(fq: str, star: bool, ix) -> list:
+    """The project entities an import names: a class, every overload of a function, a property,
+    or (``*``) the package or class whose members it brings. Library targets name nothing here."""
+    from openunderstand.ounderstand import symbol_table
+
+    def own(entry):
+        return entry is not None and not getattr(entry[0], "library", False)
+
+    if star:
+        if fq in ix.packages:
+            return [_package_row(fq)]
+        if own(ix.classes.get(fq)):
+            return [_row_at(*ix.classes[fq][1]["key"])]
+        return [_project_type(fq)] if symbol_table.is_project_type(fq) else []
+    if own(ix.classes.get(fq)):
+        return [_row_at(*ix.classes[fq][1]["key"])]
+    if symbol_table.is_project_type(fq):
+        return [_project_type(fq)]
+    owner, _, name = fq.rpartition(".")
+    found = [c for c in ix.top_funs.get((owner, name), []) + ix.top_vars.get((owner, name), [])]
+    if own(ix.classes.get(owner)) and ix.classes[owner][1]["object"]:      # `import a.Obj.member`
+        found += ix.members_funs.get(owner, {}).get(name, []) + ix.members_vars.get(owner, {}).get(name, [])
+    return [_row_at(*rec["key"]) for kf, rec in found if not getattr(kf, "library", False)]
+
+
+def _write_imports(kfile, file_ent, resolver):
+    """``Java Importby`` (``Demand`` for ``*``) on what an import names, with the file as the entity.
+
+    Inverse only, at the last identifier, as Java's: Understand has no ``Java Import`` on the
+    importing file. A project class or function also gets a ``Java DotRefby`` on the package (and
+    outer types) enclosing it, at the first identifier.
+    """
+    ix = resolver.ix
+    for fq, star, line, col, head_line, head_col in kfile.import_sites:
+        targets = [t for t in _imported(fq, star, ix) if t is not None]
+        for target in targets:
+            ReferenceModel.get_or_create(
+                _kind=kind_id("Java Importby Demand" if star else "Java Importby"),
+                _file=file_ent, _line=line, _column=col_1based(col), _ent=file_ent, _scope=target,
+            )
+        if not targets or star:
+            continue
+        parts = fq.split(".")
+        for i in range(len(parts) - 1, 0, -1):
+            prefix = ".".join(parts[:i])
+            package = _package_row(prefix)
+            row = package or (_row_at(*ix.classes[prefix][1]["key"]) if prefix in ix.classes else _project_type(prefix))
+            if row is not None:
+                ReferenceModel.get_or_create(
+                    _kind=kind_id("Java DotRefby"),
+                    _file=file_ent, _line=head_line, _column=col_1based(head_col), _ent=file_ent, _scope=row,
+                )
+                if package is not None:
+                    break          # intermediate packages get nothing
+
+
 def analyse(paths, root: str | None = None) -> kotlin_parser.Summary:
     """Parse and write these Kotlin files; with no database bound, only parse.
 
@@ -383,8 +480,10 @@ def analyse(paths, root: str | None = None) -> kotlin_parser.Summary:
             written.append((kfile, _write_declarations(p, kfile)))
         for kfile, file_ent in written:
             _write_typed(kfile, file_ent)
+            _write_super_qualifiers(kfile, file_ent)
         for kfile, file_ent in written:
             _write_references(kfile, file_ent, resolver)
+            _write_imports(kfile, file_ent, resolver)
         flush_reference_writes()
     summary.analysed = len(written)
     for path, error in summary.failed.items():

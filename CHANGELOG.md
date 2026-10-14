@@ -21,9 +21,14 @@
   placeholder entities named by their long name. Infix and operator calls are calls too: `a to b`, `a + b`, `a[i]`,
   `x in c`, `-a`, `a++`, `a += b` and `f(x)` on a value (a symbolic operator on a
   primitive or an array writes nothing, since the compiler inlines it), and argument
-  types now choose between overloads where they are known. Destructuring (`val (a, b) = p`, a data class's `componentN` included) and `for`
-  loops (`iterator`, `hasNext`, `next`) are calls too. Not resolved: Java
-  overloads by argument type, `==`, and libraries without an index (kotlinx, third party). There is no Understand oracle to measure any of it against. A Java-only project's database is
+  types now choose between overloads where they are known. Destructuring (`val (a, b) = p`, a data class's `componentN` included), `for`
+  loops (`iterator`, `hasNext`, `next`), delegated properties (`getValue`, `setValue`,
+  `provideDelegate`), `==` (`equals`, where a more specific one than `Any`'s exists) and
+  a lambda parameter's destructuring (typed by the callee's signature) are calls too. Types carry their type arguments,
+  so `List<Point>` gives a loop variable, `list[0]`, `first()`, `it` and `{ p -> }` their element type, a call binds its own
+  type parameters from its receiver, arguments, explicit `<T>` and lambdas (`map { it.x }`), and type aliases with
+  parameters expand; the declared type a call is stored in binds what the arguments leave open; a type parameter's upper bound (and `where` clause) types a value no binding reached, and `in T` projections read as unknown; anonymous objects are classes of their own (`(Anon_N)`) whose members, captured locals and supertypes resolve; anonymous functions are walked like lambdas, with typed parameters; callable references (`::f`, `Type::m`, `obj::m`, `::Type`) are a Use of what they name, and of the type before the `::`, overloads refused; a class named as a static receiver (`Util.twice()`, `Math.max`) is a Use of it; imports are `Importby`/`Importby Demand` on what they name (with `DotRefby` on the enclosing package) and a project package named in an expression is a Use per segment; a qualified declared type, supertype, cast, `is` or `catch` type reads its package or outer type with a DotRef at its first segment; an unknown or conflicting binding stays unknown. Not resolved: Java overloads by argument type, and libraries without an
+  index (kotlinx, third party). There is no Understand oracle to measure any of it against. A Java-only project's database is
   unchanged (fingerprint identical). The wheels grow by about 3 MB.
 
 ## IDEA plugin 0.6.1

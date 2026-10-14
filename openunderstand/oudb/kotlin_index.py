@@ -20,6 +20,7 @@ the resolver looks a stdlib function up exactly as it looks up a project one. Th
 from __future__ import annotations
 
 import gzip
+import json
 import os
 from functools import lru_cache
 from types import SimpleNamespace
@@ -40,12 +41,24 @@ DEFAULT_PACKAGES = (
     "kotlin.jvm",
 )
 
-_DECL = {"C": "class", "I": "interface", "E": "enum", "A": "annotation"}
+_DECL = {"C": "class", "O": "class", "I": "interface", "E": "enum", "A": "annotation"}
+
+
+def _tuple(x):
+    """A JSON type expression (lists) as the tuples the collector produces."""
+    if isinstance(x, list):
+        return tuple(_tuple(i) for i in x)
+    return x
+
+
+def _expr(text):
+    return _tuple(json.loads(text)) if text else None
 
 
 @lru_cache(maxsize=1)
 def _load() -> dict:
-    data = {"types": {}, "supers": {}, "aliases": {}, "functions": [], "properties": [], "data": {}}
+    data = {"types": {}, "supers": {}, "aliases": {}, "functions": [], "properties": [], "data": {},
+            "tparams": {}, "super_exprs": {}, "alias_exprs": {}}
     if not os.path.exists(_PATH):
         return data
     with gzip.open(_PATH, "rt", encoding="utf8") as handle:
@@ -55,16 +68,23 @@ def _load() -> dict:
             parts = line.rstrip("\n").split("\t")
             if parts[0] == "@A" and len(parts) >= 3:
                 data["aliases"][parts[1]] = parts[2]
+                if len(parts) >= 5:
+                    data["alias_exprs"][parts[1]] = (tuple(p for p in parts[3].split(",") if p), _expr(parts[4]))
             elif parts[0] == "@D" and len(parts) >= 3:
                 data["data"][parts[1]] = parts[2].split(",")
             elif parts[0] == "@F" and len(parts) >= 7:
-                data["functions"].append(tuple(parts[1:7]) + ((parts[7] if len(parts) > 7 else ""),))
+                row = tuple(parts[1:7]) + ((parts[7] if len(parts) > 7 else ""),)
+                data["functions"].append(row + tuple(parts[8:11]) + ("",) * max(0, 11 - len(parts)))
             elif parts[0] == "@V" and len(parts) >= 5:
-                data["properties"].append(tuple(parts[1:5]))
+                data["properties"].append(tuple(parts[1:5]) + tuple(parts[5:7]) + ("",) * max(0, 7 - len(parts)))
             elif len(parts) >= 2 and not parts[0].startswith("@"):
                 data["types"][parts[0]] = parts[1]
                 if len(parts) > 2 and parts[2]:
                     data["supers"][parts[0]] = parts[2].split(",")
+                if len(parts) > 3:
+                    data["tparams"][parts[0]] = tuple(p for p in parts[3].split(",") if p)
+                if len(parts) > 4 and parts[4]:
+                    data["super_exprs"][parts[0]] = _tuple(json.loads(parts[4]))
     return data
 
 
@@ -79,6 +99,11 @@ def flag(longname: str) -> str | None:
 
 def is_interface(longname: str) -> bool:
     return _load()["types"].get(longname) == "I"
+
+
+def alias_expression(longname: str):
+    """A stdlib typealias's type parameters and the type expression it stands for, or ``None``."""
+    return _load()["alias_exprs"].get(longname)
 
 
 def alias_target(longname: str) -> str | None:
@@ -118,13 +143,14 @@ def library_files() -> tuple:
         while package and package in data["types"]:
             package = package.rpartition(".")[0]
         record = {
-            "name": fq.rpartition(".")[2], "decl": _DECL.get(kind, "class"), "object": False,
+            "name": fq.rpartition(".")[2], "decl": _DECL.get(kind, "class"), "object": kind == "O",
             "companion": None, "supers": list(data["supers"].get(fq, [])), "scope": (),
             "key": (fq, 0, 0), "vis": ["public"], "data": list(data["data"].get(fq, [])),
+            "tparams": data["tparams"].get(fq, ()), "super_exprs": data["super_exprs"].get(fq, ()),
         }
         file_of(package).classes[fq] = record
     serial = 0
-    for kind, where, name, receiver, params, ret, ptypes in data["functions"]:
+    for kind, where, name, receiver, params, ret, ptypes, rexpr, retexpr, ptexprs in data["functions"]:
         serial += 1
         package, owner = (where[1:], None) if where.startswith("=") else ("", where)
         if owner:
@@ -139,9 +165,11 @@ def library_files() -> tuple:
                 "receiver": receiver or None, "ret": ret or None, "ret_init": None, "local": False,
                 "scope": (), "vis": ["public"], "tparams": (),
                 "ptypes": tuple((t or None) for t in ptypes.split(",")) if params else (),
+                "receiver_expr": _expr(rexpr), "ret_expr": _expr(retexpr),
+                "ptexprs": tuple(_expr(t) for t in ptexprs.split("|")) if params else (),
             }
         )
-    for where, name, receiver, declared in data["properties"]:
+    for where, name, receiver, declared, declared_expr, receiver_expr in data["properties"]:
         serial += 1
         package, owner = (where[1:], None) if where.startswith("=") else ("", where)
         if owner:
@@ -154,6 +182,7 @@ def library_files() -> tuple:
                 "key": (longname, 0, serial), "name": name, "owner": owner, "kind": "property",
                 "declared": declared or None, "init": None, "scope": (), "vis": ["public"],
                 "receiver": receiver or None,
+                "declared_expr": _expr(declared_expr), "receiver_expr": _expr(receiver_expr),
             }
         )
     return tuple(files.values())

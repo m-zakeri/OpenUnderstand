@@ -28,8 +28,8 @@ constructors; properties (a ``val``/``var`` constructor parameter is one);
 parameters; type parameters; type aliases; and locals and ``for`` variables in
 function bodies. A type alias has no kind of its own, so it is a class-kind
 entity whose ``type`` reads ``typealias <target>``. **Not declared**: anything
-inside a lambda, an anonymous function or an object literal, accessors'
-parameters, and catch/when-subject variables.
+inside a lambda or an anonymous function (an object literal *is* declared: see
+``anonymous``), accessors' parameters, and catch/when-subject variables.
 
 **Facts for resolution.** Besides the entities, the collector records what
 ``kotlin_symbols`` needs to resolve calls and names later: ``classes`` (supertypes,
@@ -50,6 +50,7 @@ from antlr4.tree.Tree import TerminalNode
 
 from openunderstand.analysis_passes.kotlin_expressions import Env, ExprWalker
 from openunderstand.analysis_passes.kotlin_tree import (
+    type_expr,
     children,
     find,
     first,
@@ -72,6 +73,8 @@ class KFile:
     package: str = ""
     package_pos: list = field(default_factory=list)  # (name, line, col) per segment
     imports: list = field(default_factory=list)  # (fqname, alias or None, star)
+    qualifiers: list = field(default_factory=list)  # qualified supertypes: {owner, name, start, enclosing}
+    import_sites: list = field(default_factory=list)  # (fqname, star, line, col, head line, head col)
     defines: list = field(default_factory=list)  # addDefineRefs dictionaries
     types: list = field(default_factory=list)  # declared types to turn into Typed
     top_types: list = field(default_factory=list)  # (name, longname, line, col) for Contain
@@ -88,6 +91,39 @@ class _Collector:
         self.package: list[str] = []
         self.class_envs: dict = {}  # class scope -> Env of its primary constructor's parameters
         self.primary_keys: dict = {}  # class scope -> its primary constructor's entity key
+        self._tp: list = []           # type parameters in scope: a stack of name sets
+        self.anon: dict = {}          # id(objectLiteral) -> its number over the file, in source order
+        self.capture: dict = {}       # anonymous object scope -> the Env of the code that creates it
+
+    def texpr(self, type_ctx):
+        """A type as a tuple that keeps its arguments, with the type parameters in scope marked."""
+        scope = {}
+        for frame in self._tp:
+            scope.update(frame)
+        return type_expr(type_ctx, scope)
+
+    def tparam_map(self, ctx) -> dict:
+        """The type parameters ``ctx`` declares, each with its single upper bound as a type expression.
+
+        A bound is what a member lookup on a value of that type may assume (`T : Point` has
+        ``x``). Two bounds (`where T : A, T : B`) are an intersection no one type names, so none.
+        """
+        names = self.type_parameter_names(ctx)
+        found = {n: [] for n in names}
+        self._tp.append({n: None for n in names})
+        try:
+            tp = first(ctx, "typeParameters")
+            for p in children(tp, "typeParameter") if tp is not None else []:
+                if first(p, "type_") is not None:
+                    found[_name(first(p, "simpleIdentifier"))[0]].append(first(p, "type_"))
+            constraints = first(ctx, "typeConstraints")
+            for c in children(constraints, "typeConstraint") if constraints is not None else []:
+                n = _name(first(c, "simpleIdentifier"))[0]
+                if n in found and first(c, "type_") is not None:
+                    found[n].append(first(c, "type_"))
+            return {n: (self.texpr(b[0]) if len(b) == 1 else None) for n, b in found.items()}
+        finally:
+            self._tp.pop()
 
     # -- facts for resolution ---------------------------------------------
     def walker(self, owner, scope, env, receiver_lambda=False):
@@ -98,18 +134,21 @@ class _Collector:
             {
                 "key": key, "name": name, "owner": owner, "kind": kind,
                 "declared": name_of(type_ctx) if type_ctx is not None else None,
+                "declared_expr": self.texpr(type_ctx) if type_ctx is not None else None,
                 "init": init, "scope": tuple(scope), "vis": vis, "receiver": receiver,
             }
         )
 
     def callable_fact(self, key, name, owner, ctor, params, receiver, ret, ret_init, local, scope,
-                      vis=None, tparams=(), ptypes=()):
+                      vis=None, tparams=(), ptypes=(), ptexprs=(), ret_expr=None, receiver_expr=None):
         self.out.callables.append(
             {
                 "key": key, "name": name, "owner": owner, "ctor": ctor, "params": params,
                 "receiver": receiver, "ret": ret, "ret_init": ret_init, "local": local,
                 "scope": tuple(scope), "vis": vis, "tparams": tuple(tparams),
                 "ptypes": tuple(ptypes),    # one per parameter: a class name, "<fn>" or None (unknown)
+                "ptexprs": tuple(ptexprs),  # the same, as type expressions that keep their arguments
+                "ret_expr": ret_expr, "receiver_expr": receiver_expr,
             }
         )
 
@@ -134,6 +173,41 @@ class _Collector:
             for cp in (children(params, "classParameter") if params is not None else [])
             if has_token(cp, "val") or has_token(cp, "var")
         ]
+
+    def super_exprs(self, cls_ctx) -> list:
+        """The supertypes as type expressions, in the order ``supertypes`` lists their names."""
+        specs = first(cls_ctx, "delegationSpecifiers")
+        out = []
+        for annotated in children(specs, "annotatedDelegationSpecifier") if specs is not None else []:
+            spec = first(annotated, "delegationSpecifier")
+            if spec is None:
+                continue
+            for inner in spec.children or []:
+                user = None
+                if rule(inner) == "userType":
+                    user = inner
+                elif rule(inner) in ("constructorInvocation", "explicitDelegation"):
+                    user = first(inner, "userType")
+                if user is not None:
+                    out.append(self.texpr(user))
+        return out
+
+    def super_qualifiers(self, cls_ctx, key, scope):
+        """Qualified supertypes (``: a.b.Base``, ``: Outer.Iface``) of a class, for ``Java DotRef``."""
+        specs = first(cls_ctx, "delegationSpecifiers")
+        for annotated in children(specs, "annotatedDelegationSpecifier") if specs is not None else []:
+            spec = first(annotated, "delegationSpecifier")
+            for inner in (spec.children if spec is not None else []) or []:
+                user = inner if rule(inner) == "userType" else (
+                    first(inner, "userType") if rule(inner) in ("constructorInvocation", "explicitDelegation") else None)
+                if user is None:
+                    continue
+                parts = children(user, "simpleUserType")
+                if len(parts) > 1:
+                    self.out.qualifiers.append(
+                        {"owner": key, "name": user_type_name(user), "enclosing": list(scope),
+                         "start": _name(first(parts[0], "simpleIdentifier"))[1:]}
+                    )
 
     def supertypes(self, cls_ctx) -> list:
         specs = first(cls_ctx, "delegationSpecifiers")
@@ -165,6 +239,11 @@ class _Collector:
         for imp in children(imports, "importHeader") if imports is not None else []:
             ident = first(imp, "identifier")
             alias = first(imp, "importAlias")
+            segments = [_name(s) for s in children(ident, "simpleIdentifier")]
+            self.out.import_sites.append(
+                (ident.getText().replace("`", ""), has_token(imp, "*"),
+                 segments[-1][1], segments[-1][2], segments[0][1], segments[0][2])
+            )
             self.out.imports.append(
                 (
                     ident.getText().replace("`", ""),
@@ -172,6 +251,14 @@ class _Collector:
                     has_token(imp, "*"),
                 )
             )
+        def scan(node):
+            for c in node.children or []:
+                if not isinstance(c, TerminalNode):
+                    if rule(c) == "objectLiteral":
+                        self.anon[id(c)] = len(self.anon) + 1
+                    scan(c)
+
+        scan(tree)
         for top in children(tree, "topLevelObject"):
             member = first(top, "memberPropertyDeclaration")
             if member is not None:
@@ -229,12 +316,16 @@ class _Collector:
         if named is None:
             return
         name, line, col = named
+        user = find(type_ctx, "userType")
+        head = children(user, "simpleUserType")[0] if user is not None else None
+        start = _name(first(head, "simpleIdentifier"))[1:] if head is not None and "." in name else None
         self.out.types.append(
             {
                 "owner": owner,  # (longname, line, col) of the declared entity
                 "name": name,
                 "line": line,
                 "col": col,
+                "start": start,  # (line, col) of the first segment of a qualified name
                 "enclosing": list(scope),
             }
         )
@@ -281,7 +372,13 @@ class _Collector:
             span=False,
         )
         self.out.top_types.append((name, longname, line, col))
-        self.out.aliases.append((longname, mods, name_of(target), tuple(scope)))
+        alias_params = self.type_parameter_names(ctx)
+        self._tp.append({n: None for n in alias_params})
+        try:
+            expression = self.texpr(target)
+        finally:
+            self._tp.pop()
+        self.out.aliases.append((longname, mods, name_of(target), tuple(scope), expression, alias_params))
         inner = scope + [name]
         self.type_parameters(ctx, inner)
         self.typed((longname, line, col), target, inner)
@@ -302,6 +399,13 @@ class _Collector:
             )
 
     def klass(self, ctx, scope, top_level, in_object):
+        self._tp.append(self.tparam_map(ctx))
+        try:
+            return self._klass(ctx, scope, top_level, in_object)
+        finally:
+            self._tp.pop()
+
+    def _klass(self, ctx, scope, top_level, in_object):
         mods = self.mods(first(ctx, "modifiers"))
         ident = first(ctx, "simpleIdentifier")
         is_interface = has_token(ctx, "interface")
@@ -337,7 +441,9 @@ class _Collector:
             "name": _name(ident)[0], "decl": decl, "object": False, "companion": None,
             "supers": self.supertypes(ctx), "scope": tuple(inner), "key": (longname, line, col),
             "vis": self.visibility(mods), "data": self.data_components(ctx, mods),
+            "tparams": self.type_parameter_names(ctx), "super_exprs": self.super_exprs(ctx),
         }
+        self.super_qualifiers(ctx, (longname, line, col), inner)
         self.type_parameters(ctx, inner)
         self.primary_constructor(ctx, inner, decl)
         self.header_calls(ctx, inner, (longname, line, col))
@@ -348,6 +454,38 @@ class _Collector:
                 for entry in children(entries, "enumEntry"):
                     self.enum_entry(entry, inner)
             self.members(enum_body, inner, decl, in_object=False)
+
+    def anonymous(self, ctx, walker):
+        """``object : Base(x) { ... }``: a class of its own, named ``(Anon_N)`` over the file as in Java.
+
+        Its members are declared under it and see the locals of the code that creates it. Returns
+        the long name, which types the expression. The header's ``Base(x)`` is a call made by the
+        creating code, so the creating walker records it.
+        """
+        scope = list(walker.scope)
+        name = "(Anon_%d)" % self.anon.get(id(ctx), 0)
+        longname = ".".join([*scope, name])
+        if longname in self.out.classes:
+            return longname
+        key = self.add(None, scope, decl=K.ANONYMOUS_CLASS, type_text="Class", ctx=ctx,
+                       modifiers=["final"], name=name)
+        inner = scope + [name]
+        self.out.classes[longname] = {
+            "name": name, "decl": K.CLASS, "object": False, "companion": None,
+            "supers": self.supertypes(ctx), "scope": tuple(inner), "key": key,
+            "vis": ["public"], "data": [], "tparams": (), "super_exprs": self.super_exprs(ctx),
+        }
+        self.super_qualifiers(ctx, key, inner)
+        specs = first(ctx, "delegationSpecifiers")
+        for annotated in children(specs, "annotatedDelegationSpecifier") if specs is not None else []:
+            spec = first(annotated, "delegationSpecifier")
+            invocation = first(spec, "constructorInvocation") if spec is not None else None
+            if invocation is not None:
+                walker.header_call(first(invocation, "userType"), first(invocation, "valueArguments"))
+        self.capture[tuple(inner)] = walker.env
+        self.class_envs[tuple(inner)] = Env(walker.env)
+        self.members(first(ctx, "classBody"), inner, K.CLASS, in_object=False)
+        return longname
 
     def header_calls(self, cls_ctx, scope, class_key):
         """The superclass constructors a class header invokes: ``class A : Base(x)``."""
@@ -397,6 +535,7 @@ class _Collector:
             "supers": self.supertypes(ctx), "scope": tuple(scope + [_name(ident)[0]]),
             "key": (longname, line, col), "vis": self.visibility(mods),
         }
+        self.super_qualifiers(ctx, (longname, line, col), scope + [_name(ident)[0]])
         self.members(first(ctx, "classBody"), scope + [_name(ident)[0]], K.CLASS, in_object=True)
 
     def companion(self, ctx, scope):
@@ -465,7 +604,7 @@ class _Collector:
             span=False,
         )
         env = Env()
-        fact_params, defaults, ptypes = [], [], []
+        fact_params, defaults, ptypes, ptexprs = [], [], [], []
         for cp in children(params, "classParameter") if params is not None else []:
             pmods = self.mods(first(cp, "modifiers"))
             ident = first(cp, "simpleIdentifier")
@@ -490,13 +629,14 @@ class _Collector:
                 env.names[name] = ("local", key)
             fact_params.append((default is not None, "vararg" in pmods, _fn_receiver(type_ctx)))
             ptypes.append(_param_type(type_ctx))
+            ptexprs.append(self.texpr(type_ctx))
             if default is not None:
                 defaults.append((ctor_key, default))   # a default value runs in the constructor
         self.class_envs[tuple(scope)] = env
         self.primary_keys[tuple(scope)] = ctor_key
         self.callable_fact(
             ctor_key, cname, ".".join(scope), True, fact_params, None, None, None, False, scope,
-            vis=self.visibility(mods), ptypes=ptypes,
+            vis=self.visibility(mods), ptypes=ptypes, ptexprs=ptexprs,
         )
         for key, default in defaults:
             self.walker(key, scope, Env(env)).walk(default)
@@ -527,7 +667,7 @@ class _Collector:
         self.callable_fact(
             key, cname, ".".join(scope), True, [(i["default"], i["vararg"], i["fnrecv"]) for i in infos],
             None, None, None, False, inner, vis=self.visibility(mods),
-            ptypes=[i["ptype"] for i in infos],
+            ptypes=[i["ptype"] for i in infos], ptexprs=[i["ptexpr"] for i in infos],
         )
         walker = self.walker(key, inner, env)
         for info in infos:
@@ -537,6 +677,13 @@ class _Collector:
         walker.walk(first(ctx, "block"))
 
     def function(self, ctx, scope, top_level, in_object, owner=None, env=None):
+        self._tp.append(self.tparam_map(ctx))
+        try:
+            return self._function(ctx, scope, top_level, in_object, owner, env)
+        finally:
+            self._tp.pop()
+
+    def _function(self, ctx, scope, top_level, in_object, owner=None, env=None):
         mods = self.mods(first(ctx, "modifiers"))
         ident = first(ctx, "simpleIdentifier")
         body = first(ctx, "functionBody")
@@ -570,7 +717,7 @@ class _Collector:
             self.typed(key, ret, inner)   # inner: sees the function's <T>
         self.type_parameters(ctx, inner)
         infos = self.parameters(first(ctx, "functionValueParameters"), inner, inner, longname)
-        fenv = Env(env)
+        fenv = Env(env if env is not None else self.capture.get(tuple(scope)))
         for info in infos:
             fenv.names[info["name"]] = ("local", info["key"])
         walker = self.walker(key, inner, fenv)
@@ -582,6 +729,8 @@ class _Collector:
             for part in body.children or []:
                 if rule(part) == "expression" and ret is None:
                     ret_init = walker.walk(part)
+                elif rule(part) == "expression":
+                    walker.expect(walker.walk(part), ret)
                 else:
                     walker.walk(part)
         receiver = first(ctx, "receiverType")
@@ -591,7 +740,9 @@ class _Collector:
             name_of(receiver) if receiver is not None else None,
             name_of(ret) if ret is not None else None, ret_init, env is not None, inner,
             vis=self.visibility(mods), tparams=self.type_parameter_names(ctx),
-            ptypes=[i["ptype"] for i in infos],
+            ptypes=[i["ptype"] for i in infos], ptexprs=[i["ptexpr"] for i in infos],
+            ret_expr=self.texpr(ret) if ret is not None else None,
+            receiver_expr=self.texpr(receiver) if receiver is not None else None,
         )
         return key
 
@@ -620,12 +771,19 @@ class _Collector:
             infos.append(
                 {"key": key, "name": name, "default": default is not None, "default_ctx": default,
                  "vararg": "vararg" in mods, "fnrecv": _fn_receiver(type_ctx),
-                 "ptype": _param_type(type_ctx)}
+                 "ptype": _param_type(type_ctx), "ptexpr": self.texpr(type_ctx)}
             )
         return infos
 
     def property(self, ctx, scope, top_level, in_object):
         head = first(ctx, "propertyDeclarationHead")
+        self._tp.append(self.tparam_map(head))
+        try:
+            return self._property(ctx, scope, top_level, in_object, head)
+        finally:
+            self._tp.pop()
+
+    def _property(self, ctx, scope, top_level, in_object, head):
         mods = self.mods(first(head, "modifiers"))
         is_val = has_token(head, "val")
         out_mods = self.visibility(mods)
@@ -659,9 +817,9 @@ class _Collector:
         init = None
         for part in head.children or []:
             if rule(part) == "expression":
-                init = walker.walk(part)
+                init = walker.expect(walker.walk(part), type_ctx)
             elif rule(part) == "propertyDelegate":
-                walker.walk(part)
+                init = walker.delegate(part, is_var=has_token(head, "var"))
         accessor_env = Env(env)
         accessor_env.names["value"] = ("shadow",)
         accessor_env.names["field"] = ("shadow",)
@@ -677,6 +835,7 @@ class _Collector:
                 init=init if (t is None and len(keys) == 1) else None, scope=scope,
                 vis=self.visibility(mods), receiver=name_of(receiver) if receiver is not None else None,
             )
+            self.out.variables[-1]["receiver_expr"] = self.texpr(receiver) if receiver is not None else None
 
     @staticmethod
     def variables(head):
@@ -733,11 +892,25 @@ class _Collector:
 
 
 def _param_type(type_ctx):
-    """A parameter's type for overload applicability: a class name, ``"<fn>"`` or ``None``."""
+    """A parameter's type for overload applicability: a class name, ``"<fn>"`` or ``None``.
+
+    A function type is ``"<fn>"``, followed by ``":Name"`` when its first parameter is a class: that
+    is what types a lambda's destructured parameter (``Map.forEach { (k, v) -> }``).
+    """
     if type_ctx is None:
         return None
-    if find(type_ctx, "functionType") is not None and name_of(type_ctx) is None:
-        return "<fn>"
+    fn = find(type_ctx, "functionType")
+    if fn is not None and name_of(type_ctx) is None:
+        parameters = first(fn, "functionTypeParameters")
+        head = None
+        for c in (parameters.children if parameters is not None else []) or []:
+            if rule(c) in ("parameter", "type_"):
+                head = c
+                break
+        if head is not None and rule(head) == "parameter":
+            head = first(head, "type_")
+        named = name_of(head) if head is not None else None
+        return "<fn>:" + named if named else "<fn>"
     return name_of(type_ctx)
 
 

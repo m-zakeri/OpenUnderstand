@@ -28,9 +28,11 @@ default import), then constructors; and a qualified name or call on a receiver w
 type is known -- ``this``, a typed variable or property, a literal, a cast, a
 constructor, a call to a function with a declared (or trivially inferred) return
 type, a class or object name. Members are found level by level up the hierarchy, so
-an override hides what it overrides. What it does not: overloads that differ only by
-argument type (arity only), infix and operator calls, ``invoke``, a Java getter read
-as a Kotlin property, and a receiver the project cannot type.
+an override hides what it overrides. Types carry their type arguments (``Ty``): ``List<Point>``
+yields ``Point`` for a loop, an index, ``first()`` or a lambda's ``it``, a call binds its own
+type parameters from its receiver, arguments and lambdas, and an unknown or conflicting binding
+is left unknown. What it does not: a Java getter read as a Kotlin property, bounds and
+expected types steering inference, and a receiver the project cannot type.
 """
 
 from __future__ import annotations
@@ -64,6 +66,14 @@ KOTLIN_FOR = {
     "java.lang.RuntimeException": "kotlin.RuntimeException",
     "java.lang.Error": "kotlin.Error",
     "java.lang.Enum": "kotlin.Enum",
+    "java.lang.Integer": "kotlin.Int",
+    "java.lang.Long": "kotlin.Long",
+    "java.lang.Short": "kotlin.Short",
+    "java.lang.Byte": "kotlin.Byte",
+    "java.lang.Double": "kotlin.Double",
+    "java.lang.Float": "kotlin.Float",
+    "java.lang.Character": "kotlin.Char",
+    "java.lang.Boolean": "kotlin.Boolean",
     "java.lang.Iterable": "kotlin.collections.MutableIterable",
     "java.util.Iterator": "kotlin.collections.MutableIterator",
     "java.util.ListIterator": "kotlin.collections.MutableListIterator",
@@ -89,6 +99,68 @@ LOOP_INTRINSIC = frozenset(
     "IntRange LongRange CharRange UIntRange ULongRange IntProgression LongProgression "
     "CharProgression UIntProgression ULongProgression".split()
 ) | {"kotlin.String", "kotlin.CharSequence"}
+
+class Ty(tuple):
+    """A resolved type: ``(kind, name)`` for equality and hashing, plus the type arguments it carries.
+
+    Every comparison in this module (hierarchy membership, applicability, overload choice) is
+    about the *erased* type, which is exactly what a 2-tuple does; the arguments ride along as an
+    attribute so ``List<Point>`` and ``List<String>`` are the same key and still tell apart when
+    an element type is asked. ``args`` holds a ``Ty`` or ``None`` (unknown) per argument.
+    """
+
+    args: tuple = ()
+
+    def __new__(cls, kind, name, args=()):
+        t = super().__new__(cls, (kind, name))
+        t.args = tuple(args)
+        return t
+
+    def __repr__(self):
+        return f"{self[1]}<{', '.join(map(repr, self.args))}>" if self.args else f"{self[1]}"
+
+
+class _Library:
+    """Stands for the file of a standard-library declaration, whose names are fully qualified."""
+
+    library = True
+
+
+LIB = _Library()
+
+
+def _a(t) -> tuple:
+    return getattr(t, "args", ())
+
+
+def with_args(t, args):
+    """``t`` carrying ``args``, or ``t`` unchanged when none of them is known."""
+    return Ty(t[0], t[1], args) if t is not None and any(a is not None for a in args) else t
+
+
+def _deep(t):
+    """A key that tells ``List<Point>`` from ``List<String>``, which ``==`` on a ``Ty`` does not."""
+    if t is None:
+        return None
+    return (t[0], t[1], tuple(_deep(a) for a in _a(t)))
+
+
+def _pnames(expr) -> set:
+    """The type parameters a type expression mentions."""
+    if not isinstance(expr, tuple) or not expr:
+        return set()
+    if expr[0] == "p":
+        return {expr[1]}
+    out = set()
+    for part in expr[1:]:
+        if isinstance(part, tuple):
+            if part and isinstance(part[0], str):
+                out |= _pnames(part)
+            else:
+                for x in part:
+                    out |= _pnames(x)
+    return out
+
 
 AMBIGUOUS = object()   # a level declares the name but no single declaration fits
 OPAQUE = ("opaque",)   # a supertype this cannot see into
@@ -123,7 +195,9 @@ def lookup_type(name: str, kfile, enclosing, project_has):
     return None
 
 
-def _arity_ok(rec, nargs: int) -> bool:
+def _arity_ok(rec, nargs) -> bool:
+    if nargs is None:                  # a callable reference: any arity
+        return True
     params = rec["params"]
     required = sum(1 for default, vararg, _ in params if not default and not vararg)
     if any(vararg for _, vararg, _ in params):
@@ -131,7 +205,9 @@ def _arity_ok(rec, nargs: int) -> bool:
     return required <= nargs <= len(params)
 
 
-def _java_arity_ok(written: tuple, nargs: int) -> bool:
+def _java_arity_ok(written: tuple, nargs) -> bool:
+    if nargs is None:
+        return True
     variadic = bool(written) and written[-1].endswith("...")
     return len(written) == nargs or (variadic and nargs >= len(written) - 1)
 
@@ -164,11 +240,15 @@ class Index:
         self.top_funs: dict = {}          # (package, name) -> [(kfile, rec)]
         self.top_vars: dict = {}
         self.nested: dict = {}            # class longname -> name -> longname
-        self.aliases: dict = {}           # project typealias longname -> (kfile, target text, scope)
+        self.packages: set = set()        # every package the project's Kotlin files declare, prefixes too
+        self.aliases: dict = {}           # project typealias longname -> (kfile, target text, scope, expr, tparams)
         for kf in project:
-            for longname, _mods, target, scope in kf.aliases:
+            parts = kf.package.split(".") if kf.package else []
+            self.packages.update(".".join(parts[: i + 1]) for i in range(len(parts)))
+            for longname, _mods, target, scope, *more in kf.aliases:
                 if target:
-                    self.aliases[longname] = (kf, target, scope)
+                    texpr, tps = (more + [None, ()])[:2] if more else (None, ())
+                    self.aliases[longname] = (kf, target, scope, texpr, tuple(tps or ()))
         for kf in [*project, *kotlin_index.library_files()]:
             for ln, rec in kf.classes.items():
                 self.classes[ln] = (kf, rec)
@@ -206,6 +286,8 @@ class Resolver:
         self._receivers: dict = {}
         self._ctx = None            # the call being resolved: its arguments, for applicability
         self._ptypes: dict = {}
+        self._infer: dict = {}      # (file, call id) -> the type parameters its call binds
+        self._assuper: dict = {}
 
     # -- types -------------------------------------------------------------
     def _java(self, longname: str) -> bool:
@@ -223,7 +305,7 @@ class Resolver:
         if longname in ix.classes:
             return ("class", longname)
         if longname in ix.aliases:
-            kf, target, scope = ix.aliases[longname]
+            kf, target, scope, *_ = ix.aliases[longname]
             return self.type_name(target, kf, scope, depth + 1)
         target = kotlin_index.alias_target(longname)
         if target:
@@ -242,6 +324,258 @@ class Resolver:
             return self.expand(name, depth)
         hit = lookup_type(name, kfile, scope, self._has)
         return self.expand(hit[1], depth) if hit else None
+
+    # -- type arguments ---------------------------------------------------------
+    def tparams_of(self, t):
+        """The type parameters a class declares, or ``None`` when its declaration is not seen."""
+        if t is not None and t[0] == "class":
+            entry = self.ix.classes.get(t[1])
+            return tuple(entry[1].get("tparams") or ()) if entry else None
+        return None
+
+    def kclass(self, t):
+        """``t`` as a Kotlin class carrying its arguments: the JDK's ``List`` is Kotlin's ``MutableList``."""
+        if t is None:
+            return None
+        if t[0] == "class":
+            return t
+        if t[0] == "lib" and t[1] in KOTLIN_FOR and KOTLIN_FOR[t[1]] in self.ix.classes:
+            k = ("class", KOTLIN_FOR[t[1]])
+            return with_args(k, _a(t)) if len(self.tparams_of(k) or ()) == len(_a(t)) else k
+        return None
+
+    def class_env(self, t) -> dict:
+        k = self.kclass(t)
+        return dict(zip(self.tparams_of(k) or (), _a(k))) if k is not None and _a(k) else {}
+
+    def inst(self, expr, env, kf, scope, depth=0):
+        """A type expression as a type, with the type parameters in ``env`` replaced; ``None`` if unknown."""
+        if not isinstance(expr, tuple) or depth > 6:
+            return None
+        if expr[0] == "p":
+            if expr[1] in env or len(expr) < 3:
+                return env.get(expr[1])
+            return self.inst(expr[2], {}, kf, scope, depth + 1)      # unbound: its upper bound
+        if expr[0] != "c":
+            return None
+        _, name, args = expr
+        if getattr(kf, "library", False):
+            fq = name
+        else:
+            hit = lookup_type(name, kf, scope, self._has)
+            fq = hit[1] if hit else None
+        if not fq:
+            return None
+        if fq not in self.ix.classes:
+            alias = self.ix.aliases.get(fq)
+            if alias is not None:
+                akf, _text, ascope, aexpr, atps = alias
+            else:
+                known = kotlin_index.alias_expression(fq)
+                akf, ascope, (atps, aexpr) = (LIB, (), known) if known else (None, None, (None, None))
+            if aexpr is not None:
+                inner = {tp: self.inst(a, env, kf, scope, depth + 1) for tp, a in zip(atps or (), args)}
+                return self.inst(aexpr, inner, akf, ascope, depth + 1)
+        base = self.expand(fq)
+        if base is None:
+            return None
+        declared = self.tparams_of(base)
+        if not args or (declared is not None and len(declared) != len(args)):
+            return base
+        return with_args(base, [self.inst(a, env, kf, scope, depth + 1) for a in args])
+
+    def supers_g(self, t):
+        """The direct supertypes of ``t`` with the arguments ``t`` gives them."""
+        if t[0] == "class":
+            kf, rec = self.ix.classes[t[1]]
+            env = self.class_env(t)
+            out = (self.inst(e, env, kf, rec["scope"]) for e in rec.get("super_exprs") or ())
+            return [x for x in out if x is not None]
+        if t[0] == "lib":
+            out = []
+            for s in jdk_index.supertypes(t[1]):
+                mapped = KOTLIN_FOR.get(s)
+                same = mapped in self.ix.classes and len(self.tparams_of(("class", mapped)) or ()) == len(_a(t))
+                out.append(Ty("lib", s, _a(t) if same else ()))
+            k = self.kclass(t)
+            if k is not None:
+                out.append(k)
+            return out
+        return []
+
+    def as_super(self, t, target, depth=0, seen=None):
+        """``t`` seen as ``target`` (an erased type), with the arguments that gives it, or ``None``."""
+        if t[:2] == target:
+            return t
+        if depth > 14:
+            return None
+        key = (_deep(t), target)
+        if depth == 0 and key in self._assuper:
+            return self._assuper[key]
+        seen = seen if seen is not None else set()
+        result = None
+        if _deep(t) not in seen:
+            seen.add(_deep(t))
+            for sup in self.supers_g(t):           # a path that kept the arguments beats one that lost them
+                found = self.as_super(sup, target, depth + 1, seen)
+                if found is not None and (result is None or (_a(found) and not _a(result))):
+                    result = found
+                    if _a(found):
+                        break
+        if depth == 0:
+            self._assuper[key] = result
+        return result
+
+    def member_env(self, owner, recv) -> dict:
+        """The owner's type parameters as ``recv`` binds them, for a member found on ``recv``."""
+        if not owner or recv is None or recv[0] not in ("class", "lib", "java") or not _a(recv):
+            return {}
+        seen = self.as_super(recv, ("class", owner))
+        return self.class_env(seen) if seen is not None else {}
+
+    def unify(self, expr, t, env, kf, scope, free):
+        """Bind the type parameters ``expr`` mentions by matching it against the type ``t``.
+
+        A parameter bound twice to unrelated types, or matched against an unknown, is poisoned
+        to ``None`` rather than guessed: ``listOf(Circle(), Square())`` is not ``List<Circle>``.
+        """
+        if not isinstance(expr, tuple):
+            return
+        if t is None:
+            for n in _pnames(expr):
+                if n not in env:
+                    env[n] = None
+                    free.add(n)
+            return
+        if expr[0] == "p":
+            n = expr[1]
+            if n not in env:
+                env[n] = t
+                free.add(n)
+            elif n in free and env[n] is not None and _deep(env[n]) != _deep(t):
+                a, b = env[n], t
+                if self.is_subtype(a, b):
+                    env[n] = b
+                elif not self.is_subtype(b, a):
+                    env[n] = None
+            return
+        if expr[0] != "c" or not expr[2] or t[0] not in ("class", "lib", "java"):
+            return
+        target = self.type_name(expr[1], kf, scope) if not getattr(kf, "library", False) else self.expand(expr[1])
+        seen = self.as_super(t, tuple(target[:2])) if target is not None else None
+        if seen is None or len(_a(seen)) != len(expr[2]):
+            for n in _pnames(expr):
+                if n not in env:
+                    env[n] = None
+                    free.add(n)
+            return
+        for sub_expr, sub_t in zip(expr[2], _a(seen)):
+            self.unify(sub_expr, sub_t, env, kf, scope, free)
+
+    def infer(self, hit, kf, occ) -> dict:
+        """The type parameters a resolved call binds: the receiver's, then the call's own.
+
+        Stage one reads the receiver, the explicit ``<T>`` and the arguments' types; stage two
+        reads what each lambda argument evaluates to, which may itself ask stage one's answer
+        for its parameters -- so the dictionary is published before stage two runs.
+        """
+        key = (kf.path, occ["id"]) if occ is not None else None
+        if key is not None and key in self._infer:
+            return self._infer[key]
+        env: dict = {}
+        if key is not None:
+            self._infer[key] = env
+        free: set = set()
+        kind = hit[0]
+        if kind == "fun":
+            kf2, rec = hit[1]
+            recv = hit[2] if len(hit) > 2 else None
+            if rec["owner"] and not rec["ctor"]:
+                env.update(self.member_env(rec["owner"], recv))
+            for tp in rec.get("tparams", ()):
+                env.pop(tp, None)
+            names, scope2 = tuple(rec.get("tparams", ())), rec["scope"]
+            if rec.get("receiver_expr") is not None and recv is not None and recv[0] in ("class", "lib", "java"):
+                self.unify(rec["receiver_expr"], recv, env, kf2, scope2, free)
+            params = rec["params"]
+            ptexprs = rec.get("ptexprs") or ()
+        elif kind == "ctor_call":
+            kf2, rec = hit[2]
+            names, scope2 = tuple(self.tparams_of(("class", hit[1])) or ()), rec["scope"]
+            params, ptexprs = rec["params"], rec.get("ptexprs") or ()
+        elif kind == "ctor":
+            names, kf2, scope2, params, ptexprs = tuple(self.tparams_of(("class", hit[1])) or ()), kf, (), (), ()
+        else:
+            return env
+        if occ is not None:
+            for name, targ in zip(names, occ.get("targs") or ()):
+                env[name] = self.inst(targ, {}, kf, occ["s"])
+            if not occ["named"] and ptexprs:
+                for i, desc in enumerate(occ["args"]):
+                    if desc is not None and desc[0] == "lambda":
+                        continue
+                    pe = ptexprs[i] if i < len(ptexprs) else (ptexprs[-1] if params and params[-1][1] else None)
+                    if pe is not None:
+                        at = self.type_of(desc, kf, occ["s"], occ["o"]) if desc is not None else None
+                        if at is not None and at[0] not in ("class", "lib", "java"):
+                            at = None
+                        self.unify(pe, at, env, kf2, scope2, free)
+            self._expected(kind, hit, occ, env, kf, kf2, scope2, names)
+            for i, desc in enumerate(occ["args"]):          # stage two: what the lambdas evaluate to
+                if desc is None or desc[0] != "lambda" or not ptexprs:
+                    continue
+                pe = ptexprs[i] if i < len(ptexprs) and isinstance(ptexprs[i], tuple) and ptexprs[i][0] == "fn" \
+                    else ptexprs[-1]
+                if not isinstance(pe, tuple) or pe[0] != "fn" or not (_pnames(pe[3]) - set(env)):
+                    continue
+                value = self.type_of(desc[1], kf, occ["s"], occ["o"]) if len(desc) > 1 and desc[1] else None
+                if value is not None and value[0] not in ("class", "lib", "java"):
+                    value = None
+                self.unify(pe[3], value, env, kf2, scope2, free)
+        return env
+
+    def _expected(self, kind, hit, occ, env, kf, kf2, scope2, names):
+        """Bind what the arguments left unbound from the type the call's value is stored in.
+
+        ``val xs: List<Point> = emptyList()`` binds ``T`` by matching the declared result
+        ``List<T>`` against ``List<Point>``. Weaker than an argument, so it only fills gaps, and
+        only when the declared type is a supertype-shaped match (anything else binds nothing).
+        """
+        expected = occ.get("exp")
+        missing = [n for n in names if n not in env]
+        if expected is None or not missing:
+            return
+        want = self.inst(expected, {}, kf, occ["s"])
+        if want is None or want[0] not in ("class", "lib", "java"):
+            return
+        shape = hit[1][1].get("ret_expr") if kind == "fun" else ("c", hit[1], tuple(("p", n) for n in names))
+        trial: dict = {}
+        self.unify(shape, want, trial, kf2, scope2, set())
+        for n in missing:
+            if trial.get(n) is not None:
+                env[n] = trial[n]
+
+    def lambda_param_ty(self, desc, kf, scope):
+        """The type of lambda parameter ``index``: written, or what the callee's function type says."""
+        _, call_id, position, index, declared = desc
+        if declared:
+            return self.type_name(declared, kf, scope)
+        if call_id is None or position == -2:
+            return None
+        hit = self.call_target(call_id, kf)
+        if hit is None or hit[0] != "fun":
+            return None
+        kf2, rec = hit[1]
+        ptexprs = rec.get("ptexprs") or ()
+        if not ptexprs:
+            return None
+        slot = position if 0 <= position < len(ptexprs) else len(ptexprs) - 1
+        fn = ptexprs[slot]
+        if not isinstance(fn, tuple) or fn[0] != "fn":
+            fn = ptexprs[-1]
+        if not isinstance(fn, tuple) or fn[0] != "fn" or index >= len(fn[2]):
+            return None
+        return self.inst(fn[2][index], self.infer(hit, kf, kf.occurrences[call_id]), kf2, rec["scope"])
 
     def direct_supers(self, t):
         kind, ln = t
@@ -320,7 +654,7 @@ class Resolver:
             return True
         if argument is None or argument == "lambda" or pt is None or pt == "*" or pt in rec.get("tparams", ()):
             return True
-        if pt == "<fn>":
+        if pt.startswith("<fn>"):
             return False               # a value of a known class where a function is wanted
         key = (rec["key"], index)
         if key not in self._ptypes:
@@ -373,6 +707,8 @@ class Resolver:
     def _java_funs(self, ln, name, nargs):
         entries = symbol_table.INDEX.methods.get(f"{ln}.{name}") or []
         fits = [e for e in entries if _java_arity_ok(e[0], nargs)]
+        if nargs is None:              # a reference names the method, not a call: only an unoverloaded one
+            return [("jfun", ln, name, len(fits[0][0]), 0)] if len(fits) == 1 else []
         if len(fits) <= 1:
             return [("jfun", ln, name, nargs, 0)] if fits else []
         site = symbol_table.overload_site(f"{ln}.{name}", [None] * nargs)
@@ -470,10 +806,13 @@ class Resolver:
         return self.find(rt, level)
 
     # -- types of declarations ------------------------------------------------
-    def var_type(self, kf, rec):
+    def var_type(self, kf, rec, recv=None):
         key = rec["key"]
         if key in self._busy:
             return None
+        expr = rec.get("declared_expr")
+        if expr is not None:
+            return self.inst(expr, self.member_env(rec["owner"], recv), kf, rec["scope"])
         if rec["declared"]:
             return self.type_name(rec["declared"], kf, rec["scope"])
         if rec["init"] is None:
@@ -484,9 +823,12 @@ class Resolver:
         finally:
             self._busy.discard(key)
 
-    def return_type(self, kf, rec):
+    def return_type(self, kf, rec, env=None):
         if rec["ctor"]:
             return ("class", rec["owner"])
+        expr = rec.get("ret_expr")
+        if expr is not None:
+            return self.inst(expr, env or {}, kf, rec["scope"])
         if rec["ret"]:
             return self.type_name(rec["ret"], kf, rec["scope"])
         if rec["ret_init"] is None or rec["key"] in self._busy:
@@ -497,28 +839,44 @@ class Resolver:
         finally:
             self._busy.discard(rec["key"])
 
-    def hit_type(self, hit):
-        """The type a resolved call or name evaluates to."""
+    def hit_type(self, hit, kf=None, occ=None):
+        """The type a resolved call or name evaluates to (``occ``: the call, for its type arguments)."""
         kind = hit[0]
         if kind == "fun":
-            return self.return_type(*hit[1])
+            env = self.infer(hit, kf, occ) if occ is not None and kf is not None \
+                else self.member_env(hit[1][1]["owner"], hit[2] if len(hit) > 2 else None)
+            return self.return_type(*hit[1], env)
         if kind in ("ctor", "ctor_call"):
-            return ("class", hit[1])
-        if kind == "jctor":
-            return ("java", hit[1])
-        if kind == "libctor":
-            return ("lib", hit[1])
+            cls = ("class", hit[1])
+            tps = self.tparams_of(cls)
+            if tps and occ is not None and kf is not None:
+                env = self.infer(hit, kf, occ)
+                return with_args(cls, [env.get(tp) for tp in tps])
+            return cls
+        if kind in ("jctor", "libctor"):
+            t = ("java" if kind == "jctor" else "lib", hit[1])
+            if occ is not None and kf is not None and occ.get("targs"):
+                return with_args(t, [self.inst(a, {}, kf, occ["s"]) for a in occ["targs"]])
+            return t
         if kind == "jfun":
             return self.expand(symbol_table.return_type(hit[1], hit[2]))
         if kind == "jdkfun":
             return self.expand(jdk_index.return_type(hit[1], hit[2]))
         if kind in ("var", "dataprop"):
-            return self.var_type(*hit[1])
+            return self.var_type(*hit[1], hit[2] if len(hit) > 2 else None)
         if kind == "jvar":
             return self.expand(symbol_table.member_type(hit[1], hit[2]))
         if kind == "jdkvar":
             return self.expand(jdk_index.field_type(hit[1], hit[2]))
         return None
+
+    @staticmethod
+    def tag(hit, recv):
+        """``hit`` remembering the receiver type it was found on, so its type arguments can be read."""
+        if isinstance(hit, tuple) and hit[0] in ("fun", "var", "dataprop") and len(hit) == 2 \
+                and recv is not None and recv[0] in ("class", "lib", "java"):
+            return (*hit, recv)
+        return hit
 
     # -- the type of an expression -------------------------------------------
     def type_of(self, desc, kf, scope, owner=None):
@@ -529,6 +887,14 @@ class Resolver:
             return self.expand(desc[1])
         if kind == "cast":
             return self.type_name(desc[1], kf, scope)
+        if kind == "lparam":
+            return self.lambda_parameter_type(desc, kf, scope)
+        if kind == "delegate":
+            _, value, provided = desc
+            call = self.call_target(provided[4], kf)
+            if isinstance(call, tuple):
+                return self.hit_type(call)         # provideDelegate answers: that is the delegate
+            return self.type_of(value, kf, scope, owner)
         if kind == "element":
             _, iterable, following = desc
             return self.element_type(iterable, kf, scope, owner) or self.type_of(following, kf, scope, owner)
@@ -543,6 +909,8 @@ class Resolver:
                 if binding[0] == "local":
                     entry = self.ix.variables.get(binding[1])
                     return self.var_type(*entry) if entry else None
+                if binding[0] == "lparam":
+                    return self.lambda_parameter_type(binding, kf, scope)
                 return None
             hit = self.free_var(name, kf, scope, owner)
             if isinstance(hit, tuple):
@@ -552,13 +920,23 @@ class Resolver:
             cls = self.type_name(name, kf, scope)
             if cls and cls[0] == "class":
                 return ("static", cls[1])
+            if cls is None and name in self.ix.packages:
+                return ("package", name)    # `a` in `a.b.C.f()`
             return cls                      # a Java or library class used as a receiver
         if kind == "member":
             _, recv, name = desc
             rt = self.type_of(recv, kf, scope, owner)
+            if rt is not None and rt[0] == "package":
+                fq = f"{rt[1]}.{name}"
+                if fq in self.ix.classes:
+                    return ("static", fq)
+                if fq in self.ix.packages:
+                    return ("package", fq)
+                tops = [c for c in self.ix.top_vars.get((rt[1], name), []) if c[1]["receiver"] is None]
+                return self.var_type(*tops[0]) if len(tops) == 1 else None
             hit = self.find_member(rt, lambda t, n=name: self._var_level(t, n))
             if isinstance(hit, tuple):
-                return self.hit_type(hit)
+                return self.hit_type(self.tag(hit, rt))
             if rt is not None and rt[0] == "static":
                 nested = self.ix.nested.get(rt[1], {}).get(name)
                 if nested:
@@ -566,27 +944,58 @@ class Resolver:
             return None
         if kind == "call":
             call = self.call_target(desc[4], kf)
-            return self.hit_type(call) if isinstance(call, tuple) else None
+            return self.hit_type(call, kf, kf.occurrences[desc[4]]) if isinstance(call, tuple) else None
         return None
 
-    def element_type(self, desc, kf, scope, owner):
-        """What a loop over ``desc`` yields, where the type system's missing type arguments cannot say.
+    def lambda_parameter_type(self, desc, kf, scope):
+        """The type of a lambda's destructured parameter: written, or the callee's lambda parameter type.
 
-        A map yields its entries, ``withIndex()`` an ``IndexedValue``, ``zip`` a ``Pair`` --
-        the cases that make ``for ((k, v) in map)`` and ``for ((i, x) in list.withIndex())``
-        the usual destructuring loops. Anything else is left to ``next()``'s declared type.
+        ``{ (k, v): Pair<A, B> -> }`` says it. Otherwise the lambda is an argument of a call, and
+        that call's parameter, a function type ``(Map.Entry<K, V>) -> R``, names the type of the
+        lambda's first parameter -- recorded only when it is a class.
         """
+        _, call_id, position, index, declared = desc
+        if declared:
+            return self.type_name(declared, kf, scope)
+        found = self.lambda_param_ty(desc, kf, scope)
+        if found is not None:
+            return found
+        if call_id is None or index != 0 or position == -2:
+            return None
+        hit = self.call_target(call_id, kf)
+        if hit is None or hit[0] != "fun":
+            return None
+        kf2, rec = hit[1]
+        ptypes = rec.get("ptypes") or ()
+        if not ptypes:
+            return None
+        slot = position if 0 <= position < len(ptypes) else len(ptypes) - 1
+        text = ptypes[slot]
+        if not text or not text.startswith("<fn>:"):
+            return None
+        return self.type_name(text[5:], kf2, rec["scope"])
+
+    def element_type(self, desc, kf, scope, owner):
+        """What a loop over ``desc`` yields: its ``Iterable``'s element, or a map's entry.
+
+        The type arguments say it when the iterable's are known. Where they are not, a map
+        still yields its entries, ``withIndex()`` an ``IndexedValue`` and ``zip`` a ``Pair``,
+        and anything else is left to ``next()``'s declared type.
+        """
+        rt = self.type_of(desc, kf, scope, owner)
+        if rt is not None and rt[0] in ("class", "lib", "java"):
+            iterable = self.as_super(rt, ("class", "kotlin.collections.Iterable"))
+            if iterable is not None and _a(iterable) and _a(iterable)[0] is not None:
+                return _a(iterable)[0]
         if desc[0] == "call" and desc[2] in ("withIndex", "zip"):
             hit = self.call_target(desc[4], kf)
             if hit is not None and hit[0] == "fun" and getattr(hit[1][0], "library", False):
                 return ("class", "kotlin.collections.IndexedValue" if desc[2] == "withIndex" else "kotlin.Pair")
-        rt = self.type_of(desc, kf, scope, owner)
         if rt is not None and rt[0] in ("class", "lib", "java"):
-            hierarchy = self.hierarchy(rt)
-            if ("class", "kotlin.collections.Map") in hierarchy:
-                if ("class", "kotlin.collections.MutableMap") in hierarchy:
-                    return ("class", "kotlin.collections.MutableMap.MutableEntry")
-                return ("class", "kotlin.collections.Map.Entry")
+            for source, entry in (("MutableMap", "MutableMap.MutableEntry"), ("Map", "Map.Entry")):
+                mapped = self.as_super(rt, ("class", "kotlin.collections." + source))
+                if mapped is not None:
+                    return with_args(("class", "kotlin.collections." + entry), _a(mapped))
         return None
 
     def this_type(self, kf, scope, owner):
@@ -643,8 +1052,8 @@ class Resolver:
         """One declaration standing for same-named overloads; its type is unknown if they disagree."""
         first = candidates[0]
         if len(candidates) > 1 and getattr(first[0], "library", False) and \
-                len({(c[1]["ret"], c[1]["ret_init"]) for c in candidates}) > 1:
-            return (first[0], {**first[1], "ret": None, "ret_init": None})
+                len({(c[1]["ret"], c[1]["ret_init"], c[1].get("ret_expr")) for c in candidates}) > 1:
+            return (first[0], {**first[1], "ret": None, "ret_init": None, "ret_expr": None})
         return first
 
     def top_level_hit(self, name, nargs, kf):
@@ -737,7 +1146,7 @@ class Resolver:
         if rt is None:
             return None
         hit = self.find_member(rt, lambda t: self._fun_level(t, "invoke", nargs))
-        return hit if isinstance(hit, tuple) else None
+        return self.tag(hit, rt) if isinstance(hit, tuple) else None
 
     def constructor(self, t, nargs, exclude=None):
         kind, target = t
@@ -798,7 +1207,7 @@ class Resolver:
             if hit is AMBIGUOUS:
                 return None
             if hit is not None:
-                return hit
+                return self.tag(hit, rt)
         hit = self.top_level_hit(name, nargs, kf)
         if hit is AMBIGUOUS:
             return None
@@ -810,11 +1219,18 @@ class Resolver:
         return None
 
     def qualified_call(self, rt, name, nargs, kf):
+        if rt[0] == "package":              # `a.b.foo()` or `a.b.Point(1)`
+            fq = f"{rt[1]}.{name}"
+            if fq in self.ix.classes:
+                return self.constructor(("class", fq), nargs)
+            hit = self._choose([c for c in self.ix.top_funs.get((rt[1], name), [])
+                                if c[1]["receiver"] is None and self._fits(c, nargs)])
+            return hit if hit is not AMBIGUOUS else None
         hit = self.find_member(rt, lambda t: self._fun_level(t, name, nargs))
         if hit is OPAQUE or hit is AMBIGUOUS:
             return None
         if hit is not None:
-            return hit
+            return self.tag(hit, rt)
         if rt[0] == "static":
             nested = self.ix.nested.get(rt[1], {}).get(name)
             if nested:
@@ -823,7 +1239,7 @@ class Resolver:
         if rt[0] in ("class", "java", "lib", "super"):
             subject = ("class", rt[1]) if rt[0] == "super" else rt
             hit = self.extension_hit(subject, name, nargs, kf)
-            return hit if hit is not AMBIGUOUS else None
+            return self.tag(hit, rt if rt[0] != "super" else subject) if hit is not AMBIGUOUS else None
         return None
 
     # -- bare names ----------------------------------------------------------
@@ -846,6 +1262,8 @@ class Resolver:
 
     # -- the entry point -----------------------------------------------------
     def receiver_lambda(self, call_id, position, kf) -> bool:
+        if call_id is None:
+            return True                        # an anonymous function that writes its own receiver
         occ = kf.occurrences[call_id]
         target = self.call_target(call_id, kf)
         if target is not None and target[0] == "fun":
@@ -875,8 +1293,10 @@ class Resolver:
         if occ["r"] is None:
             return False
         rt = self.type_of(occ["r"], kf, occ["s"], occ["o"])
-        return rt is not None and rt[0] in ("class", "lib") and \
-            (rt[1] in INTRINSIC_OWNERS or bool(_ARRAYS.fullmatch(rt[1])))
+        if rt is None or rt[0] not in ("class", "lib"):
+            return False
+        name = KOTLIN_FOR.get(rt[1], rt[1])        # the JDK's String and boxes are Kotlin's primitives
+        return name in INTRINSIC_OWNERS or bool(_ARRAYS.fullmatch(name))
 
     @staticmethod
     def _intrinsic(rec) -> bool:
@@ -885,6 +1305,85 @@ class Resolver:
             if owner and (owner in INTRINSIC_OWNERS or _ARRAYS.fullmatch(owner)):
                 return True
         return False
+
+    @staticmethod
+    def _type_read(cls) -> list:
+        """A class named where a value is expected (a static receiver) is read, as a ``Use`` of it."""
+        if cls is None or cls[0] not in ("class", "java", "lib"):
+            return []
+        return [("ref", ("create", cls[1]) if cls[0] == "class" else
+                 ("jcreate", cls[1], 0) if cls[0] == "java" else ("libcreate", cls[1]))]
+
+    def _reference(self, occ, kf) -> list:
+        """What ``::name`` / ``Type::name`` / ``obj::name`` names, as call-style outcomes, or ``[]``."""
+        name, recv, scope, owner = occ["n"], occ["r"], occ["s"], occ["o"]
+        if occ.get("type_only"):               # the `Type` in `Type::member`
+            written = occ["type_only"]
+            if isinstance(written, tuple):     # an expression receiver: a type only if no variable has the name
+                if written[0] == "name" and (written[2] is not None or
+                                             self.free_var(written[1], kf, scope, owner) is not None):
+                    return []
+                cls = self.type_of(written, kf, scope, owner)
+                cls = ("class", cls[1]) if cls is not None and cls[0] == "static" else (
+                    cls if cls is not None and cls[0] in ("java", "lib") and written[0] == "name" else None)
+            else:
+                cls = self.type_name(written, kf, scope)
+            if cls is None:
+                return []
+            return [("create", cls[1]) if cls[0] == "class" else
+                    ("jcreate", cls[1], 0) if cls[0] == "java" else ("libcreate", cls[1])]
+        if recv is None:
+            binding = occ["b"]
+            if binding is not None:
+                if binding[0] == "fun":
+                    cands = [self.ix.callables[k] for k in binding[1] if k in self.ix.callables]
+                    hit = self._choose(cands)
+                elif binding[0] == "local" and binding[1] in self.ix.variables:
+                    hit = ("var", self.ix.variables[binding[1]])
+                else:
+                    return []
+            else:
+                hit = self.free_call(name, None, kf, scope, owner)
+                if not isinstance(hit, tuple):
+                    hit = self.free_var(name, kf, scope, owner)
+        else:
+            rt = self.type_of(recv, kf, scope, owner)
+            if rt is None:
+                return []
+            hit = None
+            if rt[0] == "static":                  # `Type::member` is the instance member first
+                inst = ("class", rt[1])
+                hit = self.find(inst, lambda t: self._fun_level(t, name, None))
+                if hit is None:
+                    hit = self.find(inst, lambda t: self._var_level(t, name))
+                if hit is AMBIGUOUS or hit is OPAQUE:
+                    return []
+            if not isinstance(hit, tuple):
+                hit = self.qualified_call(rt, name, None, kf)
+            if not isinstance(hit, tuple) and rt[0] != "static":
+                hit = self.find_member(rt, lambda t: self._var_level(t, name))
+        if not isinstance(hit, tuple):
+            return []
+        kind = hit[0]
+        if kind == "fun":
+            return [("call", hit[1])]
+        if kind in ("var", "dataprop"):
+            return [("var", hit[1])]
+        if kind == "ctor_call":
+            return [("call", hit[2])]
+        if kind == "ctor":
+            return [("create", hit[1])]
+        if kind == "jfun":
+            return [("jcall", hit[1], hit[2], hit[3])]
+        if kind == "jctor":
+            return [("jcreate", hit[1], hit[2])]
+        if kind == "jdkfun":
+            return [("jdkcall", hit[1], hit[2])]
+        if kind == "libctor":
+            return [("libcreate", hit[1])]
+        if kind in ("jvar", "jdkvar"):
+            return [hit]
+        return []
 
     def resolve(self, occ, kf):
         """The declarations an occurrence refers to, as a list of tagged tuples, or ``[]``.
@@ -899,8 +1398,13 @@ class Resolver:
             return []
         if occ["r"] is not None and _contains(occ["r"], "this") and self.blocked(occ, kf):
             return []
+        if occ["t"] == "ref":
+            wrap = "dotref" if occ.get("dotref") else "ref"
+            return [(wrap, o) for o in self._reference(occ, kf)]
         if occ["t"] == "call":
             if occ.get("loop") is not None and self._loop_intrinsic(occ, kf):
+                return []
+            if occ.get("op") and occ.get("sym") and self._primitive_receiver(occ, kf):
                 return []
             target = self.call_target(occ["id"], kf)
             if target is None:
@@ -909,10 +1413,13 @@ class Resolver:
             kind = target[0]
             if kind == "dataprop":
                 return [("var", target[1])]       # componentN of a data class reads that property
+            if kind == "fun" and occ["n"] == "equals" and occ.get("op") and \
+                    target[1][1]["owner"] == "kotlin.Any":
+                return []      # `==` on a type with no equals of its own: the universal default says nothing
+            if kind == "jdkfun" and occ["n"] == "equals" and occ.get("op") and target[1] == "java.lang.Object":
+                return []
             if kind == "fun":
-                if occ.get("op") and (
-                    self._intrinsic(target[1][1]) or (occ.get("sym") and self._primitive_receiver(occ, kf))
-                ):
+                if occ.get("op") and self._intrinsic(target[1][1]):
                     return []
                 return [("call", target[1])]
             if kind == "ctor":
@@ -937,9 +1444,26 @@ class Resolver:
                     return [("var", self.ix.variables[binding[1]])]
                 return []
             hit = self.free_var(occ["n"], kf, occ["s"], occ["o"])
+            if hit is None and occ["m"] == "use":
+                cls = self.type_name(occ["n"], kf, occ["s"])
+                if cls is None and occ["n"] in self.ix.packages:
+                    return [("ref", ("package", occ["n"]))]                      # `a` in `a.b.C.f()`
+                return self._type_read(cls)                                       # `Util` in `Util.twice()`
         else:
             rt = self.type_of(occ["r"], kf, occ["s"], occ["o"])
+            if rt is not None and rt[0] == "package":
+                fq = f"{rt[1]}.{occ['n']}"
+                if fq in self.ix.classes:
+                    return self._type_read(("class", fq))
+                if fq in self.ix.packages:
+                    return [("ref", ("package", fq))]
+                tops = [c for c in self.ix.top_vars.get((rt[1], occ["n"]), []) if c[1]["receiver"] is None]
+                return [("var", tops[0])] if len(tops) == 1 else []
             hit = self.find_member(rt, lambda t, n=occ["n"]: self._var_level(t, n))
+            if hit is None and rt is not None and rt[0] == "static" and occ["m"] == "use":
+                nested = self.ix.nested.get(rt[1], {}).get(occ["n"])
+                if nested:
+                    return self._type_read(("class", nested))                     # `Outer.Inner.f()`
         if not isinstance(hit, tuple):
             return []
         if hit[0] == "var":

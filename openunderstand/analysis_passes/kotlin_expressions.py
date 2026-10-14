@@ -47,10 +47,35 @@ and ``next()`` on the result, anchored on ``in``. Each destructured or loop vari
 typed by that call, so what is done with it resolves. A loop's ``occurrence["loop"]`` names
 its iterable, so the resolver can leave a loop over a range, array or string alone.
 
-Not walked: anonymous objects and anonymous functions, callable references
-(``::f``), annotations, types. Not resolved: ``==`` (``equals``), the name-based and
-bracketed destructuring forms, a lambda parameter's destructuring, and property
-delegates' ``getValue``.
+An anonymous object is declared by the collector (``_Collector.anonymous``) and is a value of its own
+class, ``("lit", longname)``; the header's ``Base(x)`` call is recorded by the creating walker.
+
+An anonymous function is walked like a lambda: its parameters are shadows that carry their written
+type, and it has an implicit receiver only if it writes one.
+
+A callable reference is a ``ref`` occurrence at the name after ``::``, with the receiver as for a
+qualified name; it is a read (a ``Use``) of whatever the name finds, with any arity, plus a
+read of the type before the ``::`` (``type_only``: a class, not a variable).
+
+Not walked: annotations, types.
+
+**Delegated properties and ``==``** are calls as well. ``val x by d`` calls ``getValue``
+(and ``setValue`` for a ``var``) on ``d``, after ``provideDelegate`` when ``d`` declares it, at
+the ``by``; the property is typed by the ``getValue`` call. ``a == b`` and ``a != b`` call
+``a.equals(b)`` at the operator; ``===``, ``!==`` and a comparison with ``null`` call nothing.
+
+A lambda parameter's destructuring, ``{ (k, v) -> }``, is ``componentN`` on a ``("lparam", ...)``
+value: the parameter's type is the one written (``{ (a, b): Pair<A, B> -> }``) or the first
+parameter of the function type the callee declares for that lambda (``Map.forEach`` takes
+``(Map.Entry<K, V>) -> Unit``). Its names stay shadows, never entities.
+
+Not resolved: the name-based and bracketed destructuring forms, a lambda destructured in any
+parameter the callee's function type does not give. A lambda parameter that is not
+destructured (``it``, ``{ p -> }``) is typed by the same signature: its name carries the
+same ``("lparam", call id, position, index, declared)`` as its binding, and a lambda records
+the descriptor of its last statement (``("lambda", result)``) so the resolver can bind the
+callee's result type parameter (``map { it.x }``). A call records its explicit type
+arguments in ``targs``.
 """
 
 from __future__ import annotations
@@ -59,6 +84,7 @@ from antlr4.tree.Tree import TerminalNode
 
 from openunderstand.analysis_passes.kotlin_tree import (
     children,
+    find,
     first,
     has_equals,
     name_of,
@@ -67,8 +93,6 @@ from openunderstand.analysis_passes.kotlin_tree import (
 )
 
 _SKIPPED = {
-    "objectLiteral",
-    "anonymousFunction",
     "callableReference",
     "annotation",
     "fileAnnotation",
@@ -138,6 +162,7 @@ class ExprWalker:
         self.lambda_depth = 0
         self.receiver_lambda_next = receiver_lambda
         self.pending_lambda = None  # (call id, position) of the lambda being entered
+        self.lambda_result = None   # the last statement's descriptor of the lambda just walked
         self.last = None  # the occurrence a following `++` may turn into a modify
 
     # -- recording ---------------------------------------------------------
@@ -163,9 +188,17 @@ class ExprWalker:
             "named": False,  # a named or spread argument: the arguments' order says nothing
             "sym": False,    # an operator written as a symbol (see op_call)
             "loop": None,    # for `iterator`/`hasNext`/`next`: the loop's iterable
+            "targs": (),     # explicit type arguments of the call, as type expressions
+            "exp": None,     # the declared type the call's value is stored in, as a type expression
         }
         self.c.out.occurrences.append(occ)
         return occ
+
+    def expect(self, descriptor, type_ctx):
+        """Note the declared type a call's value is assigned to: it may bind the call's type parameters."""
+        if descriptor is not None and descriptor[0] == "call" and type_ctx is not None:
+            self.c.out.occurrences[descriptor[4]]["exp"] = self.c.texpr(type_ctx)
+        return descriptor
 
     # -- walking -----------------------------------------------------------
     def walk(self, ctx, mode=None):
@@ -300,6 +333,7 @@ class ExprWalker:
                 i += 2
             else:                                   # `is` / `!is` and its type
                 current = None
+                self.note_type(kids[i + 1] if i + 1 < len(kids) and rule(kids[i + 1]) == "type_" else None)
                 i += 2
         return current
 
@@ -310,9 +344,26 @@ class ExprWalker:
         self.op_call(container, "contains", 1, operator.start)
         return None
 
+    def note_type(self, type_ctx):
+        """A qualified type written in an expression (``as a.b.C``, ``is Outer.Inner``) reads its qualifier."""
+        user = None if type_ctx is None else type_ctx if rule(type_ctx) == "userType" else find(type_ctx, "userType")
+        parts = children(user, "simpleUserType") if user is not None else []
+        if len(parts) > 1:
+            self.c.out.qualifiers.append(
+                {"owner": self.owner, "name": ".".join(name_pos(first(p, "simpleIdentifier"))[0] for p in parts),
+                 "enclosing": list(self.scope), "start": name_pos(first(parts[0], "simpleIdentifier"))[1:]}
+            )
+
+    def r_typeTest(self, ctx, mode):
+        self.note_type(first(ctx, "type_"))
+        return None
+
     def r_asExpression(self, ctx, mode):
         kids = [c for c in ctx.children or [] if rule(c) is not None]
         desc = self.walk(kids[0], mode if len(kids) == 1 else None)
+        for c in kids[1:]:
+            if rule(c) == "type_":
+                self.note_type(c)
         if len(kids) > 1:
             named = name_of(kids[-1])
             return ("cast", named) if named else None
@@ -322,22 +373,82 @@ class ExprWalker:
         outer, depth = self.env, self.lambda_depth
         self.env = outer.child()
         self.lambda_depth += 1
-        if self.pending_lambda is not None:
-            self.lambdas.append(self.pending_lambda)
+        binding = self.pending_lambda          # (call id, argument position) this lambda is passed as
+        if binding is not None:
+            self.lambdas.append(binding)
             pushed = True
         else:
             pushed = False
         self.pending_lambda = None
         params = first(ctx, "lambdaParameters")
         if params is None:
-            self.env.names["it"] = ("shadow",)
+            # `it` is the callee's first lambda parameter, typed by its signature
+            self.env.names["it"] = ("lparam", binding[0], binding[1], 0, None) if binding else ("shadow",)
         else:
-            for p in children(params, "lambdaParameter"):
+            for position, p in enumerate(children(params, "lambdaParameter")):
+                # `{ (k, v) -> }` is componentN on the parameter, whose type the callee's signature
+                # (or an explicit `: Type`) gives
+                declared = name_of(first(p, "type_")) if first(p, "type_") is not None else None
+                value = ("lparam", binding[0] if binding else None, binding[1] if binding else None, position, declared)
+                destructured = first(p, "multiVariableDeclaration") is not None
                 for ident in _identifiers(p):
-                    self.env.names[ident] = ("shadow",)
-        self.generic(ctx)
+                    self.env.names[ident] = ("shadow",) if destructured or not (binding or declared) else value
+                if destructured and (binding is not None or declared):
+                    self.components(p, value)
+        result = None
+        for child in ctx.children or []:
+            if rule(child) == "statements":
+                for statement in children(child, "statement"):
+                    result = self.walk(statement)       # the last one is the lambda's value
+            else:
+                self.walk(child)
+        self.lambda_result = result
         self.env, self.lambda_depth = outer, depth
         if pushed:
+            self.lambdas.pop()
+        return None
+
+    def r_objectLiteral(self, ctx, mode):
+        """An anonymous object is declared by the collector; as a value it is of its own class."""
+        return ("lit", self.c.anonymous(ctx, self))
+
+    def r_anonymousFunction(self, ctx, mode):
+        """``fun(x: Int): Int { ... }`` as a value: a scope like a lambda's, with typed parameters.
+
+        Its parameters are shadows (never entities) but carry their written type, so ``x.foo()``
+        resolves. It has no implicit receiver of its own unless it writes one (``fun Int.(): ...``),
+        in which case the names inside may belong to that receiver and are left alone.
+        """
+        outer, depth = self.env, self.lambda_depth
+        self.env = outer.child()
+        self.lambda_depth += 1
+        self.pending_lambda = None
+        own_receiver = False
+        for c in ctx.children or []:
+            if rule(c) == "anonymousFunctionParameters":
+                break
+            if rule(c) == "type_":
+                own_receiver = True
+        if own_receiver:
+            self.lambdas.append((None, 0))
+        params = first(ctx, "anonymousFunctionParameters")
+        for position, p in enumerate(children(params, "anonymousFunctionParameter") if params is not None else []):
+            declared = name_of(first(p, "type_")) if first(p, "type_") is not None else None
+            default = first(p, "expression")
+            if default is not None:
+                self.walk(default)
+            name = name_of_identifier(first(p, "simpleIdentifier"))
+            self.env.names[name] = ("lparam", None, None, position, declared) if declared else ("shadow",)
+        result = None
+        body = first(ctx, "functionBody")
+        for part in (body.children if body is not None else []) or []:
+            if rule(part) == "expression":
+                result = self.walk(part)
+            else:
+                self.walk(part)
+        self.lambda_result = result
+        self.env, self.lambda_depth = outer, depth
+        if own_receiver:
             self.lambdas.pop()
         return None
 
@@ -378,11 +489,12 @@ class ExprWalker:
         descriptor = None
         # the initialiser first: it cannot see the variable it initialises
         for c in head.children or []:
-            if rule(c) in ("propertyDelegate",):
-                descriptor = None
-                self.walk(c)
+            if rule(c) == "propertyDelegate":
+                descriptor = self.delegate(c, is_var=any(
+                    isinstance(t, TerminalNode) and t.getText() == "var" for t in head.children or []
+                ))
             elif rule(c) == "expression":
-                descriptor = self.walk(c)
+                descriptor = self.expect(self.walk(c), first(first(head, "variableDeclaration") or head, "type_"))
         if self.lambda_depth > 0:
             for ident in _identifiers(head):
                 self.env.names[ident] = ("shadow",)
@@ -392,6 +504,41 @@ class ExprWalker:
         if accessors is not None:
             self.generic(accessors)
         return None
+
+    def delegate(self, ctx, is_var):
+        """``val x by d``: ``d.getValue(thisRef, property)``, plus ``setValue`` for a ``var``.
+
+        If the delegate's type declares ``provideDelegate``, the delegate that is read is what that
+        returns, so the descriptor says "this, unless provideDelegate answers". The result stands
+        for the property's value, so ``val x by lazy { ... }`` is typed by ``getValue``.
+        """
+        value = self.walk(first(ctx, "expression"))
+        by = ctx.children[0].symbol
+        if value is None:
+            return None
+        provided = self.op_call(value, "provideDelegate", 2, by, symbol=False, args=(None, None))
+        holder = ("delegate", value, provided)
+        getter = self.op_call(holder, "getValue", 2, by, symbol=False, args=(None, None))
+        if is_var:
+            self.op_call(holder, "setValue", 3, by, symbol=False, args=(None, None, None))
+        return getter
+
+    def r_equality(self, ctx, mode):
+        """``a == b`` calls ``a.equals(b)``; ``===`` compares identity and calls nothing."""
+        kids = self._operands(ctx)
+        if len(kids) == 1:
+            return self.walk(kids[0], mode)
+        current = self.walk(kids[0])
+        left_text = kids[0].getText()
+        i = 1
+        while i + 1 < len(kids):
+            op, right_ctx = kids[i], kids[i + 1]
+            right = self.walk(right_ctx)
+            if op.getText().strip() in ("==", "!=") and "null" not in (left_text, right_ctx.getText()):
+                self.op_call(current, "equals", 1, op.start, args=(right,))
+            current, left_text = None, ""
+            i += 2
+        return current
 
     def components(self, holder, value):
         """``componentN`` calls for ``val (a, b) = value``: one per entry, or ``None`` for none.
@@ -456,6 +603,7 @@ class ExprWalker:
         ident = first(ctx, "simpleIdentifier")
         if ident is not None:
             self.env.names[name_of_identifier(ident)] = ("shadow",)
+        self.note_type(first(ctx, "userType"))
         self.generic(ctx)
         self.env = outer
         return None
@@ -492,6 +640,43 @@ class ExprWalker:
 
     r_multiLineStringContent = r_lineStringContent
 
+    def reference(self, ctx, receiver, at=None, chained=False):
+        """``::f``, ``Type::f``, ``obj::f``: a read of the function, property or constructor named.
+
+        Written as a ``ref`` occurrence at the name after ``::`` (``Type::class`` and ``::class``
+        name no declaration). ``Type::f`` takes the type as an ordinary name receiver, which the
+        resolver reads as a class (an unbound reference to an instance member) or an object.
+        """
+        ident = first(ctx, "simpleIdentifier")
+        written = first(ctx, "receiverType") or first(ctx, "nullableType")
+        if written is not None:
+            dotted = name_of(written)
+            user = find(written, "userType")
+            if dotted and user is not None:       # the type is read at its last segment
+                segment = name_pos(first(children(user, "simpleUserType")[-1], "simpleIdentifier"))
+                used = self.occurrence("ref", segment[0], segment[1], segment[2])
+                used["type_only"] = dotted
+                used["dotref"] = dotted[:1].isupper() and not chained
+        elif at is not None and receiver is not None and receiver[0] in ("name", "member"):
+            used = self.occurrence("ref", receiver[-1] if receiver[0] == "member" else receiver[1], at[0], at[1])
+            used["type_only"] = receiver           # a class name when it is not a variable
+            head = receiver
+            while head[0] == "member":
+                head = head[1]
+            used["dotref"] = head[0] == "name" and head[1][:1].isupper() and not chained
+        if ident is None:
+            return
+        if written is not None:
+            receiver = UNKNOWN
+            if dotted:
+                head, *rest = dotted.split(".")
+                receiver = ("name", head, self.env.lookup(head))
+                for segment in rest:
+                    receiver = ("member", receiver, segment)
+        name, line, col = name_pos(ident)
+        self.occurrence("ref", name, line, col, receiver=receiver,
+                        binding=self.env.lookup(name) if receiver is None else None)
+
     # -- the chain `a.b(c).d` ---------------------------------------------
     def chain(self, primary, suffixes, mode):
         index = 0
@@ -499,8 +684,10 @@ class ExprWalker:
         final_mode = mode or "use"
         has_more = bool(suffixes)
         kind = rule(primary) if primary is not None else None
+        recv_at = None                      # where the receiver's last name is written
         if kind == "simpleIdentifier":
             name, line, col = name_pos(primary)
+            recv_at = (line, col)
             call_at = _call_index(suffixes, 0)
             if call_at is not None:
                 current, index = self.call(None, name, line, col, suffixes, call_at)
@@ -524,8 +711,11 @@ class ExprWalker:
         elif kind == "stringLiteral":
             self.generic(primary)
             current = ("lit", "kotlin.String")
-        elif kind in ("callableReference",):
+        elif kind == "callableReference":
+            self.reference(primary, None, chained=bool(suffixes))
             return None
+        elif kind == "objectLiteral":
+            current = self.walk(primary)
         elif primary is not None:
             self.walk(primary)
         while index < len(suffixes):
@@ -535,6 +725,8 @@ class ExprWalker:
             if sr == "navigationSuffix":
                 operator = s.children[0].getText().strip() if s.children else ""
                 if operator == "::":
+                    self.reference(s, current if current is not None else UNKNOWN, recv_at,
+                                   chained=index < len(suffixes) - 1)
                     return None
                 ident = first(s, "simpleIdentifier")
                 if ident is None:  # `.class` or `.(expr)`
@@ -543,6 +735,7 @@ class ExprWalker:
                     index += 1
                     continue
                 name, line, col = name_pos(ident)
+                recv_at = (line, col)
                 # a receiver that is written but untyped must not look like "no receiver"
                 if current is None:
                     current = UNKNOWN
@@ -589,6 +782,11 @@ class ExprWalker:
             binding=self.env.lookup(name) if receiver is None else None,
         )
         end = at
+        if at > 0 and rule(suffixes[at - 1]) == "typeArguments":     # `emptyList<Point>()`
+            occ["targs"] = tuple(
+                "*" if not children(a, "type_") else self.c.texpr(first(a, "type_"))
+                for a in children(suffixes[at - 1], "typeProjection")
+            )
         nargs = self.arguments(suffixes[at], occ)
         # lambdas written after the call (`f(x) {} {}`) are further arguments
         while end + 1 < len(suffixes) and rule(suffixes[end + 1]) == "callSuffix" and first(suffixes[end + 1], "valueArguments") is None:
@@ -617,7 +815,7 @@ class ExprWalker:
                 described = self.walk(expression)
                 self.pending_lambda = None
                 if occ is not None:
-                    occ["args"].append(("lambda",) if _is_lambda(expression) else described)
+                    occ["args"].append(("lambda", self.lambda_result) if _is_lambda(expression) else described)
                     occ["named"] = occ["named"] or named or spread
                 count += 1
         for c in call_suffix.children or []:
@@ -628,7 +826,7 @@ class ExprWalker:
                 self.walk(lam)
                 self.pending_lambda = None
                 if occ is not None:
-                    occ["args"].append(("lambda",))
+                    occ["args"].append(("lambda", self.lambda_result))
                 count += 1
         return count
 
@@ -649,7 +847,7 @@ def _is_lambda(expression) -> bool:
     """Whether an argument expression is, directly, a lambda literal."""
     node = expression
     while node is not None and not isinstance(node, TerminalNode):
-        if rule(node) == "lambdaLiteral":
+        if rule(node) in ("lambdaLiteral", "anonymousFunction"):
             return True
         kids = [c for c in node.children or [] if not (isinstance(c, TerminalNode) and not c.symbol.text.strip())]
         if len(kids) != 1:

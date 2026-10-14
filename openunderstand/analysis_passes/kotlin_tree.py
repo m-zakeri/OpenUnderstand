@@ -130,3 +130,70 @@ def user_type_name(user_type) -> str:
     return ".".join(
         name_pos(first(p, "simpleIdentifier"))[0] for p in children(user_type, "simpleUserType")
     )
+
+
+def _contra(projection) -> bool:
+    """Whether a type argument is written ``in T``: reading through it yields ``Any``, not ``T``."""
+    mods = first(projection, "typeProjectionModifiers")
+    return mods is not None and "in" in [leaf.getText() for leaf in _leaves(mods)]
+
+
+def _leaves(node):
+    if not getattr(node, "children", None):
+        yield node
+    else:
+        for c in node.children:
+            yield from _leaves(c)
+
+
+def type_expr(ctx, tparams=frozenset()):
+    """A written type as a nested tuple, keeping its type arguments; ``None`` when it has none to keep.
+
+    ``("c", "Map.Entry", (args...))`` is a class by name (as written, resolved later in the file that
+    wrote it), ``("p", "T")`` a reference to a type parameter in ``tparams``, ``("fn", receiver,
+    (parameters...), result)`` a function type, and ``"*"`` a star projection. Nullability, variance
+    and annotations are dropped: they change what a value may be, not what it is.
+    """
+    if ctx is None:
+        return None
+    name = rule(ctx)
+    if name in ("type_", "receiverType"):
+        if name == "type_" and first(ctx, "type_") is not None:   # `A & B`
+            return None
+        for c in ctx.children or []:
+            if rule(c) in ("parenthesizedType", "nullableType", "typeReference", "functionType"):
+                return type_expr(c, tparams)
+        return None
+    if name == "parenthesizedType":
+        return type_expr(first(ctx, "type_"), tparams)
+    if name == "nullableType":
+        return type_expr(first(ctx, "typeReference") or first(ctx, "parenthesizedType"), tparams)
+    if name in ("typeReference", "userType"):
+        user = ctx if name == "userType" else first(ctx, "userType")
+        if user is None:
+            return None
+        parts = children(user, "simpleUserType")
+        names = [name_pos(first(p, "simpleIdentifier"))[0] for p in parts]
+        if len(names) == 1 and names[0] in tparams:
+            bound = tparams.get(names[0]) if isinstance(tparams, dict) else None
+            return ("p", names[0], bound) if bound else ("p", names[0])
+        arguments = first(parts[-1], "typeArguments")
+        args = tuple(
+            "*" if not children(a, "type_") else (
+                None if _contra(a) else type_expr(first(a, "type_"), tparams))      # `in T` reads as Any
+            for a in (children(arguments, "typeProjection") if arguments is not None else [])
+        )
+        return ("c", ".".join(names), args)
+    if name == "functionType":
+        receiver = first(ctx, "receiverType")
+        parameters = first(ctx, "functionTypeParameters")
+        params = []
+        for c in (parameters.children if parameters is not None else []) or []:
+            if rule(c) == "parameter":
+                params.append(type_expr(first(c, "type_"), tparams))
+            elif rule(c) == "type_":
+                params.append(type_expr(c, tparams))
+        result = [c for c in ctx.children or [] if rule(c) == "type_"]
+        return ("fn", type_expr(receiver, tparams) if receiver is not None else None, tuple(params),
+                type_expr(result[-1], tparams) if result else None)
+    return None
