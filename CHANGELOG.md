@@ -15,9 +15,12 @@
   `update_files` run it and report under a `"kotlin"` key present only when
   Kotlin files are involved. Calls, constructor calls, reads, writes and
   modifications of project declarations are written too (`Call`, `Create`, `Use`,
-  `Set`, `Modify`), only where exactly one declaration fits; library and Java
-  callees, overloads that differ by argument type, and infix or operator calls
-  are not. There is no Understand oracle to measure any of it against. A Java-only project's database is
+  `Set`, `Modify`), only where exactly one declaration fits. That now includes the
+  Kotlin standard library (through a generated index of its functions, properties and
+  supertypes), the project's Java classes and the JDK; library targets are
+  placeholder entities named by their long name. Overloads that differ by argument
+  type, infix and operator calls, and libraries without an index (kotlinx, third
+  party) are not resolved. There is no Understand oracle to measure any of it against. A Java-only project's database is
   unchanged (fingerprint identical). The wheels grow by about 3 MB.
 
 ## IDEA plugin 0.6.1

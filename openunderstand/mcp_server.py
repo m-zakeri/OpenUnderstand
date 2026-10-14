@@ -54,8 +54,8 @@ def analyze(source_dir: str, database: str = "") -> str:
     Kotlin files (.kt, .kts) under it are analysed too, under Java kinds:
     packages, types, functions, properties, parameters and locals, with Define,
     Contain and Typed references, plus Call, Create, Use, Set and Modify where a
-    name or call resolves to exactly one project declaration. Library and Java
-    callees are not resolved. The result carries a "kotlin" entry when there are any.
+    name or call resolves to exactly one declaration -- the project's Kotlin or Java,
+    the Kotlin standard library or the JDK. The result carries a "kotlin" entry when there are any.
 
     source_dir: directory of Java source to analyse.
     database:   where to write the .udb (default: alongside the source).
