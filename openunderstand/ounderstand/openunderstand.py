@@ -119,7 +119,13 @@ def start_parsing(
     # name declared in another file without it.
     symbol_table.build(config["Config"]["repo_address"])
 
-    runner(path_project=config["Config"]["repo_address"])
+    kotlin = runner(path_project=config["Config"]["repo_address"])
+    if kotlin.files:
+        print(
+            f"Kotlin: {kotlin.analysed} of {kotlin.files} file(s) analysed, "
+            f"{len(kotlin.failed)} failed. Declarations and their declared "
+            "types only: no calls, uses or other references."
+        )
 
     # Passes run in a fixed order, and several create placeholder entities
     # before the define pass has declared the real ones. Fold them together

@@ -1,4 +1,4 @@
-"""Analyse every ``.java`` file under a project.
+"""Analyse every ``.java`` file under a project, and parse its Kotlin files.
 
 Workers only *collect* and the parent writes, which is the layering
 ``analysis_passes/`` always claimed. Getting there needed two things that were
@@ -19,6 +19,13 @@ calculator_app committed 43 entities and 208 references against the sequential
 make sure of it, ``_isolate`` rebinds the models to a throwaway in-memory
 database in each worker, so a stray write goes nowhere near the real one.
 
+Kotlin files are found and analysed after the Java ones, in the parent, by the
+declaration pass in ``kotlin_project`` (`runner` returns its
+``kotlin_parser.Summary``). They never reach the Java passes, which would write
+nonsense for them; with no database bound they are only parsed.
+``get_files`` therefore stays Java-only, which the symbol table, the update path
+and the comparison harness all rely on.
+
 Results are consumed with ``imap``, which preserves order. That is not a
 detail: an entity's parent is set by whichever file creates it first, and
 ``get_files`` sorts for the same reason.
@@ -26,6 +33,8 @@ detail: an entity's parent is set by whichever file creates it first, and
 
 import os
 
+from openunderstand.utils import kotlin_parser
+from openunderstand.ounderstand import kotlin_project
 from openunderstand.ounderstand.parsing_process import (
     collect_file,
     get_files,
@@ -58,7 +67,19 @@ def _default_jobs():
     return max(1, (os.cpu_count() or 2) - 1)
 
 
-def runner(path_project: str = "", jobs: int = None):
+def runner(path_project: str = "", jobs: int = None, kotlin: bool = True):
+    """Analyse the Java files, then the Kotlin ones. Returns the Kotlin summary.
+
+    ``kotlin=False`` skips the Kotlin files, which is the only cost a mixed
+    project pays; a Java-only project has nothing to find.
+    """
+    _analyse_java(path_project, jobs)
+    if not kotlin:
+        return kotlin_parser.Summary()
+    return kotlin_project.analyse_project(path_project)
+
+
+def _analyse_java(path_project: str, jobs: int = None):
     files = get_files(path_project)
     jobs = _default_jobs() if jobs is None else jobs
     if jobs <= 1 or len(files) < 4:

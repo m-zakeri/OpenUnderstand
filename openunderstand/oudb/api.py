@@ -627,6 +627,11 @@ def update_files(paths, source_root: str = ""):
     Files that no longer exist are purged and not re-analysed, so deleting a
     source file does the right thing.
 
+    Kotlin paths (``.kt``/``.kts``) never reach the Java passes: they are
+    purged like any file and re-analysed by the Kotlin declaration pass
+    (``ounderstand.kotlin_project``), reported under the summary's ``"kotlin"``
+    key, which is present only when one was named or depended on a named file.
+
     Returns a summary dict.
     """
     from openunderstand.oudb.models import (
@@ -636,6 +641,9 @@ def update_files(paths, source_root: str = ""):
     )
     from openunderstand.ounderstand.parsing_process import process_file
     from openunderstand.ounderstand import symbol_table
+
+    from openunderstand.ounderstand import kotlin_project
+    from openunderstand.utils import kotlin_parser
 
     requested = [os.path.abspath(p) for p in paths]
 
@@ -681,8 +689,11 @@ def update_files(paths, source_root: str = ""):
         symbol_table.build(source_root)
 
     reanalysed = [p for p in paths if os.path.exists(p)]
+    kotlin_files = [p for p in reanalysed if kotlin_parser.is_kotlin(p)]
     for path in reanalysed:
-        process_file(path)
+        if not kotlin_parser.is_kotlin(path):
+            process_file(path)
+    kotlin_summary = kotlin_project.analyse(kotlin_files) if kotlin_files else None
 
     # The same project-wide passes a full build runs, through the one function. Running
     # only the first two left an updated database holding rows a rebuilt one
@@ -697,7 +708,19 @@ def update_files(paths, source_root: str = ""):
         if ent is not None
     ]
     finalised = finalise_analysis(file_ids=touched)
+    kotlin_named = [p for p in paths if kotlin_parser.is_kotlin(p)]
+    kotlin = (
+        {
+            "kotlin": kotlin_parser.report(
+                kotlin_summary or kotlin_parser.Summary(),
+                deleted=len(kotlin_named) - len(kotlin_files),
+            )
+        }
+        if kotlin_named
+        else {}
+    )
     return {
+        **kotlin,
         "requested": len(requested),
         "files": len(paths),
         "reanalysed": len(reanalysed),
@@ -714,7 +737,7 @@ def update_files(paths, source_root: str = ""):
 
 
 def update_db(repo_path: str = "", branch: str = "origin/master"):
-    """Re-analyse the .java files that differ from `branch`.
+    """Re-analyse the .java files that differ from `branch`, and parse the Kotlin ones.
 
     Paths from `git diff` are repository-relative; they are resolved against
     `repo_path` so this works from any working directory.
@@ -726,8 +749,12 @@ def update_db(repo_path: str = "", branch: str = "origin/master"):
 
     repo_path = os.path.abspath(repo_path)
     changed = git.Repo(repo_path).git.diff(branch, name_only=True).split("\n")
+    from openunderstand.utils import kotlin_parser
+
     paths = [
-        os.path.join(repo_path, name) for name in changed if name.endswith(".java")
+        os.path.join(repo_path, name)
+        for name in changed
+        if name.endswith(".java") or kotlin_parser.is_kotlin(name)
     ]
     return update_files(paths, source_root=repo_path)
 

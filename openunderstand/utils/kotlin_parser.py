@@ -7,8 +7,9 @@ runtime when it does not. Both give the same tree, and the tree is built from
 the listener-enabled ``gen.kotlin.KotlinParser`` either way, so a pass written
 against it sees the same contexts from both engines.
 
-This is parsing only. Nothing here extracts entities, references or metrics:
-the analysis pipeline still reads ``.java`` files alone (see ``is_kotlin``).
+This module only parses. The runner finds Kotlin files (``find_files``) and
+``ounderstand.kotlin_project`` writes their declarations; they are never handed
+to the Java passes, which would write nonsense for them.
 
 Entry rules: ``kotlinFile`` for ``.kt``, ``script`` for ``.kts``. The accelerator
 raises ``RuntimeError`` on input it cannot parse into the entry rule, where the
@@ -125,3 +126,65 @@ def parse_file(path: str, prefer_cpp: bool = True) -> Result:
     return parse(
         FileStream(os.fspath(path), encoding="utf-8"), entry_rule(path), prefer_cpp
     )
+
+
+def find_files(root: str) -> list[str]:
+    """Every ``.kt`` and ``.kts`` file under ``root``, sorted by path."""
+    return sorted(
+        os.path.join(here, name)
+        for here, _, names in os.walk(root)
+        for name in names
+        if is_kotlin(name)
+    )
+
+
+@dataclass
+class Summary:
+    """What parsing a project's Kotlin files found. ``failed`` maps path -> first error."""
+
+    files: int = 0
+    failed: dict[str, str] = field(default_factory=dict)
+    analysed: int = 0  # files whose declarations were written (0 when only parsing)
+
+    @property
+    def parsed(self) -> int:
+        return self.files - len(self.failed)
+
+
+def parse_paths(paths, prefer_cpp: bool = True) -> Summary:
+    """Parse the given Kotlin files; keep no trees, report what failed."""
+    summary = Summary()
+    for path in paths:
+        summary.files += 1
+        try:
+            result = parse_file(path, prefer_cpp)
+        except (OSError, UnicodeDecodeError) as exc:  # unreadable, not a syntax error
+            summary.failed[path] = f"{type(exc).__name__}: {exc}"
+            continue
+        if not result.ok:
+            summary.failed[path] = result.errors[0] if result.errors else "no tree"
+    for path, error in summary.failed.items():
+        logger.warning("kotlin: cannot parse %s: %s", path, error[:200])
+    if summary.files:
+        logger.info(
+            "kotlin: %d file(s), %d parsed, %d failed (parsing only: no entities "
+            "or references are written for Kotlin)",
+            summary.files, summary.parsed, len(summary.failed),
+        )
+    return summary
+
+
+def parse_project(root: str, prefer_cpp: bool = True) -> Summary:
+    """Parse every Kotlin file under ``root``."""
+    return parse_paths(find_files(root), prefer_cpp)
+
+
+def report(summary: Summary, **extra) -> dict:
+    """The JSON-able form the entry points return."""
+    return {
+        "files": summary.files,
+        "parsed": summary.parsed,
+        "analysed": summary.analysed,
+        "failed": dict(summary.failed),
+        **extra,
+    }

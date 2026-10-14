@@ -51,6 +51,11 @@ def _quiet(fn, *args, **kwargs):
 def analyze(source_dir: str, database: str = "") -> str:
     """Analyse a Java project and open the resulting database.
 
+    Kotlin files (.kt, .kts) under it are analysed too, for declarations only:
+    packages, types, functions, properties, parameters and locals, with Define,
+    Contain and Typed references, under Java kinds. Calls, uses and the rest are
+    Java-only. The result carries a "kotlin" entry when there are any.
+
     source_dir: directory of Java source to analyse.
     database:   where to write the .udb (default: alongside the source).
     """
@@ -59,6 +64,8 @@ def analyze(source_dir: str, database: str = "") -> str:
     from openunderstand.ounderstand.parsing_process import process_file, get_files
     from openunderstand.ounderstand import symbol_table
     from openunderstand.oudb.models import finalise_analysis
+    from openunderstand.utils import kotlin_parser
+    from openunderstand.ounderstand import kotlin_project
 
     source_dir = os.path.abspath(os.path.expanduser(source_dir))
     if not os.path.isdir(source_dir):
@@ -87,19 +94,21 @@ def analyze(source_dir: str, database: str = "") -> str:
         # Every entry point runs the same six, in the same order, through the
         # one function. Stopping after the first two left this server -- and
         # the IDEA plugin that reads it -- holding rows the CLI deletes.
+        # Kotlin before the fix-ups: they run over the whole database.
+        kotlin = kotlin_project.analyse_project(source_dir)
         finalise_analysis()
-        return len(files), ou_open(os.path.join(out_dir, name))
+        return len(files), kotlin, ou_open(os.path.join(out_dir, name))
 
-    (count, db), _ = _quiet(run)
+    (count, kotlin, db), _ = _quiet(run)
     _STATE["db"], _STATE["path"] = db, os.path.join(out_dir, name)
-    return json.dumps(
-        {
-            "database": _STATE["path"],
-            "files_analyzed": count,
-            "entities": len(db.ents()),
-        },
-        indent=2,
-    )
+    result = {
+        "database": _STATE["path"],
+        "files_analyzed": count,
+        "entities": len(db.ents()),
+    }
+    if kotlin.files:  # absent for a Java-only project, so its output is unchanged
+        result["kotlin"] = kotlin_parser.report(kotlin)
+    return json.dumps(result, indent=2)
 
 
 def open_database(path: str) -> str:
@@ -115,7 +124,7 @@ def open_database(path: str) -> str:
 def update(paths: list[str], source_root: str = "") -> str:
     """Re-analyse source files that have changed, without a full rebuild.
 
-    Use this after editing Java source instead of calling analyze() again: it
+    Use this after editing source instead of calling analyze() again: it
     re-analyses only the named files and the files that depend on them, and is
     about ten times quicker than a full build on a mid-sized project.
 
@@ -125,6 +134,8 @@ def update(paths: list[str], source_root: str = "") -> str:
 
     paths:       the .java files that changed. A path that no longer exists is
                  purged and not re-analysed, so deleting a file works too.
+                 Kotlin paths (.kt, .kts) are parsed and reported under
+                 "kotlin" only; they add and remove nothing in the database.
     source_root: the project root. Defaults to the root the open database
                  recorded when it was built.
     """
@@ -133,7 +144,7 @@ def update(paths: list[str], source_root: str = "") -> str:
 
     _require_db()
     if not paths:
-        raise ValueError("paths is empty: name the .java files that changed.")
+        raise ValueError("paths is empty: name the .java or .kt files that changed.")
 
     root = os.path.abspath(os.path.expanduser(source_root)) if source_root else ""
     if not root:

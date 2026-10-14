@@ -170,4 +170,4 @@ each node (only its source span), and anything outside the 391 files.
 `CLAUDE.md`). The committed Python parser is `openunderstand/gen/kotlin/`,
 generated with the listener enabled; regenerate it and rebuild the accelerator
 (`openunderstand/gen/kotlinspeedy/build.py <files>`) after editing a `.g4`.
-Parsing only: there is no Kotlin entity, reference or metric pass yet.
+The first entity pass (declarations and `Typed`) is `analysis_passes/kotlin_declarations.py`; there is no call/use pass or metric for Kotlin yet.

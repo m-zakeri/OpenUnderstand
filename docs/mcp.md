@@ -44,6 +44,13 @@ times quicker on a mid-sized project -- one file of the 85-file `org.json`
 benchmark takes 1.2s against 14s for the whole thing. Each file's previous
 contribution is deleted first, so a renamed method does not linger under both
 names, and the result is what a rebuild of the same source would have written.
+
+Kotlin files (`.kt`, `.kts`) get a declarations-only analysis: packages,
+types, functions, properties, parameters and locals, with `Define`, `Contain`
+and `Typed` references, under Java kinds. Calls and uses are not written. When a
+project has any, `analyze` and `update` add a `"kotlin"` entry to their result --
+`files`, `parsed`, `analysed` and `failed` (path to first syntax error), plus
+`deleted` for `update`. A Java-only project's result has no such key.
 `source_root` defaults to the root the open database recorded when it was
 built, so it is usually not needed. A path that no longer exists is purged and
 not re-analysed, which is how you record a deleted file.

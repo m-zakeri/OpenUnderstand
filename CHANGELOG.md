@@ -2,11 +2,20 @@
 
 ## Unreleased
 
-* **Kotlin parsing.** `openunderstand.utils.kotlin_parser` parses `.kt` and
-  `.kts` files with a Kotlin 2.4 grammar, through a second C++ accelerator
-  (`openunderstand.gen.kotlinspeedy`) or the Python runtime. Parsing only: the
-  analysis still reads Java files alone, and no Kotlin entities, references or
-  metrics exist yet. The wheels grow by about 3 MB for the second extension.
+* **Kotlin.** `openunderstand.utils.kotlin_parser` parses `.kt` and `.kts`
+  files with a Kotlin 2.4 grammar, through a second C++ accelerator
+  (`openunderstand.gen.kotlinspeedy`) or the Python runtime. A first entity pass
+  declares what a Kotlin file defines (packages, types, type aliases, objects,
+  functions, constructors, properties, parameters, locals) under **Java kinds**, with
+  `Declare`, `Contain`, `Define`, `Begin`/`End` and `Typed`, to project classes
+  and to library types through a committed Kotlin stdlib index
+  (`oudb/kotlin_index.txt.gz`, generated from the stdlib source with
+  `scripts/gen_kotlin_index.py`) and the JDK index.
+  The runner, `start_parsing`, the MCP `analyze` and `update` tools and
+  `update_files` run it and report under a `"kotlin"` key present only when
+  Kotlin files are involved. No calls, uses or other references yet, and no
+  Understand oracle to measure them against. A Java-only project's database is
+  unchanged (fingerprint identical). The wheels grow by about 3 MB.
 
 ## IDEA plugin 0.6.1
 
