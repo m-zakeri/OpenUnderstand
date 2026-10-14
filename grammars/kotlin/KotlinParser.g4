@@ -96,7 +96,18 @@ constructorInvocation
     ;
 
 explicitDelegation
-    : (userType | functionType) NL* 'by' NL* expression
+    : (userType | functionType) NL* 'by' NL* delegateExpression
+    ;
+
+delegateExpression // no trailing lambda: it would be read as the class body
+    : primaryExpression delegateSuffix* (NL* asOperator NL* type_)*
+    ;
+
+delegateSuffix
+    : postfixUnaryOperator
+    | typeArguments? valueArguments
+    | indexingSuffix
+    | navigationSuffix
     ;
 
 classBody
@@ -183,7 +194,7 @@ companionObject
     ;
 
 memberPropertyDeclaration
-    : propertyDeclarationHead NL* explicitBackingField (NL+ ';')? NL* propertyAccessors
+    : propertyDeclarationHead NL* explicitBackingField propertyAccessors?
     ;
 
 explicitBackingField
@@ -191,7 +202,7 @@ explicitBackingField
     ;
 
 propertyDeclaration
-    : propertyDeclarationHead (NL+ ';')? NL* propertyAccessors
+    : propertyDeclarationHead propertyAccessors?
     ;
 
 propertyDeclarationHead
@@ -201,15 +212,8 @@ propertyDeclarationHead
     ;
 
 propertyAccessors
-    : (
-        getter? (NL* semi? setter)?
-        | setter? (NL* semi? getter)?
-    )
-    /*
-        XXX: actually, it's not that simple. You can put semi only on the same line as getter, but any other semicolons
-        between property and getter are forbidden
-        Is this a bug in kotlin parser? Who knows.
-    */
+    : (NL | ';')* getter ((NL | ';')* setter)?
+    | (NL | ';')* setter ((NL | ';')* getter)?
     ;
 
 multiVariableDeclaration
@@ -332,7 +336,7 @@ statements
     ;
 
 statement
-    : (label | annotation)* (declaration | assignment | destructuringAssignment | loopStatement | expression)
+    : label* (declaration | annotation* (destructuringAssignment | loopStatement) | expressionStatement)
     ;
 
 declaration
@@ -347,9 +351,8 @@ destructuringAssignment
     : multiVariableDeclaration NL* '=' NL* expression
     ;
 
-assignment
-    : directlyAssignableExpression '=' NL* expression
-    | assignableExpression assignmentAndOperator NL* expression
+expressionStatement
+    : expression (('=' | assignmentAndOperator) NL* expression)?
     ;
 
 expression
@@ -401,7 +404,7 @@ asExpression
     ;
 
 prefixUnaryExpression
-    : unaryPrefix* postfixUnaryExpression
+    : unaryPrefix* (postfixUnaryExpression | jumpExpression)
     ;
 
 unaryPrefix
@@ -411,29 +414,13 @@ unaryPrefix
     ;
 
 postfixUnaryExpression
-    : primaryExpression
-    | primaryExpression postfixUnarySuffix+
+    : primaryExpression postfixUnarySuffix*
     ;
 
 postfixUnarySuffix
     : postfixUnaryOperator
     | typeArguments
     | callSuffix
-    | indexingSuffix
-    | navigationSuffix
-    ;
-
-directlyAssignableExpression
-    : postfixUnaryExpression assignableSuffix
-    | simpleIdentifier
-    ;
-
-assignableExpression
-    : prefixUnaryExpression
-    ;
-
-assignableSuffix
-    : typeArguments
     | indexingSuffix
     | navigationSuffix
     ;
@@ -447,12 +434,11 @@ navigationSuffix
     ;
 
 callSuffix
-    : typeArguments? valueArguments? annotatedLambda
-    | typeArguments? valueArguments
+    : typeArguments? (valueArguments annotatedLambda? | annotatedLambda)
     ;
 
 annotatedLambda
-    : annotation* label? NL* lambdaLiteral
+    : annotation* label? lambdaLiteral
     ;
 
 valueArguments
@@ -496,7 +482,6 @@ primaryExpression
     | ifExpression
     | whenExpression
     | tryExpression
-    | jumpExpression
     ;
 
 parenthesizedExpression
@@ -602,7 +587,11 @@ superExpression
 
 controlStructureBody
     : block
-    | statement
+    | controlStatement
+    ;
+
+controlStatement
+    : label* (annotation* (destructuringAssignment | loopStatement) | expressionStatement)
     ;
 
 ifExpression
@@ -613,7 +602,7 @@ ifExpression
     ;
 
 whenExpression
-    : 'when' NL* ('(' NL* whenSubject NL* ')')? NL* '{' NL* (whenEntry NL*)* NL* '}'
+    : 'when' NL* ('(' NL* whenSubject NL* ')')? NL* '{' (NL | ';')* (whenEntry (NL | ';')*)* '}'
     ;
 
 whenSubject
@@ -626,8 +615,8 @@ whenGuard
     ;
 
 whenEntry
-    : whenCondition (NL* ',' NL* whenCondition)* (NL* ',')? (NL* whenGuard)? NL* '->' NL* controlStructureBody semi?
-    | 'else' NL* '->' NL* controlStructureBody semi?
+    : whenCondition (NL* ',' NL* whenCondition)* (NL* ',')? (NL* whenGuard)? NL* '->' NL* controlStructureBody
+    | 'else' NL* '->' NL* controlStructureBody
     ;
 
 whenCondition
@@ -950,11 +939,9 @@ excl
     ;
 
 semi
-    : (';' | NL) NL* // actually, it's WS or comment between ';', here it's handled in lexer (see ;; token)
-    | EOF
+    : (';' | NL)+
     ;
 
-semis // writing this as "semi+" sends antlr into infinite loop or smth
+semis
     : (';' | NL)+
-    | EOF
     ;

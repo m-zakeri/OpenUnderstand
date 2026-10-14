@@ -47,6 +47,36 @@ unbalanced parenthesis, i.e. not Kotlin. Hand-written probe files covering the
 right shape; spot-checked for guards, backing fields, `$$` templates, `T & Any`
 and destructuring assignment only.
 
+## Speed
+
+The upstream grammar was slow because ANTLR's context-free first pass (SLL)
+read far ahead before it could rule a path out, often to the end of a class
+body. Each change below removes a path that is grammatical but never real Kotlin:
+
+* `controlStructureBody` no longer takes a declaration (`if (c) class A` made
+  every class and function ambiguous with a trailing lambda).
+* `return`/`throw`/`break` are not primary expressions, so `return a.b` is no
+  longer ambiguous with `(return a).b`.
+* An assignment is an expression with an optional `= expr` tail, so no scan to
+  find the `=`.
+* A delegate (`by expr`) cannot end in a lambda, which would be the class body.
+* `callSuffix` is left-factored; property accessors, `when` entries and `semi`
+  have no empty-or-newline alternatives; a trailing lambda must start on the
+  call's line, as in the compiler.
+
+Same 400 files (kotlinx.coroutines), same machine, Java target, one process:
+
+| | before | after |
+| --- | ---: | ---: |
+| first pass (cold), seconds | 76 | 19.5 |
+| later passes (warm), seconds | 15 | 6.5 |
+| tokens looked ahead | 8.3M | 5.2M |
+
+Parse success is unchanged on every corpus above. Tried and dropped: semantic
+predicates to forbid a `{` after a bodiless declaration. They made the first
+pass slower (ANTLR does not use them to prune the SLL pass) and need target
+specific code.
+
 ## Caveats
 
 * Pure-Python ANTLR is slow on this grammar (3 to 12 s a file). Use the C++
