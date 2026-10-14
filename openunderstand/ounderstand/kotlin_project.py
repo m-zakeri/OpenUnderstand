@@ -22,8 +22,23 @@ stdlib index (``oudb/kotlin_index``) or the JDK index. A library target is a
 placeholder entity, as the Java passes make for the JDK. A name that resolves to
 neither gets **no reference**: a wrong target is worse than a missing one.
 
-Not written: calls, uses, sets, overrides, extends/implements, type arguments,
-and anything inside a lambda. A file that does not parse is skipped and reported.
+**Calls and uses** come last, once every file's declarations are in the database.
+``kotlin_symbols`` resolves each occurrence the expression walker found against
+the facts of the whole project, and this writes ``Call``/``Callby`` to a
+function or constructor, ``Create``/``Createby`` to a constructed class,
+``Use``/``Useby`` for a read, ``Set``/``Setby`` for a plain assignment and
+``Modify``/``Modifyby`` for ``+=`` and ``++``, at the name, scoped to the
+function, property or class whose code it is. Only project declarations are
+targets and only a single fitting candidate is accepted (see ``kotlin_symbols``);
+the rest writes nothing. ``relabel_nondynamic_calls`` later splits ``Call`` into
+``Call Nondynamic`` from the callee's kind, as for Java.
+
+The facts of every file are cached against its mtime and size, because resolving a
+file needs the declarations of the others: an update re-reads only what changed.
+
+Not written: overrides, extends/implements, type arguments, ``Set Init``, infix
+and operator calls, anything inside an anonymous object, and calls to Java or
+library callees. A file that does not parse is skipped and reported.
 """
 
 from __future__ import annotations
@@ -42,7 +57,7 @@ from openunderstand.oudb.models import (
     kind_family,
     kind_id,
 )
-from openunderstand.oudb import jdk_index, kotlin_index
+from openunderstand.ounderstand import kotlin_symbols
 from openunderstand.utils import kotlin_parser
 
 logger = logging.getLogger(__name__)
@@ -159,40 +174,20 @@ def _project_type(longname: str):
     return None
 
 
-def _is_library_type(longname: str) -> bool:
-    return kotlin_index.known(longname) or jdk_index.known(longname)
-
-
 def resolve_type(name: str, kfile, enclosing) -> EntityModel | None:
     """What ``name`` means in ``kfile``: a project class, or a library type.
 
-    Kotlin's order: the enclosing scopes (nested types, type parameters), explicit
-    imports and aliases, the file's package, ``*`` imports, then the default
-    imports (``kotlin.*``, ``kotlin.collections.*``, ..., ``java.lang.*``), and
-    last the name as written. A project declaration beats a library type of the
-    same name at the same step. ``None`` when nothing matches -- no reference is
-    written for a name nothing explains.
+    The lookup order is ``kotlin_symbols.lookup_type``'s; here "the project
+    declares it" is answered by the database, so Java classes and type parameters
+    in scope count too. ``None`` when nothing matches: no reference is written
+    for a name nothing explains.
     """
-    first = name.split(".", 1)[0]
-    rest = name[len(first):]
-    package_depth = len(kfile.package.split(".")) if kfile.package else 0
-    scopes = []
-    for depth in range(len(enclosing), package_depth, -1):
-        scopes.append(".".join(enclosing[:depth]))
-    steps = [[f"{scope}.{name}" for scope in scopes]]
-    steps.append([fq + rest for fq, alias, star in kfile.imports if not star and (alias or fq.rsplit(".", 1)[-1]) == first])
-    steps.append([f"{kfile.package}.{name}" if kfile.package else name])
-    steps.append([f"{fq}.{name}" for fq, alias, star in kfile.imports if star])
-    steps.append([f"{package}.{name}" for package in (*kotlin_index.DEFAULT_PACKAGES, "java.lang")])
-    steps.append([name])
-    for candidates in steps:
-        for candidate in candidates:
-            row = _project_type(candidate)
-            if row is not None:
-                return row
-            if _is_library_type(candidate):
-                return _library_entity(candidate)
-    return None
+    hit = kotlin_symbols.lookup_type(
+        name, kfile, enclosing, lambda longname: _project_type(longname) is not None
+    )
+    if hit is None:
+        return None
+    return _project_type(hit[1]) if hit[0] == "project" else _library_entity(hit[1])
 
 
 def _write_typed(kfile, file_ent):
@@ -212,10 +207,91 @@ def _write_typed(kfile, file_ent):
             )
 
 
-def analyse(paths) -> kotlin_parser.Summary:
+#: path -> ((mtime_ns, size), KFile). Facts are pure data, so they survive an update.
+_FACTS: dict = {}
+
+
+def _stat(path: str):
+    info = os.stat(path)
+    return (info.st_mtime_ns, info.st_size)
+
+
+def _facts(path: str, fresh: bool):
+    """The facts for a file, from the cache unless ``fresh`` or the file changed.
+
+    Returns ``(KFile or None, error or None)``.
+    """
+    try:
+        stat = _stat(path)
+        cached = _FACTS.get(path)
+        if cached is not None and cached[0] == stat and not fresh:
+            return cached[1], None
+        result = kotlin_parser.parse_file(path)
+    except (OSError, UnicodeDecodeError) as exc:
+        _FACTS.pop(path, None)
+        return None, f"{type(exc).__name__}: {exc}"
+    if not result.ok:
+        _FACTS.pop(path, None)
+        return None, result.errors[0] if result.errors else "no tree"
+    kfile = kotlin_declarations.collect(result.tree, path)
+    _FACTS[path] = (stat, kfile)
+    return kfile, None
+
+
+def forget(paths) -> None:
+    for path in paths:
+        _FACTS.pop(path, None)
+
+
+_POSITIONAL = {
+    "call": ("Java Call", "Java Callby"),
+    "create": ("Java Create", "Java Createby"),
+    "use": ("Java Use", "Java Useby"),
+    "set": ("Java Set", "Java Setby"),
+    "modify": ("Java Modify", "Java Modifyby"),
+}
+
+
+def _write_references(kfile, file_ent, resolver):
+    index = resolver.ix
+    for occ in kfile.occurrences:
+        outcome = resolver.resolve(occ, kfile)
+        if not outcome:
+            continue
+        scope = _row_at(*occ["o"])
+        if scope is None:
+            continue
+        for kind, target in outcome:
+            if kind == "call":
+                key, label = target[1]["key"], "call"
+            elif kind == "create":
+                entry = index.classes.get(target)
+                if entry is None:
+                    continue
+                key, label = entry[1]["key"], "create"
+            else:
+                key, label = target[1]["key"], occ["m"]
+            row = _row_at(*key)
+            if row is None:
+                continue
+            forward, inverse = _POSITIONAL[label]
+            for name, owner, ent in ((forward, scope, row), (inverse, row, scope)):
+                ReferenceModel.get_or_create(
+                    _kind=kind_id(name),
+                    _file=file_ent,
+                    _line=occ["l"],
+                    _column=col_1based(occ["c"]),
+                    _ent=ent,
+                    _scope=owner,
+                )
+
+
+def analyse(paths, root: str | None = None) -> kotlin_parser.Summary:
     """Parse and write these Kotlin files; with no database bound, only parse.
 
-    Returns the parse summary, with ``analysed`` counting the files written.
+    ``root`` is the project, whose other Kotlin files supply the declarations a
+    call or name may resolve to; without it only ``paths`` are known. Returns the
+    parse summary, with ``analysed`` counting the files written.
     """
     paths = list(paths)
     if not _database_bound():
@@ -226,15 +302,19 @@ def analyse(paths) -> kotlin_parser.Summary:
     facts = []
     for path in paths:
         summary.files += 1
-        try:
-            result = kotlin_parser.parse_file(path)
-        except (OSError, UnicodeDecodeError) as exc:
-            summary.failed[path] = f"{type(exc).__name__}: {exc}"
-            continue
-        if not result.ok:
-            summary.failed[path] = result.errors[0] if result.errors else "no tree"
-            continue
-        facts.append(kotlin_declarations.collect(result.tree, path))
+        kfile, error = _facts(path, fresh=True)
+        if kfile is None:
+            summary.failed[path] = error
+        else:
+            facts.append(kfile)
+    known = {k.path: k for k in facts}
+    if root is not None:
+        for path in kotlin_parser.find_files(root):
+            if path not in known:
+                kfile, _ = _facts(path, fresh=False)
+                if kfile is not None:
+                    known[path] = kfile
+    resolver = kotlin_symbols.Resolver(kotlin_symbols.Index(list(known.values())))
     p = Project()
     written = []
     with ReferenceModel._meta.database.atomic():
@@ -242,6 +322,8 @@ def analyse(paths) -> kotlin_parser.Summary:
             written.append((kfile, _write_declarations(p, kfile)))
         for kfile, file_ent in written:
             _write_typed(kfile, file_ent)
+        for kfile, file_ent in written:
+            _write_references(kfile, file_ent, resolver)
         flush_reference_writes()
     summary.analysed = len(written)
     for path, error in summary.failed.items():
@@ -255,4 +337,36 @@ def analyse(paths) -> kotlin_parser.Summary:
 
 
 def analyse_project(root: str) -> kotlin_parser.Summary:
-    return analyse(kotlin_parser.find_files(root))
+    return analyse(kotlin_parser.find_files(root), root=root)
+
+
+def dependents(file_ids) -> set:
+    """Kotlin files, other than these, that refer to something these declare.
+
+    A change to a declaration can change what a name or call elsewhere means, so
+    those files are re-analysed with it. One level: a body edit never reaches
+    past the files that name the entity.
+    """
+    flush_reference_writes()
+    definein = kind_id("Java Definein")
+    declared = {
+        r._scope_id
+        for r in ReferenceModel.select().where(
+            (ReferenceModel._kind == definein) & (ReferenceModel._ent.in_(list(file_ids)))
+        )
+    }
+    if not declared:
+        return set()
+    files = {
+        r._file_id
+        for r in ReferenceModel.select().where(
+            ReferenceModel._ent.in_(list(declared)) | ReferenceModel._scope.in_(list(declared))
+        )
+        if r._file_id is not None
+    }
+    files -= set(file_ids)
+    return {
+        e._id
+        for e in EntityModel.select().where(EntityModel._id.in_(list(files)))
+        if kotlin_parser.is_kotlin(e._longname or "")
+    }

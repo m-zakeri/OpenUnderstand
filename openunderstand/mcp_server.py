@@ -51,10 +51,11 @@ def _quiet(fn, *args, **kwargs):
 def analyze(source_dir: str, database: str = "") -> str:
     """Analyse a Java project and open the resulting database.
 
-    Kotlin files (.kt, .kts) under it are analysed too, for declarations only:
+    Kotlin files (.kt, .kts) under it are analysed too, under Java kinds:
     packages, types, functions, properties, parameters and locals, with Define,
-    Contain and Typed references, under Java kinds. Calls, uses and the rest are
-    Java-only. The result carries a "kotlin" entry when there are any.
+    Contain and Typed references, plus Call, Create, Use, Set and Modify where a
+    name or call resolves to exactly one project declaration. Library and Java
+    callees are not resolved. The result carries a "kotlin" entry when there are any.
 
     source_dir: directory of Java source to analyse.
     database:   where to write the .udb (default: alongside the source).

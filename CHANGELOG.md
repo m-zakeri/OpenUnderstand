@@ -13,8 +13,11 @@
   `scripts/gen_kotlin_index.py`) and the JDK index.
   The runner, `start_parsing`, the MCP `analyze` and `update` tools and
   `update_files` run it and report under a `"kotlin"` key present only when
-  Kotlin files are involved. No calls, uses or other references yet, and no
-  Understand oracle to measure them against. A Java-only project's database is
+  Kotlin files are involved. Calls, constructor calls, reads, writes and
+  modifications of project declarations are written too (`Call`, `Create`, `Use`,
+  `Set`, `Modify`), only where exactly one declaration fits; library and Java
+  callees, overloads that differ by argument type, and infix or operator calls
+  are not. There is no Understand oracle to measure any of it against. A Java-only project's database is
   unchanged (fingerprint identical). The wheels grow by about 3 MB.
 
 ## IDEA plugin 0.6.1

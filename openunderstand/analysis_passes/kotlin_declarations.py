@@ -28,8 +28,14 @@ constructors; properties (a ``val``/``var`` constructor parameter is one);
 parameters; type parameters; type aliases; and locals and ``for`` variables in
 function bodies. A type alias has no kind of its own, so it is a class-kind
 entity whose ``type`` reads ``typealias <target>``. **Not declared**: anything
-inside a lambda, an anonymous function or an object literal, ``init`` blocks, accessors' parameters, and
-catch/when-subject variables.
+inside a lambda, an anonymous function or an object literal, accessors'
+parameters, and catch/when-subject variables.
+
+**Facts for resolution.** Besides the entities, the collector records what
+``kotlin_symbols`` needs to resolve calls and names later: ``classes`` (supertypes,
+companion), ``callables`` (arity, extension receiver, return type), ``variables``
+(declared type, or the initialiser's descriptor) and the ``occurrences`` the
+expression walker (``kotlin_expressions``) finds in bodies and initialisers.
 
 Long names are Java's shape: ``pkg.Outer.Inner.member``, a parameter or local
 ``pkg.Outer.fn.name``, a constructor ``pkg.C.C``. A top-level function or
@@ -42,64 +48,22 @@ from dataclasses import dataclass, field
 
 from antlr4.tree.Tree import TerminalNode
 
+from openunderstand.analysis_passes.kotlin_expressions import Env, ExprWalker
+from openunderstand.analysis_passes.kotlin_tree import (
+    children,
+    find,
+    first,
+    has_token,
+    name_of,
+    named_type,
+    name_pos as _name,
+    rule,
+    source_text,
+    user_type_name,
+)
 from openunderstand.utils import kind_names as K
 
-_RULE_CACHE: dict = {}
-_SKIP = {"lambdaLiteral", "objectLiteral", "anonymousFunction"}
 _VISIBILITY = {"public", "protected", "private"}
-
-
-def rule(ctx) -> str | None:
-    """The grammar rule a context came from (``None`` for a token)."""
-    if isinstance(ctx, TerminalNode):
-        return None
-    cls = type(ctx)
-    name = _RULE_CACHE.get(cls)
-    if name is None:
-        raw = cls.__name__[: -len("Context")]
-        name = _RULE_CACHE[cls] = raw[0].lower() + raw[1:]
-    return name
-
-
-def children(ctx, name: str | None = None):
-    return [
-        c for c in (ctx.children or []) if name is None or rule(c) == name
-    ]
-
-
-def first(ctx, name: str):
-    for c in ctx.children or []:
-        if rule(c) == name:
-            return c
-    return None
-
-
-def find(ctx, name: str):
-    """The first descendant of rule ``name`` in pre-order, or ``None``."""
-    for c in ctx.children or []:
-        if rule(c) == name:
-            return c
-        if not isinstance(c, TerminalNode):
-            hit = find(c, name)
-            if hit is not None:
-                return hit
-    return None
-
-
-def has_token(ctx, text: str) -> bool:
-    return any(isinstance(c, TerminalNode) and c.getText() == text for c in ctx.children or [])
-
-
-def source_text(ctx) -> str:
-    start, stop = ctx.start, ctx.stop
-    if stop is None:
-        return ""
-    return start.getInputStream().getText(start.start, stop.stop)
-
-
-def _name(simple_identifier) -> tuple[str, int, int]:
-    token = simple_identifier.start
-    return token.text.strip("`"), token.line, token.column
 
 
 @dataclass
@@ -112,12 +76,67 @@ class KFile:
     types: list = field(default_factory=list)  # declared types to turn into Typed
     top_types: list = field(default_factory=list)  # (name, longname, line, col) for Contain
     aliases: list = field(default_factory=list)  # top-level typealiases: (longname, modifiers)
+    classes: dict = field(default_factory=dict)  # longname -> supertypes, companion, ...
+    callables: list = field(default_factory=list)  # functions and constructors
+    variables: list = field(default_factory=list)  # properties, parameters, locals
+    occurrences: list = field(default_factory=list)  # calls and names, unresolved
 
 
 class _Collector:
     def __init__(self, path: str):
         self.out = KFile(path)
         self.package: list[str] = []
+        self.class_envs: dict = {}  # class scope -> Env of its primary constructor's parameters
+        self.primary_keys: dict = {}  # class scope -> its primary constructor's entity key
+
+    # -- facts for resolution ---------------------------------------------
+    def walker(self, owner, scope, env, receiver_lambda=False):
+        return ExprWalker(self, owner, scope, env, receiver_lambda)
+
+    def variable_fact(self, key, name, owner, kind, type_ctx=None, init=None, scope=(), vis=None, receiver=None):
+        self.out.variables.append(
+            {
+                "key": key, "name": name, "owner": owner, "kind": kind,
+                "declared": name_of(type_ctx) if type_ctx is not None else None,
+                "init": init, "scope": tuple(scope), "vis": vis, "receiver": receiver,
+            }
+        )
+
+    def callable_fact(self, key, name, owner, ctor, params, receiver, ret, ret_init, local, scope,
+                      vis=None, tparams=()):
+        self.out.callables.append(
+            {
+                "key": key, "name": name, "owner": owner, "ctor": ctor, "params": params,
+                "receiver": receiver, "ret": ret, "ret_init": ret_init, "local": local,
+                "scope": tuple(scope), "vis": vis, "tparams": tuple(tparams),
+            }
+        )
+
+    @staticmethod
+    def type_parameter_names(ctx) -> tuple:
+        tp = first(ctx, "typeParameters")
+        return tuple(_name(first(p, "simpleIdentifier"))[0] for p in children(tp, "typeParameter")) if tp is not None else ()
+
+    @staticmethod
+    def owner_of(scope, top_level):
+        return None if top_level else ".".join(scope)
+
+    def supertypes(self, cls_ctx) -> list:
+        specs = first(cls_ctx, "delegationSpecifiers")
+        names = []
+        for annotated in children(specs, "annotatedDelegationSpecifier") if specs is not None else []:
+            spec = first(annotated, "delegationSpecifier")
+            if spec is None:
+                continue
+            for inner in spec.children or []:
+                user = None
+                if rule(inner) == "userType":
+                    user = inner
+                elif rule(inner) in ("constructorInvocation", "explicitDelegation"):
+                    user = first(inner, "userType")
+                if user is not None:
+                    names.append(user_type_name(user))
+        return names
 
     # -- entry -------------------------------------------------------------
     def file(self, tree):
@@ -181,7 +200,7 @@ class _Collector:
     def mods(modifiers_ctx) -> set:
         if modifiers_ctx is None:
             return set()
-        return {m.getText() for m in children(modifiers_ctx, "modifier")}
+        return {m.getText().strip() for m in children(modifiers_ctx, "modifier")}
 
     @staticmethod
     def visibility(mods: set) -> list:
@@ -248,7 +267,7 @@ class _Collector:
             span=False,
         )
         self.out.top_types.append((name, longname, line, col))
-        self.out.aliases.append((longname, mods))
+        self.out.aliases.append((longname, mods, name_of(target), tuple(scope)))
         inner = scope + [name]
         self.type_parameters(ctx, inner)
         self.typed((longname, line, col), target, inner)
@@ -300,8 +319,14 @@ class _Collector:
         inner = scope + [_name(ident)[0]]
         if top_level:
             self.out.top_types.append((_name(ident)[0], longname, line, col))
+        self.out.classes[longname] = {
+            "name": _name(ident)[0], "decl": decl, "object": False, "companion": None,
+            "supers": self.supertypes(ctx), "scope": tuple(inner), "key": (longname, line, col),
+            "vis": self.visibility(mods),
+        }
         self.type_parameters(ctx, inner)
         self.primary_constructor(ctx, inner, decl)
+        self.header_calls(ctx, inner, (longname, line, col))
         self.members(first(ctx, "classBody"), inner, decl, in_object=False)
         enum_body = first(ctx, "enumClassBody")
         if enum_body is not None:
@@ -310,14 +335,33 @@ class _Collector:
                     self.enum_entry(entry, inner)
             self.members(enum_body, inner, decl, in_object=False)
 
+    def header_calls(self, cls_ctx, scope, class_key):
+        """The superclass constructors a class header invokes: ``class A : Base(x)``."""
+        specs = first(cls_ctx, "delegationSpecifiers")
+        for annotated in children(specs, "annotatedDelegationSpecifier") if specs is not None else []:
+            spec = first(annotated, "delegationSpecifier")
+            invocation = first(spec, "constructorInvocation") if spec is not None else None
+            if invocation is None:
+                continue
+            owner = self.primary_keys.get(tuple(scope), class_key)
+            env = Env(self.class_envs.get(tuple(scope)))
+            self.walker(owner, scope, env).header_call(
+                first(invocation, "userType"), first(invocation, "valueArguments")
+            )
+
     def enum_entry(self, entry, scope):
-        self.add(
+        key = self.add(
             first(entry, "simpleIdentifier"),
             scope,
             decl=K.ENUM_CONSTANT,
             type_text=scope[-1],
             ctx=entry,
             modifiers=("public", "static", "final"),
+        )
+        self.out.variables.append(
+            {"key": key, "name": _name(first(entry, "simpleIdentifier"))[0],
+             "owner": ".".join(scope), "kind": "property", "declared": scope[-1],
+             "init": None, "scope": tuple(scope)}
         )
         body = first(entry, "classBody")
         if body is not None:
@@ -334,13 +378,18 @@ class _Collector:
         )
         if top_level:
             self.out.top_types.append((_name(ident)[0], longname, line, col))
+        self.out.classes[longname] = {
+            "name": _name(ident)[0], "decl": K.CLASS, "object": True, "companion": None,
+            "supers": self.supertypes(ctx), "scope": tuple(scope + [_name(ident)[0]]),
+            "key": (longname, line, col), "vis": self.visibility(mods),
+        }
         self.members(first(ctx, "classBody"), scope + [_name(ident)[0]], K.CLASS, in_object=True)
 
     def companion(self, ctx, scope):
         mods = self.mods(first(ctx, "modifiers"))
         ident = first(ctx, "simpleIdentifier")
         name = _name(ident)[0] if ident is not None else "Companion"
-        self.add(
+        longname, line, col = self.add(
             ident,
             scope,
             decl=K.CLASS,
@@ -349,6 +398,14 @@ class _Collector:
             modifiers=self.visibility(mods) + ["final", "static"],
             name=name,
         )
+        self.out.classes[longname] = {
+            "name": name, "decl": K.CLASS, "object": True, "companion": None,
+            "supers": self.supertypes(ctx), "scope": tuple(scope + [name]),
+            "key": (longname, line, col), "vis": self.visibility(mods),
+        }
+        outer = self.out.classes.get(".".join(scope))
+        if outer is not None:
+            outer["companion"] = longname
         self.members(first(ctx, "classBody"), scope + [name], K.CLASS, in_object=True)
 
     def members(self, body, scope, owner_decl, in_object):
@@ -368,6 +425,11 @@ class _Collector:
                     self.companion(c, scope)
                 elif name == "secondaryConstructor":
                     self.secondary_constructor(c, scope)
+                elif name == "anonymousInitializer":
+                    owner = self.out.classes.get(".".join(scope))
+                    if owner is not None:
+                        env = Env(self.class_envs.get(tuple(scope)))
+                        self.walker(owner["key"], scope, env).walk(c)
 
     def primary_constructor(self, cls_ctx, scope, owner_decl):
         pc = first(cls_ctx, "primaryConstructor")
@@ -378,7 +440,7 @@ class _Collector:
         cname = scope[-1]
         ctor_scope = scope + [cname]
         # the constructor's entity sits at the class name, as a record's does
-        self.add(
+        ctor_key = self.add(
             first(cls_ctx, "simpleIdentifier"),
             scope,
             decl=K.CONSTRUCTOR,
@@ -388,28 +450,46 @@ class _Collector:
             name=cname,
             span=False,
         )
+        env = Env()
+        fact_params, defaults = [], []
         for cp in children(params, "classParameter") if params is not None else []:
             pmods = self.mods(first(cp, "modifiers"))
             ident = first(cp, "simpleIdentifier")
+            name = _name(ident)[0]
             type_ctx = first(cp, "type_")
+            default = first(cp, "expression")
             if has_token(cp, "val") or has_token(cp, "var"):
                 fmods = self.visibility(pmods) if (_VISIBILITY & pmods) else ["public"]
                 if has_token(cp, "val"):
                     fmods.append("final")
-                longname, line, col = self.add(
+                key = self.add(
                     ident, scope, decl=K.FIELD, type_text=type_ctx.getText(), ctx=cp, modifiers=fmods, span=False
                 )
-                self.typed((longname, line, col), type_ctx, scope)
+                self.typed(key, type_ctx, scope)
+                self.variable_fact(key, name, ".".join(scope), "property", type_ctx, scope=scope, vis=self.visibility(pmods))
             else:
-                longname, line, col = self.add(
+                key = self.add(
                     ident, ctor_scope, decl=K.PARAMETER, type_text=type_ctx.getText(), ctx=cp, modifiers=(), span=False
                 )
-                self.typed((longname, line, col), type_ctx, scope)
+                self.typed(key, type_ctx, scope)
+                self.variable_fact(key, name, ctor_key[0], "param", type_ctx, scope=scope)
+                env.names[name] = ("local", key)
+            fact_params.append((default is not None, "vararg" in pmods, _fn_receiver(type_ctx)))
+            if default is not None:
+                defaults.append((ctor_key, default))   # a default value runs in the constructor
+        self.class_envs[tuple(scope)] = env
+        self.primary_keys[tuple(scope)] = ctor_key
+        self.callable_fact(
+            ctor_key, cname, ".".join(scope), True, fact_params, None, None, None, False, scope,
+            vis=self.visibility(mods),
+        )
+        for key, default in defaults:
+            self.walker(key, scope, Env(env)).walk(default)
 
     def secondary_constructor(self, ctx, scope):
         mods = self.mods(first(ctx, "modifiers"))
         cname = scope[-1]
-        self.add(
+        longname, line, col = self.add(
             None,
             scope,
             decl=K.CONSTRUCTOR,
@@ -423,10 +503,24 @@ class _Collector:
         for c in ctx.children or []:
             if isinstance(c, TerminalNode) and c.getText() == "constructor":
                 d["line"], d["col"] = c.symbol.line, c.symbol.column
-        self.parameters(first(ctx, "functionValueParameters"), scope + [cname], scope)
-        self.body(first(ctx, "block"), scope + [cname])
+        key = (longname, d["line"], d["col"])
+        inner = scope + [cname]
+        infos = self.parameters(first(ctx, "functionValueParameters"), inner, scope, longname)
+        env = Env()
+        for info in infos:
+            env.names[info["name"]] = ("local", info["key"])
+        self.callable_fact(
+            key, cname, ".".join(scope), True, [(i["default"], i["vararg"], i["fnrecv"]) for i in infos],
+            None, None, None, False, inner, vis=self.visibility(mods),
+        )
+        walker = self.walker(key, inner, env)
+        for info in infos:
+            if info["default_ctx"] is not None:
+                walker.walk(info["default_ctx"])
+        walker.walk(first(ctx, "constructorDelegationCall"))
+        walker.walk(first(ctx, "block"))
 
-    def function(self, ctx, scope, top_level, in_object, owner=None):
+    def function(self, ctx, scope, top_level, in_object, owner=None, env=None):
         mods = self.mods(first(ctx, "modifiers"))
         ident = first(ctx, "simpleIdentifier")
         body = first(ctx, "functionBody")
@@ -454,22 +548,46 @@ class _Collector:
             ctx=ctx,
             modifiers=out_mods,
         )
+        key = (longname, line, col)
         inner = scope + [name]
         if ret is not None:
-            self.typed((longname, line, col), ret, inner)   # inner: sees the function's <T>
+            self.typed(key, ret, inner)   # inner: sees the function's <T>
         self.type_parameters(ctx, inner)
-        self.parameters(first(ctx, "functionValueParameters"), inner, inner)
+        infos = self.parameters(first(ctx, "functionValueParameters"), inner, inner, longname)
+        fenv = Env(env)
+        for info in infos:
+            fenv.names[info["name"]] = ("local", info["key"])
+        walker = self.walker(key, inner, fenv)
+        for info in infos:
+            if info["default_ctx"] is not None:
+                walker.walk(info["default_ctx"])
+        ret_init = None
         if body is not None:
-            self.body(body, inner)
+            for part in body.children or []:
+                if rule(part) == "expression" and ret is None:
+                    ret_init = walker.walk(part)
+                else:
+                    walker.walk(part)
+        receiver = first(ctx, "receiverType")
+        self.callable_fact(
+            key, name, None if (top_level or env is not None) else ".".join(scope), False,
+            [(i["default"], i["vararg"], i["fnrecv"]) for i in infos],
+            name_of(receiver) if receiver is not None else None,
+            name_of(ret) if ret is not None else None, ret_init, env is not None, inner,
+            vis=self.visibility(mods), tparams=self.type_parameter_names(ctx),
+        )
+        return key
 
-    def parameters(self, params, owner_scope, type_scope):
+    def parameters(self, params, owner_scope, type_scope, owner_longname=None):
+        """Declare a function's parameters; returns what the callers need about each."""
+        infos = []
         if params is None:
-            return
+            return infos
         for fp in children(params, "functionValueParameter"):
             param = first(fp, "parameter")
             type_ctx = first(param, "type_")
             mods = self.mods(first(fp, "modifiers"))
-            longname, line, col = self.add(
+            key = self.add(
                 first(param, "simpleIdentifier"),
                 owner_scope,
                 decl=K.PARAMETER,
@@ -478,7 +596,15 @@ class _Collector:
                 modifiers=(),
                 span=False,
             )
-            self.typed((longname, line, col), type_ctx, type_scope)
+            self.typed(key, type_ctx, type_scope)
+            name = _name(first(param, "simpleIdentifier"))[0]
+            self.variable_fact(key, name, owner_longname, "param", type_ctx, scope=type_scope)
+            default = first(fp, "expression")
+            infos.append(
+                {"key": key, "name": name, "default": default is not None, "default_ctx": default,
+                 "vararg": "vararg" in mods, "fnrecv": _fn_receiver(type_ctx)}
+            )
+        return infos
 
     def property(self, ctx, scope, top_level, in_object):
         head = first(ctx, "propertyDeclarationHead")
@@ -489,10 +615,11 @@ class _Collector:
             out_mods.append("final")
         if top_level or in_object:
             out_mods.append("static")
+        keys = []
         for variable in self.variables(head):
             ident = first(variable, "simpleIdentifier")
             type_ctx = first(variable, "type_")
-            longname, line, col = self.add(
+            key = self.add(
                 ident,
                 scope,
                 decl=K.FIELD,
@@ -502,7 +629,36 @@ class _Collector:
                 span=False,
             )
             if type_ctx is not None:
-                self.typed((longname, line, col), type_ctx, scope)
+                self.typed(key, type_ctx, scope)
+            keys.append((key, variable, type_ctx))
+        if not keys:
+            return
+        # the first variable owns the code: an initialiser, a delegate, accessors
+        key, variable, type_ctx = keys[0]
+        env = Env(None if top_level else self.class_envs.get(tuple(scope)))
+        receiver_lambda = _fn_receiver(type_ctx)
+        walker = self.walker(key, scope, env, receiver_lambda)
+        init = None
+        for part in head.children or []:
+            if rule(part) == "expression":
+                init = walker.walk(part)
+            elif rule(part) == "propertyDelegate":
+                walker.walk(part)
+        accessor_env = Env(env)
+        accessor_env.names["value"] = ("shadow",)
+        accessor_env.names["field"] = ("shadow",)
+        accessors = self.walker(key, scope, accessor_env)
+        for part in ctx.children or []:
+            if rule(part) in ("propertyAccessors", "explicitBackingField"):
+                accessors.walk(part)
+        owner = None if top_level else ".".join(scope)
+        receiver = first(head, "receiverType")
+        for k, v, t in keys:
+            self.variable_fact(
+                k, _name(first(v, "simpleIdentifier"))[0], owner, "property", t,
+                init=init if (t is None and len(keys) == 1) else None, scope=scope,
+                vis=self.visibility(mods), receiver=name_of(receiver) if receiver is not None else None,
+            )
 
     @staticmethod
     def variables(head):
@@ -512,47 +668,28 @@ class _Collector:
         multi = first(head, "multiVariableDeclaration")
         return [first(e, "variableDeclaration") for e in children(multi, "destructuringEntry")] if multi is not None else []
 
-    # -- bodies ------------------------------------------------------------
-    def body(self, ctx, scope):
-        """Locals, local functions and local classes in a function body.
-
-        Skips lambdas, anonymous functions and object literals: what they
-        declare belongs to a scope this pass does not model yet.
-        """
-        if ctx is None:
-            return
-        for c in ctx.children or []:
-            name = rule(c)
-            if name is None or name in _SKIP:
-                continue
-            if name == "propertyDeclaration":
-                self.local(c, scope)
-                self.body(c, scope)
-            elif name == "classDeclaration":
-                self.klass(c, scope, top_level=False, in_object=False)
-            elif name == "objectDeclaration":
-                self.obj(c, scope, top_level=False)
-            elif name == "functionDeclaration":
-                self.function(c, scope, top_level=False, in_object=False)
-            elif name == "forStatement":
-                for v in children(c, "variableDeclaration"):
-                    self.local_variable(v, scope, c, ())
-                for multi in children(c, "multiVariableDeclaration"):
-                    for e in children(multi, "destructuringEntry"):
-                        self.local_variable(first(e, "variableDeclaration"), scope, c, ())
-                self.body(c, scope)
-            else:
-                self.body(c, scope)
-
-    def local(self, ctx, scope):
+    # -- locals (called by the expression walker) ---------------------------
+    def local(self, ctx, scope, env, init):
         head = first(ctx, "propertyDeclarationHead")
         mods = ("final",) if has_token(head, "val") else ()
-        for variable in self.variables(head):
-            self.local_variable(variable, scope, ctx, mods)
+        variables = self.variables(head)
+        for variable in variables:
+            key = self.local_variable(
+                variable, scope, ctx, mods, init if len(variables) == 1 else None
+            )
+            env.names[_name(first(variable, "simpleIdentifier"))[0]] = ("local", key)
 
-    def local_variable(self, variable, scope, ctx, mods):
+    def for_variables(self, ctx, scope, env):
+        found = [(v, ctx) for v in children(ctx, "variableDeclaration")]
+        for multi in children(ctx, "multiVariableDeclaration"):
+            found += [(first(e, "variableDeclaration"), ctx) for e in children(multi, "destructuringEntry")]
+        for variable, owner_ctx in found:
+            key = self.local_variable(variable, scope, owner_ctx, (), None)
+            env.names[_name(first(variable, "simpleIdentifier"))[0]] = ("local", key)
+
+    def local_variable(self, variable, scope, ctx, mods, init):
         type_ctx = first(variable, "type_")
-        longname, line, col = self.add(
+        key = self.add(
             first(variable, "simpleIdentifier"),
             scope,
             decl=K.LOCAL,
@@ -562,49 +699,20 @@ class _Collector:
             span=False,
         )
         if type_ctx is not None:
-            self.typed((longname, line, col), type_ctx, scope)
+            self.typed(key, type_ctx, scope)
+        self.variable_fact(
+            key, _name(first(variable, "simpleIdentifier"))[0], ".".join(scope), "local", type_ctx,
+            init=init if type_ctx is None else None, scope=scope,
+        )
+        return key
 
 
-def named_type(type_ctx):
-    """``(dotted name, line, col)`` of the class a type names, or ``None``.
-
-    The position is the last identifier, where Understand anchors a ``Typed``.
-    A nullable ``T?`` and a parenthesised type name ``T``; a function type, an
-    intersection and ``dynamic`` name no class, and type arguments are left to a
-    later pass.
-    """
+def _fn_receiver(type_ctx) -> bool:
+    """Whether a declared type is a function type with a receiver: ``T.() -> Unit``."""
     if type_ctx is None:
-        return None
-    ctx = type_ctx
-    for _ in range(8):
-        name = rule(ctx)
-        if name == "type_":
-            if first(ctx, "type_") is not None:  # `A & B`
-                return None
-            inner = None
-            for c in ctx.children or []:
-                if rule(c) in ("parenthesizedType", "nullableType", "typeReference", "functionType"):
-                    inner = c
-            if inner is None:
-                return None
-            ctx = inner
-        elif name == "parenthesizedType":
-            ctx = first(ctx, "type_")
-        elif name == "nullableType":
-            ctx = first(ctx, "typeReference") or first(ctx, "parenthesizedType")
-        elif name == "typeReference":
-            user = first(ctx, "userType")
-            if user is None:
-                return None
-            parts = children(user, "simpleUserType")
-            names = [_name(first(p, "simpleIdentifier"))[0] for p in parts]
-            _, line, col = _name(first(parts[-1], "simpleIdentifier"))
-            return ".".join(names), line, col
-        else:
-            return None
-        if ctx is None:
-            return None
-    return None
+        return False
+    fn = find(type_ctx, "functionType")
+    return fn is not None and first(fn, "receiverType") is not None
 
 
 def collect(tree, path: str) -> KFile:

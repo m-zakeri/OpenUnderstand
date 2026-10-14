@@ -47,7 +47,9 @@ names, and the result is what a rebuild of the same source would have written.
 
 Kotlin files (`.kt`, `.kts`) get a declarations-only analysis: packages,
 types, functions, properties, parameters and locals, with `Define`, `Contain`
-and `Typed` references, under Java kinds. Calls and uses are not written. When a
+and `Typed` references, under Java kinds, plus `Call`, `Create`, `Use`, `Set` and
+`Modify` where a name or call resolves to exactly one project declaration (not to
+library or Java code). When a
 project has any, `analyze` and `update` add a `"kotlin"` entry to their result --
 `files`, `parsed`, `analysed` and `failed` (path to first syntax error), plus
 `deleted` for `update`. A Java-only project's result has no such key.

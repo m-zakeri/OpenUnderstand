@@ -670,7 +670,25 @@ def update_files(paths, source_root: str = ""):
         if affected
         else []
     )
-    paths = sorted({*requested, *dependents})
+    # Kotlin: a declaration that changed can change what a name means in the
+    # Kotlin files that mention it, which Java's dependency walk does not see.
+    kotlin_seeds = []
+    for named in requested:
+        if kotlin_parser.is_kotlin(named):
+            row = EntityModel.get_or_none(EntityModel._longname == named)
+            if row is not None:
+                kotlin_seeds.append(row._id)
+    kotlin_dependents = (
+        [
+            e._longname
+            for e in EntityModel.select().where(
+                EntityModel._id.in_(list(kotlin_project.dependents(kotlin_seeds)))
+            )
+        ]
+        if kotlin_seeds
+        else []
+    )
+    paths = sorted({*requested, *dependents, *kotlin_dependents})
 
     removed_entities = removed_refs = 0
     for path in paths:
@@ -693,7 +711,10 @@ def update_files(paths, source_root: str = ""):
     for path in reanalysed:
         if not kotlin_parser.is_kotlin(path):
             process_file(path)
-    kotlin_summary = kotlin_project.analyse(kotlin_files) if kotlin_files else None
+    kotlin_project.forget(p for p in paths if not os.path.exists(p))
+    kotlin_summary = (
+        kotlin_project.analyse(kotlin_files, root=source_root or None) if kotlin_files else None
+    )
 
     # The same project-wide passes a full build runs, through the one function. Running
     # only the first two left an updated database holding rows a rebuilt one
