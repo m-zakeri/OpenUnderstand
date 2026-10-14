@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "org.openunderstand"
-version = "0.6.0"  // Marketplace rejects a re-upload under the version it verified
+version = "0.6.1"  // Marketplace rejects a re-upload under the version it verified
 
 kotlin { jvmToolchain(21) }
 

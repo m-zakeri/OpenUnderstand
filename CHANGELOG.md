@@ -1,5 +1,15 @@
 # Changelog
 
+## IDEA plugin 0.6.1
+
+* **Export All...** writes `metrics.csv`, `symbols.csv` and `references.csv`
+  for the whole project in one step.
+* **Export CSV...** proposes a file name matching the table shown.
+* Fixed: a stray line printed ahead of the table no longer breaks the Symbol
+  Table and References views, and unexpected output now appears in the error
+  dialog.
+* Bundles analyser 0.7.0.
+
 ## 0.7.0
 
 ### Every metric at or above 0.9 on every fixture

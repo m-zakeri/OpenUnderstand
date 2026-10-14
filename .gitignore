@@ -195,3 +195,4 @@ idea-plugin/.gradle
 idea-plugin/*.csv
 
 paper
+openunderstand/gen/kotlinspeedy/.build-work/
