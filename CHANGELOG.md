@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+* **Kotlin parsing.** `openunderstand.utils.kotlin_parser` parses `.kt` and
+  `.kts` files with a Kotlin 2.4 grammar, through a second C++ accelerator
+  (`openunderstand.gen.kotlinspeedy`) or the Python runtime. Parsing only: the
+  analysis still reads Java files alone, and no Kotlin entities, references or
+  metrics exist yet. The wheels grow by about 3 MB for the second extension.
+
 ## IDEA plugin 0.6.1
 
 * **Export All...** writes `metrics.csv`, `symbols.csv` and `references.csv`

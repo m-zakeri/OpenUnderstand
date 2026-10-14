@@ -1,8 +1,9 @@
 """Attach the optional speedy-antlr C++ parse accelerator to the build.
 
 All packaging metadata lives in ``pyproject.toml``. This file exists only to
-build ``openunderstand.gen.java8speedy.sa_javalabeled_cpp_parser`` when the
-toolchain to do so is present, and to get out of the way when it is not.
+build ``openunderstand.gen.java8speedy.sa_javalabeled_cpp_parser`` (and the
+Kotlin twin, ``gen.kotlinspeedy.sa_kotlin_cpp_parser``) when the toolchain to do
+so is present, and to get out of the way when it is not.
 
 The accelerator parses Java about 7.8x faster than the pure-Python ANTLR
 runtime -- 2.5s against 19.7s over benchmark/JSON's 85 files -- while producing
@@ -39,6 +40,8 @@ from setuptools.command.build_ext import build_ext
 HERE = pathlib.Path(__file__).resolve().parent
 SPEEDY = HERE / "openunderstand" / "gen" / "java8speedy"
 EXT_NAME = "openunderstand.gen.java8speedy.sa_javalabeled_cpp_parser"
+KOTLIN = HERE / "openunderstand" / "gen" / "kotlinspeedy"
+KOTLIN_EXT_NAME = "openunderstand.gen.kotlinspeedy.sa_kotlin_cpp_parser"
 
 
 def _load_build_module():
@@ -60,6 +63,8 @@ def _missing_tools() -> list[str]:
         missing.append("openunderstand/gen/java8speedy/build.py")
     if not (HERE / "grammars" / "JavaParserLabeled.g4").is_file():
         missing.append("grammars/JavaParserLabeled.g4")
+    if not (KOTLIN / "build.py").is_file() or not (HERE / "grammars" / "kotlin").is_dir():
+        missing.append("openunderstand/gen/kotlinspeedy/build.py and grammars/kotlin")
     return missing
 
 
@@ -97,6 +102,8 @@ class BuildAccelerator(build_ext):
     """
 
     def build_extension(self, ext):
+        if ext.name == KOTLIN_EXT_NAME:
+            return self._build_kotlin(ext)
         if ext.name != EXT_NAME:
             return super().build_extension(ext)
 
@@ -121,11 +128,31 @@ class BuildAccelerator(build_ext):
         shutil.rmtree(work, ignore_errors=True)
 
 
+    def _build_kotlin(self, ext):
+        """The Kotlin accelerator: same toolchain and cache, its own grammar."""
+        spec = importlib.util.spec_from_file_location(
+            "_ou_kotlin_build", KOTLIN / "build.py"
+        )
+        kb = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(kb)
+        out = pathlib.Path(self.get_ext_fullpath(ext.name))
+        out.parent.mkdir(parents=True, exist_ok=True)
+        cache = pathlib.Path(
+            os.environ.get("OPENUNDERSTAND_BUILD_CACHE", SPEEDY / ".build-cache")
+        )
+        work = cache / "work-kotlin"
+        kb.build(out, cache=cache, work=work)
+        shutil.rmtree(work, ignore_errors=True)
+
+
 # Sources are listed for setuptools' benefit only -- BuildAccelerator never
 # compiles them, because they are generated. The list must be non-empty or
 # setuptools declines to build the extension at all.
 ext_modules = (
-    [Extension(EXT_NAME, sources=[str(SPEEDY / "build.py")], optional=False)]
+    [
+        Extension(EXT_NAME, sources=[str(SPEEDY / "build.py")], optional=False),
+        Extension(KOTLIN_EXT_NAME, sources=[str(KOTLIN / "build.py")], optional=False),
+    ]
     if _wanted()
     else []
 )

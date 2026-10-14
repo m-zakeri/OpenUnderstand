@@ -7,10 +7,12 @@ The Kotlin grammar has no semantic predicates, so no Python-to-C++ rewrite.
 
     .venv/bin/python openunderstand/gen/kotlinspeedy/build.py
 
-Output: ``sa_kotlin_cpp_parser<ext>`` next to this file, plus the Python-target
-parser it was validated against in ``.build-cache/kotlin_py``. Entry rule:
-``kotlinFile`` (``script`` for .kts).
+Output: ``sa_kotlin_cpp_parser<ext>`` next to this file. Pass ``.kt``/``.kts``
+files as arguments to check the C++ tree against the pure-Python one. Entry
+rule: ``kotlinFile`` (``script`` for .kts). ``setup.py`` calls ``build`` too.
 """
+
+from __future__ import annotations
 
 import importlib.util
 import shutil
@@ -38,10 +40,14 @@ SOURCES = [
 ]
 
 
-def main() -> int:
-    cache = jb.HERE / ".build-cache"  # share the jar and the built C++ runtime
-    out_so = HERE / f"{MODULE}{sysconfig.get_config_var('EXT_SUFFIX') or '.so'}"
-    work = HERE / ".build-work"
+def build(out_so: Path, cache: Path | None = None, work: Path | None = None) -> None:
+    """Generate, compile and write the extension to ``out_so``.
+
+    Shared by ``main`` and ``setup.py``. Leaves ``work`` in place for ``main``
+    to validate against; ``setup.py`` removes it.
+    """
+    cache = cache or jb.HERE / ".build-cache"  # share the jar and the built C++ runtime
+    work = work or HERE / ".build-work"
     shutil.rmtree(work, ignore_errors=True)
     cpp, py = work / "cpp", work / "py"
     cpp.mkdir(parents=True)
@@ -53,9 +59,8 @@ def main() -> int:
         ("Cpp", ["-visitor", "-no-listener"], cpp),
         ("Python3", ["-no-visitor", "-no-listener"], py),
     ):
-        for g in ("KotlinLexer.g4", "KotlinParser.g4"):
+        for g in ("KotlinLexer.g4", "KotlinParser.g4", "UnicodeClasses.g4"):
             shutil.copy(GRAMMARS / g, out)
-        shutil.copy(GRAMMARS / "UnicodeClasses.g4", out)
         for g in ("KotlinLexer.g4", "KotlinParser.g4"):
             jb.run(
                 ["java", "-jar", str(jar), f"-Dlanguage={lang}", *extra,
@@ -68,6 +73,13 @@ def main() -> int:
     jb.CPP_SOURCES = SOURCES  # compile_extension reads this module global
     jb.compile_extension(cpp, inc, lib, out_so)
     print(f"built {out_so}")
+
+
+def main() -> int:
+    out_so = HERE / f"{MODULE}{sysconfig.get_config_var('EXT_SUFFIX') or '.so'}"
+    work = HERE / ".build-work"
+    build(out_so, work=work)
+    py = work / "py"
 
     # validate: the C++ tree must equal the pure-Python tree on real files
     sys.path.insert(0, str(py))
@@ -82,8 +94,9 @@ def main() -> int:
     files = [Path(p) for p in sys.argv[1:]]
     for f in files:
         st = FileStream(str(f), encoding="utf8")
-        want = KotlinParser(CommonTokenStream(KotlinLexer(st))).kotlinFile()
-        got = sa.do_parse(KotlinParser, st, "kotlinFile", None)
+        entry = "script" if f.suffix == ".kts" else "kotlinFile"
+        want = getattr(KotlinParser(CommonTokenStream(KotlinLexer(st))), entry)()
+        got = sa.do_parse(KotlinParser, st, entry, None)
         validate_top_ctx(want, got)
     print(f"validated {len(files)} file(s): C++ tree identical to Python tree")
     shutil.rmtree(work / "cpp", ignore_errors=True)

@@ -100,8 +100,11 @@ jobs:
           CIBW_TEST_REQUIRES: ""
           CIBW_TEST_COMMAND: >
             python -c "from openunderstand.utils import antler_parser as a;
+            from openunderstand.utils import kotlin_parser as k;
             assert a.is_available(), a.unavailable_reason();
-            print('accelerator present')"
+            assert k.is_available(), k.unavailable_reason();
+            assert k.parse_text('fun f() = 1').ok;
+            print('accelerators present')"
 
       - uses: actions/upload-artifact@v4
         with:

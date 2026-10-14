@@ -138,7 +138,9 @@ jobs:
           from openunderstand.utils import antler_parser as a
           assert '/tmp/clean/' in openunderstand.__file__, openunderstand.__file__
           assert a.is_available(), a.unavailable_reason()
-          print('accelerator present in the published wheel')
+          from openunderstand.utils import kotlin_parser as k
+          assert k.is_available(), k.unavailable_reason()
+          print('accelerators present in the published wheel')
           "
 
       - run: python -m twine check dist/*

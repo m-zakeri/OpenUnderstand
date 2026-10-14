@@ -28,7 +28,7 @@ kotlinFile
     ;
 
 script
-    : shebangLine? NL* fileAnnotation* packageHeader importList (statement semi)* EOF
+    : shebangLine? NL* fileAnnotation* packageHeader importList (statement (semi statement)* semi?)? EOF
     ;
 
 fileAnnotation
@@ -56,7 +56,7 @@ topLevelObject
     ;
 
 classDeclaration
-    : modifiers? ('class' | 'fun'? 'interface') NL* simpleIdentifier (NL* typeParameters)? (
+    : modifiers? ('class' | ('fun' NL*)? 'interface') NL* simpleIdentifier (NL* typeParameters)? (
         NL* primaryConstructor
     )? (NL* ':' NL* delegationSpecifiers)? (NL* typeConstraints)? (
         NL* classBody
@@ -89,6 +89,7 @@ delegationSpecifier
     | explicitDelegation
     | userType
     | typeModifiers? functionType
+    | parenthesizedType
     ;
 
 constructorInvocation
@@ -155,7 +156,11 @@ enumEntry
 functionDeclaration
     : modifiers? 'fun' (NL* typeParameters)? (NL* receiverType NL* '.')? NL* simpleIdentifier NL* functionValueParameters (
         NL* ':' NL* type_
-    )? (NL* typeConstraints)? (NL* functionBody)?
+    )? (NL* contractSpec)? (NL* typeConstraints)? (NL* contractSpec)? (NL* functionBody)?
+    ;
+
+contractSpec
+    : Identifier NL* '[' NL* expression (NL* ',' NL* expression)* NL* ','? NL* ']'
     ;
 
 functionValueParameters
@@ -235,14 +240,14 @@ propertyDelegate
 
 getter
     : modifiers? 'get'
-    | modifiers? 'get' NL* '(' NL* ')' (NL* ':' NL* type_)? NL* functionBody
+    | modifiers? 'get' NL* '(' NL* ')' (NL* ':' NL* type_)? (NL* contractSpec)? NL* functionBody
     ;
 
 setter
     : modifiers? 'set'
-    | modifiers? 'set' NL* '(' (annotation | parameterModifier)* setterParameter ')' (
+    | modifiers? 'set' NL* '(' (annotation | parameterModifier)* setterParameter NL* ','? NL* ')' (
         NL* ':' NL* type_
-    )? NL* functionBody
+    )? (NL* contractSpec)? NL* functionBody
     ;
 
 typeAlias
@@ -290,8 +295,8 @@ nullableType
     ;
 
 typeReference
-    : userType
-    | 'dynamic' // do we need a separate dynamic support here?
+    : 'dynamic'
+    | userType // `dynamic` is listed first: it is also a valid identifier, and a bare `dynamic` is the type
     ;
 
 functionType
@@ -316,7 +321,7 @@ simpleUserType
     ;
 
 functionTypeParameters
-    : '(' NL* (parameter | type_)? (NL* ',' NL* (parameter | type_))* NL* ')'
+    : '(' NL* ((parameter | type_) (NL* ',' NL* (parameter | type_))* (NL* ',')?)? NL* ')'
     ;
 
 typeConstraints
@@ -336,7 +341,7 @@ statements
     ;
 
 statement
-    : label* (declaration | annotation* (destructuringAssignment | loopStatement) | expressionStatement)
+    : label* (declaration | annotation* (destructuringAssignment | loopStatement) | statementAnnotation (NL* statementAnnotation)* NL+ expressionStatement | expressionStatement)
     ;
 
 declaration
@@ -426,15 +431,22 @@ postfixUnarySuffix
     ;
 
 indexingSuffix
-    : '[' NL* expression (NL* ',' NL* expression)* NL* ']'
+    : '[' NL* expression (NL* ',' NL* expression)* (NL* ',')? NL* ']'
     ;
 
 navigationSuffix
-    : NL* memberAccessOperator NL* (simpleIdentifier | parenthesizedExpression | 'class')
+    : NL* ('.' | safeNav) NL* (simpleIdentifier | parenthesizedExpression | 'class')
+    | '::' NL* (simpleIdentifier | 'class')
     ;
 
 callSuffix
-    : typeArguments? (valueArguments annotatedLambda? | annotatedLambda)
+    : typeArguments? (valueArguments (NL* annotatedLambda)? | annotatedLambda | NL+ labeledLambda)
+    ;
+
+// A labelled or annotated lambda on the next line is one more argument of the call.
+labeledLambda
+    : annotation* label lambdaLiteral
+    | annotation+ lambdaLiteral
     ;
 
 annotatedLambda
@@ -543,7 +555,7 @@ lambdaLiteral // anonymous functions?
     ;
 
 lambdaParameters
-    : lambdaParameter (NL* COMMA NL* lambdaParameter)* COMMA?
+    : lambdaParameter (NL* COMMA NL* lambdaParameter)* (NL* COMMA)?
     ;
 
 lambdaParameter
@@ -552,7 +564,7 @@ lambdaParameter
     ;
 
 anonymousFunction
-    : contextParameters? NL* 'fun' (NL* type_ NL* '.')? NL* anonymousFunctionParameters (NL* ':' NL* type_)? (
+    : contextParameters? NL* 'fun' (NL* typeParameters)? (NL* type_ NL* '.')? NL* anonymousFunctionParameters (NL* ':' NL* type_)? (
         NL* typeConstraints
     )? (NL* functionBody)?
     ;
@@ -591,7 +603,7 @@ controlStructureBody
     ;
 
 controlStatement
-    : label* (annotation* (destructuringAssignment | loopStatement) | expressionStatement)
+    : label* (annotation* (destructuringAssignment | loopStatement) | statementAnnotation (NL* statementAnnotation)* NL+ expressionStatement | expressionStatement)
     ;
 
 ifExpression
@@ -638,7 +650,7 @@ tryExpression
     ;
 
 catchBlock
-    : 'catch' NL* '(' annotation* simpleIdentifier ':' userType ')' NL* block
+    : 'catch' NL* '(' annotation* simpleIdentifier ':' userType ','? ')' NL* block
     ;
 
 finallyBlock
@@ -674,7 +686,8 @@ jumpExpression
     ;
 
 callableReference // ?:: here is not an actual operator, it's just a lexer hack to avoid (?: + :) vs (? + ::) ambiguity
-    : (receiverType? NL* '::' NL* (simpleIdentifier | 'class'))
+    : receiverType? '::' NL* (simpleIdentifier | 'class')
+    | typeModifiers? nullableType NL+ '::' NL* (simpleIdentifier | 'class') // `a?` may be followed by a line break
     ;
 
 assignmentAndOperator
@@ -828,7 +841,7 @@ contextParameters
     ;
 
 contextParameter
-    : (simpleIdentifier NL* ':' NL*)? type_
+    : (annotation* parameterModifier* simpleIdentifier NL* ':' NL*)? type_
     ;
 
 label
@@ -837,6 +850,12 @@ label
 
 annotation
     : (singleAnnotation | multiAnnotation) NL*
+    ;
+
+// An annotation ending its line covers the whole expression statement after it
+// (`@A\n x = 1`); on the same line it covers only the next operand.
+statementAnnotation
+    : singleAnnotation | multiAnnotation
     ;
 
 singleAnnotation

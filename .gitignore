@@ -182,6 +182,7 @@ openunderstand/gen/java8speedy/*.so
 # (dir/*) and the path down to the baselines re-included.
 /scripts/*
 !/scripts/idea_metrics.py
+!/scripts/kotlin_shape/
 !/scripts/compare/
 /scripts/compare/*
 !/scripts/compare/baseline/
@@ -196,3 +197,4 @@ idea-plugin/*.csv
 
 paper
 openunderstand/gen/kotlinspeedy/.build-work/
+scripts/kotlin_shape/pyparser/

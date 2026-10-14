@@ -4,8 +4,11 @@ include openunderstand/oudb/*.txt
 include openunderstand/oudb/*.txt.gz
 include openunderstand/gen/javaLabeled/*.interp
 include openunderstand/gen/javaLabeled/*.tokens
+include openunderstand/gen/kotlin/*.interp
+include openunderstand/gen/kotlin/*.tokens
 recursive-include grammars *.g4
 prune openunderstand/gen/java8speedy/.build-cache
+prune openunderstand/gen/kotlinspeedy/.build-work
 prune benchmark
 prune scripts/compare/out
 global-exclude *.pyc __pycache__/*

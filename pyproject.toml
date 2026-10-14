@@ -89,7 +89,7 @@ version = { attr = "openunderstand.__version__" }
 # `openunderstand.oudb...`, so the installed package could not import itself.
 where = ["."]
 include = ["openunderstand*"]
-exclude = ["openunderstand.gen.java8speedy.build-cache*"]
+exclude = ["openunderstand.gen.java8speedy.build-cache*", "openunderstand.gen.kotlinspeedy.build-work*"]
 
 [tool.setuptools.package-data]
 # The seed files are load-bearing: fill.py reads them to populate the kind
@@ -97,6 +97,7 @@ exclude = ["openunderstand.gen.java8speedy.build-cache*"]
 # files ship with the generated parsers.
 "openunderstand.oudb" = ["*.txt", "*.txt.gz"]
 "openunderstand.gen.javaLabeled" = ["*.interp", "*.tokens"]
+"openunderstand.gen.kotlin" = ["*.interp", "*.tokens"]
 "openunderstand.gen.java8speedy" = ["*.md"]
 
 [tool.black]

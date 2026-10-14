@@ -85,3 +85,89 @@ specific code.
   alternative inside fails, not at the real error. Bisect by truncating the file
   at member boundaries to find it.
 * Understand 7.0 has no Kotlin language, so there is no oracle to score against.
+
+## Second corpus and scripts
+
+Eight further repositories (compose-multiplatform, detekt, koin, nowinandroid,
+sqldelight, kotlinx-datetime, leakcanary, gradle-build-action: 4,975 `.kt` and
+419 `.kts` files) first parsed 5,337 of 5,394. Real defects found and fixed:
+
+* a `.kts` script needed a separator after its last statement, so a file with
+  no final newline failed;
+* a trailing comma in a function type's parameters and in an index `a[x,]`;
+* a lambda on the line after a call's `)` (`f(x)\n{ ... }`) is a trailing
+  lambda in Kotlin; the speed edit that dropped it was wrong and is restored
+  for the `valueArguments` case only.
+
+Now 5,387 of 5,394. The other seven are not Kotlin: Groovy-style `group "x"`,
+a `%JAVA_VERSION%` template, and five test-data files holding several modules
+under `// @Module` comments. Earlier corpora are unchanged.
+
+## Kotlin's own parser tests
+
+`compiler/psi/psi-impl/testData/psi` in JetBrains/kotlin holds the compiler
+parser's test files with expected trees. Files whose expected tree has no
+`PsiErrorElement` (449 of 763) were run as the conformance set: 394 parsed at
+first, 407 now. Fixed: annotated, `_`-named and `noinline` context parameters,
+type parameters on an anonymous function, `contract [...]` on functions and
+accessors (before or after `where`), a trailing comma in a setter parameter, a
+catch clause and a lambda's parameters, `fun` and `interface` split across a
+newline, and a parenthesised function type as a supertype.
+
+The other 42 are not accepted, on purpose: the Kotlin parser tolerates them and
+the compiler rejects them (`object Foo()`, `fun name()` as an expression,
+`error class`, `private init`, old `a.{ ... }` and `fun f<T>()` syntax, `val x1`
+as a `when` subject without an initialiser, `1l`), or the file is several
+modules glued together under `// FILE:` comments. This grammar describes valid
+Kotlin, so it is stricter than the compiler's parser there. Not covered: a
+function type with annotated receiver written without parentheses
+(`fun @A () -> Unit?.f()`).
+
+## Tree shape against Kotlin's PSI
+
+A file that parses can still be grouped wrongly, so `scripts/kotlin_shape/`
+compares trees. `psi_spans.py` reads a PSI dump (`*.txt` beside each test file
+in `compiler/psi/psi-impl/testData/psi`) into typed source spans;
+`antlr_spans.py` produces the same spans from this grammar's tree (unrolling
+left-nested binary chains, prefix/postfix wrapping, dot/call/index folding);
+`compare.py` diffs them per element type. Setup: `gen_py.sh` builds a Python
+parser, the Kotlin repo's PSI test data is cloned sparsely, and the files whose
+expected tree has no error are copied to `pv/`.
+
+On 391 comparable files and 41 element types (binary/unary/postfix
+expressions, calls, dot and safe access, indexing, callable references and class
+literals, lambdas, `if`/`when`/`try`/loops, `return`/`throw`, annotated and
+labelled expressions, destructuring, classes, objects, functions, properties,
+accessors, constructors, type aliases, type and value arguments, value
+parameters, user, nullable and function types) every file is identical: recall
+1.0000, precision 1.0000.
+
+Grammar defects this found and fixed: a newline before `::` glued a callable
+reference to the line above; an annotation ending its line did not cover the
+whole assignment or `as` expression that follows (`statementAnnotation`); a
+bare `dynamic` parsed as a user type (`typeReference` now lists it first); a
+labelled or annotated lambda on the next line was not one more argument of the
+call (`labeledLambda`).
+
+Where the trees differ in form and the check normalises it, so a consumer must
+know: the receiver of a callable reference or class literal is a type here
+(`Map<String, Int>::size`, `a?::b`) and an expression in PSI (a call with type
+arguments and no parentheses); a statement label covers its first operand
+(`l@ a + b` is `(l@ a) + b`); an annotation on an anonymous function or a
+destructuring statement sits inside that node; a `when` subject `val` is a
+property.
+
+Two PSI shapes are kept out on purpose: a bare `h<baz>` (type arguments with no
+call) is not valid Kotlin, though PSI reads it as a call.
+
+Not checked: element types not listed above (modifier lists, annotation
+entries, string template entries, constants, imports), the exact nesting of
+each node (only its source span), and anything outside the 391 files.
+
+## Using it from OpenUnderstand
+
+`openunderstand.utils.kotlin_parser` parses `.kt`/`.kts` with this grammar (see
+`CLAUDE.md`). The committed Python parser is `openunderstand/gen/kotlin/`,
+generated with the listener enabled; regenerate it and rebuild the accelerator
+(`openunderstand/gen/kotlinspeedy/build.py <files>`) after editing a `.g4`.
+Parsing only: there is no Kotlin entity, reference or metric pass yet.
