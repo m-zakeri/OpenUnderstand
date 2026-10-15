@@ -183,7 +183,9 @@ def lookup_type(name: str, kfile, enclosing, project_has):
     steps = [[".".join(enclosing[:d]) + "." + name for d in range(len(enclosing), package_depth, -1)]]
     steps.append([fq + rest for fq, alias, star in kfile.imports if not star and (alias or fq.rsplit(".", 1)[-1]) == first])
     steps.append([f"{kfile.package}.{name}" if kfile.package else name])
-    steps.append([f"{fq}.{name}" for fq, alias, star in kfile.imports if star])
+    # a `*` import never brings in a JDK type Kotlin maps to its own: `import java.util.*` leaves
+    # `List` and `Map` the Kotlin ones
+    steps.append([c for c in (f"{fq}.{name}" for fq, alias, star in kfile.imports if star) if c not in KOTLIN_FOR])
     steps.append([f"{p}.{name}" for p in (*kotlin_index.DEFAULT_PACKAGES, "java.lang")])
     steps.append([name])
     for candidates in steps:
@@ -1081,6 +1083,21 @@ class Resolver:
                 return hit
         return None
 
+    def extension_var_hit(self, rt, name, kf):
+        """The extension property named ``name`` that applies to a receiver of type ``rt``."""
+        if rt is None or rt[0] not in ("class", "java", "lib"):
+            return None
+        applies = set(self.hierarchy(rt))
+        for tier in self.tiers(name, kf):
+            found = [c for pkg, orig in tier for c in self.ix.top_vars.get((pkg, orig), [])
+                     if c[1]["receiver"] is not None and self._extension_applies(c[0], c[1], applies)]
+            distinct = {_ckey(c) for c in found}
+            if len(distinct) == 1:
+                return ("var", found[0], rt)
+            if distinct:
+                return AMBIGUOUS
+        return None
+
     def _extension_applies(self, kf2, rec, applies) -> bool:
         text = rec["receiver"]
         if text == "*" or text in rec.get("tparams", ()):
@@ -1362,6 +1379,13 @@ class Resolver:
                 hit = self.qualified_call(rt, name, None, kf)
             if not isinstance(hit, tuple) and rt[0] != "static":
                 hit = self.find_member(rt, lambda t: self._var_level(t, name))
+            subject = ("class", rt[1]) if rt[0] == "static" else rt
+            if not isinstance(hit, tuple) and rt[0] == "static":
+                found = self.extension_hit(subject, name, None, kf)    # `Point::ext`: unbound, so the instance type
+                hit = found if isinstance(found, tuple) else None
+            if not isinstance(hit, tuple):
+                found = self.extension_var_hit(subject, name, kf)       # `Point::twice`
+                hit = found if isinstance(found, tuple) else None
         if not isinstance(hit, tuple):
             return []
         kind = hit[0]
@@ -1437,6 +1461,8 @@ class Resolver:
                 return [] if init else [("libcreate", target[1])]
             return []
         # a name
+        if occ["m"] == "skip":                 # the head of `Outer.Inner::class`, read as a DotRef instead
+            return []
         if occ["r"] is None:
             binding = occ["b"]
             if binding is not None:
@@ -1460,6 +1486,8 @@ class Resolver:
                 tops = [c for c in self.ix.top_vars.get((rt[1], occ["n"]), []) if c[1]["receiver"] is None]
                 return [("var", tops[0])] if len(tops) == 1 else []
             hit = self.find_member(rt, lambda t, n=occ["n"]: self._var_level(t, n))
+            if hit is None and rt is not None and rt[0] in ("class", "java", "lib"):
+                hit = self.extension_var_hit(rt, occ["n"], kf)               # `p.twice`, `list.lastIndex`
             if hit is None and rt is not None and rt[0] == "static" and occ["m"] == "use":
                 nested = self.ix.nested.get(rt[1], {}).get(occ["n"])
                 if nested:

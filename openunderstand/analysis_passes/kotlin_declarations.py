@@ -73,6 +73,8 @@ class KFile:
     package: str = ""
     package_pos: list = field(default_factory=list)  # (name, line, col) per segment
     imports: list = field(default_factory=list)  # (fqname, alias or None, star)
+    type_args: list = field(default_factory=list)  # type arguments of receiver types: {owner, name, line, col, plain, ...}
+    receivers: list = field(default_factory=list)  # extension receiver types: {owner, name, line, col, enclosing}
     qualifiers: list = field(default_factory=list)  # qualified supertypes: {owner, name, start, enclosing}
     import_sites: list = field(default_factory=list)  # (fqname, star, line, col, head line, head col)
     defines: list = field(default_factory=list)  # addDefineRefs dictionaries
@@ -192,6 +194,61 @@ class _Collector:
                     out.append(self.texpr(user))
         return out
 
+    def receiver_type(self, key, receiver_ctx, scope):
+        """The type an extension is declared on: a read of that class by the extension."""
+        named = named_type(receiver_ctx)
+        if named is None:
+            return
+        dotted, line, col = named
+        if any(dotted in frame for frame in self._tp):        # `fun <T> T.also(...)`: a type parameter
+            return
+        self.out.receivers.append(
+            {"owner": key, "name": dotted, "line": line, "col": col, "enclosing": list(scope)}
+        )
+        user = find(receiver_ctx, "userType")
+        parts = children(user, "simpleUserType") if user is not None else []
+        if len(parts) > 1:
+            self.out.qualifiers.append(
+                {"owner": key, "name": dotted, "enclosing": list(scope),
+                 "start": _name(first(parts[0], "simpleIdentifier"))[1:]}
+            )
+        self.type_arguments(receiver_ctx, key, scope)
+
+    def type_arguments(self, type_ctx, key, scope, constructed=False):
+        """Every class named as a type argument inside a type, at any depth, for ``GenericArgument``.
+
+        ``List<Map<String, Point>>`` names Map, String and Point. A variance-projected argument
+        (``out Point``) is a plain ``Use``, as Java's bounded wildcard is; ``*`` names nothing.
+        """
+        user = find(type_ctx, "userType") if type_ctx is not None else None
+        if user is None:
+            return
+        self.argument_list(first(children(user, "simpleUserType")[-1], "typeArguments"), key, scope, constructed)
+
+    def argument_list(self, arguments, key, scope, constructed=False):
+        """The classes in one ``<...>`` list. ``constructed`` is a call's own (`ArrayList<Point>()`),
+        which Java reads as ``Use GenericArgument``; a declaration's are ``Typed``."""
+        for projection in children(arguments, "typeProjection") if arguments is not None else []:
+            written = first(projection, "type_")
+            if written is None:
+                continue
+            named = named_type(written)
+            inner = find(written, "userType")
+            if named is not None and inner is not None and not any(named[0] in frame for frame in self._tp):
+                segments = children(inner, "simpleUserType")
+                self.out.type_args.append(
+                    {"owner": key, "name": named[0], "enclosing": list(scope),
+                     "start": _name(first(segments[0], "simpleIdentifier"))[1:],
+                     "plain": first(projection, "typeProjectionModifiers") is not None,
+                     "constructed": constructed}
+                )
+                if len(segments) > 1:                  # a qualified argument reads its package too
+                    self.out.qualifiers.append(
+                        {"owner": key, "name": named[0], "enclosing": list(scope),
+                         "start": _name(first(segments[0], "simpleIdentifier"))[1:]}
+                    )
+            self.type_arguments(written, key, scope, constructed)
+
     def super_qualifiers(self, cls_ctx, key, scope):
         """Qualified supertypes (``: a.b.Base``, ``: Outer.Iface``) of a class, for ``Java DotRef``."""
         specs = first(cls_ctx, "delegationSpecifiers")
@@ -203,6 +260,7 @@ class _Collector:
                 if user is None:
                     continue
                 parts = children(user, "simpleUserType")
+                self.type_arguments(spec, key, scope)        # `: Comparable<Point>`
                 if len(parts) > 1:
                     self.out.qualifiers.append(
                         {"owner": key, "name": user_type_name(user), "enclosing": list(scope),
@@ -314,6 +372,7 @@ class _Collector:
         """Remember the named type written on a declaration, for ``Java Typed``."""
         named = named_type(type_ctx)
         if named is None:
+            self.function_type_arguments(type_ctx, owner, scope)     # `(List<Point>) -> Unit`
             return
         name, line, col = named
         user = find(type_ctx, "userType")
@@ -329,6 +388,20 @@ class _Collector:
                 "enclosing": list(scope),
             }
         )
+        self.type_arguments(type_ctx, owner, scope)
+
+    def function_type_arguments(self, ctx, owner, scope):
+        """The type arguments of the types a function type is built from (receiver, parameters, result).
+
+        A function type names no class itself, but ``(List<Point>) -> Unit`` still mentions Point.
+        """
+        for child in (ctx.children if ctx is not None else None) or []:
+            if isinstance(child, TerminalNode):
+                continue
+            if rule(child) == "userType":
+                self.argument_list(first(children(child, "simpleUserType")[-1], "typeArguments"), owner, scope)
+            elif rule(child) != "typeArguments":
+                self.function_type_arguments(child, owner, scope)
 
     # -- declarations ------------------------------------------------------
     def declaration(self, decl, scope, *, top_level, in_object, owner=None):
@@ -381,7 +454,11 @@ class _Collector:
         self.out.aliases.append((longname, mods, name_of(target), tuple(scope), expression, alias_params))
         inner = scope + [name]
         self.type_parameters(ctx, inner)
-        self.typed((longname, line, col), target, inner)
+        self._tp.append({n: None for n in alias_params})        # `Named<V> = Map<String, V>`: V is no class
+        try:
+            self.typed((longname, line, col), target, inner)
+        finally:
+            self._tp.pop()
 
     def type_parameters(self, ctx, scope_with_owner):
         tp = first(ctx, "typeParameters")
@@ -734,6 +811,8 @@ class _Collector:
                 else:
                     walker.walk(part)
         receiver = first(ctx, "receiverType")
+        if receiver is not None:
+            self.receiver_type(key, receiver, inner)
         self.callable_fact(
             key, name, None if (top_level or env is not None) else ".".join(scope), False,
             [(i["default"], i["vararg"], i["fnrecv"]) for i in infos],
@@ -829,6 +908,8 @@ class _Collector:
                 accessors.walk(part)
         owner = None if top_level else ".".join(scope)
         receiver = first(head, "receiverType")
+        if receiver is not None:
+            self.receiver_type(keys[0][0], receiver, scope)
         for k, v, t in keys:
             self.variable_fact(
                 k, _name(first(v, "simpleIdentifier"))[0], owner, "property", t,

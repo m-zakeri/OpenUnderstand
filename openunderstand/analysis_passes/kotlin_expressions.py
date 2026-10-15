@@ -348,6 +348,8 @@ class ExprWalker:
         """A qualified type written in an expression (``as a.b.C``, ``is Outer.Inner``) reads its qualifier."""
         user = None if type_ctx is None else type_ctx if rule(type_ctx) == "userType" else find(type_ctx, "userType")
         parts = children(user, "simpleUserType") if user is not None else []
+        if parts:                       # `x as List<Point>`: an expression, so Java's `Use GenericArgument`
+            self.c.argument_list(first(parts[-1], "typeArguments"), self.owner, self.scope, constructed=True)
         if len(parts) > 1:
             self.c.out.qualifiers.append(
                 {"owner": self.owner, "name": ".".join(name_pos(first(p, "simpleIdentifier"))[0] for p in parts),
@@ -640,7 +642,7 @@ class ExprWalker:
 
     r_multiLineStringContent = r_lineStringContent
 
-    def reference(self, ctx, receiver, at=None, chained=False):
+    def reference(self, ctx, receiver, at=None, chained=False, head_at=None, names=()):
         """``::f``, ``Type::f``, ``obj::f``: a read of the function, property or constructor named.
 
         Written as a ``ref`` occurrence at the name after ``::`` (``Type::class`` and ``::class``
@@ -652,18 +654,38 @@ class ExprWalker:
         if written is not None:
             dotted = name_of(written)
             user = find(written, "userType")
-            if dotted and user is not None:       # the type is read at its last segment
-                segment = name_pos(first(children(user, "simpleUserType")[-1], "simpleIdentifier"))
-                used = self.occurrence("ref", segment[0], segment[1], segment[2])
-                used["type_only"] = dotted
-                used["dotref"] = dotted[:1].isupper() and not chained
+            if dotted and user is not None:
+                parts = children(user, "simpleUserType")
+                dot = dotted[:1].isupper() and not chained
+                # a DotRef is to the head type at the head (as Java's `Outer.Inner.class`); a Use is
+                # of the whole type at its last segment
+                if len(parts) > 1 and not dot:
+                    # a package-qualified type is an expression: one name per segment, as `a.b.C.f` is
+                    walked = None
+                    for p in parts:
+                        seg, line, col = name_pos(first(p, "simpleIdentifier"))
+                        self.occurrence("name", seg, line, col, receiver=walked,
+                                        binding=self.env.lookup(seg) if walked is None else None)
+                        walked = ("name", seg, None) if walked is None else ("member", walked, seg)
+                else:
+                    segment = name_pos(first(parts[0 if dot else -1], "simpleIdentifier"))
+                    used = self.occurrence("ref", segment[0], segment[1], segment[2])
+                    used["type_only"] = dotted.split(".")[0] if dot else dotted
+                    used["dotref"] = dot
         elif at is not None and receiver is not None and receiver[0] in ("name", "member"):
-            used = self.occurrence("ref", receiver[-1] if receiver[0] == "member" else receiver[1], at[0], at[1])
-            used["type_only"] = receiver           # a class name when it is not a variable
             head = receiver
             while head[0] == "member":
                 head = head[1]
-            used["dotref"] = head[0] == "name" and head[1][:1].isupper() and not chained
+            dot = head[0] == "name" and head[1][:1].isupper() and not chained and head_at is not None
+            if dot:
+                used = self.occurrence("ref", head[1], head_at[0], head_at[1])
+                used["type_only"] = head
+                for occ in names:                  # `Outer.Inner::class` reads its head only, as Java's does
+                    occ["m"] = "skip"
+            else:
+                used = self.occurrence("ref", receiver[-1] if receiver[0] == "member" else receiver[1], at[0], at[1])
+                used["type_only"] = receiver       # a class name when it is not a variable
+            used["dotref"] = dot
         if ident is None:
             return
         if written is not None:
@@ -685,9 +707,11 @@ class ExprWalker:
         has_more = bool(suffixes)
         kind = rule(primary) if primary is not None else None
         recv_at = None                      # where the receiver's last name is written
+        head_at = None                      # where its first name is written
+        names_read = []                     # the name occurrences of this chain, in order
         if kind == "simpleIdentifier":
             name, line, col = name_pos(primary)
-            recv_at = (line, col)
+            recv_at = head_at = (line, col)
             call_at = _call_index(suffixes, 0)
             if call_at is not None:
                 current, index = self.call(None, name, line, col, suffixes, call_at)
@@ -698,6 +722,7 @@ class ExprWalker:
                     binding=self.env.lookup(name),
                 )
                 self.last = occ
+                names_read.append(occ)
                 current = ("name", name, occ["b"])
         elif kind == "thisExpression":
             current = ("this",)
@@ -726,7 +751,7 @@ class ExprWalker:
                 operator = s.children[0].getText().strip() if s.children else ""
                 if operator == "::":
                     self.reference(s, current if current is not None else UNKNOWN, recv_at,
-                                   chained=index < len(suffixes) - 1)
+                                   chained=index < len(suffixes) - 1, head_at=head_at, names=names_read)
                     return None
                 ident = first(s, "simpleIdentifier")
                 if ident is None:  # `.class` or `.(expr)`
@@ -748,6 +773,7 @@ class ExprWalker:
                     mode=final_mode if last_one else "use",
                 )
                 self.last = occ
+                names_read.append(occ)
                 current = ("member", current, name)
             elif sr == "callSuffix":     # invoke: `f(x)(y)`
                 current, index = self.call(current if current is not None else UNKNOWN, "invoke",
@@ -787,6 +813,7 @@ class ExprWalker:
                 "*" if not children(a, "type_") else self.c.texpr(first(a, "type_"))
                 for a in children(suffixes[at - 1], "typeProjection")
             )
+            self.c.argument_list(suffixes[at - 1], self.owner, self.scope, constructed=True)
         nargs = self.arguments(suffixes[at], occ)
         # lambdas written after the call (`f(x) {} {}`) are further arguments
         while end + 1 < len(suffixes) and rule(suffixes[end + 1]) == "callSuffix" and first(suffixes[end + 1], "valueArguments") is None:

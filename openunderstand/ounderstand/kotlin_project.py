@@ -219,6 +219,41 @@ def _write_typed(kfile, file_ent):
             _write_type_qualifiers(kfile, file_ent, t, owner)
 
 
+def _write_receivers(kfile, file_ent):
+    """An extension reads the class it extends: a ``Java Use`` at the receiver type's last segment."""
+    for t in kfile.receivers:
+        owner = _row_at(*t["owner"])
+        target = resolve_type(t["name"], kfile, t["enclosing"])
+        if owner is None or target is None:
+            continue
+        for kind, scope, ent in (("Java Use", owner, target), ("Java Useby", target, owner)):
+            ReferenceModel.get_or_create(
+                _kind=kind_id(kind), _file=file_ent, _line=t["line"],
+                _column=col_1based(t["col"]), _ent=ent, _scope=scope,
+            )
+
+
+def _write_type_args(kfile, file_ent):
+    """A class named as a type argument of a declaration: ``Typed GenericArgument`` (``Use`` when
+    variance-projected), at the argument's first segment, as Java's declared generic arguments."""
+    for t in kfile.type_args:
+        owner = _row_at(*t["owner"])
+        target = resolve_type(t["name"], kfile, t["enclosing"])
+        if owner is None or target is None:
+            continue
+        if t.get("constructed"):                # `ArrayList<Point>()`: Java's `new HashMap<K, V>()` rule
+            pair = ("Java Use GenericArgument", "Java Useby GenericArgument")
+        elif t["plain"]:
+            pair = ("Java Use", "Java Useby")
+        else:
+            pair = ("Java Typed GenericArgument", "Java Typedby GenericArgument")
+        for kind, scope, ent in ((pair[0], owner, target), (pair[1], target, owner)):
+            ReferenceModel.get_or_create(
+                _kind=kind_id(kind), _file=file_ent, _line=t["start"][0],
+                _column=col_1based(t["start"][1]), _ent=ent, _scope=scope,
+            )
+
+
 def _write_super_qualifiers(kfile, file_ent):
     for t in kfile.qualifiers:
         owner = _row_at(*t["owner"])
@@ -481,6 +516,8 @@ def analyse(paths, root: str | None = None) -> kotlin_parser.Summary:
         for kfile, file_ent in written:
             _write_typed(kfile, file_ent)
             _write_super_qualifiers(kfile, file_ent)
+            _write_receivers(kfile, file_ent)
+            _write_type_args(kfile, file_ent)
         for kfile, file_ent in written:
             _write_references(kfile, file_ent, resolver)
             _write_imports(kfile, file_ent, resolver)
