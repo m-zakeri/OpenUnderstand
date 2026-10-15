@@ -81,6 +81,11 @@ def _file_entity(path: str):
     )[0]
 
 
+def _owner_row(key, file_ent):
+    """The entity a piece of code belongs to: the file itself for a `@file:` annotation."""
+    return file_ent if key[0] == "<file>" else _row_at(*key)
+
+
 def _row_at(longname: str, line: int, col: int):
     """The entity declared with this long name at this position."""
     rows = entity_rows(longname)
@@ -254,6 +259,20 @@ def _write_type_args(kfile, file_ent):
             )
 
 
+def _write_annotations(kfile, file_ent):
+    """``@Mark`` on a declaration is a ``Java Use Annotation`` of the annotation class, scoped to it."""
+    for t in kfile.annotations:
+        owner = _owner_row(t["owner"], file_ent)
+        target = resolve_type(t["name"], kfile, t["enclosing"])
+        if owner is None or target is None:
+            continue
+        for kind, scope, ent in (("Java Use Annotation", owner, target), ("Java Useby Annotation", target, owner)):
+            ReferenceModel.get_or_create(
+                _kind=kind_id(kind), _file=file_ent, _line=t["line"],
+                _column=col_1based(t["col"]), _ent=ent, _scope=scope,
+            )
+
+
 def _write_super_qualifiers(kfile, file_ent):
     for t in kfile.qualifiers:
         owner = _row_at(*t["owner"])
@@ -322,6 +341,7 @@ _POSITIONAL = {
     "create": ("Java Create", "Java Createby"),
     "use": ("Java Use", "Java Useby"),
     "dotref": ("Java DotRef", "Java DotRefby"),
+    "annotation": ("Java Use Annotation", "Java Useby Annotation"),
     "set": ("Java Set", "Java Setby"),
     "modify": ("Java Modify", "Java Modifyby"),
 }
@@ -340,15 +360,18 @@ def _placeholder(kind: str, longname: str):
     )[0]
 
 
-def _java_method_row(owner: str, name: str, nargs: int):
-    """The Java method row a call with ``nargs`` arguments names, or ``None`` when not unique."""
+def _java_method_row(owner: str, name: str, nargs: int, site=None):
+    """The Java method row a call with ``nargs`` arguments names, or ``None`` when not unique.
+
+    ``site`` is the (line, column) the resolver already chose by argument type."""
     from openunderstand.ounderstand import symbol_table
 
     longname = f"{owner}.{name}"
     rows = [r for r in entity_rows(longname) if kind_family(r._kind_id) == "method"]
     if len(rows) == 1:
         return rows[0]
-    site = symbol_table.overload_site(longname, [None] * nargs)
+    if not isinstance(site, tuple):
+        site = symbol_table.overload_site(longname, [None] * nargs)
     for row in rows:
         if site is not None and (row._line, row._column) == site:
             return row
@@ -378,13 +401,18 @@ def _targets(outcome, index):
         if getattr(kf, "library", False):
             return [("var", _placeholder("Java Unknown Variable Member", rec["key"][0]))]
         return [("var", _row_at(*rec["key"]))]
+    if kind == "annot":
+        entry = index.classes.get(outcome[1])
+        if entry is None or getattr(entry[0], "library", False):
+            return [("annotation", _library_entity(outcome[1]))]
+        return [("annotation", _row_at(*entry[1]["key"]))]
     if kind == "create":
         kf, rec = index.classes[outcome[1]]
         if getattr(kf, "library", False):
             return [("create", _library_entity(outcome[1]))]
         return [("create", _row_at(*rec["key"]))]
     if kind == "jcall":
-        return [("call", _java_method_row(outcome[1], outcome[2], outcome[3]))]
+        return [("call", _java_method_row(outcome[1], outcome[2], outcome[3], outcome[4] if len(outcome) > 4 else None))]
     if kind == "jcreate":
         return [("create", _project_type(outcome[1]))]
     if kind == "jvar":
@@ -404,7 +432,7 @@ def _write_references(kfile, file_ent, resolver):
         outcome = resolver.resolve(occ, kfile)
         if not outcome:
             continue
-        scope = _row_at(*occ["o"])
+        scope = _owner_row(occ["o"], file_ent)
         if scope is None:
             continue
         for item in outcome:
@@ -517,6 +545,7 @@ def analyse(paths, root: str | None = None) -> kotlin_parser.Summary:
             _write_typed(kfile, file_ent)
             _write_super_qualifiers(kfile, file_ent)
             _write_receivers(kfile, file_ent)
+            _write_annotations(kfile, file_ent)
             _write_type_args(kfile, file_ent)
         for kfile, file_ent in written:
             _write_references(kfile, file_ent, resolver)

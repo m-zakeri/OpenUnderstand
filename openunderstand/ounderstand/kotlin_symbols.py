@@ -289,6 +289,11 @@ class Resolver:
         self._ctx = None            # the call being resolved: its arguments, for applicability
         self._ptypes: dict = {}
         self._infer: dict = {}      # (file, call id) -> the type parameters its call binds
+        self._tainted: set = set()  # calls inferred while their enclosing call was still being resolved
+        self._lambda_recv: list = []  # the implicit receivers of the lambdas around the occurrence being resolved
+        self._lam_ctx = None          # (occurrence, file) being resolved: where `this` is asked from
+        self._pending: set = set()    # calls being resolved right now
+        self._cycle: set = set()      # the pending calls the computation in progress had to ask about
         self._assuper: dict = {}
 
     # -- types -------------------------------------------------------------
@@ -395,7 +400,15 @@ class Resolver:
             return [x for x in out if x is not None]
         if t[0] == "lib":
             out = []
+            declared, generic = jdk_index.generic_supertypes(t[1])
+            for raw in generic:                              # `TaskCollection<org.gradle.api.Task>`
+                parsed = self._library_type(raw, dict(zip(declared, _a(t))))
+                if parsed is not None:
+                    out.append(parsed)
+            written = {x[1] for x in out}
             for s in jdk_index.supertypes(t[1]):
+                if s in written:
+                    continue                                  # already there, with its arguments
                 mapped = KOTLIN_FOR.get(s)
                 same = mapped in self.ix.classes and len(self.tparams_of(("class", mapped)) or ()) == len(_a(t))
                 out.append(Ty("lib", s, _a(t) if same else ()))
@@ -404,6 +417,29 @@ class Resolver:
                 out.append(k)
             return out
         return []
+
+    def _library_type(self, text, env):
+        """A javap type (``a.B<c.D, T>``) as a ``Ty``; a name in ``env`` is a type parameter bound there."""
+        text = text.strip().replace("? super ", "").replace("? extends ", "")
+        if text == "?":
+            return None
+        head, _, tail = text.partition("<")
+        if head in env:
+            return env[head]
+        args, depth, current = [], 0, ""
+        for ch in tail[:-1] if tail else "":
+            depth += (ch == "<") - (ch == ">")
+            if ch == "," and depth == 0:
+                args.append(current)
+                current = ""
+            else:
+                current += ch
+        if current.strip():
+            args.append(current)
+        base = self.expand(head)
+        if base is None:
+            return None
+        return with_args(base, [self._library_type(a, env) for a in args])
 
     def as_super(self, t, target, depth=0, seen=None):
         """``t`` seen as ``target`` (an erased type), with the arguments that gives it, or ``None``."""
@@ -534,7 +570,32 @@ class Resolver:
                 if value is not None and value[0] not in ("class", "lib", "java"):
                     value = None
                 self.unify(pe[3], value, env, kf2, scope2, free)
+        if key is not None and key in self._tainted:        # computed without its enclosing call's answer
+            self._tainted.discard(key)
+            self._infer.pop(key, None)
         return env
+
+    def _argument_expectation(self, occ, kf):
+        """The type the enclosing call's parameter wants of this call, `f(emptyList())`: its declared type
+        under what that call has bound so far. ``None`` when the enclosing call is unknown or still being
+        resolved (then this result must not be remembered, it will be asked again)."""
+        link = occ.get("arg_of")
+        if link is None:
+            return None
+        parent_key = (kf.path, link[0])
+        target = self.call_target(link[0], kf) if parent_key not in self._callee else self._callee[parent_key]
+        if target is None or target[0] != "fun":
+            if parent_key in self._callee and self._callee[parent_key] is None:
+                self._tainted.add((kf.path, occ["id"]))
+            return None
+        kf2, rec = target[1]
+        ptexprs = rec.get("ptexprs") or ()
+        if link[1] >= len(ptexprs) and not (rec["params"] and rec["params"][-1][1]):
+            return None
+        pe = ptexprs[link[1]] if link[1] < len(ptexprs) else ptexprs[-1]
+        env = self.infer(target, kf, kf.occurrences[link[0]])
+        wanted = self.inst(pe, env, kf2, rec["scope"])
+        return wanted if wanted is not None and wanted[0] in ("class", "lib", "java") else None
 
     def _expected(self, kind, hit, occ, env, kf, kf2, scope2, names):
         """Bind what the arguments left unbound from the type the call's value is stored in.
@@ -545,9 +606,10 @@ class Resolver:
         """
         expected = occ.get("exp")
         missing = [n for n in names if n not in env]
-        if expected is None or not missing:
+        given = self._argument_expectation(occ, kf) if expected is None and missing else None
+        if (expected is None and given is None) or not missing:
             return
-        want = self.inst(expected, {}, kf, occ["s"])
+        want = self.inst(expected, {}, kf, occ["s"]) if expected is not None else given
         if want is None or want[0] not in ("class", "lib", "java"):
             return
         shape = hit[1][1].get("ret_expr") if kind == "fun" else ("c", hit[1], tuple(("p", n) for n in names))
@@ -641,6 +703,8 @@ class Resolver:
                     out.append("lambda")
                     continue
                 t = self.type_of(desc, kf, occ["s"], occ["o"]) if desc is not None else None
+                if t is not None and t[0] == "static" and (self.ix.classes.get(t[1]) or (None, {}))[1].get("object"):
+                    t = ("class", t[1])                # an `object` passed as a value is an instance of itself
                 out.append(t if t is not None and t[0] in ("class", "java", "lib") else None)
             ctx["types"] = out
         return ctx["types"]
@@ -675,9 +739,54 @@ class Resolver:
         if not _arity_ok(rec, nargs):
             return False
         ctx = self._ctx
+        if ctx is not None and ctx["occ"]["named"] and rec.get("pnames"):
+            return self._named_fits(kf2, rec, ctx["occ"])
         if ctx is None or ctx["occ"]["named"] or not rec.get("ptypes"):
             return True
         return all(self._param_accepts(kf2, rec, i, a) for i, a in enumerate(self._arg_types()))
+
+    def _named_fits(self, kf2, rec, occ) -> bool:
+        """Whether the arguments, some written ``name = value``, can bind this declaration's parameters.
+
+        A positional argument takes the next parameter, a named one its parameter by name, a trailing
+        lambda the last; every parameter without a default must be bound, and a bound parameter's
+        type must accept its argument where both are known. A spread argument (``*xs``) or arguments
+        not aligned with their names say nothing here.
+        """
+        names, args = occ.get("argnames") or [], occ["args"]
+        pnames, params = rec["pnames"], rec["params"]
+        if len(names) != len(args) or len(pnames) != len(params):
+            return True
+        types = self._arg_types()
+        named = {pnames.index(n) for n in names if n not in (None, "*") and n in pnames}
+        if any(n not in (None, "*") and n not in pnames for n in names):
+            return False
+        bound, position = {}, 0
+        spread = {i for i, n in enumerate(names) if n == "*"}       # `*xs`: an array standing for the elements
+        for i, name in enumerate(names):
+            if name not in (None, "*"):
+                j = pnames.index(name)
+            else:
+                if args[i] is not None and args[i][0] == "lambda" and i == len(args) - 1 \
+                        and len(params) - 1 not in named and len(params) - 1 not in bound:
+                    j = len(params) - 1                     # a trailing lambda takes the last parameter
+                else:
+                    while position in named or position in bound:
+                        position += 1                       # a positional argument takes the next free one
+                    j = position
+                    position += 1
+                if j >= len(params):
+                    if not (params and params[-1][1]):
+                        return False
+                    j = len(params) - 1
+            if j in bound and not params[j][1]:
+                return False
+            bound[j] = i
+        if any(not default and not vararg and j not in bound for j, (default, vararg, _) in enumerate(params)):
+            return False
+        # a value typed `Any` may have been smart-cast to what the parameter wants: it excludes nothing
+        return all(self._param_accepts(kf2, rec, j, types[i]) for j, i in bound.items()
+                   if i < len(types) and types[i] != ("class", "kotlin.Any") and i not in spread)
 
     def _unknown_arguments(self) -> bool:
         return self._ctx is not None and any(a is None for a in self._arg_types())
@@ -713,10 +822,34 @@ class Resolver:
             return [("jfun", ln, name, len(fits[0][0]), 0)] if len(fits) == 1 else []
         if len(fits) <= 1:
             return [("jfun", ln, name, nargs, 0)] if fits else []
-        site = symbol_table.overload_site(f"{ln}.{name}", [None] * nargs)
+        site = symbol_table.overload_site(f"{ln}.{name}", self._java_argument_types(nargs))
         if site is not None:
             return [("jfun", ln, name, nargs, site)]
         return [("jfun", ln, name, nargs, i) for i in range(len(fits))]
+
+    #: Kotlin's primitives as the Java overload resolution names them.
+    _JAVA_PRIMITIVE = {
+        "kotlin.Int": "int", "kotlin.Long": "long", "kotlin.Short": "short", "kotlin.Byte": "byte",
+        "kotlin.Double": "double", "kotlin.Float": "float", "kotlin.Boolean": "boolean", "kotlin.Char": "char",
+        "kotlin.String": "java.lang.String", "kotlin.Any": "java.lang.Object", "kotlin.CharSequence": "java.lang.CharSequence",
+    }
+
+    def _java_argument_types(self, nargs):
+        """The call's argument types as Java names (``None`` where unknown), for choosing a Java overload."""
+        types = self._arg_types() if self._ctx is not None and len(self._ctx["occ"]["args"]) == nargs else []
+        out = []
+        for i in range(nargs):
+            t = types[i] if i < len(types) else None
+            if t is None or t == "lambda":
+                out.append(None)
+            elif t[1] in self._JAVA_PRIMITIVE:
+                out.append(self._JAVA_PRIMITIVE[t[1]])
+            elif t[0] in ("java", "lib") or (t[0] == "class" and t[1] in self.ix.classes and
+                                              not t[1].startswith("kotlin.")):
+                out.append(t[1])
+            else:
+                out.append(None)
+        return out
 
     def _var_level(self, t, name):
         kind, ln = t
@@ -731,6 +864,9 @@ class Resolver:
 
     @staticmethod
     def hit_key(hit):
+        if hit[0] == "var" and hit[1][1].get("owner"):
+            # one property however many platforms declare it (`expect val Default` and each `actual`)
+            return ("property", hit[1][1]["owner"], hit[1][1]["name"])
         if hit[0] in ("fun", "var"):
             return _ckey(hit[1])
         if hit[0] == "dataprop":
@@ -863,6 +999,12 @@ class Resolver:
         if kind == "jfun":
             return self.expand(symbol_table.return_type(hit[1], hit[2]))
         if kind == "jdkfun":
+            recv = hit[3] if len(hit) > 3 else None
+            index = jdk_index.returned_type_parameter(hit[1], hit[2]) if recv is not None and _a(recv) else None
+            if index is not None:                       # `ArrayList<Point>.get(0)` returns the receiver's E
+                seen = self.as_super(recv, ("lib", hit[1]))
+                if seen is not None and index < len(_a(seen)) and _a(seen)[index] is not None:
+                    return _a(seen)[index]
             return self.expand(jdk_index.return_type(hit[1], hit[2]))
         if kind in ("var", "dataprop"):
             return self.var_type(*hit[1], hit[2] if len(hit) > 2 else None)
@@ -875,7 +1017,8 @@ class Resolver:
     @staticmethod
     def tag(hit, recv):
         """``hit`` remembering the receiver type it was found on, so its type arguments can be read."""
-        if isinstance(hit, tuple) and hit[0] in ("fun", "var", "dataprop") and len(hit) == 2 \
+        if isinstance(hit, tuple) and hit[0] in ("fun", "var", "dataprop", "jdkfun") and len(hit) in (2, 3) \
+                and (len(hit) == 2 or hit[0] == "jdkfun") \
                 and recv is not None and recv[0] in ("class", "lib", "java"):
             return (*hit, recv)
         return hit
@@ -939,6 +1082,10 @@ class Resolver:
             hit = self.find_member(rt, lambda t, n=name: self._var_level(t, n))
             if isinstance(hit, tuple):
                 return self.hit_type(self.tag(hit, rt))
+            if hit is None and rt is not None and rt[0] in ("java", "lib"):
+                accessor = self.synthetic_property(rt, name, "use")
+                if accessor is not None:
+                    return self.hit_type(accessor)
             if rt is not None and rt[0] == "static":
                 nested = self.ix.nested.get(rt[1], {}).get(name)
                 if nested:
@@ -1000,10 +1147,41 @@ class Resolver:
                     return with_args(("class", "kotlin.collections." + entry), _a(mapped))
         return None
 
-    def this_type(self, kf, scope, owner):
+    def _extension_receiver(self, owner):
+        """The type an extension function or property is declared on, for the code of ``owner``, or ``None``."""
         entry = self.ix.callables.get(owner)
         if entry is not None and entry[1]["receiver"] and not entry[1]["ctor"]:
             return self.type_name(entry[1]["receiver"], entry[0], entry[1]["scope"])
+        entry = self.ix.variables.get(owner)           # `val Long.isClosed get() = ...`
+        if entry is not None and entry[1].get("receiver"):
+            return self.type_name(entry[1]["receiver"], entry[0], entry[1]["scope"])
+        return None
+
+    def _has_extension_receiver(self, owner) -> bool:
+        entry = self.ix.callables.get(owner)
+        if entry is not None and entry[1]["receiver"] and not entry[1]["ctor"]:
+            return True
+        entry = self.ix.variables.get(owner)
+        return entry is not None and bool(entry[1].get("receiver"))
+
+    def this_type(self, kf, scope, owner):
+        if self._lam_ctx is not None:
+            occ, kf0 = self._lam_ctx
+            for call_id, position in reversed(occ["lam"]):
+                if call_id is None:
+                    return None                       # an anonymous function with a receiver of its own
+                target = self.call_target(call_id, kf0)
+                if target is not None and target[0] == "fun":
+                    if self.receiver_lambda(call_id, position, kf0):
+                        return self.lambda_receiver_type(call_id, position, kf0)
+                    continue                          # an ordinary Kotlin lambda: `this` is outside it
+                if target is not None and target[0] == "jdkfun":
+                    if self.receiver_lambda(call_id, position, kf0):
+                        return self.lambda_receiver_type(call_id, position, kf0)
+                    continue                          # an indexed library method whose parameter is no Action
+                return None                           # a Java or unindexed callee: a SAM lambda may take a receiver
+        if self._has_extension_receiver(owner):
+            return self._extension_receiver(owner)
         chain = self.class_chain(scope)
         return ("class", chain[0]) if chain else None
 
@@ -1035,8 +1213,42 @@ class Resolver:
             found += self.ix.members_vars.get(package, {}).get(original, [])
         return found
 
-    @staticmethod
-    def _choose(candidates):
+    def _param_ty(self, kf2, rec, i):
+        key = (rec["key"], i)
+        if key not in self._ptypes:
+            pts = rec.get("ptypes") or ()
+            text = pts[i] if i < len(pts) else None
+            self._ptypes[key] = self.type_name(text, kf2, rec["scope"]) if text and text != "*" and \
+                not text.startswith("<fn>") and text not in rec.get("tparams", ()) else None
+        return self._ptypes[key]
+
+    def most_specific(self, candidates):
+        """The one overload whose parameter types are all at least as specific as every other's, or ``None``.
+
+        Kotlin picks it when several overloads accept the arguments: ``launch(job)`` with one overload
+        taking a ``CoroutineContext`` and another a ``Job`` is the ``Job`` one. A position whose types
+        are unknown, or unrelated, makes the comparison undecided.
+        """
+        def below(c, d):                               # c's parameters are subtypes of d's, somewhere strictly
+            strict = False
+            for i in range(min(len(c[1]["params"]), len(d[1]["params"]))):
+                tc, td = (c[1].get("ptypes") or ()), (d[1].get("ptypes") or ())
+                if i < len(tc) and i < len(td) and tc[i] == td[i]:
+                    continue                           # written the same: no difference here
+                a, b = self._param_ty(c[0], c[1], i), self._param_ty(d[0], d[1], i)
+                if a is None or b is None:
+                    return False
+                if a == b:
+                    continue
+                if b not in self.hierarchy(a):
+                    return False
+                strict = True
+            return strict
+
+        best = [c for c in candidates if all(c is d or _ckey(c) == _ckey(d) or below(c, d) for d in candidates)]
+        return best[0] if len({_ckey(c) for c in best}) == 1 else None
+
+    def _choose(self, candidates):
         """One distinct declaration out of these, ``AMBIGUOUS`` for several, ``None`` for none."""
         distinct = {_ckey(c) for c in candidates}
         if not distinct:
@@ -1045,18 +1257,42 @@ class Resolver:
             # a fixed-arity overload beats a vararg one taking the same arguments
             fixed = [c for c in candidates if not any(p[1] for p in c[1]["params"])]
             if len({_ckey(c) for c in fixed}) == 1 and len(fixed) < len(candidates):
-                return ("fun", Resolver._merged(fixed))
+                return ("fun", self._merged(fixed))
+            specific = self.most_specific(candidates)
+            if specific is not None:
+                return ("fun", self._merged([specific]))
             return AMBIGUOUS
-        return ("fun", Resolver._merged(candidates))
+        return ("fun", self._merged(candidates))
 
-    @staticmethod
-    def _merged(candidates):
-        """One declaration standing for same-named overloads; its type is unknown if they disagree."""
+    def _merged(self, candidates):
+        """One declaration standing for same-named overloads; its type is unknown if they disagree.
+
+        Overloads of an extension that differ only in the receiver they extend (`DomainObjectCollection`,
+        `NamedDomainObjectCollection`, `TaskCollection`: `withType`) agree on a call to the narrowest one:
+        the receiver that is a subtype of all the others' decides, as Kotlin's most specific choice does."""
         first = candidates[0]
         if len(candidates) > 1 and getattr(first[0], "library", False) and \
                 len({(c[1]["ret"], c[1]["ret_init"], c[1].get("ret_expr")) for c in candidates}) > 1:
+            narrowest = self._narrowest_receiver(candidates)
+            if narrowest is not None:
+                return narrowest
             return (first[0], {**first[1], "ret": None, "ret_init": None, "ret_expr": None})
         return first
+
+    def _narrowest_receiver(self, candidates):
+        tys = []
+        for c in candidates:
+            text = c[1].get("receiver")
+            ty = self.type_name(text, c[0], c[1]["scope"]) if text and text != "*" else None
+            if ty is None:
+                return None
+            tys.append(ty)
+        if len({_deep(t) for t in tys}) == 1 or len(set(tys)) == 1:
+            return None          # same receiver, different results (`sumOf` by what the lambda returns): undecided
+        for c, ty in zip(candidates, tys):
+            if all(other == ty or other in self.hierarchy(ty) for other in tys):
+                return c
+        return None
 
     def top_level_hit(self, name, nargs, kf):
         for tier in self.tiers(name, kf):
@@ -1082,6 +1318,32 @@ class Resolver:
             if hit is not None:
                 return hit
         return None
+
+    def synthetic_property(self, rt, name, mode):
+        """A Java getter read as a Kotlin property: ``file.name`` calls ``getName()`` (``isX`` for a
+        boolean), ``file.name = v`` calls ``setName(v)``. A field or Kotlin member of that name wins
+        before this is asked; Kotlin's own types (``kotlin.*``) have real properties and are skipped."""
+        if rt[0] == "lib" and (rt[1].startswith("kotlin.") or rt[1] in KOTLIN_FOR):
+            return None
+        cap = name[:1].upper() + name[1:]
+        if mode == "set":
+            names, nargs = (f"set{cap}",), 1
+        elif mode == "use":
+            names, nargs = (f"get{cap}", f"is{cap}"), 0
+        else:
+            return None
+        found = []
+        for accessor in names:
+            hit = self.find_member(rt, lambda t, n=accessor: self._fun_level(t, n, nargs))
+            if isinstance(hit, tuple) and hit[0] in ("jfun", "jdkfun"):
+                found.append(hit)
+        if not found and mode == "set":
+            # Gradle's lazy properties have no setter: `name = "x"` assigns through `getName()`'s Property<T>
+            hit = self.find_member(rt, lambda t, n=f"get{cap}": self._fun_level(t, n, 0))
+            if isinstance(hit, tuple) and hit[0] == "jdkfun" and \
+                    (jdk_index.return_type(hit[1], hit[2]) or "").rsplit(".", 1)[-1].endswith("Property"):
+                found.append(hit)
+        return found[0] if len(found) == 1 else None
 
     def extension_var_hit(self, rt, name, kf):
         """The extension property named ``name`` that applies to a receiver of type ``rt``."""
@@ -1113,15 +1375,35 @@ class Resolver:
         """What a call occurrence resolves to (a hit tuple), or ``None``."""
         key = (kf.path, occurrence_id)
         if key in self._callee:
+            if key in self._pending:
+                self._cycle.add(key)           # asked while still being resolved: an answer built on this is provisional
             return self._callee[key]
         self._callee[key] = None   # a call whose receiver depends on itself
-        result = self._resolve_call(kf.occurrences[occurrence_id], kf)
+        self._pending.add(key)
+        outer, self._cycle = self._cycle, set()
+        try:
+            result = self._resolve_call(kf.occurrences[occurrence_id], kf)
+        finally:
+            self._pending.discard(key)
+            asked = self._cycle - {key}
+            self._cycle = outer | asked
         result = result if isinstance(result, tuple) else None
-        self._callee[key] = result
+        if asked:
+            # it leaned on a call that was still being resolved (`flowOf(it)` needs `it`, which needs the
+            # enclosing call's lambda result, which is this call): do not remember an answer given without it
+            del self._callee[key]
+        else:
+            self._callee[key] = result
         return result
 
     def _resolve_call(self, occ, kf):
         saved, self._ctx = self._ctx, {"occ": occ, "kf": kf, "types": None}
+        saved_receivers, saved_ctx = self._lambda_recv, self._lam_ctx
+        self._lam_ctx = (occ, kf)
+        if occ["r"] is None and occ["b"] is None:
+            # a call is resolved against the receivers of the lambdas around *it*, whoever asks first
+            around = self.lambda_receivers(occ, kf)
+            self._lambda_recv = around if around is not None else []
         try:
             if occ.get("init"):
                 return self._resolve_init(occ, kf)
@@ -1133,6 +1415,8 @@ class Resolver:
             return result
         finally:
             self._ctx = saved
+            self._lambda_recv = saved_receivers
+            self._lam_ctx = saved_ctx
 
     def _resolve_named(self, occ, kf, name):
         nargs, scope, owner, recv = occ["a"], occ["s"], occ["o"], occ["r"]
@@ -1197,10 +1481,9 @@ class Resolver:
 
     def implicit_receivers(self, kf, scope, owner):
         """The ``this`` values in scope, innermost first; ``None`` stands for one we cannot type."""
-        out = []
-        entry = self.ix.callables.get(owner)
-        if entry is not None and entry[1]["receiver"] and not entry[1]["ctor"]:
-            out.append(self.type_name(entry[1]["receiver"], entry[0], entry[1]["scope"]))
+        out = list(self._lambda_recv)         # `T.() -> R` lambdas around the code, innermost first
+        if self._has_extension_receiver(owner):
+            out.append(self._extension_receiver(owner))
         for ln in self.class_chain(scope):
             out.append(("class", ln))
             companion = self.ix.classes[ln][1]["companion"]
@@ -1247,11 +1530,23 @@ class Resolver:
         if hit is OPAQUE or hit is AMBIGUOUS:
             return None
         if hit is not None:
+            if hit[0] in ("jdkfun", "jfun") and self._ctx is not None and self._ctx["occ"].get("targs") \
+                    and rt[0] in ("class", "java", "lib"):
+                # `tasks.register<Jar>("x")`: a Java member knows no type arguments, so an extension
+                # declaring as many type parameters is what the call names
+                ext = self.extension_hit(rt, name, nargs, kf)
+                if ext is not None and ext is not AMBIGUOUS and \
+                        len(ext[1][1].get("tparams", ())) == len(self._ctx["occ"]["targs"]):
+                    return self.tag(ext, rt)
             return self.tag(hit, rt)
         if rt[0] == "static":
             nested = self.ix.nested.get(rt[1], {}).get(name)
             if nested:
                 return self.constructor(("class", nested), nargs)
+            for root in self.static_roots(rt[1]):        # `Type.f()` where f extends Type's companion or object
+                hit = self.extension_hit(root, name, nargs, kf)
+                if hit is not None and hit is not AMBIGUOUS:
+                    return self.tag(hit, root)
             return None
         if rt[0] in ("class", "java", "lib", "super"):
             subject = ("class", rt[1]) if rt[0] == "super" else rt
@@ -1260,7 +1555,7 @@ class Resolver:
         return None
 
     # -- bare names ----------------------------------------------------------
-    def free_var(self, name, kf, scope, owner):
+    def free_var(self, name, kf, scope, owner, mode="use"):
         """A hit, ``AMBIGUOUS``/``OPAQUE`` when the name exists but cannot be pinned, or ``None``."""
         for rt in self.implicit_receivers(kf, scope, owner):
             if rt is None:
@@ -1268,6 +1563,10 @@ class Resolver:
             hit = self.find(rt, lambda t: self._var_level(t, name))
             if hit is not None:
                 return hit
+            if rt[0] in ("java", "lib"):                   # `rootProject` in an extension on Gradle's Project
+                accessor = self.synthetic_property(rt, name, mode if mode == "set" else "use")
+                if accessor is not None:
+                    return accessor
         for tier in self.tiers(name, kf):
             found = [c for pkg, orig in tier for c in self._top_vars_at(pkg, orig) if c[1]["receiver"] is None]
             distinct = {_ckey(c) for c in found}
@@ -1278,6 +1577,17 @@ class Resolver:
         return None
 
     # -- the entry point -----------------------------------------------------
+    def _named_lambda_param(self, call_id, kf, rec):
+        """Index of the parameter a lambda passed by name (``onCompletion = { ... }``) binds to, when the
+        call has exactly one such lambda and the callee names its parameters."""
+        occ = kf.occurrences[call_id]
+        names = occ.get("argnames") or []
+        lam = [n for n, a in zip(names, occ["args"]) if n not in (None, "*") and a is not None and a[0] == "lambda"]
+        pnames = rec.get("pnames") or ()
+        if len(lam) != 1 or lam[0] not in pnames or len(pnames) != len(rec["params"]):
+            return None
+        return pnames.index(lam[0])
+
     def receiver_lambda(self, call_id, position, kf) -> bool:
         if call_id is None:
             return True                        # an anonymous function that writes its own receiver
@@ -1287,12 +1597,70 @@ class Resolver:
             params = target[1][1]["params"]
             if not params:
                 return False
-            if position == -2:                 # a named argument: any parameter may be it
-                return any(p[2] for p in params)
+            if position == -2:                 # a named argument: its parameter, else any of them
+                j = self._named_lambda_param(call_id, kf, target[1][1])
+                return params[j][2] if j is not None else any(p[2] for p in params)
             return params[position if 0 <= position < len(params) else -1][2]
+        if target is not None and target[0] == "jdkfun":
+            return self._action_spec(call_id, position, target, kf) is not None    # a Gradle `Action<T>` parameter
         if target is not None:
             return False                       # a Java or constructor callee: no receiver lambdas
         return occ["n"] in RECEIVER_LAMBDAS
+
+    def _action_spec(self, call_id, position, target, kf):
+        """The receiver spec of the Gradle ``Action<T>`` parameter this lambda is passed as, or ``None``."""
+        if position == -2:
+            return None
+        nargs = kf.occurrences[call_id]["a"]
+        index = nargs - 1 if position == -1 else position
+        return jdk_index.action_receiver(target[1], target[2], nargs, index)
+
+    def lambda_receiver_type(self, call_id, position, kf):
+        """The type of ``this`` inside a ``T.() -> R`` lambda, from the callee's function type, or ``None``."""
+        if call_id is None:
+            return None
+        target = self.call_target(call_id, kf)
+        if target is not None and target[0] == "jdkfun":
+            # Kotlin's SAM-with-receiver plugin: a lambda for Gradle's `Action<T>` is `T.() -> Unit`
+            spec = self._action_spec(call_id, position, target, kf)
+            if spec is None:
+                return None
+            if spec.startswith("#"):                    # a type argument of the object the call is made on
+                recv = target[3] if len(target) > 3 else None
+                seen = self.as_super(recv, ("lib", target[1])) if recv is not None else None
+                args = _a(seen) if seen is not None else ()
+                t = args[int(spec[1:])] if int(spec[1:]) < len(args) else None
+            else:
+                t = self.expand(spec)
+            return t if t is not None and t[0] in ("class", "lib", "java") else None
+        if target is None or target[0] != "fun":
+            return None
+        kf2, rec = target[1]
+        ptexprs = rec.get("ptexprs") or ()
+        if not ptexprs:
+            return None
+        if position == -2:
+            position = self._named_lambda_param(call_id, kf, rec)
+            if position is None:
+                return None
+        fn = ptexprs[position] if 0 <= position < len(ptexprs) else ptexprs[-1]
+        if not isinstance(fn, tuple) or fn[0] != "fn" or fn[1] is None:
+            return None
+        t = self.inst(fn[1], self.infer(target, kf, kf.occurrences[call_id]), kf2, rec["scope"])
+        return t if t is not None and t[0] in ("class", "lib", "java") else None
+
+    def lambda_receivers(self, occ, kf):
+        """The receivers of the receiver-lambdas around ``occ``, innermost first; ``None`` if one is unknown
+        (the name may belong to it, so nothing is resolved), ``[]`` if there is none."""
+        out = []
+        for call_id, position in reversed(occ["lam"]):
+            if not self.receiver_lambda(call_id, position, kf):
+                continue
+            t = self.lambda_receiver_type(call_id, position, kf)
+            if t is None:
+                return None
+            out.append(t)
+        return out
 
     def blocked(self, occ, kf) -> bool:
         """Whether the occurrence sits in a lambda whose implicit receiver may own the name."""
@@ -1398,7 +1766,7 @@ class Resolver:
         if kind == "ctor":
             return [("create", hit[1])]
         if kind == "jfun":
-            return [("jcall", hit[1], hit[2], hit[3])]
+            return [("jcall", hit[1], hit[2], hit[3], hit[4])]
         if kind == "jctor":
             return [("jcreate", hit[1], hit[2])]
         if kind == "jdkfun":
@@ -1418,10 +1786,23 @@ class Resolver:
         ``("jdkcall", type, name)``, ``("jdkvar", type, name)``, ``("libcreate", fq)``
         for the JDK and library classes.
         """
-        if occ["r"] is None and self.blocked(occ, kf) and occ["b"] is None:
-            return []
         if occ["r"] is not None and _contains(occ["r"], "this") and self.blocked(occ, kf):
             return []
+        saved, saved_ctx = self._lambda_recv, self._lam_ctx
+        self._lam_ctx = (occ, kf)
+        if occ["r"] is None and occ["b"] is None:
+            receivers = self.lambda_receivers(occ, kf)
+            if receivers is None:
+                self._lam_ctx = saved_ctx
+                return []
+            self._lambda_recv = receivers
+        try:
+            return self._resolve(occ, kf)
+        finally:
+            self._lambda_recv = saved
+            self._lam_ctx = saved_ctx
+
+    def _resolve(self, occ, kf):
         if occ["t"] == "ref":
             wrap = "dotref" if occ.get("dotref") else "ref"
             return [(wrap, o) for o in self._reference(occ, kf)]
@@ -1435,6 +1816,9 @@ class Resolver:
                 return []
             init = occ.get("init")   # a delegation call creates nothing: the object exists
             kind = target[0]
+            if occ.get("annot") and kind in ("ctor", "ctor_call", "libctor") and \
+                    (kind == "libctor" or self.ix.classes[target[1]][1]["decl"] == "annotation"):
+                return [("annot", target[1])]       # `Inner(1)` inside an annotation is an annotation
             if kind == "dataprop":
                 return [("var", target[1])]       # componentN of a data class reads that property
             if kind == "fun" and occ["n"] == "equals" and occ.get("op") and \
@@ -1451,7 +1835,7 @@ class Resolver:
             if kind == "ctor_call":
                 return ([] if init else [("create", target[1])]) + [("call", target[2])]
             if kind == "jfun":
-                return [("jcall", target[1], target[2], target[3])]
+                return [("jcall", target[1], target[2], target[3], target[4])]
             if kind == "jctor":
                 return [("jcall", target[1], target[1].rsplit(".", 1)[-1], target[2])] + \
                     ([] if init else [("jcreate", target[1], target[2])])
@@ -1469,7 +1853,7 @@ class Resolver:
                 if binding[0] == "local" and binding[1] in self.ix.variables:
                     return [("var", self.ix.variables[binding[1]])]
                 return []
-            hit = self.free_var(occ["n"], kf, occ["s"], occ["o"])
+            hit = self.free_var(occ["n"], kf, occ["s"], occ["o"], occ["m"])
             if hit is None and occ["m"] == "use":
                 cls = self.type_name(occ["n"], kf, occ["s"])
                 if cls is None and occ["n"] in self.ix.packages:
@@ -1488,6 +1872,11 @@ class Resolver:
             hit = self.find_member(rt, lambda t, n=occ["n"]: self._var_level(t, n))
             if hit is None and rt is not None and rt[0] in ("class", "java", "lib"):
                 hit = self.extension_var_hit(rt, occ["n"], kf)               # `p.twice`, `list.lastIndex`
+            if hit is None and rt is not None and rt[0] in ("java", "lib"):
+                accessor = self.synthetic_property(rt, occ["n"], occ["m"])    # `file.name` is getName()
+                if accessor is not None:
+                    return [("jcall", accessor[1], accessor[2], accessor[3], accessor[4])] if accessor[0] == "jfun" \
+                        else [("jdkcall", accessor[1], accessor[2])]
             if hit is None and rt is not None and rt[0] == "static" and occ["m"] == "use":
                 nested = self.ix.nested.get(rt[1], {}).get(occ["n"])
                 if nested:
@@ -1500,4 +1889,8 @@ class Resolver:
             return [("jvar", hit[1], hit[2])]
         if hit[0] == "jdkvar":
             return [("jdkvar", hit[1], hit[2])]
+        if hit[0] == "jfun":
+            return [("jcall", hit[1], hit[2], hit[3], hit[4])]    # a Java getter read as a property
+        if hit[0] == "jdkfun":
+            return [("jdkcall", hit[1], hit[2])]
         return []

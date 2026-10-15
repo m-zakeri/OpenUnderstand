@@ -29,6 +29,11 @@ from functools import lru_cache
 
 _PATH = os.path.join(os.path.dirname(__file__), "jdk_index.txt.gz")
 
+#: Library jars indexed the same way (``scripts/gen_jdk_index.py --jar``). Their types are known and
+#: have members and supertypes like the JDK's, but are never offered by simple name: a Java or Kotlin
+#: file reaches one by an import or a qualified name, and a bare ``Task`` must not mean Gradle's.
+_EXTRA_PATHS = (os.path.join(os.path.dirname(__file__), "gradle_index.txt.gz"),)
+
 
 @lru_cache(maxsize=1)
 def _load() -> dict:
@@ -39,7 +44,13 @@ def _load() -> dict:
         # simply answers "unknown", which is the same answer the hand-written
         # tables gave for anything they did not list.
         return {"types": types, "by_simple": by_simple}
-    with gzip.open(_PATH, "rt", encoding="utf8") as handle:
+    for path in (_PATH, *[p for p in _EXTRA_PATHS if os.path.exists(p)]):
+        _read(path, types, by_simple, extra=path != _PATH)
+    return {"types": types, "by_simple": by_simple}
+
+
+def _read(path, types, by_simple, extra):
+    with gzip.open(path, "rt", encoding="utf8") as handle:
         for line in handle:
             if line.startswith("#"):
                 continue
@@ -51,8 +62,34 @@ def _load() -> dict:
             if len(parts) != 7:
                 continue
             longname, flags, supers, fields, methods, members, superclass = parts
-            arities, returns, sealed = {}, {}, set()
+            arities, returns, sealed, actions = {}, {}, set(), {}
+            tparams, generic_supers, generic_methods = [], [], {}
             for item in methods.split(","):
+                if item.startswith("&"):
+                    # `&name/arity=T:S|return|param|param`: a method's own type parameters and signature
+                    head, _, body = item[1:].partition("=")
+                    name, _, arity = head.partition("/")
+                    fields = body.split("|")
+                    if name and arity.isdigit() and len(fields) >= 2:
+                        generic_methods.setdefault(name, []).append(
+                            (int(arity), [t for t in fields[0].split(":") if t], fields[1].replace(";", ","),
+                             [f.replace(";", ",") for f in fields[2:]])
+                        )
+                    continue
+                if item.startswith("%"):
+                    tparams = [t for t in item[1:].split(";") if t]
+                    continue
+                if item.startswith("~"):
+                    generic_supers.append(item[1:].replace(";", ","))
+                    continue
+                if item.startswith("^"):
+                    # `^name/arity:index=Receiver`: a lambda passed at that parameter has Receiver as `this`
+                    head, _, spec = item[1:].partition("=")
+                    name, _, tail = head.partition("/")
+                    arity, _, index = tail.partition(":")
+                    if name and arity.isdigit() and index.isdigit():
+                        actions.setdefault(name, []).append((int(arity), int(index), spec))
+                    continue
                 if item.startswith("!"):
                     # A name every overload of which is static or final.
                     sealed.add(item[1:])
@@ -76,6 +113,10 @@ def _load() -> dict:
                 "methods": arities,
                 "returns": returns,
                 "sealed": sealed,
+                "actions": actions,
+                "tparams": tparams,
+                "generic_supers": generic_supers,
+                "generic_methods": generic_methods,
                 # Declared members at this type -- constructors included, every
                 # overload counted, at any visibility. This is what RFC sums
                 # over the superclass chain: java.lang.Throwable is 27 and
@@ -86,11 +127,37 @@ def _load() -> dict:
                 # interface.
                 "superclass": superclass,
             }
-            if "N" not in flags:
+            if "N" not in flags and not extra:
                 # A nested type is named through its outer type or an explicit
                 # import, never by its bare simple name.
                 by_simple.setdefault(longname.rsplit(".", 1)[-1], []).append(longname)
-    return {"types": types, "by_simple": by_simple}
+
+
+def generic_supertypes(longname: str):
+    """(type parameters, supertypes written with type arguments) of a library type, or ``((), ())``."""
+    entry = _load()["types"].get(longname) or {}
+    return entry.get("tparams", []), entry.get("generic_supers", [])
+
+
+def generic_method(longname: str, member: str, arity: int):
+    """(type parameters, return type, parameter types) of a library method with type parameters of its own,
+    as javap writes them, or ``None``."""
+    entry = _load()["types"].get(longname) or {}
+    for declared_arity, tparams, ret, params in entry.get("generic_methods", {}).get(member, ()):
+        if declared_arity == arity:
+            return tparams, ret, params
+    return None
+
+
+def action_receiver(longname: str, member: str, arity: int, index: int):
+    """The receiver of a Kotlin lambda passed as argument ``index`` of ``longname.member(...)``: a type, or
+    ``#i`` for the i-th type argument of the object the call is made on; ``None`` when that parameter is
+    not a Gradle ``Action``. Kotlin's SAM-with-receiver plugin makes ``Action<T>``'s lambda ``T.() -> Unit``."""
+    entry = _load()["types"].get(longname)
+    for declared_arity, declared_index, spec in (entry or {}).get("actions", {}).get(member, ()):
+        if declared_arity == arity and declared_index == index:
+            return spec
+    return None
 
 
 def resolve_simple(name: str, packages=()) -> str | None:

@@ -859,7 +859,7 @@ def purge_file(file_entity_id):
 #: Long-name roots that belong to the JDK or the Kotlin standard library rather
 #: than to the project. An entity under one of these is external and already
 #: fully qualified, however unresolved its kind looks.
-EXTERNAL_ROOTS = ("java.", "javax.", "kotlin.")
+EXTERNAL_ROOTS = ("java.", "javax.", "kotlin.", "org.gradle.")
 
 
 #: Reference-table foreign-key indexes, dropped for the per-file loop and

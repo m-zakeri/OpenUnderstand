@@ -66,6 +66,9 @@ from openunderstand.utils import kind_names as K
 
 _VISIBILITY = {"public", "protected", "private"}
 
+#: The owner key of code that belongs to the file itself, not to a declaration (`@file:` annotations).
+FILE_OWNER = ("<file>", 0, 0)
+
 
 @dataclass
 class KFile:
@@ -73,6 +76,7 @@ class KFile:
     package: str = ""
     package_pos: list = field(default_factory=list)  # (name, line, col) per segment
     imports: list = field(default_factory=list)  # (fqname, alias or None, star)
+    annotations: list = field(default_factory=list)  # annotations on declarations: {owner, name, line, col, enclosing}
     type_args: list = field(default_factory=list)  # type arguments of receiver types: {owner, name, line, col, plain, ...}
     receivers: list = field(default_factory=list)  # extension receiver types: {owner, name, line, col, enclosing}
     qualifiers: list = field(default_factory=list)  # qualified supertypes: {owner, name, start, enclosing}
@@ -142,7 +146,7 @@ class _Collector:
         )
 
     def callable_fact(self, key, name, owner, ctor, params, receiver, ret, ret_init, local, scope,
-                      vis=None, tparams=(), ptypes=(), ptexprs=(), ret_expr=None, receiver_expr=None):
+                      vis=None, tparams=(), ptypes=(), ptexprs=(), ret_expr=None, receiver_expr=None, pnames=()):
         self.out.callables.append(
             {
                 "key": key, "name": name, "owner": owner, "ctor": ctor, "params": params,
@@ -150,6 +154,7 @@ class _Collector:
                 "scope": tuple(scope), "vis": vis, "tparams": tuple(tparams),
                 "ptypes": tuple(ptypes),    # one per parameter: a class name, "<fn>" or None (unknown)
                 "ptexprs": tuple(ptexprs),  # the same, as type expressions that keep their arguments
+                "pnames": tuple(pnames),    # the parameters' names, for matching named arguments
                 "ret_expr": ret_expr, "receiver_expr": receiver_expr,
             }
         )
@@ -317,6 +322,9 @@ class _Collector:
                     scan(c)
 
         scan(tree)
+        for file_annotation in children(tree, "fileAnnotation"):      # `@file:JvmName("X")`: the file's own
+            for body in children(file_annotation, "unescapedAnnotation"):
+                self.annotation_body(body, FILE_OWNER, self.package)
         for top in children(tree, "topLevelObject"):
             member = first(top, "memberPropertyDeclaration")
             if member is not None:
@@ -331,6 +339,7 @@ class _Collector:
         if name is not None:
             text = name
         scope_longname = ".".join(scope)
+        key_for_annotations = ((scope_longname + "." + text) if scope_longname else text, line, col)
         stop = ctx.stop
         spanned = None
         if span and stop is not None and stop.text == "}":
@@ -353,7 +362,47 @@ class _Collector:
                 "implicit": implicit,
             }
         )
+        self.annotations_of(ctx, key_for_annotations, scope)
         return (scope_longname + "." + text) if scope_longname else text, line, col
+
+    def annotations_of(self, ctx, key, scope):
+        """The annotations written on a declaration: a ``Use Annotation`` of each, and its arguments.
+
+        An annotation class cannot be generic, so its own type arguments are rare, but its argument
+        expressions (``@Mark(Point::class, items = [arrayOf<String>()])``) are ordinary code and are
+        walked as the declaration's: calls, names and class literals resolve there.
+        """
+        modifiers = first(ctx, "modifiers")
+        if modifiers is None:                                   # a property keeps them on its head
+            head = first(ctx, "propertyDeclarationHead")
+            modifiers = first(head, "modifiers") if head is not None else None
+        for annotation in children(modifiers, "annotation") if modifiers is not None else []:
+            for single in [c for c in annotation.children or [] if rule(c) in ("singleAnnotation", "multiAnnotation")]:
+                for body in children(single, "unescapedAnnotation"):         # `@A` or `@[A B]`
+                    self.annotation_body(body, key, scope)
+
+    def annotation_body(self, body, key, scope):
+        """One ``unescapedAnnotation``: its ``Use Annotation``, type arguments, qualifier and arguments."""
+        invocation = first(body, "constructorInvocation")
+        user = first(invocation, "userType") if invocation is not None else first(body, "userType")
+        if user is None:
+            return
+        parts = children(user, "simpleUserType")
+        name, line, col = _name(first(parts[-1], "simpleIdentifier"))
+        self.out.annotations.append(
+            {"owner": key, "name": user_type_name(user), "line": line, "col": col, "enclosing": list(scope)}
+        )
+        self.argument_list(first(parts[-1], "typeArguments"), key, scope, True)
+        if len(parts) > 1:
+            self.out.qualifiers.append(
+                {"owner": key, "name": user_type_name(user), "enclosing": list(scope),
+                 "start": _name(first(parts[0], "simpleIdentifier"))[1:]}
+            )
+        arguments = first(invocation, "valueArguments") if invocation is not None else None
+        walker = self.walker(key, scope, Env(None))
+        walker.in_annotation = True
+        for argument in children(arguments, "valueArgument") if arguments is not None else []:
+            walker.walk(first(argument, "expression"))
 
     @staticmethod
     def mods(modifiers_ctx) -> set:
@@ -681,7 +730,7 @@ class _Collector:
             span=False,
         )
         env = Env()
-        fact_params, defaults, ptypes, ptexprs = [], [], [], []
+        fact_params, defaults, ptypes, ptexprs, pnames = [], [], [], [], []
         for cp in children(params, "classParameter") if params is not None else []:
             pmods = self.mods(first(cp, "modifiers"))
             ident = first(cp, "simpleIdentifier")
@@ -705,6 +754,7 @@ class _Collector:
                 self.variable_fact(key, name, ctor_key[0], "param", type_ctx, scope=scope)
                 env.names[name] = ("local", key)
             fact_params.append((default is not None, "vararg" in pmods, _fn_receiver(type_ctx)))
+            pnames.append(name)
             ptypes.append(_param_type(type_ctx))
             ptexprs.append(self.texpr(type_ctx))
             if default is not None:
@@ -713,7 +763,7 @@ class _Collector:
         self.primary_keys[tuple(scope)] = ctor_key
         self.callable_fact(
             ctor_key, cname, ".".join(scope), True, fact_params, None, None, None, False, scope,
-            vis=self.visibility(mods), ptypes=ptypes, ptexprs=ptexprs,
+            vis=self.visibility(mods), ptypes=ptypes, ptexprs=ptexprs, pnames=pnames,
         )
         for key, default in defaults:
             self.walker(key, scope, Env(env)).walk(default)
@@ -745,6 +795,7 @@ class _Collector:
             key, cname, ".".join(scope), True, [(i["default"], i["vararg"], i["fnrecv"]) for i in infos],
             None, None, None, False, inner, vis=self.visibility(mods),
             ptypes=[i["ptype"] for i in infos], ptexprs=[i["ptexpr"] for i in infos],
+            pnames=[i["name"] for i in infos],
         )
         walker = self.walker(key, inner, env)
         for info in infos:
@@ -798,6 +849,7 @@ class _Collector:
         for info in infos:
             fenv.names[info["name"]] = ("local", info["key"])
         walker = self.walker(key, inner, fenv)
+        walker.return_expr = self.texpr(ret) if ret is not None else None
         for info in infos:
             if info["default_ctx"] is not None:
                 walker.walk(info["default_ctx"])
@@ -820,6 +872,7 @@ class _Collector:
             name_of(ret) if ret is not None else None, ret_init, env is not None, inner,
             vis=self.visibility(mods), tparams=self.type_parameter_names(ctx),
             ptypes=[i["ptype"] for i in infos], ptexprs=[i["ptexpr"] for i in infos],
+            pnames=[i["name"] for i in infos],
             ret_expr=self.texpr(ret) if ret is not None else None,
             receiver_expr=self.texpr(receiver) if receiver is not None else None,
         )
@@ -933,7 +986,7 @@ class _Collector:
         mods = ("final",) if has_token(head, "val") else ()
         variables = self.variables(head)
         for position, variable in enumerate(variables):
-            if len(variables) == 1:
+            if len(variables) == 1 and first(head, "multiVariableDeclaration") is None:
                 value = init
             else:
                 value = entry_inits[position] if entry_inits and position < len(entry_inits) else None

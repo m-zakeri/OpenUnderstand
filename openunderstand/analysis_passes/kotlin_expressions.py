@@ -69,7 +69,8 @@ value: the parameter's type is the one written (``{ (a, b): Pair<A, B> -> }``) o
 parameter of the function type the callee declares for that lambda (``Map.forEach`` takes
 ``(Map.Entry<K, V>) -> Unit``). Its names stay shadows, never entities.
 
-Not resolved: the name-based and bracketed destructuring forms, a lambda destructured in any
+Name-based entries (``(val a = prop)``) read the property and bracketed ``[a, b]`` is ``componentN``
+too. Not resolved: a lambda destructured in any
 parameter the callee's function type does not give. A lambda parameter that is not
 destructured (``it``, ``{ p -> }``) is typed by the same signature: its name carries the
 same ``("lparam", call id, position, index, declared)`` as its binding, and a lambda records
@@ -164,6 +165,8 @@ class ExprWalker:
         self.pending_lambda = None  # (call id, position) of the lambda being entered
         self.lambda_result = None   # the last statement's descriptor of the lambda just walked
         self.last = None  # the occurrence a following `++` may turn into a modify
+        self.in_annotation = False  # walking the arguments of an annotation
+        self.return_expr = None     # the enclosing function's written return type, as a type expression
 
     # -- recording ---------------------------------------------------------
     def occurrence(self, kind, name, line, col, receiver=None, nargs=0, mode="use", binding=None,
@@ -186,10 +189,12 @@ class ExprWalker:
             "alt": alt,    # the name to try if this one finds nothing (`plusAssign`, then `plus`)
             "args": [],    # a descriptor per argument (None: unknown, ("lambda",): a lambda)
             "named": False,  # a named or spread argument: the arguments' order says nothing
+            "argnames": [],  # one per argument: its name when written `name = value`, else None
             "sym": False,    # an operator written as a symbol (see op_call)
             "loop": None,    # for `iterator`/`hasNext`/`next`: the loop's iterable
             "targs": (),     # explicit type arguments of the call, as type expressions
             "exp": None,     # the declared type the call's value is stored in, as a type expression
+            "annot": self.in_annotation,   # inside an annotation's arguments: `Inner(1)` there is an annotation
         }
         self.c.out.occurrences.append(occ)
         return occ
@@ -199,6 +204,19 @@ class ExprWalker:
         if descriptor is not None and descriptor[0] == "call" and type_ctx is not None:
             self.c.out.occurrences[descriptor[4]]["exp"] = self.c.texpr(type_ctx)
         return descriptor
+
+    def r_jumpExpression(self, ctx, mode):
+        """``return call()``: the function's written return type is what the call's value is stored in."""
+        kids = [c for c in ctx.children or [] if not (isinstance(c, TerminalNode) and not c.symbol.text.strip())]
+        expression = first(ctx, "expression")
+        desc = self.walk(expression) if expression is not None else None
+        plain = bool(kids) and isinstance(kids[0], TerminalNode) and kids[0].getText() == "return"
+        if plain and desc is not None and desc[0] == "call" and self.return_expr is not None:
+            self.c.out.occurrences[desc[4]]["exp"] = self.return_expr
+        for child in kids:                                   # `throw`/labels hold nothing else to walk
+            if child is not expression and not isinstance(child, TerminalNode):
+                self.walk(child)
+        return None
 
     # -- walking -----------------------------------------------------------
     def walk(self, ctx, mode=None):
@@ -545,20 +563,24 @@ class ExprWalker:
     def components(self, holder, value):
         """``componentN`` calls for ``val (a, b) = value``: one per entry, or ``None`` for none.
 
-        Only the positional form with parentheses and no ``= name`` entries is the ordinary
-        destructuring; the name-based and bracketed forms are newer and left alone.
+        Positional entries, in parentheses or the newer brackets, are ``componentN`` at the opening
+        token. A name-based entry, ``(val first = firstName)``, reads the property it names instead:
+        a plain read of ``firstName`` on the value, at that name, and the new variable takes its type.
         """
         multi = first(holder, "multiVariableDeclaration")
-        if multi is None or value is None or not multi.getText().startswith("("):
-            return None
-        entries = children(multi, "destructuringEntry")
-        if any(has_equals(e) for e in entries):
+        if multi is None or value is None:
             return None
         out = []
-        # at the opening parenthesis, not on an entry's name: the name is where that variable is
+        # at the opening token, not on an entry's name: the name is where that variable is
         # defined, and one position carries one kind of reference
-        for position, entry in enumerate(entries, 1):
-            out.append(self.op_call(value, f"component{position}", 0, multi.start, symbol=False))
+        for position, entry in enumerate(children(multi, "destructuringEntry"), 1):
+            if has_equals(entry):
+                prop = first(entry, "simpleIdentifier")
+                name, line, col = name_pos(prop)
+                self.occurrence("name", name, line, col, receiver=value)
+                out.append(("member", value, name))
+            else:
+                out.append(self.op_call(value, f"component{position}", 0, multi.start, symbol=False))
         return out
 
     def r_forStatement(self, ctx, mode):
@@ -843,7 +865,11 @@ class ExprWalker:
                 self.pending_lambda = None
                 if occ is not None:
                     occ["args"].append(("lambda", self.lambda_result) if _is_lambda(expression) else described)
+                    occ["argnames"].append(
+                        name_of_identifier(first(argument, "simpleIdentifier")) if named else ("*" if spread else None))
                     occ["named"] = occ["named"] or named or spread
+                    if described is not None and described[0] == "call" and not named and not spread:
+                        self.c.out.occurrences[described[4]]["arg_of"] = (occ["id"], base + count)
                 count += 1
         for c in call_suffix.children or []:
             if rule(c) in ("annotatedLambda", "labeledLambda"):
@@ -854,6 +880,7 @@ class ExprWalker:
                 self.pending_lambda = None
                 if occ is not None:
                     occ["args"].append(("lambda", self.lambda_result))
+                    occ["argnames"].append(None)
                 count += 1
         return count
 

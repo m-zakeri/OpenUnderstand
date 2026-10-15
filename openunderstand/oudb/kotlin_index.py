@@ -27,6 +27,9 @@ from types import SimpleNamespace
 
 _PATH = os.path.join(os.path.dirname(__file__), "kotlin_index.txt.gz")
 
+#: More ``@F`` rows read the same way: Gradle's Kotlin DSL extensions (``scripts/gen_gradle_dsl_index.py``).
+_EXTRA_PATHS = (os.path.join(os.path.dirname(__file__), "gradle_dsl_index.txt.gz"),)
+
 #: What every Kotlin/JVM file sees without importing, lowest precedence of all
 #: (after the file's own scope, its package, and its explicit and `*` imports).
 DEFAULT_PACKAGES = (
@@ -61,7 +64,13 @@ def _load() -> dict:
             "tparams": {}, "super_exprs": {}, "alias_exprs": {}}
     if not os.path.exists(_PATH):
         return data
-    with gzip.open(_PATH, "rt", encoding="utf8") as handle:
+    for path in (_PATH, *[p for p in _EXTRA_PATHS if os.path.exists(p)]):
+        _read(path, data)
+    return data
+
+
+def _read(path, data):
+    with gzip.open(path, "rt", encoding="utf8") as handle:
         for line in handle:
             if line.startswith("#"):
                 continue
@@ -74,7 +83,8 @@ def _load() -> dict:
                 data["data"][parts[1]] = parts[2].split(",")
             elif parts[0] == "@F" and len(parts) >= 7:
                 row = tuple(parts[1:7]) + ((parts[7] if len(parts) > 7 else ""),)
-                data["functions"].append(row + tuple(parts[8:11]) + ("",) * max(0, 11 - len(parts)))
+                tail = tuple(parts[8:12]) + ("",) * max(0, 12 - len(parts))
+                data["functions"].append(row + tail)
             elif parts[0] == "@V" and len(parts) >= 5:
                 data["properties"].append(tuple(parts[1:5]) + tuple(parts[5:7]) + ("",) * max(0, 7 - len(parts)))
             elif len(parts) >= 2 and not parts[0].startswith("@"):
@@ -85,7 +95,6 @@ def _load() -> dict:
                     data["tparams"][parts[0]] = tuple(p for p in parts[3].split(",") if p)
                 if len(parts) > 4 and parts[4]:
                     data["super_exprs"][parts[0]] = _tuple(json.loads(parts[4]))
-    return data
 
 
 def known(longname: str) -> bool:
@@ -150,7 +159,7 @@ def library_files() -> tuple:
         }
         file_of(package).classes[fq] = record
     serial = 0
-    for kind, where, name, receiver, params, ret, ptypes, rexpr, retexpr, ptexprs in data["functions"]:
+    for kind, where, name, receiver, params, ret, ptypes, rexpr, retexpr, ptexprs, tparams in data["functions"]:
         serial += 1
         package, owner = (where[1:], None) if where.startswith("=") else ("", where)
         if owner:
@@ -163,7 +172,7 @@ def library_files() -> tuple:
                 "key": (longname, 0, serial), "name": name, "owner": owner, "ctor": kind == "c",
                 "params": [(c in "dD", c in "vV", c in "RDV") for c in params],
                 "receiver": receiver or None, "ret": ret or None, "ret_init": None, "local": False,
-                "scope": (), "vis": ["public"], "tparams": (),
+                "scope": (), "vis": ["public"], "tparams": tuple(t for t in tparams.split(",") if t),
                 "ptypes": tuple((t or None) for t in ptypes.split(",")) if params else (),
                 "receiver_expr": _expr(rexpr), "ret_expr": _expr(retexpr),
                 "ptexprs": tuple(_expr(t) for t in ptexprs.split("|")) if params else (),
