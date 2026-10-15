@@ -83,6 +83,7 @@ from __future__ import annotations
 
 from antlr4.tree.Tree import TerminalNode
 
+from openunderstand.utils import kind_names as K
 from openunderstand.analysis_passes.kotlin_tree import (
     children,
     find,
@@ -131,12 +132,21 @@ class Env:
     def __init__(self, parent: "Env | None" = None):
         self.parent = parent
         self.names: dict = {}
+        self.pkeys: dict = {}       # name -> entity key of a declared lambda parameter
 
     def lookup(self, name: str):
         env = self
         while env is not None:
             if name in env.names:
                 return env.names[name]
+            env = env.parent
+        return None
+
+    def pkey(self, name: str):
+        env = self
+        while env is not None:
+            if name in env.names:
+                return env.pkeys.get(name)
             env = env.parent
         return None
 
@@ -168,7 +178,9 @@ class ExprWalker:
         self.scope = tuple(scope)
         self.env = env
         self.lambdas: list = []  # (call id, argument position) enclosing the code
-        self.lambda_depth = 0
+        self.lambda_depth = 0       # inside an anonymous function: its declarations are not made
+        self.wowner = owner         # who references are written against: the innermost lambda, else the owner
+        self.dscope = tuple(scope)  # where declarations inside the code go: the innermost lambda's scope
         self.receiver_lambda_next = receiver_lambda
         self.pending_lambda = None  # (call id, position) of the lambda being entered
         self.lambda_result = None   # the last statement's descriptor of the lambda just walked
@@ -182,6 +194,8 @@ class ExprWalker:
         occ = {
             "id": len(self.c.out.occurrences),
             "o": self.owner,
+            "w": self.wowner,
+            "pk": self.env.pkey(name) if receiver is None and binding is not None and binding[0] in ("lparam", "shadow") else None,
             "t": kind,
             "n": name,
             "r": receiver,
@@ -406,9 +420,13 @@ class ExprWalker:
         return desc
 
     def r_lambdaLiteral(self, ctx, mode):
-        outer, depth = self.env, self.lambda_depth
+        outer = self.env
         self.env = outer.child()
-        self.lambda_depth += 1
+        saved = (self.wowner, self.dscope)
+        lambda_name = self.c.lambda_name(".".join(self.dscope))
+        lambda_key = self.c.add(None, list(self.dscope), decl=K.LAMBDA, type_text=None, ctx=ctx, modifiers=(),
+                                name=lambda_name)
+        self.wowner, self.dscope = lambda_key, (*self.dscope, lambda_name)
         binding = self.pending_lambda          # (call id, argument position) this lambda is passed as
         if binding is not None:
             self.lambdas.append(binding)
@@ -429,6 +447,7 @@ class ExprWalker:
                 destructured = first(p, "multiVariableDeclaration") is not None
                 for ident in _identifiers(p):
                     self.env.names[ident] = ("shadow",) if destructured or not (binding or declared) else value
+                self.declare_lambda_parameters(p)
                 if destructured and (binding is not None or declared):
                     self.components(p, value)
         result = None
@@ -439,10 +458,28 @@ class ExprWalker:
             else:
                 self.walk(child)
         self.lambda_result = result
-        self.env, self.lambda_depth = outer, depth
+        self.env = outer
+        self.wowner, self.dscope = saved
         if pushed:
             self.lambdas.pop()
         return None
+
+    def declare_lambda_parameters(self, p):
+        """Each explicit lambda parameter (and each name it destructures) is a parameter of the lambda."""
+        entries = [first(p, "variableDeclaration")] if first(p, "variableDeclaration") is not None else \
+            [first(e, "variableDeclaration") for e in children(first(p, "multiVariableDeclaration"), "destructuringEntry")] \
+            if first(p, "multiVariableDeclaration") is not None else []
+        for variable in entries:
+            ident = first(variable, "simpleIdentifier") if variable is not None else None
+            if ident is None:
+                continue
+            type_ctx = first(variable, "type_")
+            key = self.c.add(ident, list(self.dscope), decl=K.PARAMETER,
+                             type_text=type_ctx.getText() if type_ctx is not None else None,
+                             ctx=variable, modifiers=(), span=False)
+            if type_ctx is not None:
+                self.c.typed(key, type_ctx, list(self.dscope))
+            self.env.pkeys[name_pos(ident)[0]] = key
 
     def r_objectLiteral(self, ctx, mode):
         """An anonymous object is declared by the collector; as a value it is of its own class."""
@@ -535,7 +572,7 @@ class ExprWalker:
             for ident in _identifiers(head):
                 self.env.names[ident] = ("shadow",)
         else:
-            self.c.local(ctx, self.scope, self.env, descriptor, self.components(head, descriptor))
+            self.c.local(ctx, list(self.dscope), self.env, descriptor, self.components(head, descriptor))
         accessors = first(ctx, "propertyAccessors")
         if accessors is not None:
             self.generic(accessors)
@@ -619,7 +656,7 @@ class ExprWalker:
             for name in _identifiers_in(ctx, ("variableDeclaration", "multiVariableDeclaration")):
                 self.env.names[name] = ("shadow",)
         else:
-            self.c.for_variables(ctx, self.scope, self.env, element, entries)
+            self.c.for_variables(ctx, list(self.dscope), self.env, element, entries)
         for c in ctx.children or []:
             if rule(c) == "controlStructureBody":
                 self.walk(c)
@@ -651,17 +688,17 @@ class ExprWalker:
     # a local declaration inside a body
     def r_classDeclaration(self, ctx, mode):
         if self.lambda_depth == 0:
-            self.c.klass(ctx, list(self.scope), False, False)
+            self.c.klass(ctx, list(self.dscope), False, False)
         return None
 
     def r_objectDeclaration(self, ctx, mode):
         if self.lambda_depth == 0:
-            self.c.obj(ctx, list(self.scope), False)
+            self.c.obj(ctx, list(self.dscope), False)
         return None
 
     def r_functionDeclaration(self, ctx, mode):
         if self.lambda_depth == 0:
-            key = self.c.function(ctx, list(self.scope), False, False, None, env=self.env)
+            key = self.c.function(ctx, list(self.dscope), False, False, None, env=self.env)
             if key is not None:
                 self.env.declare_fun(key[0].rsplit(".", 1)[-1], key)
         return None
@@ -760,7 +797,7 @@ class ExprWalker:
                     binding=self.env.lookup(name),
                 )
                 self.last = occ
-                occ["deref"] = _dereferenced(suffixes[:1])
+                occ["deref"] = _dereferenced(suffixes[:1]) and (final_mode if final_mode in ("set", "modify") else True)
                 names_read.append(occ)
                 current = ("name", name, occ["b"])
         elif kind == "thisExpression":
@@ -842,6 +879,8 @@ class ExprWalker:
                 if text in ("++", "--"):
                     if self.last is not None:
                         self.last["m"] = "modify"
+                        if len(names_read) > 1 and names_read[0].get("deref"):
+                            names_read[0]["deref"] = "modify"      # `a.f++` partly modifies `a`
                     current = self.op_call(current, "inc" if text == "++" else "dec", 0, s.start)
             index += 1
         return current

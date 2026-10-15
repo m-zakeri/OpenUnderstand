@@ -624,10 +624,49 @@ class _Collector:
             self.members(enum_body, inner, decl, in_object=False)
             # an enum implies `values()` and `valueOf(value)`, as Java's does
             for implicit_name in ("values", "valueOf"):
-                self.add(None, inner, decl=K.METHOD, type_text=None, ctx=ctx, modifiers=("public", "static"),
-                         span=False, name=implicit_name, implicit=True)
-            self.add(None, inner + ["valueOf"], decl=K.PARAMETER, type_text="String", ctx=ctx, modifiers=(),
-                     span=False, name="value", implicit=True)
+                method = self.add(None, inner, decl=K.METHOD, type_text=None, ctx=ctx, modifiers=("public", "static"),
+                                  span=False, name=implicit_name, implicit=True)
+                self.implicit_typed(method, longname, ctx, inner)
+            param = self.add(None, inner + ["valueOf"], decl=K.PARAMETER, type_text="String", ctx=ctx, modifiers=(),
+                             span=False, name="value", implicit=True)
+            self.implicit_typed(param, "kotlin.String", ctx, inner)
+        if "data" in mods:
+            self.data_members(ctx, inner, longname)
+
+    def lambda_name(self, scope_longname: str) -> str:
+        """``(lambda_expr_N)``, numbered over the enclosing declaration in source order, as Java's."""
+        counts = self.__dict__.setdefault("_lambda_counts", {})
+        counts[scope_longname] = counts.get(scope_longname, 0) + 1
+        return "(lambda_expr_%d)" % counts[scope_longname]
+
+    def implicit_typed(self, owner, type_name, ctx, scope):
+        """A ``Java Typed Implicit`` for an entity the language declares: at the declaration's start."""
+        self.out.types.append(
+            {"owner": owner, "name": type_name, "line": ctx.start.line, "col": ctx.start.column, "start": None,
+             "enclosing": list(scope), "implicit": True}
+        )
+
+    def data_members(self, ctx, scope, longname):
+        """A data class declares ``componentN`` and ``copy`` (and its parameters) without writing them."""
+        pc = first(ctx, "primaryConstructor")
+        params = first(pc, "classParameters") if pc is not None else None
+        props = [cp for cp in (children(params, "classParameter") if params is not None else [])
+                 if has_token(cp, "val") or has_token(cp, "var")]
+        for index, cp in enumerate(props, 1):
+            method = self.add(None, scope, decl=K.METHOD, type_text=None, ctx=ctx, modifiers=("public", "final"),
+                              span=False, name=f"component{index}", implicit=True)
+            named = name_of(first(cp, "type_"))
+            if named:
+                self.implicit_typed(method, named, ctx, scope)
+        copy = self.add(None, scope, decl=K.METHOD, type_text=None, ctx=ctx, modifiers=("public", "final"),
+                        span=False, name="copy", implicit=True)
+        self.implicit_typed(copy, longname, ctx, scope)
+        for cp in props:
+            param = self.add(None, scope + ["copy"], decl=K.PARAMETER, type_text=None, ctx=ctx, modifiers=(),
+                             span=False, name=_name(first(cp, "simpleIdentifier"))[0], implicit=True)
+            named = name_of(first(cp, "type_"))
+            if named:
+                self.implicit_typed(param, named, ctx, scope)
 
     def anonymous(self, ctx, walker):
         """``object : Base(x) { ... }``: a class of its own, named ``(Anon_N)`` over the file as in Java.

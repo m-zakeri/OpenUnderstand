@@ -202,6 +202,11 @@ def resolve_type(name: str, kfile, enclosing) -> EntityModel | None:
         name, kfile, enclosing, lambda longname: _project_type(longname) is not None
     )
     if hit is None:
+        # a single-type import names its class exactly, even from a library nothing indexes
+        head = name.split(".", 1)[0]
+        for fq, alias, star in kfile.imports:
+            if not star and (alias or fq.rsplit(".", 1)[-1]) == head:
+                return _library_entity(fq + name[len(head):])
         return None
     return _project_type(hit[1]) if hit[0] == "project" else _library_entity(hit[1])
 
@@ -212,7 +217,8 @@ def _write_typed(kfile, file_ent):
         target = resolve_type(t["name"], kfile, t["enclosing"])
         if owner is None or target is None:
             continue
-        for kind, scope, ent in (("Java Typed", owner, target), ("Java Typedby", target, owner)):
+        pair = ("Java Typed Implicit", "Java Typedby Implicit") if t.get("implicit") else ("Java Typed", "Java Typedby")
+        for kind, scope, ent in ((pair[0], owner, target), (pair[1], target, owner)):
             ReferenceModel.get_or_create(
                 _kind=kind_id(kind),
                 _file=file_ent,
@@ -587,10 +593,17 @@ def _write_references(kfile, file_ent, resolver):
     index = resolver.ix
     for occ in kfile.occurrences:
         outcome = resolver.resolve(occ, kfile)
-        if not outcome:
-            continue
-        scope = _owner_row(occ["o"], file_ent)
-        if scope is None:
+        scope = _owner_row(occ.get("w") or occ["o"], file_ent)
+        if occ.get("pk") and scope is not None:           # a lambda parameter: nothing else resolves it
+            param = _row_at(*occ["pk"])
+            if param is not None and not outcome:
+                forward, inverse = _POSITIONAL[occ["m"]]
+                for name, owner, ent in ((forward, scope, param), (inverse, param, scope)):
+                    ReferenceModel.get_or_create(
+                        _kind=kind_id(name), _file=file_ent, _line=occ["l"], _column=col_1based(occ["c"]),
+                        _ent=ent, _scope=owner,
+                    )
+        if not outcome or scope is None:
             continue
         for item in outcome:
             for label, row in _targets(item, index):
@@ -598,7 +611,10 @@ def _write_references(kfile, file_ent, resolver):
                     continue
                 forward, inverse = _POSITIONAL[occ["m"] if label == "var" else label]
                 if label == "var" and occ["m"] == "use" and occ.get("deref"):
-                    forward, inverse = "Java Use Deref Partial", "Java Useby Deref Partial"
+                    word = {"set": "Set", "modify": "Modify"}.get(occ["deref"], "Use")
+                    forward, inverse = f"Java {word} Deref Partial", f"Java {word}by Deref Partial"
+                    if word == "Use":
+                        inverse = "Java Useby Deref Partial"
                 for name, owner, ent in ((forward, scope, row), (inverse, row, scope)):
                     ReferenceModel.get_or_create(
                         _kind=kind_id(name),
