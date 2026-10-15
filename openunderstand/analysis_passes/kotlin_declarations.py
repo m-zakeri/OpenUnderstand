@@ -83,6 +83,8 @@ class KFile:
     qualifiers: list = field(default_factory=list)  # qualified supertypes: {owner, name, start, enclosing}
     supers: list = field(default_factory=list)  # declared supertypes: {owner, name, line, col, ctor, enclosing}
     casts: list = field(default_factory=list)  # `as` / `as?` types: {owner, name, line, col, enclosing}
+    bounds: list = field(default_factory=list)  # type parameter bounds: {owner, name, line, col, enclosing}
+    unbounded: list = field(default_factory=list)  # keys of type parameters with no bound written
     throws: list = field(default_factory=list)  # `@Throws(X::class)` classes: {owner, name, line, col, enclosing}
     import_sites: list = field(default_factory=list)  # (fqname, star, line, col, head line, head col)
     defines: list = field(default_factory=list)  # addDefineRefs dictionaries
@@ -532,8 +534,9 @@ class _Collector:
         tp = first(ctx, "typeParameters")
         if tp is None:
             return
+        keys = {}
         for param in children(tp, "typeParameter"):
-            self.add(
+            keys[_name(first(param, "simpleIdentifier"))[0]] = self.add(
                 first(param, "simpleIdentifier"),
                 scope_with_owner,
                 decl=K.TYPE_PARAMETER,
@@ -542,6 +545,25 @@ class _Collector:
                 modifiers=(),
                 span=False,
             )
+            self.constraint(keys[_name(first(param, "simpleIdentifier"))[0]], first(param, "type_"), scope_with_owner)
+            if first(param, "type_") is None:
+                self.out.unbounded.append(keys[_name(first(param, "simpleIdentifier"))[0]])
+        constraints = first(ctx, "typeConstraints")           # `where T : A`
+        for c in children(constraints, "typeConstraint") if constraints is not None else []:
+            name = _name(first(c, "simpleIdentifier"))[0]
+            if name in keys:
+                self.constraint(keys[name], first(c, "type_"), scope_with_owner)
+
+    def constraint(self, key, bound_ctx, scope):
+        """``<T : Bound>``: the type parameter constrains itself to ``Bound``, at the bound's first segment."""
+        user = find(bound_ctx, "userType") if bound_ctx is not None else None
+        named = name_of(bound_ctx) if bound_ctx is not None else None
+        if user is None or not named:
+            return
+        start = _name(first(children(user, "simpleUserType")[0], "simpleIdentifier"))
+        self.out.bounds.append(
+            {"owner": key, "name": named, "line": start[1], "col": start[2], "enclosing": list(scope)}
+        )
 
     def klass(self, ctx, scope, top_level, in_object):
         self._tp.append(self.tparam_map(ctx))
@@ -587,6 +609,7 @@ class _Collector:
             "supers": self.supertypes(ctx), "scope": tuple(inner), "key": (longname, line, col),
             "vis": self.visibility(mods), "data": self.data_components(ctx, mods),
             "tparams": self.type_parameter_names(ctx), "super_exprs": self.super_exprs(ctx),
+            "enum": first(ctx, "enumClassBody") is not None or "enum" in mods,
         }
         self.super_qualifiers(ctx, (longname, line, col), inner)
         self.type_parameters(ctx, inner)
@@ -599,6 +622,12 @@ class _Collector:
                 for entry in children(entries, "enumEntry"):
                     self.enum_entry(entry, inner)
             self.members(enum_body, inner, decl, in_object=False)
+            # an enum implies `values()` and `valueOf(value)`, as Java's does
+            for implicit_name in ("values", "valueOf"):
+                self.add(None, inner, decl=K.METHOD, type_text=None, ctx=ctx, modifiers=("public", "static"),
+                         span=False, name=implicit_name, implicit=True)
+            self.add(None, inner + ["valueOf"], decl=K.PARAMETER, type_text="String", ctx=ctx, modifiers=(),
+                     span=False, name="value", implicit=True)
 
     def anonymous(self, ctx, walker):
         """``object : Base(x) { ... }``: a class of its own, named ``(Anon_N)`` over the file as in Java.

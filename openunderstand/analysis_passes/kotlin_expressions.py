@@ -151,6 +151,14 @@ class Env:
             self.names[name] = ("fun", [key])
 
 
+def _dereferenced(next_suffix) -> bool:
+    """Whether a name is followed by ``.member`` or ``?.member``: its value is only partly read."""
+    if not next_suffix or rule(next_suffix[0]) != "navigationSuffix":
+        return False
+    operator = next_suffix[0].children[0].getText().strip() if next_suffix[0].children else ""
+    return operator in (".", "?.") and first(next_suffix[0], "simpleIdentifier") is not None
+
+
 class ExprWalker:
     """One owner's code. ``collector`` supplies declarations for locals."""
 
@@ -752,6 +760,7 @@ class ExprWalker:
                     binding=self.env.lookup(name),
                 )
                 self.last = occ
+                occ["deref"] = _dereferenced(suffixes[:1])
                 names_read.append(occ)
                 current = ("name", name, occ["b"])
         elif kind == "thisExpression":
@@ -808,6 +817,7 @@ class ExprWalker:
                     mode=final_mode if last_one else "use",
                 )
                 self.last = occ
+                occ["deref"] = _dereferenced(suffixes[index + 1:index + 2])
                 names_read.append(occ)
                 current = ("member", current, name)
             elif sr == "callSuffix":     # invoke: `f(x)(y)`

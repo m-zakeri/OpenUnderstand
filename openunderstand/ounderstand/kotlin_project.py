@@ -332,6 +332,29 @@ def _write_supers(kfile, file_ent, resolver):
         _pair(*pair, file_ent, t["line"], t["col"], owner, target)
 
 
+def _write_implicit_supers(kfile, file_ent):
+    """What nothing writes but the language implies: an enum extends ``kotlin.Enum``, a class with no
+    superclass ``kotlin.Any``, and an unbounded type parameter ``kotlin.Any`` too. Java's rule, at the
+    declaration's line and no column; the target is external, so it has no inverse."""
+    explicit = {t["owner"][0] for t in kfile.supers if t["ctor"]}
+    owners = []
+    for longname, rec in kfile.classes.items():
+        if rec["decl"] in ("interface", "annotation") or longname in explicit:
+            continue
+        enum = "enum" in (rec.get("kind_mods") or ()) or rec.get("enum")
+        owners.append((rec["key"], "kotlin.Enum" if enum else "kotlin.Any"))
+    owners += [(key, "kotlin.Any") for key in kfile.unbounded]
+    for key, base in owners:
+        scope = _row_at(*key)
+        if scope is None:
+            continue
+        target = _library_entity(base)
+        ReferenceModel.get_or_create(
+            _kind=kind_id("Java Extend Couple Implicit External"), _file=file_ent, _line=key[1], _column=0,
+            _ent=target, _scope=scope,
+        )
+
+
 def _write_overrides(kfile, file_ent, resolver):
     """A declaration marked ``override`` is a ``Java Overrides`` of the member it overrides, at its name."""
     for rec, variable in [(r, False) for r in kfile.callables] + [(r, True) for r in kfile.variables]:
@@ -574,6 +597,8 @@ def _write_references(kfile, file_ent, resolver):
                 if row is None:
                     continue
                 forward, inverse = _POSITIONAL[occ["m"] if label == "var" else label]
+                if label == "var" and occ["m"] == "use" and occ.get("deref"):
+                    forward, inverse = "Java Use Deref Partial", "Java Useby Deref Partial"
                 for name, owner, ent in ((forward, scope, row), (inverse, row, scope)):
                     ReferenceModel.get_or_create(
                         _kind=kind_id(name),
@@ -683,9 +708,11 @@ def analyse(paths, root: str | None = None) -> kotlin_parser.Summary:
             _write_type_args(kfile, file_ent)
         for kfile, file_ent in written:
             _write_supers(kfile, file_ent, resolver)
+            _write_implicit_supers(kfile, file_ent)
             _write_overrides(kfile, file_ent, resolver)
             _write_owned_types(kfile, file_ent, kfile.casts, "Java Use Cast", "Java Useby Castby")
             _write_owned_types(kfile, file_ent, kfile.throws, "Java Throw", "Java Throwby")
+            _write_owned_types(kfile, file_ent, kfile.bounds, "Java Use Constrains Couple", "Java Useby Constrains Coupleby")
             _write_set_inits(kfile, file_ent)
             _write_references(kfile, file_ent, resolver)
             _write_imports(kfile, file_ent, resolver)
