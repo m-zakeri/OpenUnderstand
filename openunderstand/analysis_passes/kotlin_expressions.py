@@ -384,6 +384,14 @@ class ExprWalker:
         for c in kids[1:]:
             if rule(c) == "type_":
                 self.note_type(c)
+                user = find(c, "userType")
+                named = name_of(c)
+                if user is not None and named and not any(named in frame for frame in getattr(self.c, "_tp", ())):
+                    start = name_pos(first(children(user, "simpleUserType")[0], "simpleIdentifier"))
+                    self.c.out.casts.append(
+                        {"owner": self.owner, "name": named, "line": start[1], "col": start[2],
+                         "enclosing": list(self.scope)}
+                    )
         if len(kids) > 1:
             named = name_of(kids[-1])
             return ("cast", named) if named else None
@@ -774,6 +782,11 @@ class ExprWalker:
                 if operator == "::":
                     self.reference(s, current if current is not None else UNKNOWN, recv_at,
                                    chained=index < len(suffixes) - 1, head_at=head_at, names=names_read)
+                    if first(s, "simpleIdentifier") is None and current is not None and current[0] in ("name", "member"):
+                        rest = suffixes[index + 1:]       # `X::class` and `X::class.java`: a value of a known type
+                        java = len(rest) == 1 and rule(rest[0]) == "navigationSuffix" and rest[0].getText() == ".java"
+                        if not rest or java:
+                            return ("classlit", current, java)
                     return None
                 ident = first(s, "simpleIdentifier")
                 if ident is None:  # `.class` or `.(expr)`

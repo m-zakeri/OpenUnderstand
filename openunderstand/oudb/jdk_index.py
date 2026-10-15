@@ -69,11 +69,11 @@ def _read(path, types, by_simple, extra):
                     # `&name/arity=T:S|return|param|param`: a method's own type parameters and signature
                     head, _, body = item[1:].partition("=")
                     name, _, arity = head.partition("/")
-                    fields = body.split("|")
-                    if name and arity.isdigit() and len(fields) >= 2:
+                    parts = body.split("|")
+                    if name and arity.isdigit() and len(parts) >= 2:
                         generic_methods.setdefault(name, []).append(
-                            (int(arity), [t for t in fields[0].split(":") if t], fields[1].replace(";", ","),
-                             [f.replace(";", ",") for f in fields[2:]])
+                            (int(arity), [t for t in parts[0].split(":") if t], parts[1].replace(";", ","),
+                             [f.replace(";", ",") for f in parts[2:]])
                         )
                     continue
                 if item.startswith("%"):

@@ -807,6 +807,57 @@ class Resolver:
             return [("jdkfun", declaring, name)] if declaring else []
         return []
 
+    def overridden(self, rec, variable=False):
+        """The outcome naming the member a declaration marked ``override`` overrides, or ``None``.
+
+        The supertypes are searched nearest first, as a call is; the first level declaring the
+        name with the same number of parameters (and, among several, the same parameter types)
+        is the one. Two candidates that cannot be told apart are refused, as a call refuses.
+        """
+        owner = rec.get("owner")
+        if not owner or owner not in self.ix.classes or rec.get("receiver") is not None:
+            return None
+        for ty in self.hierarchy(("class", owner))[1:]:
+            if ty == OPAQUE or ty[0] not in ("class", "java", "lib"):
+                continue
+            if variable:
+                hits = self._var_level(ty[:2], rec["name"])
+            else:
+                nargs = len(rec["params"])
+                hits = self._fun_level(ty[:2], rec["name"], nargs)
+                hits = [h for h in hits if h[0] != "fun" or len(h[1][1]["params"]) == nargs]
+                if len(hits) > 1:
+                    mine = tuple(rec.get("ptypes") or ())
+                    same = [h for h in hits if h[0] == "fun" and tuple(h[1][1].get("ptypes") or ()) == mine]
+                    hits = same if same else hits
+            hits = [h for h in hits if h[0] != "dataprop"]
+            if len(hits) != 1:
+                if hits:
+                    return None
+                continue
+            hit = hits[0]
+            if hit[0] == "fun":
+                return ("call", hit[1])
+            if hit[0] == "var":
+                return ("var", hit[1])
+            if hit[0] == "jdkfun":
+                return ("jdkcall", hit[1], hit[2])
+            if hit[0] == "jdkvar":
+                return ("jdkvar", hit[1], hit[2])
+            if hit[0] == "jfun":
+                return ("jcall", hit[1], hit[2], hit[3], hit[4])
+            if hit[0] == "jvar":
+                return ("jvar", hit[1], hit[2])
+            return None
+        return None
+
+    def is_interface_type(self, fq):
+        """Whether the type named ``fq`` is an interface: a project class, a Kotlin library type or a JDK one."""
+        entry = self.ix.classes.get(fq)
+        if entry is not None:
+            return entry[1].get("decl") == "interface"
+        return kotlin_index.is_interface(fq) or jdk_index.is_interface(fq) or symbol_table.is_interface(fq)
+
     def _data_component(self, ln, position):
         """A data class's synthesised ``componentN``: it returns its Nth primary-constructor property."""
         data = self.ix.classes[ln][1].get("data") or []
@@ -977,6 +1028,63 @@ class Resolver:
         finally:
             self._busy.discard(rec["key"])
 
+    def _generic_env(self, hit, kf, occ):
+        """For a library method with type parameters of its own: (return text, environment), else ``None``.
+
+        The receiver binds the declaring type's parameters, an explicit ``<T>`` and the arguments' types
+        bind the method's (``Class<S>`` against ``Detekt::class.java``).
+        """
+        if occ is None or kf is None or len(hit) < 3:
+            return None
+        found = jdk_index.generic_method(hit[1], hit[2], occ["a"])
+        if found is None:
+            return None
+        tparams, ret, params = found
+        env: dict = {}
+        recv = hit[3] if len(hit) > 3 else None
+        declared, _ = jdk_index.generic_supertypes(hit[1])
+        seen = self.as_super(recv, ("lib", hit[1])) if recv is not None and declared else None
+        if seen is not None:
+            env.update(zip(declared, _a(seen)))
+        for name, targ in zip(tparams, occ.get("targs") or ()):
+            env[name] = self.inst(targ, {}, kf, occ["s"])
+        if not occ["named"]:
+            free: set = set()
+            for i, desc in enumerate(occ["args"]):
+                if desc is None or desc[0] == "lambda" or i >= len(params):
+                    continue
+                at = self.type_of(desc, kf, occ["s"], occ["o"])
+                if at is not None and at[0] in ("class", "lib", "java"):
+                    self._unify_text(params[i], at, env, set(tparams), free)
+        return ret, {k: v for k, v in env.items() if v is not None}
+
+    def _unify_text(self, text, t, env, mtps, free):
+        """Bind the method type parameters ``text`` (a javap type) mentions by matching it against ``t``."""
+        text = text.strip().replace("? super ", "").replace("? extends ", "").rstrip(".")
+        head, _, tail = text.partition("<")
+        if head in mtps:
+            if head not in env:
+                env[head] = t
+                free.add(head)
+            return
+        if not tail:
+            return
+        args, depth, current = [], 0, ""
+        for ch in tail[:-1]:
+            depth += (ch == "<") - (ch == ">")
+            if ch == "," and depth == 0:
+                args.append(current)
+                current = ""
+            else:
+                current += ch
+        args.append(current)
+        base = self.expand(head)
+        seen = self.as_super(t, tuple(base[:2])) if base is not None else None
+        if seen is not None and len(_a(seen)) == len(args):
+            for sub_text, sub_t in zip(args, _a(seen)):
+                if sub_t is not None:
+                    self._unify_text(sub_text, sub_t, env, mtps, free)
+
     def hit_type(self, hit, kf=None, occ=None):
         """The type a resolved call or name evaluates to (``occ``: the call, for its type arguments)."""
         kind = hit[0]
@@ -1000,6 +1108,11 @@ class Resolver:
             return self.expand(symbol_table.return_type(hit[1], hit[2]))
         if kind == "jdkfun":
             recv = hit[3] if len(hit) > 3 else None
+            generic = self._generic_env(hit, kf, occ)
+            if generic is not None:
+                typed = self._library_type(generic[0], generic[1])
+                if typed is not None:
+                    return typed
             index = jdk_index.returned_type_parameter(hit[1], hit[2]) if recv is not None and _a(recv) else None
             if index is not None:                       # `ArrayList<Point>.get(0)` returns the receiver's E
                 seen = self.as_super(recv, ("lib", hit[1]))
@@ -1032,6 +1145,14 @@ class Resolver:
             return self.expand(desc[1])
         if kind == "cast":
             return self.type_name(desc[1], kf, scope)
+        if kind == "classlit":                  # `X::class` is a KClass<X>, `X::class.java` a Class<X>
+            target = self.type_of(desc[1], kf, scope, owner)
+            if target is not None and target[0] == "static":
+                target = ("class", target[1])
+            if target is None or target[0] not in ("class", "lib", "java"):
+                return None
+            holder = self.expand("java.lang.Class" if desc[2] else "kotlin.reflect.KClass")
+            return with_args(holder, [target]) if holder is not None else None
         if kind == "lparam":
             return self.lambda_parameter_type(desc, kf, scope)
         if kind == "delegate":
@@ -1625,7 +1746,10 @@ class Resolver:
             spec = self._action_spec(call_id, position, target, kf)
             if spec is None:
                 return None
-            if spec.startswith("#"):                    # a type argument of the object the call is made on
+            if spec.startswith("@"):                    # a type parameter of the method, bound by its arguments
+                generic = self._generic_env(target, kf, kf.occurrences[call_id])
+                t = generic[1].get(spec[1:]) if generic is not None else None
+            elif spec.startswith("#"):                  # a type argument of the object the call is made on
                 recv = target[3] if len(target) > 3 else None
                 seen = self.as_super(recv, ("lib", target[1])) if recv is not None else None
                 args = _a(seen) if seen is not None else ()

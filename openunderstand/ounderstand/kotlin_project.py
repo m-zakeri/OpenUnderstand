@@ -60,6 +60,7 @@ from openunderstand.oudb.models import (
     kind_family,
     kind_id,
 )
+from openunderstand.oudb import jdk_index, kotlin_index
 from openunderstand.ounderstand import kotlin_symbols
 from openunderstand.utils import kotlin_parser
 
@@ -298,6 +299,139 @@ def _write_type_qualifiers(kfile, file_ent, t, owner):
             )
         if package is not None:
             break
+
+
+def _pair(forward, inverse, file_ent, line, col, scope, ent):
+    for kind, owner, target in ((forward, scope, ent), (inverse, ent, scope)):
+        ReferenceModel.get_or_create(
+            _kind=kind_id(kind), _file=file_ent, _line=line, _column=col_1based(col), _ent=target, _scope=owner,
+        )
+
+
+def _write_supers(kfile, file_ent, resolver):
+    """``class A : B()`` extends, ``class A : I`` implements, ``interface J : I`` extends: at the supertype's
+    last segment, as Java's. A plain supertype whose kind nothing tells is refused, not guessed."""
+    ix = resolver.ix
+    for t in kfile.supers:
+        owner = _row_at(*t["owner"])
+        target = resolve_type(t["name"], kfile, t["enclosing"])
+        if owner is None or target is None or target._id == owner._id:
+            continue
+        fq = target._longname
+        external = fq not in ix.classes and "Unknown" in _kind_name(target._kind_id)
+        known = fq in ix.classes or kotlin_index.known(fq) or jdk_index.known(fq) or not external
+        interface = False if t["ctor"] else resolver.is_interface_type(fq)
+        if not t["ctor"] and not known:
+            continue
+        mine = kfile.classes.get(t["owner"][0]) or {}
+        if interface and mine.get("decl") != "interface":
+            pair = ("Java Implement Couple", "Java Implementby Coupleby")
+        else:
+            suffix = " External" if external else ""
+            pair = (f"Java Extend Couple{suffix}", f"Java Extendby Coupleby{suffix}")
+        _pair(*pair, file_ent, t["line"], t["col"], owner, target)
+
+
+def _write_overrides(kfile, file_ent, resolver):
+    """A declaration marked ``override`` is a ``Java Overrides`` of the member it overrides, at its name."""
+    for rec, variable in [(r, False) for r in kfile.callables] + [(r, True) for r in kfile.variables]:
+        if not rec.get("override"):
+            continue
+        outcome = resolver.overridden(rec, variable)
+        mine = _row_at(*rec["key"])
+        if outcome is None or mine is None:
+            continue
+        for _, row in _targets(outcome, resolver.ix):
+            if row is not None and row._id != mine._id:
+                _pair("Java Overrides", "Java Overriddenby", file_ent, rec["key"][1], rec["key"][2], mine, row)
+
+
+def _write_owned_types(kfile, file_ent, records, forward, inverse):
+    """A class named by a cast or ``@Throws``, scoped to the declaration holding it, at its first segment."""
+    for t in records:
+        owner = _owner_row(t["owner"], file_ent)
+        target = resolve_type(t["name"], kfile, t["enclosing"])
+        if owner is not None and target is not None:
+            _pair(forward, inverse, file_ent, t["line"], t["col"], owner, target)
+
+
+def _write_set_inits(kfile, file_ent):
+    """``val x = e`` sets ``x`` at its name, from the function or class that holds it."""
+    for rec in kfile.variables:
+        if not rec.get("set_init"):
+            continue
+        row = _row_at(*rec["key"])
+        scope = row._parent if row is not None else None
+        if scope is not None:
+            _pair("Java Set Init", "Java Setby Init", file_ent, rec["key"][1], rec["key"][2], scope, row)
+
+
+#: The references through which one class uses a type, data or member of another.
+_COUPLE_KINDS = (
+    "Java Typed", "Java Create", "Java Use Cast", "Java Extend Couple", "Java Extend Couple External",
+    "Java Implement Couple", "Java Call", "Java Call Nondynamic", "Java Use", "Java Use Return", "Java Set",
+    "Java Modify", "Java Use Annotation", "Java Throw", "Java Typed GenericArgument", "Java Use GenericArgument",
+    "Java Use Deref Partial",
+)
+
+
+def _write_couples(written):
+    """``Java Couple`` between classes: A couples to B when code inside A names B, or a member B declares.
+
+    Read back from the references already written (a member's class is its parent; an external member's
+    is the type its long name starts with), and put at the coupled class's own declaration.
+    """
+    flush_reference_writes()
+    classes = {}
+    for kfile, file_ent in written:
+        for longname, rec in kfile.classes.items():
+            row = _row_at(*rec["key"])
+            if row is not None:
+                classes[row._id] = (file_ent, rec["key"][1], rec["key"][2], row)
+    if not classes:
+        return
+    kinds = [kind_id(k) for k in _COUPLE_KINDS]
+    cache: dict = {}
+
+    def ent(i):
+        if i is None:
+            return None
+        if i not in cache:
+            cache[i] = EntityModel.get_or_none(EntityModel._id == i)
+        return cache[i]
+
+    def is_type(e):
+        return e is not None and kind_family(e._kind_id) == "type" and "GenericParameter" not in _kind_name(e._kind_id)
+
+    def type_of(e):
+        seen = 0
+        while e is not None and seen < 40 and not is_type(e):
+            if "Package" in _kind_name(e._kind_id) or "File" in _kind_name(e._kind_id):
+                return None
+            parent = ent(e._parent_id)
+            if parent is None and "." in (e._longname or ""):      # an external member: its class by name
+                prefix = e._longname.rsplit(".", 1)[0]
+                parent = next((r for r in entity_rows(prefix) if is_type(r)), None)
+            e, seen = parent, seen + 1
+        return e if is_type(e) else None
+
+    def owner_class(e):
+        seen = 0
+        while e is not None and seen < 40 and not (is_type(e) and e._id in classes):
+            e, seen = ent(e._parent_id), seen + 1
+        return e if e is not None and e._id in classes else None
+
+    pairs = set()
+    for ref in ReferenceModel.select().where(
+        ReferenceModel._kind_id.in_(kinds), ReferenceModel._file_id.in_([f._id for _, f in written])
+    ):
+        a = owner_class(ent(ref._scope_id))
+        b = type_of(ent(ref._ent_id))
+        if a is not None and b is not None and a._id != b._id:
+            pairs.add((a._id, b._id))
+    for a_id, b_id in sorted(pairs):
+        file_ent, line, col, row = classes[a_id]
+        _pair("Java Couple", "Java Coupleby", file_ent, line, col, row, ent(b_id))
 
 
 #: path -> ((mtime_ns, size), KFile). Facts are pure data, so they survive an update.
@@ -548,8 +682,14 @@ def analyse(paths, root: str | None = None) -> kotlin_parser.Summary:
             _write_annotations(kfile, file_ent)
             _write_type_args(kfile, file_ent)
         for kfile, file_ent in written:
+            _write_supers(kfile, file_ent, resolver)
+            _write_overrides(kfile, file_ent, resolver)
+            _write_owned_types(kfile, file_ent, kfile.casts, "Java Use Cast", "Java Useby Castby")
+            _write_owned_types(kfile, file_ent, kfile.throws, "Java Throw", "Java Throwby")
+            _write_set_inits(kfile, file_ent)
             _write_references(kfile, file_ent, resolver)
             _write_imports(kfile, file_ent, resolver)
+        _write_couples(written)
         flush_reference_writes()
     summary.analysed = len(written)
     for path, error in summary.failed.items():

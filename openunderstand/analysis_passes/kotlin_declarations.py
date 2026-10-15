@@ -44,6 +44,7 @@ property is ``pkg.name``, defined in its file.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 
 from antlr4.tree.Tree import TerminalNode
@@ -80,6 +81,9 @@ class KFile:
     type_args: list = field(default_factory=list)  # type arguments of receiver types: {owner, name, line, col, plain, ...}
     receivers: list = field(default_factory=list)  # extension receiver types: {owner, name, line, col, enclosing}
     qualifiers: list = field(default_factory=list)  # qualified supertypes: {owner, name, start, enclosing}
+    supers: list = field(default_factory=list)  # declared supertypes: {owner, name, line, col, ctor, enclosing}
+    casts: list = field(default_factory=list)  # `as` / `as?` types: {owner, name, line, col, enclosing}
+    throws: list = field(default_factory=list)  # `@Throws(X::class)` classes: {owner, name, line, col, enclosing}
     import_sites: list = field(default_factory=list)  # (fqname, star, line, col, head line, head col)
     defines: list = field(default_factory=list)  # addDefineRefs dictionaries
     types: list = field(default_factory=list)  # declared types to turn into Typed
@@ -265,6 +269,11 @@ class _Collector:
                 if user is None:
                     continue
                 parts = children(user, "simpleUserType")
+                last = _name(first(parts[-1], "simpleIdentifier"))
+                self.out.supers.append(
+                    {"owner": key, "name": user_type_name(user), "line": last[1], "col": last[2],
+                     "ctor": rule(inner) == "constructorInvocation", "enclosing": list(scope)}
+                )
                 self.type_arguments(spec, key, scope)        # `: Comparable<Point>`
                 if len(parts) > 1:
                     self.out.qualifiers.append(
@@ -399,6 +408,16 @@ class _Collector:
                  "start": _name(first(parts[0], "simpleIdentifier"))[1:]}
             )
         arguments = first(invocation, "valueArguments") if invocation is not None else None
+        if name == "Throws" and arguments is not None:
+            for argument in children(arguments, "valueArgument"):
+                written = re.fullmatch(r"((?:\w+\.)*\w+)::class", argument.getText().strip())
+                ident = next(_descendants(argument, "simpleIdentifier"), None)
+                if written and ident is not None:
+                    start = _name(ident)
+                    self.out.throws.append(
+                        {"owner": key, "name": written.group(1), "line": start[1], "col": start[2],
+                         "enclosing": list(scope)}
+                    )
         walker = self.walker(key, scope, Env(None))
         walker.in_annotation = True
         for argument in children(arguments, "valueArgument") if arguments is not None else []:
@@ -746,6 +765,7 @@ class _Collector:
                 )
                 self.typed(key, type_ctx, scope)
                 self.variable_fact(key, name, ".".join(scope), "property", type_ctx, scope=scope, vis=self.visibility(pmods))
+                self.out.variables[-1]["override"] = "override" in pmods
             else:
                 key = self.add(
                     ident, ctor_scope, decl=K.PARAMETER, type_text=type_ctx.getText(), ctx=cp, modifiers=(), span=False
@@ -876,6 +896,7 @@ class _Collector:
             ret_expr=self.texpr(ret) if ret is not None else None,
             receiver_expr=self.texpr(receiver) if receiver is not None else None,
         )
+        self.out.callables[-1]["override"] = "override" in mods
         return key
 
     def parameters(self, params, owner_scope, type_scope, owner_longname=None):
@@ -970,6 +991,8 @@ class _Collector:
                 vis=self.visibility(mods), receiver=name_of(receiver) if receiver is not None else None,
             )
             self.out.variables[-1]["receiver_expr"] = self.texpr(receiver) if receiver is not None else None
+            self.out.variables[-1]["override"] = "override" in mods
+            self.out.variables[-1]["set_init"] = len(keys) == 1 and first(head, "expression") is not None
 
     @staticmethod
     def variables(head):
@@ -991,6 +1014,7 @@ class _Collector:
             else:
                 value = entry_inits[position] if entry_inits and position < len(entry_inits) else None
             key = self.local_variable(variable, scope, ctx, mods, value)
+            self.out.variables[-1]["set_init"] = first(head, "expression") is not None or first(head, "multiVariableDeclaration") is not None
             env.names[_name(first(variable, "simpleIdentifier"))[0]] = ("local", key)
 
     def for_variables(self, ctx, scope, env, element=None, entry_inits=None):
@@ -1023,6 +1047,14 @@ class _Collector:
             init=init if type_ctx is None else None, scope=scope,
         )
         return key
+
+
+def _descendants(ctx, wanted):
+    for child in ctx.children or []:
+        if rule(child) == wanted:
+            yield child
+        elif not isinstance(child, TerminalNode):
+            yield from _descendants(child, wanted)
 
 
 def _param_type(type_ctx):

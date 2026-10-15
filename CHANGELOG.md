@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Kotlin: Gradle lambdas whose receiver depends on a method's own type parameter (`withType(X::class.java)`, `register(name, X::class.java) { }`) are typed; `X::class` and `X::class.java` have types.
+
 * **Kotlin.** `openunderstand.utils.kotlin_parser` parses `.kt` and `.kts`
   files with a Kotlin 2.4 grammar, through a second C++ accelerator
   (`openunderstand.gen.kotlinspeedy`) or the Python runtime. A first entity pass
