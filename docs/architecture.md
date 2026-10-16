@@ -220,6 +220,16 @@ ReferenceModel.get_or_create(_kind=kind_id("Java Call"), ...)
 The codebase used to hard-code 89 of these integers, which meant inserting one
 line in a `.txt` file silently repointed them all.
 
+## Kotlin
+
+Kotlin has its own three-stage path beside the Java one, run after the Java files and before the
+project-wide fix-ups. `analysis_passes/kotlin_declarations.py` and `kotlin_expressions.py` turn a parse tree
+into facts (a `KFile`: entities, callables, variables, occurrences) with no database; `ounderstand/kotlin_symbols.py`
+resolves an occurrence against an `Index` of every file's facts, the Kotlin stdlib, the JDK, the Gradle API and
+the project's Java; `ounderstand/kotlin_project.py` writes the rows through the Java write layer. Facts are cached
+per file (mtime and size), which is what lets `update_files` re-read only what changed. The Java passes never see
+a `.kt` file. See [Kotlin](kotlin.md).
+
 ## Adding an analysis pass
 
 1. Write a `JavaParserLabeledListener` subclass in `analysis_passes/`. Collect

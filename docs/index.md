@@ -15,6 +15,9 @@ class name, method signature and kind name is Understand's, and every change is
 measured against the real tool -- see [Parity](parity.md) for how close it
 currently is.
 
+Kotlin (`.kt`, `.kts`) is analysed into the same database under Java kinds; see
+[Kotlin](kotlin.md). Unlike Java it has no Understand oracle to be measured against.
+
 ## Install
 
 ```bash

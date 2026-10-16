@@ -219,6 +219,11 @@ See [docs/idea-plugin.md](https://m-zakeri.github.io/OpenUnderstand/idea-plugin/
 
 ## What it does not do
 
+- **Kotlin is analysed but not measured.** `.kt` and `.kts` files go into the same database under Java
+  kinds (declarations, lambdas, calls, uses, supertypes, overrides, casts, and text metrics), but
+  Understand itself has no Kotlin, so there is nothing to compare it with. It was checked by reading samples
+  on kotlinx.coroutines and detekt. See [docs/kotlin.md](docs/kotlin.md) for what is and is not covered.
+
 - **Java 9-25 is analysed, measured against Understand.** Records, sealed
   types and `permits`, pattern variables and record patterns, `var` (including
   lambda parameters), switch expressions, local enums and interfaces, and
