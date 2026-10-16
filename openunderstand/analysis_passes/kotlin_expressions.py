@@ -133,6 +133,7 @@ class Env:
         self.parent = parent
         self.names: dict = {}
         self.pkeys: dict = {}       # name -> entity key of a declared lambda parameter
+        self.lazy: dict = {}        # name -> declare-on-first-use function (the implicit `it`)
 
     def lookup(self, name: str):
         env = self
@@ -146,6 +147,8 @@ class Env:
         env = self
         while env is not None:
             if name in env.names:
+                if name in env.lazy:
+                    env.pkeys[name] = env.lazy.pop(name)()
                 return env.pkeys.get(name)
             env = env.parent
         return None
@@ -162,7 +165,8 @@ class Env:
 
 
 def _dereferenced(next_suffix) -> bool:
-    """Whether a name is followed by ``.member`` or ``?.member``: its value is only partly read."""
+    """Whether a name is followed by ``.member`` or ``?.member`` (past any ``!!``): its value is only partly read."""
+    next_suffix = [x for x in next_suffix if not (rule(x) == "postfixUnaryOperator" and x.getText().strip() == "!!")]
     if not next_suffix or rule(next_suffix[0]) != "navigationSuffix":
         return False
     operator = next_suffix[0].children[0].getText().strip() if next_suffix[0].children else ""
@@ -438,6 +442,10 @@ class ExprWalker:
         if params is None:
             # `it` is the callee's first lambda parameter, typed by its signature
             self.env.names["it"] = ("lparam", binding[0], binding[1], 0, None) if binding else ("shadow",)
+            lam_scope = list(self.dscope)
+            self.env.lazy["it"] = lambda: self.c.add(      # declared when the body reads it: it is implicit
+                None, lam_scope, decl=K.PARAMETER, type_text=None, ctx=ctx, modifiers=(), span=False,
+                name="it", implicit=True)
         else:
             for position, p in enumerate(children(params, "lambdaParameter")):
                 # `{ (k, v) -> }` is componentN on the parameter, whose type the callee's signature
@@ -492,9 +500,13 @@ class ExprWalker:
         resolves. It has no implicit receiver of its own unless it writes one (``fun Int.(): ...``),
         in which case the names inside may belong to that receiver and are left alone.
         """
-        outer, depth = self.env, self.lambda_depth
+        outer = self.env
         self.env = outer.child()
-        self.lambda_depth += 1
+        saved = (self.wowner, self.dscope)
+        lambda_name = self.c.lambda_name(".".join(self.dscope))
+        lambda_key = self.c.add(None, list(self.dscope), decl=K.LAMBDA, type_text=None, ctx=ctx, modifiers=(),
+                                name=lambda_name)
+        self.wowner, self.dscope = lambda_key, (*self.dscope, lambda_name)
         self.pending_lambda = None
         own_receiver = False
         for c in ctx.children or []:
@@ -512,6 +524,12 @@ class ExprWalker:
                 self.walk(default)
             name = name_of_identifier(first(p, "simpleIdentifier"))
             self.env.names[name] = ("lparam", None, None, position, declared) if declared else ("shadow",)
+            param_key = self.c.add(first(p, "simpleIdentifier"), list(self.dscope), decl=K.PARAMETER,
+                                   type_text=first(p, "type_").getText() if first(p, "type_") is not None else None,
+                                   ctx=p, modifiers=(), span=False)
+            if first(p, "type_") is not None:
+                self.c.typed(param_key, first(p, "type_"), list(self.dscope))
+            self.env.pkeys[name] = param_key
         result = None
         body = first(ctx, "functionBody")
         for part in (body.children if body is not None else []) or []:
@@ -520,7 +538,8 @@ class ExprWalker:
             else:
                 self.walk(part)
         self.lambda_result = result
-        self.env, self.lambda_depth = outer, depth
+        self.env = outer
+        self.wowner, self.dscope = saved
         if own_receiver:
             self.lambdas.pop()
         return None
@@ -797,7 +816,7 @@ class ExprWalker:
                     binding=self.env.lookup(name),
                 )
                 self.last = occ
-                occ["deref"] = _dereferenced(suffixes[:1]) and (final_mode if final_mode in ("set", "modify") else True)
+                occ["deref"] = _dereferenced(suffixes) and (final_mode if final_mode in ("set", "modify") else True)
                 names_read.append(occ)
                 current = ("name", name, occ["b"])
         elif kind == "thisExpression":
@@ -854,7 +873,7 @@ class ExprWalker:
                     mode=final_mode if last_one else "use",
                 )
                 self.last = occ
-                occ["deref"] = _dereferenced(suffixes[index + 1:index + 2])
+                occ["deref"] = _dereferenced(suffixes[index + 1:])
                 names_read.append(occ)
                 current = ("member", current, name)
             elif sr == "callSuffix":     # invoke: `f(x)(y)`

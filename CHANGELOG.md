@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Kotlin: supertypes (Extend/Implement Couple, implicit bases), Overrides, Use Cast, Throw, Set Init, Couple, Use Constrains Couple, Deref Partial, implicit enum and data-class members; lambdas are scopes with their parameters and locals; explicit imports name library types exactly.
+
 - Kotlin: Gradle lambdas whose receiver depends on a method's own type parameter (`withType(X::class.java)`, `register(name, X::class.java) { }`) are typed; `X::class` and `X::class.java` have types.
 
 * **Kotlin.** `openunderstand.utils.kotlin_parser` parses `.kt` and `.kts`

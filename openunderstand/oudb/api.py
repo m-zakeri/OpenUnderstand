@@ -8,6 +8,7 @@ from openunderstand.oudb.models import _kind_name
 from dataclasses import dataclass
 from functools import reduce
 from openunderstand.ounderstand.parsing_process import process_file
+from openunderstand.metrics import kotlin_metrics
 from openunderstand.metrics.count_decl_method_all import count_decl_method_all
 from openunderstand.metrics.count_decl_class_variable import declare_class_variables
 from openunderstand.metrics.avg_cyclomatic import avg_cyclomatic
@@ -1510,8 +1511,10 @@ class Ent:
         metrics = {}
         known = set(self.metrics())
         # Computed once: it reparses, and the complexity family asks ten times.
+        kotlin = kotlin_metrics.is_kotlin(self)
         bodyless = (
-            _metric_family(self.kindname()) == "method"
+            not kotlin
+            and _metric_family(self.kindname()) == "method"
             and any(m in _BODYLESS_ZERO for m in metric_list)
             and metric_context.declares_without_body(self)
         )
@@ -1582,6 +1585,13 @@ class Ent:
                     else None
                 )
                 continue
+            if kotlin:
+                # Kotlin source is not Java: the text metrics have Kotlin versions (or are unavailable),
+                # and the graph metrics below read references, which Kotlin writes
+                value = kotlin_metrics.compute(self, item)
+                if value is not kotlin_metrics.UNHANDLED:
+                    metrics[item] = value
+                    continue
             if item in _BODYLESS_ZERO and bodyless:
                 metrics[item] = 0
                 continue

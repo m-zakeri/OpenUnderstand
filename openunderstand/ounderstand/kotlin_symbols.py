@@ -947,8 +947,22 @@ class Resolver:
                     hits[0], levels[position + 1:], level
                 ):
                     return AMBIGUOUS
+                if len(hits) > 1 and all(h[0] == "fun" for h in hits):      # one library entity, many overloads
+                    exact = self._exact_overloads(hits)
+                    return ("fun", self._merged([h[1] for h in (exact or hits)]))
                 return hits[0]
         return OPAQUE if unseen else None
+
+    def _exact_overloads(self, hits):
+        """The overloads whose every parameter type is exactly the (known) argument's: Kotlin prefers them
+        (`1..2` is `rangeTo(Int)`, though an `Int` literal also fits `rangeTo(Long)`)."""
+        if self._ctx is None or self._ctx["occ"]["named"]:
+            return []
+        types = self._arg_types()
+        if not types or any(t is None for t in types):
+            return []
+        return [h for h in hits if len(h[1][1]["params"]) == len(types)
+                and all(self._param_ty(h[1][0], h[1][1], i) == t for i, t in enumerate(types))]
 
     def _shadowed_differently(self, hit, later_levels, level) -> bool:
         """Whether a farther level declares a *different* overload the arguments might select.
@@ -1381,7 +1395,7 @@ class Resolver:
                 return ("fun", self._merged(fixed))
             specific = self.most_specific(candidates)
             if specific is not None:
-                return ("fun", self._merged([specific]))
+                return ("fun", self._merged([specific, *(c for c in candidates if c is not specific and _ckey(c) == _ckey(specific))]))
             return AMBIGUOUS
         return ("fun", self._merged(candidates))
 

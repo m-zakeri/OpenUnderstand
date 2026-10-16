@@ -1046,7 +1046,10 @@ class _Collector:
         accessor_env.names["field"] = ("shadow",)
         accessors = self.walker(key, scope, accessor_env)
         for part in ctx.children or []:
-            if rule(part) in ("propertyAccessors", "explicitBackingField"):
+            if rule(part) == "propertyAccessors":
+                for accessor in (c for c in part.children or [] if rule(c) in ("getter", "setter")):
+                    self.accessor(accessors, accessor, key, scope, accessor_env)
+            elif rule(part) == "explicitBackingField":
                 accessors.walk(part)
         owner = None if top_level else ".".join(scope)
         receiver = first(head, "receiverType")
@@ -1061,6 +1064,33 @@ class _Collector:
             self.out.variables[-1]["receiver_expr"] = self.texpr(receiver) if receiver is not None else None
             self.out.variables[-1]["override"] = "override" in mods
             self.out.variables[-1]["set_init"] = len(keys) == 1 and first(head, "expression") is not None
+
+    def accessor(self, walker, ctx, prop_key, scope, env):
+        """``get() = ..`` / ``set(v) { .. }``: a method of the property, its setter parameter a parameter
+        (``value`` when unnamed, an implicit one). Its code is the property's, written against the accessor."""
+        word = "get" if rule(ctx) == "getter" else "set"
+        inner = [*scope, prop_key[0].rsplit(".", 1)[-1]]
+        key = self.add(None, inner, decl=K.METHOD, type_text=None, ctx=ctx, modifiers=("public",), span=True, name=word)
+        param = first(ctx, "setterParameter")
+        child = Env(env)
+        if param is not None:
+            ident = first(param, "simpleIdentifier")
+            declared = first(param, "type_")
+            pkey = self.add(ident, [*inner, word], decl=K.PARAMETER,
+                            type_text=declared.getText() if declared is not None else None, ctx=param,
+                            modifiers=(), span=False)
+            if declared is not None:
+                self.typed(pkey, declared, [*inner, word])
+            child.names[_name(ident)[0]] = ("shadow",)
+            child.pkeys[_name(ident)[0]] = pkey
+        elif word == "set":
+            child.names["value"] = ("shadow",)
+            child.pkeys["value"] = self.add(None, [*inner, word], decl=K.PARAMETER, type_text=None, ctx=ctx,
+                                            modifiers=(), span=False, name="value", implicit=True)
+        saved = (walker.env, walker.wowner, walker.dscope)
+        walker.env, walker.wowner, walker.dscope = child, key, (*inner, word)
+        walker.walk(ctx)
+        walker.env, walker.wowner, walker.dscope = saved
 
     @staticmethod
     def variables(head):
