@@ -1184,7 +1184,12 @@ class Resolver:
             chain = self.class_chain(scope)
             return ("super", chain[0]) if chain else None
         if kind == "name":
-            _, name, binding = desc
+            name, binding = desc[1], desc[2]
+            narrowed = desc[3] if len(desc) > 3 else None
+            if narrowed is not None:                  # a smart cast: `if (x is Foo)` makes `x` a Foo here
+                cast = self.inst(narrowed, {}, kf, scope)
+                if cast is not None and cast[0] in ("class", "lib", "java"):
+                    return cast
             if binding is not None:
                 if binding[0] == "local":
                     entry = self.ix.variables.get(binding[1])

@@ -707,10 +707,13 @@ class _Collector:
         for annotated in children(specs, "annotatedDelegationSpecifier") if specs is not None else []:
             spec = first(annotated, "delegationSpecifier")
             invocation = first(spec, "constructorInvocation") if spec is not None else None
-            if invocation is None:
-                continue
+            delegation = first(spec, "explicitDelegation") if spec is not None else None
             owner = self.primary_keys.get(tuple(scope), class_key)
             env = Env(self.class_envs.get(tuple(scope)))
+            if delegation is not None:                       # `: I by b` reads `b`
+                self.walker(owner, scope, env).walk(first(delegation, "delegateExpression"))
+            if invocation is None:
+                continue
             self.walker(owner, scope, env).header_call(
                 first(invocation, "userType"), first(invocation, "valueArguments")
             )

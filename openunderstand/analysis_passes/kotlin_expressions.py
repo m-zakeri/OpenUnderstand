@@ -135,12 +135,25 @@ class Env:
         self.names: dict = {}
         self.pkeys: dict = {}       # name -> entity key of a declared lambda parameter
         self.lazy: dict = {}        # name -> declare-on-first-use function (the implicit `it`)
+        self.narrow: dict = {}      # name -> type expression a smart cast gives it here
 
     def lookup(self, name: str):
         env = self
         while env is not None:
             if name in env.names:
                 return env.names[name]
+            env = env.parent
+        return None
+
+    def narrowed(self, name: str):
+        """The type expression a smart cast gives ``name`` here, or ``None`` (a nearer declaration of the
+        name ends the search: it is another variable)."""
+        env = self
+        while env is not None:
+            if name in env.narrow:
+                return env.narrow[name]
+            if name in env.names:
+                return None
             env = env.parent
         return None
 
@@ -186,6 +199,7 @@ class ExprWalker:
         self.lambda_depth = 0       # inside an anonymous function: its declarations are not made
         self.wowner = owner         # who references are written against: the innermost lambda, else the owner
         self.dscope = tuple(scope)  # where declarations inside the code go: the innermost lambda's scope
+        self.when_subject = None    # the simple name a `when (x)` tests, for `is T ->` smart casts
         self.receiver_lambda_next = receiver_lambda
         self.pending_lambda = None  # (call id, position) of the lambda being entered
         self.lambda_result = None   # the last statement's descriptor of the lambda just walked
@@ -684,15 +698,163 @@ class ExprWalker:
         return None
 
     def r_whenExpression(self, ctx, mode):
-        outer = self.env
+        outer, outer_subject = self.env, self.when_subject
         self.env = outer.child()
         subject = first(ctx, "whenSubject")
+        self.when_subject = None
         if subject is not None:
             for ident in _identifiers_in(subject, ("variableDeclaration",)):
                 self.env.names[ident] = ("shadow",)
-        self.generic(ctx)
+            if first(subject, "variableDeclaration") is None:
+                self.when_subject = self.simple_name(first(subject, "expression"))
+        subject_name = self.when_subject
+        for child in ctx.children or []:
+            if rule(child) == "whenEntry":
+                self.when_subject = subject_name
+                self.walk_when_entry(child, subject is not None)
+            else:
+                self.walk(child)
+        self.env, self.when_subject = outer, outer_subject
+        return None
+
+    def walk_when_entry(self, ctx, has_subject):
+        """A branch is walked with what its condition proves: ``is T ->`` casts the subject, a condition
+        without a subject (``when { x is T -> }``) proves what an ``if`` would."""
+        conditions = children(ctx, "whenCondition")
+        body = first(ctx, "controlStructureBody")
+        proven = {}
+        if len(conditions) == 1:
+            test = first(conditions[0], "typeTest")
+            if has_subject and test is not None and self.when_subject:
+                if first(test, "isOperator").getText().strip() == "is":
+                    proven = {self.when_subject: self.c.texpr(first(test, "type_"))}
+            elif not has_subject and first(conditions[0], "expression") is not None:
+                proven, _ = self.facts(first(conditions[0], "expression"))
+        for child in ctx.children or []:
+            if child is not body:
+                self.walk(child)
+        self.walk_narrowed(body, proven)
+
+    def walk_narrowed(self, body, proven):
+        if body is None:
+            return
+        outer = self.env
+        self.env = outer.child()
+        self.env.narrow.update(proven)
+        self.walk(body)
+        self.env = outer
+
+    # -- smart casts ---------------------------------------------------------------------
+    def simple_name(self, ctx):
+        """The identifier an expression is, when it is nothing but a name."""
+        while ctx is not None and not isinstance(ctx, TerminalNode):
+            if rule(ctx) == "simpleIdentifier":
+                return ctx.getText()
+            kids = [c for c in ctx.children or [] if not isinstance(c, TerminalNode)]
+            if len(kids) != 1 or len(ctx.children) != 1:
+                return None
+            ctx = kids[0]
+        return None
+
+    def facts(self, ctx):
+        """(proven when the condition is true, proven when it is false): name -> type expression.
+
+        ``x is T`` proves ``T`` when true; ``x !is T`` when false; ``a && b`` proves both when true,
+        ``a || b`` the negation of both when false; ``!c`` swaps them.
+        """
+        while ctx is not None:                      # through wrappers that hold one thing and no operator
+            kids = [c for c in ctx.children or [] if not isinstance(c, TerminalNode)]
+            if rule(ctx) == "parenthesizedExpression" and len(kids) == 1:
+                ctx = kids[0]
+            elif len(ctx.children or []) == 1 and len(kids) == 1:
+                ctx = kids[0]
+            else:
+                break
+        kind = rule(ctx) if ctx is not None else None
+        operands = [c for c in (ctx.children if ctx is not None else []) or [] if not isinstance(c, TerminalNode)]
+        if kind == "conjunction":
+            true = {}
+            for operand in operands:
+                true.update(self.facts(operand)[0])
+            return true, {}
+        if kind == "disjunction":
+            false = {}
+            for operand in operands:
+                false.update(self.facts(operand)[1])
+            return {}, false
+        if kind == "prefixUnaryExpression" and ctx.getText().startswith("!") and len(operands) == 2:
+            true, false = self.facts(operands[-1])
+            return false, true
+        if kind == "infixOperation" and len(operands) == 3 and rule(operands[1]) == "isOperator":
+            name, narrowed = self.simple_name(operands[0]), self.c.texpr(operands[2])
+            if name:
+                return ({name: narrowed}, {}) if operands[1].getText().strip() == "is" else ({}, {name: narrowed})
+        return {}, {}
+
+    @staticmethod
+    def terminates(body) -> bool:
+        """Whether a branch ends by leaving: ``return``, ``throw``, ``break`` or ``continue``."""
+        node = body
+        while node is not None and not isinstance(node, TerminalNode):
+            statements = [c for c in node.children or [] if rule(c) in ("statements", "statement", "block",
+                                                                       "controlStructureBody", "controlStatement")]
+            if not statements or rule(node) == "statement" and not any(rule(c) == "block" for c in node.children):
+                break
+            node = statements[-1]
+        start = node.start.text if node is not None and getattr(node, "start", None) is not None else ""
+        return start in ("return", "throw", "break", "continue") or start.startswith(("return@", "break@", "continue@"))
+
+    def r_ifExpression(self, ctx, mode):
+        condition = first(ctx, "expression")
+        self.walk(condition)
+        proven_true, proven_false = self.facts(condition) if condition is not None else ({}, {})
+        then_body = else_body = None
+        seen_else = False
+        for child in ctx.children or []:
+            if isinstance(child, TerminalNode) and child.getText() == "else":
+                seen_else = True
+            elif rule(child) == "controlStructureBody":
+                if seen_else:
+                    else_body = child
+                else:
+                    then_body = child
+        self.walk_narrowed(then_body, proven_true)
+        self.walk_narrowed(else_body, proven_false)
+        # `if (x !is T) return`: the rest of the block knows what the other branch proved
+        if then_body is not None and else_body is None and self.terminates(then_body):
+            self.env.narrow.update(proven_false)
+        elif else_body is not None and then_body is not None and self.terminates(else_body):
+            self.env.narrow.update(proven_true)
+        return None
+
+    def r_conjunction(self, ctx, mode):
+        return self.walk_short_circuit(ctx, mode, truthy=True)
+
+    def r_disjunction(self, ctx, mode):
+        return self.walk_short_circuit(ctx, mode, truthy=False)
+
+    def walk_short_circuit(self, ctx, mode, truthy):
+        """``a && b`` evaluates ``b`` only when ``a`` held (``a || b`` when it did not)."""
+        operands = [c for c in ctx.children or [] if not isinstance(c, TerminalNode)]
+        if len(operands) == 1:
+            return self.walk(operands[0], mode)
+        outer, proven = self.env, {}
+        for operand in operands:
+            self.env = outer.child()
+            self.env.narrow.update(proven)
+            self.walk(operand)
+            proven.update(self.facts(operand)[0 if truthy else 1])
         self.env = outer
         return None
+
+    def r_delegateExpression(self, ctx, mode):
+        """``class A(b: I) : I by b``: the delegate is an ordinary expression, read by the class."""
+        kids = list(ctx.children or [])
+        suffixes = [c for c in kids[1:] if rule(c) == "delegateSuffix"]
+        if any(rule(children(c)[0]) != "navigationSuffix" for c in suffixes if children(c)):
+            return self.generic(ctx)
+        primary = children(kids[0])[0] if kids and not isinstance(kids[0], TerminalNode) else None
+        return self.chain(primary, [children(c)[0] for c in suffixes], mode)
 
     def r_catchBlock(self, ctx, mode):
         outer = self.env
@@ -819,7 +981,7 @@ class ExprWalker:
                 self.last = occ
                 occ["deref"] = _dereferenced(suffixes) and (final_mode if final_mode in ("set", "modify") else True)
                 names_read.append(occ)
-                current = ("name", name, occ["b"])
+                current = ("name", name, occ["b"], self.env.narrowed(name))
         elif kind == "thisExpression":
             current = ("this",)
         elif kind == "superExpression":
