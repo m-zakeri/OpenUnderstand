@@ -787,16 +787,21 @@ def purge_file(file_entity_id):
     Returns (entities_removed, references_removed).
     """
     flush_reference_writes()
-    define = KindModel.get_or_none(_name="Java Define")
-    declared = set()
-    if define is not None:
-        declared = {
-            ref._ent_id
-            for ref in ReferenceModel.select().where(
-                (ReferenceModel._kind == define._id)
-                & (ReferenceModel._file == file_entity_id)
-            )
-        }
+    # An implicit declaration (an enum's values(), a record's constructor, a lambda's `it`) is declared
+    # by a Define Implicit, and is this file's to remove like any other.
+    defines = [
+        k._id
+        for k in KindModel.select().where(
+            KindModel._name.in_(["Java Define", "Java Define Implicit"])
+        )
+    ]
+    declared = {
+        ref._ent_id
+        for ref in ReferenceModel.select().where(
+            (ReferenceModel._kind.in_(defines))
+            & (ReferenceModel._file == file_entity_id)
+        )
+    }
 
     refs_removed = (
         ReferenceModel.delete().where(ReferenceModel._file == file_entity_id).execute()

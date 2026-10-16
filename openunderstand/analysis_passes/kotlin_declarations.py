@@ -26,10 +26,11 @@ classes, objects and companion objects (a companion is a class named
 ``Companion`` unless named); enum entries; functions; primary and secondary
 constructors; properties (a ``val``/``var`` constructor parameter is one);
 parameters; type parameters; type aliases; and locals and ``for`` variables in
-function bodies. A type alias has no kind of its own, so it is a class-kind
-entity whose ``type`` reads ``typealias <target>``. **Not declared**: anything
-inside a lambda or an anonymous function (an object literal *is* declared: see
-``anonymous``), accessors' parameters, and catch/when-subject variables.
+function bodies, lambdas and anonymous functions (each a ``(lambda_expr_N)`` entity holding its
+parameters, the implicit ``it`` when read, and its locals), property accessors (``get``/``set`` and the
+setter's parameter), and the implicit members of enums and data classes. A type alias has no kind of its
+own, so it is a class-kind entity whose ``type`` reads ``typealias <target>``. **Not declared**:
+catch/when-subject variables.
 
 **Facts for resolution.** Besides the entities, the collector records what
 ``kotlin_symbols`` needs to resolve calls and names later: ``classes`` (supertypes,

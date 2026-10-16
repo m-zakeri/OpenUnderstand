@@ -29,8 +29,9 @@ variable), ``("fun", [keys])`` a local function, and ``None`` a free name.
 the lambda's *receiver* (``apply``, ``with``, a DSL builder), which only the callee
 knows. Each occurrence therefore records the lambdas it sits in as ``(call id,
 argument position)``; the resolver drops the free names in a lambda whose callee
-takes a receiver and keeps the rest. A lambda also hides what it declares: its
-parameters and locals are shadows, never entities.
+takes a receiver and keeps the rest. A lambda is a scope of its own: a
+``(lambda_expr_N)`` entity declares its explicit parameters, the implicit ``it`` (when read) and its locals,
+and references inside are written against it (``occ["w"]``; ``occ["o"]`` stays the semantic owner).
 
 **Operators and infix calls** are calls too: ``a to b`` and ``a shl 2`` call the infix
 function, ``a + b`` calls ``plus`` (and ``- * / % .. ..<`` likewise), ``a < b`` calls
@@ -50,8 +51,8 @@ its iterable, so the resolver can leave a loop over a range, array or string alo
 An anonymous object is declared by the collector (``_Collector.anonymous``) and is a value of its own
 class, ``("lit", longname)``; the header's ``Base(x)`` call is recorded by the creating walker.
 
-An anonymous function is walked like a lambda: its parameters are shadows that carry their written
-type, and it has an implicit receiver only if it writes one.
+An anonymous function is walked and declared like a lambda: its parameters are entities that carry
+their written type, and it has an implicit receiver only if it writes one.
 
 A callable reference is a ``ref`` occurrence at the name after ``::``, with the receiver as for a
 qualified name; it is a read (a ``Use``) of whatever the name finds, with any arity, plus a
@@ -67,7 +68,7 @@ the ``by``; the property is typed by the ``getValue`` call. ``a == b`` and ``a !
 A lambda parameter's destructuring, ``{ (k, v) -> }``, is ``componentN`` on a ``("lparam", ...)``
 value: the parameter's type is the one written (``{ (a, b): Pair<A, B> -> }``) or the first
 parameter of the function type the callee declares for that lambda (``Map.forEach`` takes
-``(Map.Entry<K, V>) -> Unit``). Its names stay shadows, never entities.
+``(Map.Entry<K, V>) -> Unit``). Each destructured name is declared as a parameter of the lambda.
 
 Name-based entries (``(val a = prop)``) read the property and bracketed ``[a, b]`` is ``componentN``
 too. Not resolved: a lambda destructured in any
@@ -496,7 +497,7 @@ class ExprWalker:
     def r_anonymousFunction(self, ctx, mode):
         """``fun(x: Int): Int { ... }`` as a value: a scope like a lambda's, with typed parameters.
 
-        Its parameters are shadows (never entities) but carry their written type, so ``x.foo()``
+        Its parameters are entities that carry their written type, so ``x.foo()``
         resolves. It has no implicit receiver of its own unless it writes one (``fun Int.(): ...``),
         in which case the names inside may belong to that receiver and are left alone.
         """

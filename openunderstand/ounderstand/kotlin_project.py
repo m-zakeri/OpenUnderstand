@@ -40,8 +40,9 @@ writes nothing. ``relabel_nondynamic_calls`` later splits ``Call`` into
 The facts of every file are cached against its mtime and size, because resolving a
 file needs the declarations of the others: an update re-reads only what changed.
 
-Not written: overrides, extends/implements, type arguments, ``Set Init``, infix
-and operator calls, and a Java getter read as a property. A file that does not parse is skipped and reported.
+Also written, after the declarations: supertypes, overrides, casts, ``@Throws``, ``Set Init``, type-parameter
+bounds, implicit supertypes and ``Java Couple`` (see ``_write_supers`` onward). A file that does not parse is
+skipped and reported.
 """
 
 from __future__ import annotations
