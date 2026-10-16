@@ -12,13 +12,13 @@ metrics. A text metric nobody implements for Kotlin (``Essential``, ``Knots``, `
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from functools import lru_cache
 
 from antlr4.tree.Tree import TerminalNode
 
 from openunderstand.analysis_passes.kotlin_tree import rule
 from openunderstand.metrics import context as metric_context
-from openunderstand.oudb.models import _kind_name
 from openunderstand.utils import kotlin_parser
 
 UNHANDLED = object()
@@ -167,23 +167,29 @@ _DECLARATIONS = {"declaration", "secondaryConstructor", "anonymousInitializer", 
 _NESTING = {"ifExpression", "forStatement", "whileStatement", "doWhileStatement", "whenExpression", "tryExpression"}
 
 
+@dataclass(frozen=True)
+class Parsed:
+    tree: object
+    line_offset: int        # lines the wrapper put before the entity's own first line
+    wrapped: bool           # the tree holds a declaration of the wrapper's own, which is not the entity's
+
+
 @lru_cache(maxsize=256)
-def _parse(text: str, kind: str):
+def _parse(text: str, lambda_like: bool) -> Parsed | None:
     """The tree of an entity's own source, wrapped when it is not a file on its own."""
     stripped = text.strip()
     if not stripped:
         return None
-    candidates = [("", 0, 0)]
-    if kind == "lambda" or stripped.startswith(("{", "fun(")):
-        candidates = [("val _l = ", 0, 1)]
+    attempts = [("", "", 0, False)]
+    if lambda_like or stripped.startswith(("{", "fun(")):
+        attempts = [("val _l = ", "", 0, True)]
     elif stripped.startswith(("get", "set")):
-        candidates = [("val _p: Int\n", 1, 1)]
-    candidates.append(("class _W {\n", 1, 1))
-    for prefix, shift, wrapper in candidates:
-        suffix = "\n}" if prefix.startswith("class") else ""
+        attempts = [("val _p: Int\n", "", 1, True)]
+    attempts.append(("class _W {\n", "\n}", 1, True))
+    for prefix, suffix, offset, wrapped in attempts:
         result = kotlin_parser.parse_text(prefix + text + suffix)
         if result.tree is not None and not result.errors:
-            return result.tree, shift, wrapper if prefix else 0
+            return Parsed(result.tree, offset, wrapped)
     return None
 
 
@@ -196,61 +202,50 @@ def _walk(node):
 
 def _tree_metric(ent, name: str):
     text = _text(ent)
-    kind = _kind_name(ent._kind_id) if hasattr(ent, "_kind_id") else ""
+    kind = ent.kindname() or ""
     lambda_like = "Lambda" in kind
-    parsed = _parse(text, "lambda" if lambda_like else "")
+    parsed = _parse(text, lambda_like)
     if parsed is None:
+        if "Constructor" in kind and text.strip().startswith("("):    # a primary constructor: its parameters only
+            return 1 if name.startswith("Cyclomatic") else 0
         return None
-    tree, shift, wrapper = parsed
-    nodes = list(_walk(tree))
-    names = [rule(n) for n in nodes]
     if name == "MaxNesting":
-        return 0 if lambda_like else _max_nesting(tree)
-    if name.startswith("Cyclomatic") or name == "Cyclomatic":
-        return _cyclomatic(nodes, names, name)
-    declarations = max(sum(1 for n in names if n in _DECLARATIONS) - wrapper, 0)   # the wrapper is not the entity's
-    executable = sum(
-        1 for n in nodes if rule(n) == "statement" and not _holds_declaration(n)
-    ) + sum(1 for x in names if x == "controlStatement")
-    if name == "CountStmtDecl":
-        return declarations
-    if name == "CountStmtExe":
-        return executable
-    if name == "CountStmt":
-        return declarations + executable
-    return _line_split(text, nodes, name, shift, wrapper)
+        return 0 if lambda_like else _max_nesting(parsed.tree)
+    nodes = list(_walk(parsed.tree))
+    if name.startswith("Cyclomatic"):
+        return _cyclomatic(nodes, name)
+    if name in ("CountLineCodeDecl", "CountLineCodeExe"):
+        return _line_split(text, nodes, name, parsed)
+    declarations = max(sum(1 for n in nodes if rule(n) in _DECLARATIONS) - parsed.wrapped, 0)
+    executable = sum(1 for n in nodes if rule(n) == "statement" and not _holds_declaration(n)) \
+        + sum(1 for n in nodes if rule(n) == "controlStatement")
+    return {"CountStmtDecl": declarations, "CountStmtExe": executable,
+            "CountStmt": declarations + executable}[name]
 
 
 def _holds_declaration(statement) -> bool:
     return any(rule(c) == "declaration" for c in statement.children or [])
 
 
-def _cyclomatic(nodes, names, name: str) -> int:
+def _is_else(entry) -> bool:
+    return any(isinstance(c, TerminalNode) and c.getText() == "else" for c in entry.children or [])
+
+
+def _cyclomatic(nodes, name: str) -> int:
+    """1 plus the decision points. Strict also counts ``&&`` and ``||``; Modified counts a ``when`` once
+    where the others count each of its branches."""
     value = 1
-    when_entries = 0
-    for node, kind in zip(nodes, names):
+    for node in nodes:
+        kind = rule(node)
         if kind in ("ifExpression", "forStatement", "whileStatement", "doWhileStatement", "catchBlock", "elvis"):
             value += 1
-        elif kind == "whenEntry":
-            if not any(isinstance(c, TerminalNode) and c.getText() == "else" for c in node.children or []):
-                when_entries += 1
+        elif kind == "whenEntry" and not _is_else(node) and name != "CyclomaticModified":
+            value += 1
+        elif kind == "whenExpression" and name == "CyclomaticModified":
+            value += any(rule(n) == "whenEntry" and not _is_else(n) for n in _walk(node))
         elif kind in ("disjunction", "conjunction") and name == "CyclomaticStrict":
-            value += sum(
-                1 for c in node.children or []
-                if isinstance(c, TerminalNode) and c.getText() in ("||", "&&")
-            )
-    if name == "CyclomaticModified":
-        value += sum(1 for n, k in zip(nodes, names) if k == "whenExpression" and _has_condition(n))
-    else:
-        value += when_entries
+            value += sum(1 for c in node.children or [] if isinstance(c, TerminalNode) and c.getText() in ("||", "&&"))
     return value
-
-
-def _has_condition(when) -> bool:
-    return any(
-        rule(n) == "whenEntry" and not any(isinstance(c, TerminalNode) and c.getText() == "else" for c in n.children or [])
-        for n in _walk(when)
-    )
 
 
 def _max_nesting(tree) -> int:
@@ -265,18 +260,11 @@ def _max_nesting(tree) -> int:
     return depth(tree, 0)
 
 
-def _line_split(text: str, nodes, name: str, shift: int, wrapper: int):
+def _line_split(text: str, nodes, name: str, parsed: Parsed):
     """Declarative lines are those a declaration (or an annotation on it) starts on; the rest of the code is
     executable. Java's finer rule (an initialiser's lines are executable) is not carried over."""
     code, _, _, _ = scan(text)
-    wrapper_seen = 0
-    declarative = set()
-    for node in nodes:
-        if rule(node) in _DECLARATIONS and node.start is not None:
-            if wrapper and wrapper_seen < wrapper:
-                wrapper_seen += 1               # the first declaration is the wrapper's own
-                continue
-            declarative.add(node.start.line - 1 - shift)
+    own = [n for n in nodes if rule(n) in _DECLARATIONS and n.start is not None][parsed.wrapped:]
+    declarative = {n.start.line - 1 - parsed.line_offset for n in own}
     decl = sum(1 for i, c in enumerate(code) if c and i in declarative)
-    total = sum(code)
-    return decl if name == "CountLineCodeDecl" else total - decl
+    return decl if name == "CountLineCodeDecl" else sum(code) - decl

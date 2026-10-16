@@ -510,6 +510,14 @@ _POSITIONAL = {
 }
 
 
+def _deref_variant(occ, forward: str, inverse: str):
+    """A name followed by ``.member`` is only partly read, set or modified: Understand's Deref Partial kinds."""
+    if occ["m"] != "use" or not occ.get("deref"):
+        return forward, inverse
+    word = {"set": "Set", "modify": "Modify"}.get(occ["deref"], "Use")
+    return f"Java {word} Deref Partial", f"Java {word}by Deref Partial"
+
+
 def _placeholder(kind: str, longname: str):
     """An external callable or variable named by its long name, as the Java passes name the JDK's."""
     return EntityModel.get_or_create(
@@ -597,7 +605,7 @@ def _write_references(kfile, file_ent, resolver):
         if occ.get("pk") and scope is not None:           # a lambda parameter: nothing else resolves it
             param = _row_at(*occ["pk"])
             if param is not None and not outcome:
-                forward, inverse = _POSITIONAL[occ["m"]]
+                forward, inverse = _deref_variant(occ, *_POSITIONAL[occ["m"]])
                 for name, owner, ent in ((forward, scope, param), (inverse, param, scope)):
                     ReferenceModel.get_or_create(
                         _kind=kind_id(name), _file=file_ent, _line=occ["l"], _column=col_1based(occ["c"]),
@@ -610,11 +618,8 @@ def _write_references(kfile, file_ent, resolver):
                 if row is None:
                     continue
                 forward, inverse = _POSITIONAL[occ["m"] if label == "var" else label]
-                if label == "var" and occ["m"] == "use" and occ.get("deref"):
-                    word = {"set": "Set", "modify": "Modify"}.get(occ["deref"], "Use")
-                    forward, inverse = f"Java {word} Deref Partial", f"Java {word}by Deref Partial"
-                    if word == "Use":
-                        inverse = "Java Useby Deref Partial"
+                if label == "var":
+                    forward, inverse = _deref_variant(occ, forward, inverse)
                 for name, owner, ent in ((forward, scope, row), (inverse, row, scope)):
                     ReferenceModel.get_or_create(
                         _kind=kind_id(name),
