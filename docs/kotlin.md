@@ -31,7 +31,8 @@ default imports) and uses four sources of declarations: the project's Kotlin, th
 Generic types are tracked (`Ty` carries its arguments): calls bind their type parameters from the receiver,
 the explicit `<T>`, the arguments and the lambdas, an expected type fills what is left, and a lambda's
 receiver (`T.() -> R`, Gradle's `Action<T>`) types its free names. A single-type import names its class
-exactly, so a type written through one is referenced even when no index covers the library.
+exactly, so a type written through one is referenced even when no index covers the library. Smart casts
+narrow a name by flow (`if (x is T)`, `x !is T` then `return`, `&&`/`||`, `when (x) { is T -> }`).
 
 ## Metrics
 
@@ -44,7 +45,9 @@ measured. `Essential`, `Knots` and `CountPath*` answer `None` for Kotlin.
 
 ## What is not covered
 
-- Smart casts (`if (x is Foo)` leaves `x` its declared type) and class delegation (`: I by x`).
+- Smart casts through assignments (a narrowed `var` reassigned), `as` statements, and stable member chains
+  (`a.b is Foo`); only simple names are narrowed.
+- The forwarding methods that class delegation (`: I by x`) generates; the delegate itself is read.
 - Libraries no index covers (kotlinx.*, third-party): their members are unresolved placeholders, and the free
   names in a lambda whose receiver cannot be typed are dropped.
 - Gradle's generated per-build accessors (`sourceSets`, `kotlin`); the Gradle index is pinned to 8.14.2.

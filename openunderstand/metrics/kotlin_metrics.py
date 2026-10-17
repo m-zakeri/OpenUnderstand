@@ -12,6 +12,7 @@ metrics. A text metric nobody implements for Kotlin (``Essential``, ``Knots``, `
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from functools import lru_cache
 
@@ -25,13 +26,17 @@ UNHANDLED = object()
 
 #: Text metrics Java derives by reparsing that are not implemented for Kotlin.
 UNAVAILABLE = frozenset(
-    {"Essential", "Knots", "CountPath", "CountPathLog", "MaxEssentialKnots", "MinEssentialKnots"}
+    {"Essential", "Knots", "CountPath", "CountPathLog", "MaxEssentialKnots", "MinEssentialKnots",
+     "AvgEssential", "MaxEssential", "SumEssential"}
 )
 
 _LINE = {"CountLine", "CountLineBlank", "CountLineCode", "CountLineComment", "CountSemicolon",
          "RatioCommentToCode"}
 _TREE = {"CountLineCodeDecl", "CountLineCodeExe", "CountStmt", "CountStmtDecl", "CountStmtExe", "Cyclomatic",
          "CyclomaticModified", "CyclomaticStrict", "MaxNesting"}
+
+
+_PRIMARY = re.compile(r"\s*(?:@\S+\s+|\w+\s+)*?(?:constructor\s*)?\(")
 
 
 def is_kotlin(ent) -> bool:
@@ -175,7 +180,7 @@ class Parsed:
 
 
 @lru_cache(maxsize=256)
-def _parse(text: str, lambda_like: bool) -> Parsed | None:
+def _parse(text: str, lambda_like: bool, accessor: bool = False) -> Parsed | None:
     """The tree of an entity's own source, wrapped when it is not a file on its own."""
     stripped = text.strip()
     if not stripped:
@@ -183,7 +188,7 @@ def _parse(text: str, lambda_like: bool) -> Parsed | None:
     attempts = [("", "", 0, False)]
     if lambda_like or stripped.startswith(("{", "fun(")):
         attempts = [("val _l = ", "", 0, True)]
-    elif stripped.startswith(("get", "set")):
+    elif accessor or stripped.startswith(("get", "set")):
         attempts = [("val _p: Int\n", "", 1, True)]
     attempts.append(("class _W {\n", "\n}", 1, True))
     for prefix, suffix, offset, wrapped in attempts:
@@ -204,9 +209,9 @@ def _tree_metric(ent, name: str):
     text = _text(ent)
     kind = ent.kindname() or ""
     lambda_like = "Lambda" in kind
-    parsed = _parse(text, lambda_like)
+    parsed = _parse(text, lambda_like, (ent.longname() or "").endswith((".get", ".set")))
     if parsed is None:
-        if "Constructor" in kind and text.strip().startswith("("):    # a primary constructor: its parameters only
+        if "Constructor" in kind and _PRIMARY.match(text):    # a primary constructor: its parameters only
             return 1 if name.startswith("Cyclomatic") else 0
         return None
     if name == "MaxNesting":

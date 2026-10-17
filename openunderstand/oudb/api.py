@@ -1533,6 +1533,9 @@ class Ent:
                     or item in graph_metrics.METHOD_SUMMARY
                 ):
                     continue
+                if kotlin and item in kotlin_metrics.UNAVAILABLE:
+                    metrics[item] = None      # a sum of unavailable values is not 0
+                    continue
                 if graph_metrics.aggregates_over_classes(item):
                     over = classes
                 else:

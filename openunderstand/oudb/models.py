@@ -930,6 +930,12 @@ def merge_placeholder_entities():
     if not placeholders:
         return 0
 
+    # A Kotlin project's library types (JUnit, AssertJ, ...) are as fully qualified as the JDK's.
+    external = EXTERNAL_ROOTS + (
+        jdk_index.LIBRARY_ROOTS
+        if EntityModel.select().where(EntityModel._longname.endswith(".kt") | EntityModel._longname.endswith(".kts")).exists()
+        else ()
+    )
     by_simple = {}
     file_kind = kind_id("Java File")
     for e in EntityModel.select():
@@ -964,7 +970,7 @@ def merge_placeholder_entities():
             # `runtime` into a project entity of that name is the
             # bare-simple-name failure, so they are left as written.
             continue
-        if (ghost._longname or "").startswith(EXTERNAL_ROOTS):
+        if (ghost._longname or "").startswith(external):
             # A JDK long name is fully qualified by construction -- it is not a
             # local name a pass failed to qualify, so there is nothing here to
             # resolve. Folding it on the simple name turned

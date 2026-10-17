@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import gzip
 import os
+from contextlib import contextmanager
 from functools import lru_cache
 
 _PATH = os.path.join(os.path.dirname(__file__), "jdk_index.txt.gz")
@@ -35,8 +36,31 @@ _PATH = os.path.join(os.path.dirname(__file__), "jdk_index.txt.gz")
 _EXTRA_PATHS = (os.path.join(os.path.dirname(__file__), "gradle_index.txt.gz"),)
 
 
-@lru_cache(maxsize=1)
+#: Third-party libraries (JUnit, AssertJ, the Kotlin compiler's PSI, ...), indexed by ``scripts/gen_library_index.py``.
+#: Only Kotlin analysis sees them (``libraries()``): Understand writes nothing for such a type from Java, so a
+#: Java project's output must not depend on them.
+_LIBRARY_PATH = os.path.join(os.path.dirname(__file__), "library_index.txt.gz")
+LIBRARY_ROOTS = ("org.junit.", "junit.", "org.assertj.", "org.reactivestreams.", "org.openjdk.jmh.",
+                 "org.jetbrains.kotlin.psi.")
+_with_libraries = [False]
+
+
+@contextmanager
+def libraries():
+    """Make the third-party library index visible for the duration (Kotlin analysis)."""
+    before, _with_libraries[0] = _with_libraries[0], True
+    try:
+        yield
+    finally:
+        _with_libraries[0] = before
+
+
 def _load() -> dict:
+    return _load_variant(_with_libraries[0])
+
+
+@lru_cache(maxsize=2)
+def _load_variant(with_libraries: bool) -> dict:
     types: dict[str, dict] = {}
     by_simple: dict[str, list[str]] = {}
     if not os.path.exists(_PATH):
@@ -44,7 +68,8 @@ def _load() -> dict:
         # simply answers "unknown", which is the same answer the hand-written
         # tables gave for anything they did not list.
         return {"types": types, "by_simple": by_simple}
-    for path in (_PATH, *[p for p in _EXTRA_PATHS if os.path.exists(p)]):
+    extras = [*_EXTRA_PATHS, *([_LIBRARY_PATH] if with_libraries else [])]
+    for path in (_PATH, *[p for p in extras if os.path.exists(p)]):
         _read(path, types, by_simple, extra=path != _PATH)
     return {"types": types, "by_simple": by_simple}
 

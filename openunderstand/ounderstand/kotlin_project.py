@@ -689,6 +689,11 @@ def _write_imports(kfile, file_ent, resolver):
 
 
 def analyse(paths, root: str | None = None) -> kotlin_parser.Summary:
+    with jdk_index.libraries():
+        return _analyse(paths, root)
+
+
+def _analyse(paths, root: str | None = None) -> kotlin_parser.Summary:
     """Parse and write these Kotlin files; with no database bound, only parse.
 
     ``root`` is the project, whose other Kotlin files supply the declarations a
