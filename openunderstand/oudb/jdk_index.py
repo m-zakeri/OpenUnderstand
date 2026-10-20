@@ -41,7 +41,7 @@ _EXTRA_PATHS = (os.path.join(os.path.dirname(__file__), "gradle_index.txt.gz"),)
 #: Java project's output must not depend on them.
 _LIBRARY_PATH = os.path.join(os.path.dirname(__file__), "library_index.txt.gz")
 LIBRARY_ROOTS = ("org.junit.", "junit.", "org.assertj.", "org.reactivestreams.", "org.openjdk.jmh.",
-                 "org.jetbrains.kotlin.psi.")
+                 "org.jetbrains.kotlin.psi.", "org.jetbrains.kotlin.com.intellij.", "kotlinx.coroutines.", "kotlinx.serialization.", "io.ktor.serialization.")
 _with_libraries = [False]
 
 
@@ -440,20 +440,23 @@ def _signatures() -> dict:
                     if len(parts) != 4:
                         continue
                     longname, supers, methods, type_params = parts
-                    overloads, returns = {}, {}
+                    overloads, returns, composites = {}, {}, {}
                     for item in methods.split("|") if methods else ():
                         name, _, rest = item.partition("(")
                         params, _, returned = rest.partition(")")
-                        overloads.setdefault(name, []).append(
-                            tuple(params.split(";")) if params else ()
-                        )
+                        erased = tuple(params.split(";")) if params else ()
+                        if erased not in overloads.setdefault(name, []):     # `>~` can repeat a row
+                            overloads[name].append(erased)
                         if returned.startswith(">?"):
                             returns.setdefault(name, returned[2:])
+                        elif returned.startswith(">~"):
+                            composites.setdefault(name, returned[2:])
                     table[longname] = (
                         supers.split(",") if supers else [],
                         overloads,
                         type_params.split(",") if type_params else [],
                         returns,
+                        composites,
                     )
         _SIGNATURES = table
     return _SIGNATURES
@@ -482,7 +485,7 @@ def returned_type_parameter(longname: str, member: str):
         if current in seen or current not in table:
             continue
         seen.add(current)
-        supers, overloads, _, returns = table[current]
+        supers, overloads, _, returns, _ = table[current]
         if member in overloads:
             # Declared here. Its variable is named as *this* type names it;
             # the receiver's parameter of the same name is the one bound, the
@@ -492,6 +495,24 @@ def returned_type_parameter(longname: str, member: str):
         pending.extend(supers)
     return None
 
+
+
+def composite_return(longname: str, member: str):
+    """``(the declaring type, its type parameters, the return type as written)`` for ``longname.member()`` when it
+    returns a parameterised type built from the declaring type's own parameters: ``Map<K, V>.entrySet()`` is
+    ``java.util.Set<java.util.Map$Entry<K,V>>``. ``None`` otherwise, or when no type in the hierarchy says."""
+    table = _signatures()
+    seen, pending = set(), [longname]
+    while pending:
+        current = pending.pop(0)
+        if current in seen or current not in table:
+            continue
+        seen.add(current)
+        supers, overloads, params, _, composites = table[current]
+        if member in overloads:
+            return (current, params, composites[member]) if member in composites else None
+        pending.extend(supers)
+    return None
 
 
 #: Box -> its primitive. symbol_table derives the other direction from it.

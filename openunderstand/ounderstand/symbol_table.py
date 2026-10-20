@@ -655,19 +655,22 @@ def build(root: str) -> _DeclarationIndex:
         }
 
     seen = set()
-    for path in _java_files(root):
+    contributions = [(path, collect) for path in _java_files(root)]
+    contributions += [(path, _kotlin_collect) for path in _kotlin_files(root)]      # what Java sees of the Kotlin
+    for path, collector in contributions:
         seen.add(path)
         key = _stat_key(path)
         cached = _FILE_FACTS.get(path)
         if cached is not None and cached[0] == key and key is not None:
             facts = cached[1]
         else:
-            facts = collect(path)
+            facts = collector(path)
             if facts is None:
                 _FILE_FACTS.pop(path, None)
                 continue
             _FILE_FACTS[path] = (key, facts)
-        index.files += 1
+        if collector is collect:
+            index.files += 1
         index.supertypes.update(facts["supertypes"])
         index.methods.update(facts["methods"])
         index.overloads.update(facts["overloads"])
@@ -1201,6 +1204,21 @@ def resolve_type(
     package, and the reference is attributed to the wrong class.
     """
     return INDEX.resolve_type(simple_name, scope_longname, local_only)
+
+
+def _kotlin_files(root: str):
+    """The project's Kotlin files, or none: a Java-only project never touches the Kotlin side."""
+    from openunderstand.utils import kotlin_parser
+
+    return kotlin_parser.find_files(root)
+
+
+def _kotlin_collect(path):
+    """A Kotlin file's contribution to the index (``kotlin_interop``), or None when it will not parse."""
+    from openunderstand.ounderstand import kotlin_interop, kotlin_project
+
+    facts, _ = kotlin_project._facts(path, fresh=False)
+    return kotlin_interop.contribution(facts) if facts is not None else None
 
 
 def _java_files(root: str):

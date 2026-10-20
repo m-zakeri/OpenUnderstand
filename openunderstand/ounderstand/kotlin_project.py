@@ -57,12 +57,15 @@ from openunderstand.oudb.models import (
     col_1based,
     entity_rows,
     flush_reference_writes,
+    forget_entity_rows,
+    is_placeholder_kind,
     _kind_name,
     kind_family,
     kind_id,
 )
 from openunderstand.oudb import jdk_index, kotlin_index
 from openunderstand.ounderstand import kotlin_symbols
+from openunderstand.utils import kind_names as K
 from openunderstand.utils import kotlin_parser
 
 logger = logging.getLogger(__name__)
@@ -131,13 +134,50 @@ def _write_package(p, kfile, file_ent):
     return p.getUnnamedPackageEntity(file_ent)
 
 
-def _write_declarations(p, kfile):
+def _forwarding_methods(kfile, resolver) -> list:
+    """The methods ``class A(b: I) : I by b`` generates: one per member of a project interface ``I`` that
+    ``A`` does not declare, as ``Define Implicit`` (the way a data class's ``componentN`` is). A library
+    interface is left alone: its members come from an index, not from the code being analysed."""
+    ix = resolver.ix
+    out = []
+    for sup in kfile.supers:
+        if not sup.get("delegated"):
+            continue
+        target = resolver.type_name(sup["name"], kfile, sup["enclosing"])
+        if target is None or target[0] != "class" or target[1] not in ix.classes:
+            continue
+        if target[1].startswith("kotlin."):
+            continue
+        owner = sup["owner"][0]
+        own = {(name, len(r["params"])) for name, lst in ix.members_funs.get(owner, {}).items() for _, r in lst}
+        seen = set()
+        for level in resolver.hierarchy(target):
+            if level[0] != "class" or level[1].startswith("kotlin."):
+                continue
+            for name, lst in ix.members_funs.get(level[1], {}).items():
+                for _, r in lst:
+                    key = (name, len(r["params"]))
+                    if key in own or key in seen or "private" in (r.get("vis") or ()):
+                        continue
+                    seen.add(key)
+                    out.append({
+                        "contents": "", "type": None, "decl": K.METHOD, "modifiers": ["public"], "span": None,
+                        "parent": kfile.package,
+                        "scope": owner.rsplit(".", 1)[-1],
+                        "ent": name, "scope_longname": owner, "ent_longname": f"{owner}.{name}",
+                        "line": sup["line"], "col": sup["col"], "implicit": True,
+                    })
+    return out
+
+
+def _write_declarations(p, kfile, resolver=None):
     from openunderstand.ounderstand import project as project_module
 
     file_ent = _file_entity(kfile.path)
     project_module.CURRENT_FILE["ent"] = file_ent
     package = _write_package(p, kfile, file_ent)
-    p.addDefineRefs(kfile.defines, file_ent)
+    forwarded = _forwarding_methods(kfile, resolver) if resolver is not None else []
+    p.addDefineRefs([*kfile.defines, *forwarded], file_ent)
     for name, longname, line, col in kfile.top_types:
         ent = _row_at(longname, line, col)
         if ent is None or package is None:
@@ -511,6 +551,25 @@ _POSITIONAL = {
 }
 
 
+def _fold_facades(kfiles) -> None:
+    """Java reaches a top-level function through its file's facade class, ``FooKt.helper(2)``: the Java passes
+    made an entity ``p.FooKt.helper`` at the function's position (``kotlin_interop``), and that is the Kotlin
+    entity ``p.helper``. Re-point what refers to the first at the second and drop it."""
+    from openunderstand.ounderstand import kotlin_interop
+
+    for kfile in kfiles:
+        for callable_, ghost_name in kotlin_interop.facade_functions(kfile):
+            ghost = _row_at(ghost_name, *callable_["key"][1:]) if entity_rows(ghost_name) else None
+            real = _row_at(*callable_["key"])
+            if ghost is None or real is None or ghost._id == real._id or not is_placeholder_kind(ghost._kind_id):
+                continue
+            for field in (ReferenceModel._ent, ReferenceModel._scope):
+                ReferenceModel.update({field: real._id}).where(field == ghost._id).execute()
+            EntityModel.update({EntityModel._parent: real._id}).where(EntityModel._parent == ghost._id).execute()
+            ghost.delete_instance()
+            forget_entity_rows()
+
+
 def _deref_variant(occ, forward: str, inverse: str):
     """A name followed by ``.member`` is only partly read, set or modified: Understand's Deref Partial kinds."""
     if occ["m"] != "use" or not occ.get("deref"):
@@ -619,7 +678,8 @@ def _write_references(kfile, file_ent, resolver):
                 if row is None:
                     continue
                 forward, inverse = _POSITIONAL[occ["m"] if label == "var" else label]
-                if label == "var":
+                # a library property is a placeholder, and a partial dereference is of a variable the project declares
+                if label == "var" and not is_placeholder_kind(row._kind_id):
                     forward, inverse = _deref_variant(occ, forward, inverse)
                 for name, owner, ent in ((forward, scope, row), (inverse, row, scope)):
                     ReferenceModel.get_or_create(
@@ -726,7 +786,7 @@ def _analyse(paths, root: str | None = None) -> kotlin_parser.Summary:
     written = []
     with ReferenceModel._meta.database.atomic():
         for kfile in facts:
-            written.append((kfile, _write_declarations(p, kfile)))
+            written.append((kfile, _write_declarations(p, kfile, resolver)))
         for kfile, file_ent in written:
             _write_typed(kfile, file_ent)
             _write_super_qualifiers(kfile, file_ent)
@@ -743,6 +803,8 @@ def _analyse(paths, root: str | None = None) -> kotlin_parser.Summary:
             _write_set_inits(kfile, file_ent)
             _write_references(kfile, file_ent, resolver)
             _write_imports(kfile, file_ent, resolver)
+        flush_reference_writes()
+        _fold_facades([kfile for kfile, _ in written])
         _write_couples(written)
         flush_reference_writes()
     summary.analysed = len(written)

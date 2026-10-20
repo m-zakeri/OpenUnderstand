@@ -275,7 +275,8 @@ class _Collector:
                 last = _name(first(parts[-1], "simpleIdentifier"))
                 self.out.supers.append(
                     {"owner": key, "name": user_type_name(user), "line": last[1], "col": last[2],
-                     "ctor": rule(inner) == "constructorInvocation", "enclosing": list(scope)}
+                     "ctor": rule(inner) == "constructorInvocation", "enclosing": list(scope),
+                     "delegated": rule(inner) == "explicitDelegation"}
                 )
                 self.type_arguments(spec, key, scope)        # `: Comparable<Point>`
                 if len(parts) > 1:
@@ -337,6 +338,12 @@ class _Collector:
         for file_annotation in children(tree, "fileAnnotation"):      # `@file:JvmName("X")`: the file's own
             for body in children(file_annotation, "unescapedAnnotation"):
                 self.annotation_body(body, FILE_OWNER, self.package)
+        env = Env(None)
+        for statement in children(tree, "statement"):                   # a script: `build.gradle.kts`
+            if first(statement, "declaration") is not None:
+                self.declaration(first(statement, "declaration"), self.package, top_level=True, in_object=False)
+            else:
+                self.walker(FILE_OWNER, list(self.package), env).walk(statement)
         for top in children(tree, "topLevelObject"):
             member = first(top, "memberPropertyDeclaration")
             if member is not None:

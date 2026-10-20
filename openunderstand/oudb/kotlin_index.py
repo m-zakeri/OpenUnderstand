@@ -29,6 +29,9 @@ _PATH = os.path.join(os.path.dirname(__file__), "kotlin_index.txt.gz")
 
 #: More ``@F`` rows read the same way: Gradle's Kotlin DSL extensions (``scripts/gen_gradle_dsl_index.py``).
 _EXTRA_PATHS = (os.path.join(os.path.dirname(__file__), "gradle_dsl_index.txt.gz"),)
+#: The top-level functions and properties of Kotlin libraries, from their compiled metadata
+#: (``scripts/gen_kotlin_library_index.py``). A package the analysed project declares too is the project's own.
+_LIBRARY_PATH = os.path.join(os.path.dirname(__file__), "kotlin_library_index.txt.gz")
 
 #: What every Kotlin/JVM file sees without importing, lowest precedence of all
 #: (after the file's own scope, its package, and its explicit and `*` imports).
@@ -61,12 +64,24 @@ def _expr(text):
 @lru_cache(maxsize=1)
 def _load() -> dict:
     data = {"types": {}, "supers": {}, "aliases": {}, "functions": [], "properties": [], "data": {},
-            "tparams": {}, "super_exprs": {}, "alias_exprs": {}}
+            "tparams": {}, "super_exprs": {}, "alias_exprs": {}, "third_party": set()}
     if not os.path.exists(_PATH):
         return data
     for path in (_PATH, *[p for p in _EXTRA_PATHS if os.path.exists(p)]):
         _read(path, data)
+    if os.path.exists(_LIBRARY_PATH):
+        before = len(data["functions"]), len(data["properties"])
+        _read(_LIBRARY_PATH, data)
+        for row in data["functions"][before[0]:]:
+            data["third_party"].add(row[1][1:])
+        for row in data["properties"][before[1]:]:
+            data["third_party"].add(row[0][1:])
     return data
+
+
+def third_party_packages() -> frozenset:
+    """Packages whose top-level declarations come from a third-party Kotlin library's metadata."""
+    return frozenset(_load()["third_party"])
 
 
 def _read(path, data):

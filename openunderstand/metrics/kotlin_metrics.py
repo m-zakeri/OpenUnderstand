@@ -12,13 +12,14 @@ metrics. A text metric nobody implements for Kotlin (``Essential``, ``Knots``, `
 
 from __future__ import annotations
 
+import math
 import re
 from dataclasses import dataclass
 from functools import lru_cache
 
 from antlr4.tree.Tree import TerminalNode
 
-from openunderstand.analysis_passes.kotlin_tree import rule
+from openunderstand.analysis_passes.kotlin_tree import children, first, rule
 from openunderstand.metrics import context as metric_context
 from openunderstand.utils import kotlin_parser
 
@@ -26,13 +27,12 @@ UNHANDLED = object()
 
 #: Text metrics Java derives by reparsing that are not implemented for Kotlin.
 UNAVAILABLE = frozenset(
-    {"Essential", "Knots", "CountPath", "CountPathLog", "MaxEssentialKnots", "MinEssentialKnots",
-     "AvgEssential", "MaxEssential", "SumEssential"}
+    {"MaxEssentialKnots", "MinEssentialKnots"}
 )
 
 _LINE = {"CountLine", "CountLineBlank", "CountLineCode", "CountLineComment", "CountSemicolon",
          "RatioCommentToCode"}
-_TREE = {"CountLineCodeDecl", "CountLineCodeExe", "CountStmt", "CountStmtDecl", "CountStmtExe", "Cyclomatic",
+_TREE = {"Essential", "Knots", "CountPath", "CountPathLog", "CountLineCodeDecl", "CountLineCodeExe", "CountStmt", "CountStmtDecl", "CountStmtExe", "Cyclomatic",
          "CyclomaticModified", "CyclomaticStrict", "MaxNesting"}
 
 
@@ -217,6 +217,17 @@ def _tree_metric(ent, name: str):
     if name == "MaxNesting":
         return 0 if lambda_like else _max_nesting(parsed.tree)
     nodes = list(_walk(parsed.tree))
+    if name in ("CountPath", "CountPathLog"):
+        return _count_path(nodes, name, parsed)
+    if name in ("Essential", "Knots"):
+        from openunderstand.metrics import kotlin_flow
+
+        body = _body_of(nodes, parsed)
+        if body is False:
+            return None
+        if body is None:
+            return 0
+        return kotlin_flow.essential(body) if name == "Essential" else kotlin_flow.knots(body)
     if name.startswith("Cyclomatic"):
         return _cyclomatic(nodes, name)
     if name in ("CountLineCodeDecl", "CountLineCodeExe"):
@@ -265,11 +276,141 @@ def _max_nesting(tree) -> int:
     return depth(tree, 0)
 
 
+def _declaration_lines(declaration) -> set:
+    """The lines a declaration is declarative on: every line of its annotations and the line its keyword
+    (or name) is on, as in Java. The lines of an initialiser or body after that are executable."""
+    lines = {declaration.start.line}
+    for node in _walk(declaration):
+        if rule(node) == "annotation" and rule(node.parentCtx) == "modifiers" and node.stop is not None:
+            lines.update(range(node.start.line, node.stop.line + 1))
+    inner = declaration.children[0] if rule(declaration) == "declaration" and declaration.children else declaration
+    for child in inner.children or []:
+        if rule(child) != "modifiers" and getattr(child, "start", None) is not None:
+            lines.add(child.start.line)
+            break
+    return lines
+
+
 def _line_split(text: str, nodes, name: str, parsed: Parsed):
     """Declarative lines are those a declaration (or an annotation on it) starts on; the rest of the code is
     executable. Java's finer rule (an initialiser's lines are executable) is not carried over."""
     code, _, _, _ = scan(text)
     own = [n for n in nodes if rule(n) in _DECLARATIONS and n.start is not None][parsed.wrapped:]
-    declarative = {n.start.line - 1 - parsed.line_offset for n in own}
+    declarative = set()
+    for n in own:
+        declarative.update(line - 1 - parsed.line_offset for line in _declaration_lines(n))
     decl = sum(1 for i, c in enumerate(code) if c and i in declarative)
     return decl if name == "CountLineCodeDecl" else sum(code) - decl
+
+
+# -- paths -------------------------------------------------------------------------------------
+_MAX_PATHS = 10**9
+_RUNS, _LEAVES = (1, 0), (0, 1)
+
+
+def _count_path(nodes, name: str, parsed: Parsed):
+    """Understand's CountPath for Java (``metrics/count_path.py``) transposed: how many ways a body can
+    complete, plus how many paths leave it from inside. Boolean operators do not count; a ``return``
+    ends its path. ``when`` is a switch (one more path without an ``else``), ``?:`` and lambdas run."""
+    body = _body_of(nodes, parsed)
+    if body is False:
+        return None
+    complete, exits = (0, 0) if body is None else _flow(body)
+    total = min(complete + exits, _MAX_PATHS) if body is not None else 0
+    total = total or (1 if body is not None else 0)
+    return total if name == "CountPath" else round(math.log10(max(total, 1)))
+
+
+def _body_of(nodes, parsed: Parsed):
+    """The entity's own body: ``None`` when it has none (an abstract member), ``False`` when not found."""
+    for node in nodes[parsed.wrapped:]:
+        kind = rule(node)
+        if kind in ("functionDeclaration", "getter", "setter"):
+            body = first(node, "functionBody")
+            return body if body is not None else None
+        if kind == "secondaryConstructor":
+            return first(node, "block")
+        if kind == "lambdaLiteral":
+            return first(node, "statements")
+        if kind == "anonymousInitializer":
+            return first(node, "block")
+    return False
+
+
+def _sequence(statements):
+    alive, exits = 1, 0
+    for statement in statements:
+        complete, escaped = _flow(statement)
+        exits = min(exits + alive * escaped, _MAX_PATHS)
+        alive = min(alive * complete, _MAX_PATHS)
+    return alive, exits
+
+
+def _unwrap(node):
+    """Down through the one-child expression levels to what the statement actually is."""
+    while node is not None and not isinstance(node, TerminalNode):
+        kids = [c for c in node.children or [] if not isinstance(c, TerminalNode)]
+        if rule(node) in ("ifExpression", "whenExpression", "tryExpression", "jumpExpression", "forStatement",
+                          "whileStatement", "doWhileStatement", "block", "statements", "controlStructureBody"):
+            return node
+        if len(kids) != 1 or len(node.children) != 1:
+            return node
+        node = kids[0]
+    return node
+
+
+def _flow(node):
+    node = _unwrap(node)
+    kind = rule(node)
+    if node is None or isinstance(node, TerminalNode):
+        return _RUNS
+    if kind in ("functionBody",):
+        inner = first(node, "block")
+        return _flow(inner if inner is not None else first(node, "expression"))
+    if kind in ("block", "statements"):
+        return _sequence(children(first(node, "statements") if kind == "block" and first(node, "statements") is not None
+                                  else node, "statement"))
+    if kind == "controlStructureBody":
+        return _flow(first(node, "block") or first(node, "statement") or first(node, "controlStatement"))
+    if kind in ("statement", "controlStatement"):
+        if first(node, "declaration") is not None:
+            return _RUNS
+        return _flow(first(node, "loopStatement") or first(node, "expressionStatement"))
+    if kind == "loopStatement":
+        return _flow(node.children[0])
+    if kind == "expressionStatement":
+        if len([c for c in node.children or [] if not (isinstance(c, TerminalNode) and not c.getText().strip())]) != 1:
+            return _RUNS                                        # an assignment
+        return _flow(first(node, "expression"))
+    if kind == "ifExpression":
+        bodies = children(node, "controlStructureBody")
+        seen_else = any(isinstance(c, TerminalNode) and c.getText() == "else" for c in node.children or [])
+        then_c, then_e = _flow(bodies[0]) if bodies else _RUNS
+        else_c, else_e = _flow(bodies[1]) if seen_else and len(bodies) > 1 else _RUNS
+        return min(then_c + else_c, _MAX_PATHS), min(then_e + else_e, _MAX_PATHS)
+    if kind in ("forStatement", "whileStatement"):
+        body_c, body_e = _flow(first(node, "controlStructureBody"))
+        return min(body_c + 1, _MAX_PATHS), body_e
+    if kind == "doWhileStatement":
+        return _flow(first(node, "controlStructureBody"))
+    if kind == "whenExpression":
+        complete = exits = 0
+        has_else = False
+        for entry in children(node, "whenEntry"):
+            has_else = has_else or _is_else(entry)
+            entry_c, entry_e = _flow(first(entry, "controlStructureBody"))
+            complete, exits = complete + entry_c, exits + entry_e
+        return min(complete + (0 if has_else else 1), _MAX_PATHS), min(exits, _MAX_PATHS)
+    if kind == "tryExpression":
+        blocks = children(node, "block")
+        complete, exits = _flow(blocks[0]) if blocks else _RUNS
+        for clause in children(node, "catchBlock"):
+            catch_c, catch_e = _flow(first(clause, "block"))
+            complete, exits = complete + catch_c, exits + catch_e
+        for final in children(node, "finallyBlock"):
+            complete *= _flow(first(final, "block"))[0]
+        return min(complete, _MAX_PATHS), min(exits, _MAX_PATHS)
+    if kind == "jumpExpression":
+        start = node.start.text if node.start is not None else ""
+        return _LEAVES if start in ("return", "throw", "break", "continue") else _RUNS
+    return _RUNS

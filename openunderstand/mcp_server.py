@@ -198,50 +198,87 @@ def list_entities(kind: str = "", limit: int = 100) -> str:
 def entity_references(longname: str, reference_kind: str = "", limit: int = 100) -> str:
     """References whose scope is this entity.
 
+    Overloads share a long name, so a method's references are those of every
+    overload; with more than one, each row's `declared_at` says which.
+
     reference_kind: e.g. "Call", "Define", "Use". Same filter grammar as kind.
     """
     db = _require_db()
     ents, _ = _quiet(db.ents)
-    match = next((e for e in ents if e.longname() == longname), None)
-    if match is None:
+    matches = [e for e in ents if e.longname() == longname]
+    if not matches:
         raise ValueError(f"no entity with longname {longname!r}")
-    refs, _ = _quiet(match.refs, reference_kind or None)
+    refs = []
+    for match in matches:
+        found, _ = _quiet(match.refs, reference_kind or None)
+        refs += [(match, ref) for ref in found]
     rows = []
     by_id = {e._id: e for e in ents}
-    for ref in refs[:limit]:
+    for match, ref in refs[:limit]:
         target = by_id.get(ref._ent)
-        rows.append(
-            {
-                "kind": ref.kindname(),
-                "entity": target.longname() if target else None,
-                "file": ref.file().longname(),
-                "line": ref.line(),
-                "column": ref.column(),
-            }
-        )
+        row = {
+            "kind": ref.kindname(),
+            "entity": target.longname() if target else None,
+            "file": ref.file().longname(),
+            "line": ref.line(),
+            "column": ref.column(),
+        }
+        if len(matches) > 1:
+            row["declared_at"] = _symbol(match).get("line")
+        rows.append(row)
     return json.dumps(
-        {"entity": longname, "total": len(refs), "references": rows}, indent=2
+        {
+            "entity": longname,
+            "overloads": len(matches),
+            "total": len(refs),
+            "references": rows,
+        },
+        indent=2,
     )
 
 
 def entity_metrics(longname: str, metrics: list[str] | None = None) -> str:
-    """Metric values for an entity. Omit `metrics` for every available name."""
+    """Metric values for an entity. Omit `metrics` for every available name.
+
+    Overloads share a long name and each has its own values, so with more than
+    one the answer is an `overloads` list, one entry per declaration.
+    """
     db = _require_db()
     ents, _ = _quiet(db.ents)
-    match = next((e for e in ents if e.longname() == longname), None)
-    if match is None:
+    matches = [e for e in ents if e.longname() == longname]
+    if not matches:
         raise ValueError(f"no entity with longname {longname!r}")
-    names = metrics or match.metrics()
-    values = {}
-    for name in names:
-        try:
-            result, _ = _quiet(match.metric, [name])
-            if result.get(name) is not None:
-                values[name] = result[name]
-        except NotImplementedError:
-            continue
+
+    def values(match):
+        found = {}
+        for name in metrics or match.metrics():
+            try:
+                result, _ = _quiet(match.metric, [name])
+                if result.get(name) is not None:
+                    found[name] = result[name]
+            except NotImplementedError:
+                continue
+        return found
+
+    if len(matches) == 1:
+        match = matches[0]
+        return json.dumps(
+            {"entity": longname, "kind": match.kindname(), "metrics": values(match)},
+            indent=2,
+        )
     return json.dumps(
-        {"entity": longname, "kind": match.kindname(), "metrics": values}, indent=2
+        {
+            "entity": longname,
+            "overloads": [
+                {
+                    "declared_at": _symbol(m).get("line"),
+                    "kind": m.kindname(),
+                    "metrics": values(m),
+                }
+                for m in matches
+            ],
+        },
+        indent=2,
     )
 
 

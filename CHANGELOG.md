@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### Kotlin
+- Third-party libraries are indexed for Kotlin only (`jdk_index.libraries()`): JUnit, AssertJ, JMH, reactive-streams,
+  the compiler's PSI and kotlinx.coroutines/serialization/Ktor classes from their jars, and those libraries'
+  top-level and extension functions from their compiled Kotlin metadata (`scripts/gen_library_index.py`,
+  `scripts/gen_kotlin_library_index.py`). Java output is unchanged.
+- Gradle Kotlin scripts are analysed: `this` is the Project, Settings or Gradle, with the DSL's default imports.
+- Java calls into Kotlin resolve in mixed projects (`kotlin_interop`), including top-level functions via `FooKt`.
+- Smart casts follow dotted paths, `x as T` statements and `require`/`check`; an assignment ends them.
+- Overloaded callable references are chosen by the function type they are passed as; a vararg may precede
+  defaulted parameters; the most specific imported extension wins; composite JDK returns (`entrySet()`) keep
+  their arguments; a library property in mid-chain is a `Use`.
+- Class delegation declares the forwarding methods; annotations on statements, lambdas and loop variables are read.
+- Metrics: `CountPath`, `CountPathLog`, `Essential`, `Knots` and the Essential roll-ups (Java's rules transposed), annotation lines as declarative.
+- Gradle's generated accessors for the core plugins type their lambda; `apply(plugin = ...)` is not the stdlib `apply`.
+
 - Kotlin: supertypes (Extend/Implement Couple, implicit bases), Overrides, Use Cast, Throw, Set Init, Couple, Use Constrains Couple, Deref Partial, implicit enum and data-class members; lambdas are scopes with their parameters and locals; explicit imports name library types exactly.
 
 - Kotlin: Gradle lambdas whose receiver depends on a method's own type parameter (`withType(X::class.java)`, `register(name, X::class.java) { }`) are typed; `X::class` and `X::class.java` have types.

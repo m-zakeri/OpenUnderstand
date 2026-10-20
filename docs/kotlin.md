@@ -45,14 +45,24 @@ measured. `Essential`, `Knots` and `CountPath*` answer `None` for Kotlin.
 
 ## What is not covered
 
-- Smart casts through assignments (a narrowed `var` reassigned), `as` statements, and stable member chains
-  (`a.b is Foo`); only simple names are narrowed.
-- The forwarding methods that class delegation (`: I by x`) generates; the delegate itself is read.
-- Libraries no index covers (kotlinx.*, third-party): their members are unresolved placeholders, and the free
-  names in a lambda whose receiver cannot be typed are dropped.
-- Gradle's generated per-build accessors (`sourceSets`, `kotlin`); the Gradle index is pinned to 8.14.2.
-- Java code calling Kotlin: the Java symbol table does not see `.kt` files.
-- Variance and bounds as inference constraints, and composite JDK generic returns such as `entrySet()`.
+- A narrowed `var` that is reassigned inside a loop before the test, and smart casts through function calls
+  other than `require`/`check`. Names and dotted paths (`a.b is Foo`) are narrowed; an assignment ends the cast.
+- Class delegation to a **library** interface and delegated properties: only the forwarding methods of a project
+  interface are declared (`Define Implicit`).
+- Libraries without an index. Indexed: the stdlib, the JDK, the Gradle API and Kotlin DSL, JUnit 3/4/5, AssertJ,
+  reactive-streams, JMH, the Kotlin compiler's PSI, kotlinx.coroutines, kotlinx.serialization and Ktor's
+  serialization (`library_index`, `kotlin_library_index`). Anything else is unresolved.
+- Gradle's generated accessors: `java { }`, `sourceSets { }`, `base`, `application`, `publishing`, `reporting`
+  and `testing` give their lambda the extension as receiver (`GRADLE_ACCESSORS`); the accessor call itself and
+  per-configuration ones (`implementation(...)`) name no declaration. The Gradle index is pinned to 8.14.2.
+  A `.gradle.kts` script runs with `Project`/`Settings`/`Gradle` as `this`.
+- Java calling Kotlin works for classes, constructors, member functions, companions, `INSTANCE` and top-level
+  functions through the facade (`FooKt.helper()`); property accessors (`getName()`), `@JvmStatic` shortcuts,
+  `internal` members and an implicit default constructor stay unresolved.
+- Variance (`in`/`out`) and bounds as inference constraints; the bounds of the stdlib's own type parameters.
+- `MaxEssentialKnots` and `MinEssentialKnots` are `None` for Kotlin. `Essential`, `Knots`, `CountPath` and
+  `CountPathLog` are Java's rules transposed over a neutral statement tree (`metrics/kotlin_flow.py`; a `when` entry
+  never falls through and a `break` in a `when` leaves the loop). No Kotlin metric is measured against Understand.
 
 ## Working on it
 

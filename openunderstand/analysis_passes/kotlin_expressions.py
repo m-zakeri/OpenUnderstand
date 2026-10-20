@@ -82,6 +82,8 @@ arguments in ``targs``.
 
 from __future__ import annotations
 
+import re
+
 from antlr4.tree.Tree import TerminalNode
 
 from openunderstand.utils import kind_names as K
@@ -123,6 +125,9 @@ _LITERALS = {
 }
 
 
+_CALLABLE_REFERENCE = re.compile(r"^[\w.?]*::[A-Za-z_]\w*$")
+_ACCESS_PATH = re.compile(r"^[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*$")
+
 #: The value of an expression whose type this pass cannot describe, used as a receiver.
 UNKNOWN = ("unknown",)
 
@@ -156,6 +161,14 @@ class Env:
                 return None
             env = env.parent
         return None
+
+    def forget(self, path: str) -> None:
+        """An assignment to ``path`` ends every smart cast of it and of what hangs off it (``a`` and ``a.b``)."""
+        env = self
+        while env is not None:
+            for key in [k for k in env.narrow if k == path or k.startswith(path + ".")]:
+                del env.narrow[key]
+            env = env.parent
 
     def pkey(self, name: str):
         env = self
@@ -199,6 +212,7 @@ class ExprWalker:
         self.lambda_depth = 0       # inside an anonymous function: its declarations are not made
         self.wowner = owner         # who references are written against: the innermost lambda, else the owner
         self.dscope = tuple(scope)  # where declarations inside the code go: the innermost lambda's scope
+        self.last_ref = None        # the occurrence of the callable reference just walked
         self.when_subject = None    # the simple name a `when (x)` tests, for `is T ->` smart casts
         self.receiver_lambda_next = receiver_lambda
         self.pending_lambda = None  # (call id, position) of the lambda being entered
@@ -284,6 +298,35 @@ class ExprWalker:
         suffixes = [children(c)[0] for c in kids[1:]]
         return self.chain(primary, suffixes, mode)
 
+    def read_annotations(self, nodes):
+        """Annotations on code that is no declaration (``@A foo()``, ``@A { }``, ``for (@A x in xs)``) are read
+        by the code holding them; a declaration's own are read when it is declared."""
+        for node in nodes:
+            singles = [node] if rule(node) in ("singleAnnotation", "multiAnnotation") else \
+                [c for c in node.children or [] if rule(c) in ("singleAnnotation", "multiAnnotation")]
+            for single in singles:
+                for body in children(single, "unescapedAnnotation"):
+                    self.c.annotation_body(body, self.wowner or self.owner, list(self.dscope))
+
+    def walk_children(self, ctx, mode):
+        kids = [c for c in ctx.children or [] if not (isinstance(c, TerminalNode) and not c.symbol.text.strip())]
+        if len(kids) == 1 and not isinstance(kids[0], TerminalNode):
+            return self.walk(kids[0], mode)
+        for child in ctx.children or []:
+            self.walk(child)
+        return None
+
+    def r_statement(self, ctx, mode):
+        if first(ctx, "declaration") is None:
+            self.read_annotations([c for c in ctx.children or [] if rule(c) in ("annotation", "statementAnnotation")])
+        return self.walk_children(ctx, mode)
+
+    def r_annotatedLambda(self, ctx, mode):
+        self.read_annotations(children(ctx, "annotation"))
+        return self.walk_children(ctx, mode)
+
+    r_labeledLambda = r_annotatedLambda
+
     def r_expressionStatement(self, ctx, mode):
         kids = [c for c in ctx.children or [] if not (isinstance(c, TerminalNode) and c.symbol.text.strip() == "")]
         operator = None
@@ -293,10 +336,17 @@ class ExprWalker:
             elif rule(c) == "assignmentAndOperator":
                 operator = "modify"
         if operator is None or len(kids) < 3:
-            return self.walk(kids[0]) if len(kids) == 1 else self.generic(ctx)
+            if len(kids) != 1:
+                return self.generic(ctx)
+            value = self.walk(kids[0])
+            self.env.narrow.update(self.statement_facts(kids[0]))
+            return value
         left, right = kids[0], kids[-1]
         assigned = self.walk(right)
         target = self.walk(left, operator)
+        assigned_path = self.simple_name(left)
+        if assigned_path:
+            self.env.forget(assigned_path)
         if operator == "modify":
             for c in kids:
                 if rule(c) == "assignmentAndOperator":
@@ -330,6 +380,7 @@ class ExprWalker:
         kids = list(ctx.children or [])
         operand = kids[-1]
         prefixes = [c for c in kids[:-1] if rule(c) == "unaryPrefix"]
+        self.read_annotations([a for c in prefixes for a in children(c, "annotation")])
         increments = any(c.getText().strip() in ("++", "--") for c in prefixes)
         desc = self.walk(operand, "modify" if increments else mode)
         for c in reversed(prefixes):          # the one nearest the operand applies first
@@ -671,6 +722,7 @@ class ExprWalker:
         return out
 
     def r_forStatement(self, ctx, mode):
+        self.read_annotations(children(ctx, "annotation"))
         outer = self.env
         self.env = outer.child()
         iterable = None
@@ -746,15 +798,10 @@ class ExprWalker:
 
     # -- smart casts ---------------------------------------------------------------------
     def simple_name(self, ctx):
-        """The identifier an expression is, when it is nothing but a name."""
-        while ctx is not None and not isinstance(ctx, TerminalNode):
-            if rule(ctx) == "simpleIdentifier":
-                return ctx.getText()
-            kids = [c for c in ctx.children or [] if not isinstance(c, TerminalNode)]
-            if len(kids) != 1 or len(ctx.children) != 1:
-                return None
-            ctx = kids[0]
-        return None
+        """The name an expression is when it is nothing but a name or a dotted path of names (``a``, ``a.b``):
+        the key a smart cast is kept under. ``a?.b``, calls and indexing are not stable enough to narrow."""
+        text = ctx.getText() if ctx is not None else ""
+        return text if _ACCESS_PATH.match(text) else None
 
     def facts(self, ctx):
         """(proven when the condition is true, proven when it is false): name -> type expression.
@@ -790,6 +837,31 @@ class ExprWalker:
             if name:
                 return ({name: narrowed}, {}) if operands[1].getText().strip() == "is" else ({}, {name: narrowed})
         return {}, {}
+
+    def statement_facts(self, ctx):
+        """What a statement proves for the code after it: ``x as T`` makes ``x`` a ``T``, and
+        ``require(c)`` / ``check(c)`` prove ``c``."""
+        node = ctx
+        while node is not None and not isinstance(node, TerminalNode):
+            kids = [c for c in node.children or [] if not isinstance(c, TerminalNode)]
+            if rule(node) == "asExpression" and any(rule(c) == "asOperator" for c in kids):
+                operator = first(node, "asOperator").getText().strip()
+                path = self.simple_name(kids[0])
+                typed = first(node, "type_")
+                return {path: self.c.texpr(typed)} if operator == "as" and path and typed is not None else {}
+            if rule(node) == "postfixUnaryExpression":
+                parts = [c for c in kids]
+                head = parts[0].getText() if parts else ""
+                call = first(parts[1], "callSuffix") if len(parts) == 2 else None
+                if head in ("require", "check") and call is not None:
+                    arguments = children(first(call, "valueArguments"), "valueArgument") if first(call, "valueArguments") is not None else []
+                    if len(arguments) == 1 and first(arguments[0], "expression") is not None:
+                        return self.facts(first(arguments[0], "expression"))[0]
+                return {}
+            if len(kids) != 1:
+                return {}
+            node = kids[0]
+        return {}
 
     @staticmethod
     def terminates(body) -> bool:
@@ -953,8 +1025,8 @@ class ExprWalker:
                 for segment in rest:
                     receiver = ("member", receiver, segment)
         name, line, col = name_pos(ident)
-        self.occurrence("ref", name, line, col, receiver=receiver,
-                        binding=self.env.lookup(name) if receiver is None else None)
+        self.last_ref = self.occurrence("ref", name, line, col, receiver=receiver,
+                                        binding=self.env.lookup(name) if receiver is None else None)
 
     # -- the chain `a.b(c).d` ---------------------------------------------
     def chain(self, primary, suffixes, mode):
@@ -966,6 +1038,7 @@ class ExprWalker:
         recv_at = None                      # where the receiver's last name is written
         head_at = None                      # where its first name is written
         names_read = []                     # the name occurrences of this chain, in order
+        path = None                         # the dotted names so far (`a.b`) while the chain is only names
         if kind == "simpleIdentifier":
             name, line, col = name_pos(primary)
             recv_at = head_at = (line, col)
@@ -982,6 +1055,7 @@ class ExprWalker:
                 occ["deref"] = _dereferenced(suffixes) and (final_mode if final_mode in ("set", "modify") else True)
                 names_read.append(occ)
                 current = ("name", name, occ["b"], self.env.narrowed(name))
+                path = name
         elif kind == "thisExpression":
             current = ("this",)
         elif kind == "superExpression":
@@ -1030,6 +1104,7 @@ class ExprWalker:
                 call_at = _call_index(suffixes, index + 1)
                 if call_at is not None:
                     current, index = self.call(current, name, line, col, suffixes, call_at)
+                    path = None
                     continue
                 occ = self.occurrence(
                     "name", name, line, col, receiver=current,
@@ -1039,6 +1114,10 @@ class ExprWalker:
                 occ["deref"] = _dereferenced(suffixes[index + 1:])
                 names_read.append(occ)
                 current = ("member", current, name)
+                path = f"{path}.{name}" if path else None
+                narrowed = self.env.narrowed(path) if path else None
+                if narrowed is not None:                      # `if (a.b is Foo)`: `a.b` is a Foo here
+                    current = ("narrow", current, narrowed)
             elif sr == "callSuffix":     # invoke: `f(x)(y)`
                 current, index = self.call(current if current is not None else UNKNOWN, "invoke",
                                            s.start.line, s.start.column, suffixes, index)
@@ -1105,8 +1184,12 @@ class ExprWalker:
                 spread = any(isinstance(c, TerminalNode) and c.getText() == "*" for c in argument.children or [])
                 if occ is not None and _is_lambda(expression):
                     self.pending_lambda = (occ["id"], -2 if named else base + count)
+                self.last_ref = None
                 described = self.walk(expression)
                 self.pending_lambda = None
+                if occ is not None and described is None and self.last_ref is not None and \
+                        _CALLABLE_REFERENCE.match(expression.getText()) and not named and not spread:
+                    self.last_ref["arg_of"] = (occ["id"], base + count)        # `map(::f)`: the parameter says its arity
                 if occ is not None:
                     occ["args"].append(("lambda", self.lambda_result) if _is_lambda(expression) else described)
                     occ["argnames"].append(
@@ -1117,6 +1200,7 @@ class ExprWalker:
                 count += 1
         for c in call_suffix.children or []:
             if rule(c) in ("annotatedLambda", "labeledLambda"):
+                self.read_annotations(children(c, "annotation"))
                 lam = first(c, "lambdaLiteral")
                 if occ is not None:
                     self.pending_lambda = (occ["id"], -1)
