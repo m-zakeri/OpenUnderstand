@@ -27,13 +27,44 @@ from typing import Any
 _STATE: dict[str, Any] = {"db": None, "path": None}
 
 
+def discover_database(start: str = "") -> str | None:
+    """The database to open without being told: $OPENUNDERSTAND_DB, else the
+    one .udb in the working directory or its .openunderstand/ folder."""
+    import glob
+
+    if os.environ.get("OPENUNDERSTAND_DB"):
+        return os.environ["OPENUNDERSTAND_DB"]
+    here = start or os.getcwd()
+    found = sorted(
+        glob.glob(os.path.join(here, "*.udb"))
+        + glob.glob(os.path.join(here, ".openunderstand", "*.udb"))
+    )
+    return found[0] if len(found) == 1 else None
+
+
 def _require_db():
+    if _STATE["db"] is None and (path := discover_database()):
+        open_database(path)
     if _STATE["db"] is None:
         raise ValueError(
             "No database open. Call analyze(source_dir=...) to build one, or "
             "open_database(path=...) if you already have a .udb."
         )
     return _STATE["db"]
+
+
+def _named(ents, name):
+    """Every entity called `name`: overloads share a long name. A name that is
+    not a long name may be its tail (`JSONWriter.stack`) if only one fits."""
+    exact = [e for e in ents if e.longname() == name]
+    if exact:
+        return exact
+    tails = sorted({e.longname() for e in ents if e.longname().endswith("." + name)})
+    if len(tails) == 1:
+        return [e for e in ents if e.longname() == tails[0]]
+    if tails:
+        raise ValueError(f"{name!r} is ambiguous: " + ", ".join(tails[:20]))
+    raise ValueError(f"no entity with longname {name!r}")
 
 
 def _quiet(fn, *args, **kwargs):
@@ -205,9 +236,8 @@ def entity_references(longname: str, reference_kind: str = "", limit: int = 100)
     """
     db = _require_db()
     ents, _ = _quiet(db.ents)
-    matches = [e for e in ents if e.longname() == longname]
-    if not matches:
-        raise ValueError(f"no entity with longname {longname!r}")
+    matches = _named(ents, longname)
+    longname = matches[0].longname()
     refs = []
     for match in matches:
         found, _ = _quiet(match.refs, reference_kind or None)
@@ -245,9 +275,8 @@ def entity_metrics(longname: str, metrics: list[str] | None = None) -> str:
     """
     db = _require_db()
     ents, _ = _quiet(db.ents)
-    matches = [e for e in ents if e.longname() == longname]
-    if not matches:
-        raise ValueError(f"no entity with longname {longname!r}")
+    matches = _named(ents, longname)
+    longname = matches[0].longname()
 
     def values(match):
         found = {}
@@ -476,9 +505,11 @@ def build_server():
     server = MCPServer(
         "openunderstand",
         instructions=(
-            "Analyse Java source and query its structure. Call analyze() with a "
-            "source directory first, or open_database() for an existing .udb; "
-            "every other tool operates on whatever is open. After editing "
+            "Analyse Java source and query its structure. A .udb in the working "
+            "directory (or its .openunderstand/ folder, or $OPENUNDERSTAND_DB) is "
+            "opened on first use; otherwise call analyze() with a source directory, "
+            "or open_database() for another .udb. Names may be a long name or its "
+            "unique tail (`JSONWriter.stack`). After editing "
             "source, call update() with the changed files rather than "
             "analyze() again."
         ),

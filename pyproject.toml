@@ -76,6 +76,7 @@ Issues = "https://github.com/m-zakeri/OpenUnderstand/issues"
 [project.scripts]
 openunderstand = "openunderstand.ounderstand.openunderstand:parse_arguments"
 openunderstand-mcp = "openunderstand.mcp_server:main"
+openunderstand-query = "openunderstand.query_cli:main"
 
 [tool.setuptools.dynamic]
 # One place only: openunderstand/__init__.py.
